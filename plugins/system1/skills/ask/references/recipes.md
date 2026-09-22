@@ -6,6 +6,8 @@ Each recipe is a complete command. Replace the paths and the wording, and keep t
 
 So when content needs preparing, these recipes show two blocks. Run the first, then run the second as a separate command. Where piping works, `… | decide … --stdin` is equivalent.
 
+**Files outside the repo need `--allow-outside`.** Only content inside the repo is sent by default, because consent is given per repo. A scratch file you just wrote to `/tmp` is outside it, so these recipes pass `--allow-outside` and say why. Never add the flag to a source you didn't create yourself.
+
 ## Screen many items
 
 **Files matching a rule.** One call per file, filtered in the engine:
@@ -31,7 +33,7 @@ grep -rn 'catch' src > /tmp/hits.txt
 ```
 
 ```sh
-decide many --file /tmp/hits.txt --split row \
+decide many --file /tmp/hits.txt --allow-outside --split row \
   --question 'swallowed:noul:The line catches an error and discards it without logging or rethrowing.' \
   --keep 'swallowed>=0.7' --format brief
 ```
@@ -51,7 +53,7 @@ tail -60 test-output.log > /tmp/failure.txt
 ```
 
 ```sh
-decide ask --file /tmp/failure.txt --format brief --questions '
+decide ask --file /tmp/failure.txt --allow-outside --format brief --questions '
 failure:
   type: choice
   instructions: What kind of failure this test output shows.
@@ -72,7 +74,7 @@ tail -40 test-output.log > /tmp/test-tail.txt
 ```
 
 ```sh
-decide ask --diff HEAD --file /tmp/test-tail.txt --split join --format brief --questions '
+decide ask --diff HEAD --file /tmp/test-tail.txt --allow-outside --split join --format brief --questions '
 tests_added:
   type: noul
   instructions: The diff adds or changes a test that exercises the new behaviour.

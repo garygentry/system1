@@ -51,6 +51,7 @@ name:
 ```
 
 - **Sources:** `--glob`, `--file path[:L1-L2]`, `--diff <range>`, `--jsonl`, `--text`, `--stdin`.
+  - Only content inside the repo is sent. A scratch file elsewhere (say `/tmp/evidence.txt`) needs `--allow-outside`, which says out loud that it is leaving the repo. Don't add it to a file you didn't write yourself.
 - **Splitting a source into items:** `--split file|hunk|row|lines:N`.
 - **Several sources as one state:** `--split join`, e.g. a diff plus a test log for a criteria check. Excludes still apply to each file first.
 - **Filtering and ranking** (`many` only): `--keep`, `--sort`, `--limit`.
