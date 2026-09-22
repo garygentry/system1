@@ -26,7 +26,7 @@ import { parse } from "yaml"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..")
 const EVALS = join(ROOT, "tools/evals")
-const WORK = workDir(process.env.DECISIONS_EVAL_DIR)
+const WORK = workDir(process.env.SYSTEM1_EVAL_DIR)
 const TIMEOUT_MS = Number(process.env.EVAL_TIMEOUT_MS ?? 240_000)
 const SKILLS = ["ask", "design", "setup"] as const
 type Skill = (typeof SKILLS)[number]
@@ -37,10 +37,10 @@ type Harness = "claude" | "codex" | "pi"
  * run deletes and recreates directories under it.
  */
 export function workDir(raw: string | undefined, root = ROOT): string {
-  const dir = resolve(raw?.trim() ? raw : join(homedir(), ".cache/decisions-evals"))
+  const dir = resolve(raw?.trim() ? raw : join(homedir(), ".cache/system1-evals"))
   const rel = relative(root, dir)
   if (rel === "" || !(rel.startsWith("..") || resolve(rel) === rel)) {
-    throw new Error(`DECISIONS_EVAL_DIR must be outside ${root} (got ${dir})`)
+    throw new Error(`SYSTEM1_EVAL_DIR must be outside ${root} (got ${dir})`)
   }
   return dir
 }
@@ -85,7 +85,7 @@ export function loadedSkills(harness: Harness, output: string): Set<Skill> {
       if (call.id && failed.has(call.id)) continue // refused, e.g. a user-only skill
       if (call.name === "Skill") {
         // Only this plugin's skills: Claude also has built-ins such as `design`.
-        const m = /^decisions:(\w+)$/.exec(String((call.input as { skill?: string }).skill ?? ""))
+        const m = /^system1:(\w+)$/.exec(String((call.input as { skill?: string }).skill ?? ""))
         if (m && SKILLS.includes(m[1] as Skill)) found.add(m[1] as Skill)
         continue
       }
@@ -236,13 +236,13 @@ function baseEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {}
   // Nothing from a parent harness (session ids, effort, entrypoints) leaks in.
   for (const [k, v] of Object.entries(process.env)) {
-    if (/^(CLAUDE|CODEX_|PI_|AI_AGENT$|OPENROUTER_API_KEY$|DECISIONS_)/.test(k)) continue
+    if (/^(CLAUDE|CODEX_|PI_|AI_AGENT$|OPENROUTER_API_KEY$|SYSTEM1_)/.test(k)) continue
     env[k] = v
   }
-  env.DECISIONS_REPLAY = "1"
+  env.SYSTEM1_REPLAY = "1"
   // The shim runs this checkout's CLI without its path leading back here.
-  env.DECISIONS_CLI = join(ROOT, "packages/cli/dist/bundle/decide.mjs")
-  env.PATH = `${join(PKG, "plugins/decisions/bin")}:${env.PATH}`
+  env.SYSTEM1_CLI = join(ROOT, "packages/cli/dist/bundle/decide.mjs")
+  env.PATH = `${join(PKG, "plugins/system1/bin")}:${env.PATH}`
   return env
 }
 
@@ -253,14 +253,14 @@ function baseEnv(): NodeJS.ProcessEnv {
 const PKG = join(WORK, "pkg")
 function stagePlugin(): void {
   rmSync(PKG, { recursive: true, force: true })
-  cpSync(join(ROOT, "plugins/decisions"), join(PKG, "plugins/decisions"), { recursive: true })
+  cpSync(join(ROOT, "plugins/system1"), join(PKG, "plugins/system1"), { recursive: true })
   cpSync(join(ROOT, ".agents"), join(PKG, ".agents"), { recursive: true })
   writeFileSync(
     join(PKG, "package.json"),
     JSON.stringify({
-      name: "decisions-eval",
+      name: "system1-eval",
       private: true,
-      pi: { skills: ["./plugins/decisions/skills"] },
+      pi: { skills: ["./plugins/system1/skills"] },
     }),
   )
 }
@@ -294,12 +294,12 @@ async function setupCodexHome(): Promise<string> {
   mkdirSync(join(home, "rules"), { recursive: true })
   symlinkSync(join(homedir(), ".codex/auth.json"), join(home, "auth.json"))
   writeFileSync(
-    join(home, "rules/decisions.rules"),
+    join(home, "rules/system1.rules"),
     'prefix_rule(pattern = ["decide"], decision = "allow")\n',
   )
   const env = { ...baseEnv(), CODEX_HOME: home }
   await run("codex", ["plugin", "marketplace", "add", PKG], WORK, env)
-  await run("codex", ["plugin", "add", "decisions@decisions"], WORK, env)
+  await run("codex", ["plugin", "add", "system1@system1"], WORK, env)
   return home
 }
 
@@ -311,7 +311,7 @@ async function drive(harness: Harness, dir: string, prompt: string, home?: strin
       [
         "-p",
         "--plugin-dir",
-        join(PKG, "plugins/decisions"),
+        join(PKG, "plugins/system1"),
         // User settings are skipped by default: their plugins crowd the skill
         // list, and their hooks can rewrite commands past --allowedTools (an
         // `rtk git diff` rewrite once blocked every git call). Set

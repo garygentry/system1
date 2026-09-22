@@ -13,14 +13,14 @@ import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
-const PLUGIN_DIR = "plugins/decisions"
+const PLUGIN_DIR = "plugins/system1"
 
 export interface Catalog {
   version: string
   owner: { name: string; email: string }
   repository: string
   license: string
-  npm: { scope: string; cli: string; core: string }
+  npm: { scope: string; cli: string; core: string; pi: string }
   marketplace: { name: string }
   plugin: {
     name: string
@@ -46,6 +46,10 @@ const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
 export function cliPackageName(catalog: Catalog): string {
   return `${catalog.npm.scope}/${catalog.npm.cli}`
+}
+
+export function piPackageName(catalog: Catalog): string {
+  return `${catalog.npm.scope}/${catalog.npm.pi}`
 }
 
 export function render(catalog: Catalog, root = ROOT): Output[] {
@@ -127,6 +131,45 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
       }),
     },
     { path: `${PLUGIN_DIR}/bin/decide`, content: shim(catalog), executable: true },
+    // Pi reads skills through a package's `pi` key. This package is only that
+    // key plus a copy of the skills, so `pi install npm:…` pulls no
+    // devDependencies. The copy is made at pack time (prepack), not committed.
+    {
+      path: "packages/pi/package.json",
+      content: json({
+        name: piPackageName(catalog),
+        version,
+        description: `${plugin.description} Skills only, for Pi.`,
+        type: "module",
+        author,
+        homepage: repository,
+        repository: { type: "git", url: repository, directory: "packages/pi" },
+        license,
+        keywords: [...plugin.keywords, "pi-package"],
+        engines: { node: ">=22" },
+        pi: { skills: ["./skills"] },
+        files: ["skills", "README.md", "LICENSE"],
+        scripts: { prepack: "node prepack.mjs" },
+        publishConfig: { access: "public" },
+      }),
+    },
+    {
+      path: "packages/pi/prepack.mjs",
+      content: `// GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
+// Copies the authored skills into this package just before it is packed, so
+// they are written in one place only (${PLUGIN_DIR}/skills).
+import { cpSync, rmSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const here = dirname(fileURLToPath(import.meta.url))
+const from = join(here, "../../${PLUGIN_DIR}/skills")
+const to = join(here, "skills")
+rmSync(to, { recursive: true, force: true })
+cpSync(from, to, { recursive: true })
+console.log(\`system1-pi: copied skills from \${from}\`)
+`,
+    },
     {
       path: "packages/core/src/version.ts",
       content: `// GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)\nexport const VERSION = "${version}"\n/** The npm package that provides \`decide\`. */\nexport const CLI_PACKAGE = "${cliPackageName(catalog)}"\n`,
@@ -135,6 +178,7 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
 
   // Stamp the one version into every package manifest, keeping everything else.
   for (const pkg of ["package.json", "packages/core/package.json", "packages/cli/package.json"]) {
+    if (!existsSync(join(root, pkg))) continue
     const current = JSON.parse(readFileSync(join(root, pkg), "utf8")) as Record<string, unknown>
     outputs.push({ path: pkg, content: json({ ...current, version }) })
   }
@@ -160,8 +204,8 @@ function shim(catalog: Catalog): string {
 # GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
 # ${SHIM_MARKER}
 set -e
-if [ -n "\${DECISIONS_CLI:-}" ]; then
-  exec node "$DECISIONS_CLI" "$@"
+if [ -n "\${SYSTEM1_CLI:-}" ]; then
+  exec node "$SYSTEM1_CLI" "$@"
 fi
 self=$0
 while [ -L "$self" ]; do
@@ -190,17 +234,17 @@ for dir in $PATH; do
   exec "$cand" "$@"
 done
 IFS=$old_ifs; set +f
-# DECISIONS_NO_NPX: never download (doctor's version probe sets it).
-if [ -z "\${DECISIONS_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
+# SYSTEM1_NO_NPX: never download (doctor's version probe sets it).
+if [ -z "\${SYSTEM1_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
   exec npx --yes "${pinned}" "$@"
 fi
-echo "decide: the decisions CLI is not installed. Install it with: npm i -g ${pinned}" >&2
+echo "decide: the System 1 CLI is not installed. Install it with: npm i -g ${pinned}" >&2
 exit 127
 `
 }
 
 /** Identifies a copy of the shim, so the global lookup can skip it. */
-const SHIM_MARKER = "decisions-shim: runs the decisions CLI pinned to this plugin's version"
+const SHIM_MARKER = "system1-shim: runs the System 1 CLI pinned to this plugin's version"
 
 export function drift(outputs: Output[], root = ROOT): string[] {
   return outputs

@@ -6,7 +6,7 @@ import {
   type ManyResult,
   runAsk,
   runMany,
-} from "@garygentry/decisions-core"
+} from "@garygentry/system1-core"
 import { buildInput, parseDecideFlags } from "../args.js"
 import { ENVELOPE_VERSION, type Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
@@ -14,12 +14,15 @@ import { briefAsk, briefMany } from "../format.js"
 import type { Io } from "../io.js"
 import { emit } from "../run.js"
 
+/** Flags that only mean something for a fan-out. `ask` is one state, one call. */
+const MANY_ONLY = ["dry-run", "confirm", "sort", "limit", "fields", "concurrency"] as const
+
 export function runAskCommand(argv: string[], io: Io, format: Format): Promise<ExitCode> {
   return emit<AskResult>(
     io,
     "ask",
     format,
-    () => runAsk(context(io), input(argv, io)),
+    () => runAsk(context(io), input(argv, io, true)),
     (r, f) => (f === "brief" ? briefAsk(r) : undefined),
   )
 }
@@ -54,8 +57,17 @@ function context(io: Io) {
   return createContext({ ...io, cwd: io.cwd ?? process.cwd(), env: io.env })
 }
 
-function input(argv: string[], io: Io) {
+function input(argv: string[], io: Io, ask = false) {
   const { values, positionals } = parseDecideFlags(argv)
+  if (ask) {
+    const given = MANY_ONLY.filter((flag) => values[flag] !== undefined)
+    if (given.length > 0) {
+      throw new DecisionsError(
+        "invalid-request",
+        `--${given.join(", --")} ${given.length > 1 ? "apply" : "applies"} to \`decide many\`, not \`ask\` (one state, one call).`,
+      )
+    }
+  }
   if (positionals.length > 0) {
     throw new DecisionsError(
       "invalid-request",

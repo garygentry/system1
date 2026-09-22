@@ -1,4 +1,4 @@
-import { DecisionsError, isDecisionsError } from "@garygentry/decisions-core/errors"
+import { DecisionsError, isDecisionsError } from "@garygentry/system1-core/errors"
 import { FORMATS, type Format, fail, ok } from "./envelope.js"
 import { EXIT, type ExitCode, exitFor } from "./exit-codes.js"
 import type { Io } from "./io.js"
@@ -31,7 +31,7 @@ export async function emit<T>(
         ? `decide ${command}: error ${code} — ${message}`
         : JSON.stringify(fail(command, code, message, details)),
     )
-    if (!isDecisionsError(error) && error instanceof Error && io.env.DECISIONS_DEBUG)
+    if (!isDecisionsError(error) && error instanceof Error && io.env.SYSTEM1_DEBUG)
       io.err(error.stack ?? "")
     return exitFor(code)
   }

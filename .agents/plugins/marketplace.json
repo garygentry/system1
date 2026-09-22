@@ -1,14 +1,14 @@
 {
-  "name": "decisions",
+  "name": "system1",
   "interface": {
-    "displayName": "Decisions"
+    "displayName": "System 1"
   },
   "plugins": [
     {
-      "name": "decisions",
+      "name": "system1",
       "source": {
         "source": "local",
-        "path": "./plugins/decisions"
+        "path": "./plugins/system1"
       },
       "policy": {
         "installation": "AVAILABLE",

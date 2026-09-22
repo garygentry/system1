@@ -198,7 +198,7 @@ function isQuestion(value: unknown): boolean {
 /** The default spec directories for a repo. */
 export function specDirs(repoRoot: string, userConfigDir: string, bundled?: string): SpecDirs {
   return {
-    repo: join(repoRoot, ".decisions", "specs"),
+    repo: join(repoRoot, ".system1", "specs"),
     user: join(userConfigDir, "specs"),
     ...(bundled ? { bundled } : {}),
   }

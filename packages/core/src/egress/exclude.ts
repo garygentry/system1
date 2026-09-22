@@ -27,7 +27,7 @@ export const DEFAULT_EXCLUDES: readonly string[] = [
   "**/*.tfstate",
   "**/*.tfstate.*",
   "**/secrets/**",
-  "**/.decisions/credentials",
+  "**/.system1/credentials",
 ]
 
 export interface ExcludeResult {

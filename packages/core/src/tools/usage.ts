@@ -35,6 +35,6 @@ function currentSession(ctx: ToolContext): string {
   if (ctx.config.session) return ctx.config.session
   throw new DecisionsError(
     "invalid-request",
-    "no current session: not running under Claude Code, Codex or Pi, and DECISIONS_SESSION is not set",
+    "no current session: not running under Claude Code, Codex or Pi, and SYSTEM1_SESSION is not set",
   )
 }

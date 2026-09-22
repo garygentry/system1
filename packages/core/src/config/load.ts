@@ -2,7 +2,7 @@
  * Layered configuration:
  *
  *   defaults → user (`$XDG_CONFIG_HOME/decisions/config.yaml`)
- *            → repo (`<repo>/.decisions/config.yaml`) → env
+ *            → repo (`<repo>/.system1/config.yaml`) → env
  *
  * Later layers win. There is one exception: egress consent is read **only**
  * from the repo layer. Consent is per repo (decision 0009), so a user-level
@@ -56,7 +56,7 @@ export interface ResolvedConfig extends DecisionsConfig {
   apiKey: string | undefined
   apiKeySource: "env" | "credentials" | undefined
   replay: boolean
-  /** `DECISIONS_SESSION`, else the harness session id (`claude:…`, `codex:…`, `pi:…`). */
+  /** `SYSTEM1_SESSION`, else the harness session id (`claude:…`, `codex:…`, `pi:…`). */
   session: string | undefined
   sessionOrigin: DetectedSession["origin"] | undefined
   /** Which files contributed, for `decide config`. */
@@ -73,11 +73,11 @@ export const DEFAULTS: DecisionsConfig = {
   profiles: [],
 }
 
-/** Walk up from `cwd` to the nearest directory holding `.decisions/` or `.git`; else `cwd`. */
+/** Walk up from `cwd` to the nearest directory holding `.system1/` or `.git`; else `cwd`. */
 export function findRepoRoot(cwd: string): string {
   let dir = resolve(cwd)
   while (true) {
-    if (existsSync(join(dir, ".decisions")) || existsSync(join(dir, ".git"))) return dir
+    if (existsSync(join(dir, ".system1")) || existsSync(join(dir, ".git"))) return dir
     const parent = dirname(dir)
     if (parent === dir) return resolve(cwd)
     dir = parent
@@ -86,16 +86,16 @@ export function findRepoRoot(cwd: string): string {
 
 export function userConfigDir(env: NodeJS.ProcessEnv = process.env, home = homedir()): string {
   const base = env.XDG_CONFIG_HOME?.trim() ? env.XDG_CONFIG_HOME : join(home, ".config")
-  return join(base, "decisions")
+  return join(base, "system1")
 }
 
 /** Where a repo keeps its decisions state: config, fixtures, the spend ledger. */
 export function stateDir(repoRoot: string): string {
-  return join(repoRoot, ".decisions")
+  return join(repoRoot, ".system1")
 }
 
 export function repoConfigPath(repoRoot: string): string {
-  return join(repoRoot, ".decisions", "config.yaml")
+  return join(repoRoot, ".system1", "config.yaml")
 }
 
 export interface LoadOptions {
@@ -137,12 +137,12 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
   const session = detectSession(env)
   return {
     ...merged,
-    model: nonEmpty(env.DECISIONS_MODEL) ?? merged.model,
-    endpoint: nonEmpty(env.DECISIONS_ENDPOINT) ?? merged.endpoint,
+    model: nonEmpty(env.SYSTEM1_MODEL) ?? merged.model,
+    endpoint: nonEmpty(env.SYSTEM1_ENDPOINT) ?? merged.endpoint,
     repoRoot,
     apiKey: key?.value,
     apiKeySource: key?.source,
-    replay: /^(1|true|yes)$/i.test(env.DECISIONS_REPLAY ?? ""),
+    replay: /^(1|true|yes)$/i.test(env.SYSTEM1_REPLAY ?? ""),
     session: session?.id,
     sessionOrigin: session?.origin,
     layers: {

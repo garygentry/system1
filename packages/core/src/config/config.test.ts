@@ -10,8 +10,8 @@ const temp = useTempDirs()
 function setup(repoConfig?: string, userConfig?: string) {
   const repo = temp({ ".git/HEAD": "ref: refs/heads/main\n", "src/a.ts": "x" })
   const home = temp()
-  if (repoConfig !== undefined) writeTree(repo, { ".decisions/config.yaml": repoConfig })
-  if (userConfig !== undefined) writeTree(home, { ".config/decisions/config.yaml": userConfig })
+  if (repoConfig !== undefined) writeTree(repo, { ".system1/config.yaml": repoConfig })
+  if (userConfig !== undefined) writeTree(home, { ".config/system1/config.yaml": userConfig })
   return { repo, home }
 }
 
@@ -33,7 +33,7 @@ describe("loadConfig", () => {
       "concurrency: 4\nbudget: { maxUsd: 1 }\negress: { exclude: ['fixtures/**'] }\n",
       "concurrency: 2\nbudget: { maxCalls: 50 }\nmodel: typesafe/jev-1.13-20260917\negress: { exclude: ['**/*.log'] }\n",
     )
-    const config = loadConfig({ cwd: repo, env: { DECISIONS_MODEL: "typesafe/jev-1.13" }, home })
+    const config = loadConfig({ cwd: repo, env: { SYSTEM1_MODEL: "typesafe/jev-1.13" }, home })
     expect(config.concurrency).toBe(4)
     expect(config.budget).toEqual({ maxCalls: 50, maxUsd: 1 })
     expect(config.model).toBe("typesafe/jev-1.13")
@@ -88,8 +88,8 @@ describe("loadConfig", () => {
 
     it("reads a mode-600 credentials file", () => {
       const { repo, home } = setup()
-      const file = join(home, ".config/decisions/credentials")
-      writeTree(home, { ".config/decisions/credentials": "openrouter_api_key: sk-file\n" })
+      const file = join(home, ".config/system1/credentials")
+      writeTree(home, { ".config/system1/credentials": "openrouter_api_key: sk-file\n" })
       chmodSync(file, 0o600)
       expect(loadConfig({ cwd: repo, env: {}, home })).toMatchObject({
         apiKey: "sk-file",
@@ -99,14 +99,14 @@ describe("loadConfig", () => {
 
     it.skipIf(process.platform === "win32")("refuses a credentials file others can read", () => {
       const { repo, home } = setup()
-      writeTree(home, { ".config/decisions/credentials": "openrouter_api_key: sk-file\n" })
-      chmodSync(join(home, ".config/decisions/credentials"), 0o644)
+      writeTree(home, { ".config/system1/credentials": "openrouter_api_key: sk-file\n" })
+      chmodSync(join(home, ".config/system1/credentials"), 0o644)
       expect(() => loadConfig({ cwd: repo, env: {}, home })).toThrow(/chmod 600/)
     })
 
     it("honours XDG_CONFIG_HOME", () => {
       const { repo } = setup()
-      const xdg = temp({ "decisions/config.yaml": "concurrency: 3\n" })
+      const xdg = temp({ "system1/config.yaml": "concurrency: 3\n" })
       expect(
         loadConfig({ cwd: repo, env: { XDG_CONFIG_HOME: xdg }, home: temp() }).concurrency,
       ).toBe(3)
@@ -115,8 +115,8 @@ describe("loadConfig", () => {
 })
 
 describe("findRepoRoot", () => {
-  it("walks up to .git or .decisions, else stays put", () => {
-    const repo = temp({ ".decisions/config.yaml": "", "a/b/c.txt": "" })
+  it("walks up to .git or .system1, else stays put", () => {
+    const repo = temp({ ".system1/config.yaml": "", "a/b/c.txt": "" })
     expect(findRepoRoot(join(repo, "a/b"))).toBe(repo)
   })
 })
@@ -125,7 +125,7 @@ describe("consent", () => {
   it("grants into the repo config, preserving other content and comments", () => {
     const { repo, home } = setup("# keep me\nconcurrency: 4\n")
     setConsent(repo, true, "test", new Date("2026-09-22T00:00:00Z"))
-    const text = readFileSync(join(repo, ".decisions/config.yaml"), "utf8")
+    const text = readFileSync(join(repo, ".system1/config.yaml"), "utf8")
     expect(text).toContain("# keep me")
     expect(text).toContain("concurrency: 4")
     const config = loadConfig({ cwd: repo, env: {}, home })
@@ -140,7 +140,7 @@ describe("consent", () => {
   it("creates the config with an explanatory header, and can revoke", () => {
     const { repo, home } = setup()
     setConsent(repo, true)
-    expect(readFileSync(join(repo, ".decisions/config.yaml"), "utf8")).toMatch(/^# decisions/)
+    expect(readFileSync(join(repo, ".system1/config.yaml"), "utf8")).toMatch(/^# decisions/)
     setConsent(repo, false)
     const { consent } = loadConfig({ cwd: repo, env: {}, home }).egress
     expect(() => assertConsent(consent, repo)).toThrow(

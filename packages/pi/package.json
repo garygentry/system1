@@ -1,0 +1,45 @@
+{
+  "name": "@garygentry/system1-pi",
+  "version": "0.1.0",
+  "description": "Route closed judgements (pick one, rate this, yes/no) to a decision model instead of reading everything yourself. Typed, calibrated answers in ~300 ms for a fraction of a cent, via the `decide` CLI. Skills only, for Pi.",
+  "type": "module",
+  "author": {
+    "name": "Gary Gentry",
+    "email": "gary@garygentry.net"
+  },
+  "homepage": "https://github.com/garygentry/system1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/garygentry/system1",
+    "directory": "packages/pi"
+  },
+  "license": "MIT",
+  "keywords": [
+    "decisions",
+    "decision-model",
+    "jev",
+    "classification",
+    "triage",
+    "agents",
+    "pi-package"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  },
+  "files": [
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepack": "node prepack.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

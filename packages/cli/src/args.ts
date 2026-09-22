@@ -6,7 +6,7 @@ import {
   parseFileRef,
   parseQuestionSet,
   type SourceSpec,
-} from "@garygentry/decisions-core"
+} from "@garygentry/system1-core"
 
 /** Flags shared by `ask` and `many`. One table, so help and parsing can't drift. */
 export const DECIDE_OPTIONS = {

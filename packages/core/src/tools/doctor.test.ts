@@ -7,7 +7,7 @@ import { CODEX_RULE, type DoctorResult, runDoctor, which } from "./doctor.js"
 
 const temp = useTempDirs()
 const SECRET = "sk-or-TESTSECRET-doctor"
-const CONSENT = { ".decisions/config.yaml": "egress:\n  consent: { granted: true }\n" }
+const CONSENT = { ".system1/config.yaml": "egress:\n  consent: { granted: true }\n" }
 const reachable = (async () =>
   Response.json({ data: { endpoints: [{ context_length: 32000 }] } })) as typeof fetch
 const noDns = (async () => {
@@ -45,7 +45,7 @@ describe("doctor", () => {
     const noConsent = await doctor({ OPENROUTER_API_KEY: SECRET }, reachable)
     expect(noConsent).toMatchObject({ healthy: true, live: false })
     const replay = await doctor(
-      { OPENROUTER_API_KEY: SECRET, DECISIONS_REPLAY: "1" },
+      { OPENROUTER_API_KEY: SECRET, SYSTEM1_REPLAY: "1" },
       reachable,
       CONSENT,
     )
@@ -64,9 +64,8 @@ describe("doctor", () => {
     expect(status(r)).toMatchObject({ path: "warn", key: "warn", consent: "warn", network: "fail" })
     expect(check(r, "network")?.detail).toMatch(/EAI_AGAIN.*Codex sandbox/)
     expect(check(r, "network")?.fix).toContain(CODEX_RULE)
-    expect(check(r, "network")?.fix).toContain("/home/u/.codex/rules/decisions.rules")
-    // Unpublished (0.0.0): point at the checkout, not at npm.
-    expect(check(r, "path")?.fix).toMatch(/not published yet.*plugins\/decisions\/bin/)
+    expect(check(r, "network")?.fix).toContain("/home/u/.codex/rules/system1.rules")
+    expect(check(r, "path")?.fix).toMatch(/^npm i -g @garygentry\/system1@\d+\.\d+\.\d+$/)
   })
 
   it("trusts the sandbox flag over nesting, and gives the rule only when sandboxed", async () => {
@@ -85,14 +84,14 @@ describe("doctor", () => {
   })
 
   it("blames the request, not the network, when the endpoint answers with an error", async () => {
-    const missing = await doctor({ CLAUDECODE: "1", DECISIONS_MODEL: "bad/model" }, status404)
+    const missing = await doctor({ CLAUDECODE: "1", SYSTEM1_MODEL: "bad/model" }, status404)
     expect(check(missing, "network")?.fix).toMatch(/does not know this model/)
     const down = await doctor({ CLAUDECODE: "1" }, status503)
     expect(check(down, "network")?.fix).toMatch(/HTTP 503: retry later/)
   })
 
   it("names each harness's network fix, and only warns in replay", async () => {
-    const replay = await doctor({ DECISIONS_REPLAY: "1", AI_AGENT: "pi" }, noDns)
+    const replay = await doctor({ SYSTEM1_REPLAY: "1", AI_AGENT: "pi" }, noDns)
     expect(replay).toMatchObject({ healthy: true, harness: "pi" })
     expect(status(replay).network).toBe("warn")
     const claude = await doctor({ CLAUDECODE: "1" }, noDns)
@@ -104,10 +103,10 @@ describe("doctor", () => {
   })
 
   it("reports a broken config as a failed check instead of throwing", async () => {
-    const badUrl = await doctor({ DECISIONS_ENDPOINT: "notaurl" }, reachable)
+    const badUrl = await doctor({ SYSTEM1_ENDPOINT: "notaurl" }, reachable)
     expect(badUrl).toMatchObject({ healthy: false, live: false })
     expect(check(badUrl, "config")).toMatchObject({ status: "fail" })
-    const badYaml = await doctor({}, reachable, { ".decisions/config.yaml": "egress: [unclosed\n" })
+    const badYaml = await doctor({}, reachable, { ".system1/config.yaml": "egress: [unclosed\n" })
     expect(badYaml.healthy).toBe(false)
     expect(check(badYaml, "config")?.detail).toBeTruthy()
   })

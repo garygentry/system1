@@ -1,6 +1,6 @@
 // Deep imports keep the startup path off the core barrel (see bundle.mjs).
-import { DecisionsError } from "@garygentry/decisions-core/errors"
-import { VERSION } from "@garygentry/decisions-core/version"
+import { DecisionsError } from "@garygentry/system1-core/errors"
+import { VERSION } from "@garygentry/system1-core/version"
 import type { Format } from "./envelope.js"
 import { EXIT, type ExitCode } from "./exit-codes.js"
 import type { Io } from "./io.js"

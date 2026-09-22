@@ -1,6 +1,6 @@
 interface:
   display_name: "Decisions: design"
   short_description: "Save or repair a reusable decisions spec with examples"
-  default_prompt: "Use $design to save this question as a spec in .decisions/specs with examples, and check it."
+  default_prompt: "Use $design to save this question as a spec in .system1/specs with examples, and check it."
 policy:
   allow_implicit_invocation: true

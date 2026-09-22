@@ -11,7 +11,7 @@
       "!**/.claude-plugin",
       "!**/.codex-plugin",
       "!.agents",
-      "!plugins/decisions/plugin.json",
+      "!plugins/system1/plugin.json",
       "!.smoke",
       "!tools/smoke/fixture-repo",
       "!tools/evals/fixture-repo",

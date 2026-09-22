@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
 import { loadCatalog, ROOT } from "./generate.js"
 
-const PLUGIN_DIR = join(ROOT, "plugins/decisions")
+const PLUGIN_DIR = join(ROOT, "plugins/system1")
 const SKILL_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 export function checkSkill(dir: string, name: string, text: string): string[] {
@@ -60,9 +60,10 @@ function versions(): string[] {
     "package.json",
     "packages/core/package.json",
     "packages/cli/package.json",
-    "plugins/decisions/plugin.json",
-    "plugins/decisions/.claude-plugin/plugin.json",
-    "plugins/decisions/.codex-plugin/plugin.json",
+    "packages/pi/package.json",
+    "plugins/system1/plugin.json",
+    "plugins/system1/.claude-plugin/plugin.json",
+    "plugins/system1/.codex-plugin/plugin.json",
   ]
   const problems = manifests.flatMap((path) => {
     const found = (JSON.parse(readFileSync(join(ROOT, path), "utf8")) as { version?: string })

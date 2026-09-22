@@ -29,7 +29,7 @@ importers:
 
   packages/cli:
     devDependencies:
-      '@garygentry/decisions-core':
+      '@garygentry/system1-core':
         specifier: workspace:*
         version: link:../core
       esbuild:
@@ -54,6 +54,8 @@ importers:
       '@types/picomatch':
         specifier: ^4.0.3
         version: 4.0.3
+
+  packages/pi: {}
 
 packages:
 

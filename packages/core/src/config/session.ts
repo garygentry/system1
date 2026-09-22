@@ -2,7 +2,7 @@
  * Which agent session a call belongs to, so the spend ledger can answer
  * "what has this session cost" across separate `decide` invocations.
  *
- * `DECISIONS_SESSION` always wins. Otherwise the id comes from the harness
+ * `SYSTEM1_SESSION` always wins. Otherwise the id comes from the harness
  * running the shell. Harnesses leak their variables into child harnesses (a
  * Pi or Codex run started from Claude Code still sees
  * `CLAUDE_CODE_SESSION_ID`), so the order below picks the innermost one:
@@ -17,18 +17,18 @@
  *
  * Known limits: Claude Code started inside Codex resolves to Codex, and Codex
  * started inside Pi resolves to Pi (Codex inherits the parent's `AI_AGENT`).
- * The environment cannot tell these apart. Set `DECISIONS_SESSION` to override.
+ * The environment cannot tell these apart. Set `SYSTEM1_SESSION` to override.
  */
 export type Harness = "claude" | "codex" | "pi"
 
 export interface DetectedSession {
-  /** `<harness>:<id>`, or the `DECISIONS_SESSION` value verbatim. */
+  /** `<harness>:<id>`, or the `SYSTEM1_SESSION` value verbatim. */
   id: string
   origin: Harness | "env"
 }
 
 export function detectSession(env: NodeJS.ProcessEnv): DetectedSession | undefined {
-  const explicit = nonEmpty(env.DECISIONS_SESSION)
+  const explicit = nonEmpty(env.SYSTEM1_SESSION)
   if (explicit) return { id: explicit, origin: "env" }
   const found = innermost(env)
   return found?.id ? { id: `${found.harness}:${found.id}`, origin: found.harness } : undefined

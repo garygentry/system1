@@ -1,4 +1,4 @@
-# `decisions` — Roadmap
+# `system1` — Roadmap
 
 **Status:** living document. Revision 2 (2026-09-22): the CLI is the only execution surface, and MCP is deferred ([0013](decisions/0013-cli-first-mcp-deferred.md)).
 
@@ -26,22 +26,23 @@ Full records are in `plans/decisions/NNNN-*.md`. A superseded record is kept and
 | 0002 | Distributed as an npm package with a pinned version. The **`decide` CLI** is what agents run | accepted (amended by 0013) |
 | 0003 | Model layer is one transport plus model profiles that are only data. A new model with the same wire shape is a profile entry. `emulated` is a second transport in phase 3 | accepted |
 | 0004 | v1 is charter phase 1 on all three first-class harnesses | accepted |
-| 0005 | Monorepo: `packages/*` plus one authored plugin root at `plugins/decisions/`. Per-harness manifests are generated | accepted |
+| 0005 | Monorepo: `packages/*` plus one authored plugin root at `plugins/system1/`. Per-harness manifests are generated | accepted |
 | 0006 | ~~Native Pi extension for the tools~~. Pi uses the CLI plus skills like the other harnesses. A Pi extension is deferred until hooks need it (M10) | **superseded by 0013** |
 | 0007 | Cursor, Copilot and other Agent Skills hosts are best effort | accepted |
-| 0008 | GitHub `garygentry/decisions`, npm `@garygentry` | accepted |
+| 0008 | GitHub `garygentry/system1`, npm `@garygentry` | accepted |
 | 0009 | Egress consent is given once per repo. Excludes and scrubbing are always on. Hooks are opted into per pack | accepted |
 | 0010 | With no key the tool only replays. A fixture miss is a typed error. Every result carries `source` | accepted |
 | 0011 | Spend guard: anything above 200 calls or $0.05 returns a projection and needs `--confirm` | accepted |
 | 0012 | Plans are tracked in `ROADMAP.md`, `milestones/Mn-*.md` and `decisions/NNNN-*.md` | accepted |
 | **0013** | **The CLI is the only execution surface, driven by skills and agents. MCP is deferred** and may come back later as a thin adapter over the same `core/tools` | **accepted** |
 | 0015 | CLI contract v1: the envelope, exit codes, `keep`/`sort` syntax, undecided before thresholds, and the consent guard on `egress allow` | accepted |
+| **0016** | **The project is named System 1 (`system1`)**: GitHub, npm, plugin, `.system1/` and `SYSTEM1_*`. The command stays `decide`. Amends 0008 | **accepted** |
 | 0014 | There is no live `command` source. Command output is piped into `--stdin`. The engine only ever spawns `git`, through `execFile` | accepted |
 
 These are carried over from the charter unchanged:
 - the vocabulary (state, question set, primitives, policy, shape, undecided);
 - the principles in §3;
-- YAML specs in `.decisions/specs/`, looked up in the repo, then the user level, then the specs bundled with the plugin;
+- YAML specs in `.system1/specs/`, looked up in the repo, then the user level, then the specs bundled with the plugin;
 - the phase order.
 
 ## Why CLI rather than MCP (summary of 0013)
@@ -59,7 +60,7 @@ For this product, CLI plus skills is at least as capable as MCP, and usually che
 | MCP advantage | Mitigation in the CLI design |
 |---|---|
 | Typed, schema-validated arguments | Schemas are defined once in TypeBox and validated inside the CLI. Errors come back as a typed JSON envelope. `decide schema <cmd>` prints the JSON Schema |
-| A long-lived process (session spend meter, warm connections) | Spend is kept in a ledger, `.decisions/usage.jsonl` (keyed by session id when the harness provides one). Cold start comes from a real install (the plugin `bin/` shim or a global install), not `npx` on every call. Aim: under 150 ms startup |
+| A long-lived process (session spend meter, warm connections) | Spend is kept in a ledger, `.system1/usage.jsonl` (keyed by session id when the harness provides one). Cold start comes from a real install (the plugin `bin/` shim or a global install), not `npx` on every call. Aim: under 150 ms startup |
 | **Runs outside the agent's sandbox.** MCP servers can reach the network when the shell can't. Codex `workspace-write` has network off by default, and Claude's sandbox needs a domain allowlist | **This is the one real gap.** Setup documents and checks the per-harness fix: an allowlisted `openrouter.ai` domain in Claude's sandbox; an approval/exec-policy rule or `network_access` for `decide` in Codex. M0 verifies it. It is the leading reason to add MCP back later |
 | Hosts with no shell (claude.ai, desktop chat) | Out of scope. Coding agents only |
 | Progress notifications and cancellation on long fan-outs | Progress goes to stderr, which is shown to the agent. SIGINT is honoured. The spend guard keeps fan-outs bounded |
@@ -74,9 +75,9 @@ For this product, CLI plus skills is at least as capable as MCP, and usually che
      Claude Code                  Codex                        Pi        (+ Agent Skills hosts)
           └─────────────────────────┼──────────────────────────┘
                                     ▼
-                      `decide` CLI  (@garygentry/decisions)   ◄── hooks · CI · scripts
+                      `decide` CLI  (@garygentry/system1)   ◄── hooks · CI · scripts
                                     │
-                      @garygentry/decisions-core (library)
+                      @garygentry/system1-core (library)
    tools/commands (harness-agnostic defs, TypeBox) · model profiles · transport · fixtures
    spend ledger/budget · sources + splitters · projection · spec loader · egress · config
 ```
@@ -118,11 +119,11 @@ For this product, CLI plus skills is at least as capable as MCP, and usually che
 | Component | Claude Code | Codex | Pi | Agent Skills hosts |
 |---|---|---|---|---|
 | Manifest | `.claude-plugin/plugin.json` (gen) | root `plugin.json` (Agent Plugins 1.0, `extensions."com.openai"`) (gen) | `packages/pi/package.json` `pi` key (skills only) | root `plugin.json` (gen) |
-| Skills | `plugins/decisions/skills/` (shared) | same, plus `agents/openai.yaml` sidecar for invocation policy | copied into the Pi package at pack time | same |
+| Skills | `plugins/system1/skills/` (shared) | same, plus `agents/openai.yaml` sidecar for invocation policy | copied into the Pi package at pack time | same |
 | `decide` on PATH | plugin `bin/decide` shim running the pinned install | `setup` installs globally, verified | same | same |
 | Network from shell | sandbox domain allowlist, if sandboxing is on | exec-policy / approval rule, or `network_access` (verify in M0) | no sandbox | host-dependent |
 | User-only skills | `disable-model-invocation: true` | `openai.yaml` `allow_implicit_invocation: false` | verify in M0 | — |
-| Marketplace / install | root `.claude-plugin/marketplace.json` | root `.agents/plugins/marketplace.json` | `pi install npm:@garygentry/decisions-pi` (or `git:`) | `npx skills add` |
+| Marketplace / install | root `.claude-plugin/marketplace.json` | root `.agents/plugins/marketplace.json` | `pi install npm:@garygentry/system1-pi` (or `git:`) | `npx skills add` |
 | Agents (phase 2+) | `agents/*.md` (gen) | `.toml` (gen; whether a plugin can ship them is unverified) | subagent extension markdown (optional) | — |
 | Hooks (phase 5) | `hooks/hooks.json` → `decide hook <pack>` | `com.openai.hooks` → same | Pi extension via `pi.on(...)` → core (deferred) | — |
 
@@ -131,7 +132,7 @@ Note on the Pi package: it now only carries the skills, and later the hooks exte
 ## Repo layout (target after M0)
 
 ```
-decisions/
+system1/
   AGENTS.md  CLAUDE.md(@AGENTS.md)  README.md  LICENSE
   catalog.yaml                   # names, version, descriptions, scope: source of truth for generation
   package.json  pnpm-workspace.yaml  tsconfig.base.json  biome.json  vitest.workspace.ts
@@ -139,7 +140,7 @@ decisions/
     core/  src/{model,transport,fixtures,run,sources,split,project,spec,egress,config,tools}/
     cli/   src/{main.ts, commands/*, format/*}          # bin: decide
     pi/    package.json (pi key → skills; extension later)
-  plugins/decisions/
+  plugins/system1/
     skills/{ask,design,setup}/SKILL.md (+ references/, agents/openai.yaml)
     specs/                       # generic specs
     bin/decide                   # generated shim (Claude PATH)
@@ -157,10 +158,10 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 
 - **Porting from jev-poc:**
   - `shared/jev.ts` → `core/model`. Price and floor move into the Jev profile.
-  - `server/transport.ts` → `core/transport`. Config becomes explicit, and the header becomes `X-Title: decisions`.
+  - `server/transport.ts` → `core/transport`. Config becomes explicit, and the header becomes `X-Title: system1`.
   - `server/concurrency.ts` → `core/run/pool`.
   - `server/spend.ts` → `core/run/spend`, rebuilt as an instance with a persisted ledger.
-  - `server/fixtures.ts` → `core/fixtures`, content-addressed as `.decisions/fixtures/<spec|adhoc>/<sha256>.json`, with no synthetic fallback.
+  - `server/fixtures.ts` → `core/fixtures`, content-addressed as `.system1/fixtures/<spec|adhoc>/<sha256>.json`, with no synthetic fallback.
   - `shared/baseline.ts` and `shared/assessment.ts` are kept for phase 3.
   - `src/demos/*/{demo,policy}.ts` feed the generic specs and the `design` references.
 - **Sources (v1):**
@@ -171,8 +172,8 @@ No `mcp.json` or `.mcp.json` is generated in v1.
   - `--keep` uses the shorthand `relevant.noul>=0.7` (ANDed when repeated);
   - `--sort`, `--limit`, `--fields`;
   - undecided items are always counted and listed separately.
-- **Egress:** consent is recorded in `.decisions/config.yaml`. The tool applies gitignore-style excludes plus defaults (`.env*`, `*.pem` and similar), and scrubs secrets with regexes. A state over the limit is refused, never truncated.
-- **Config layering:** defaults → `~/.config/decisions/config.yaml` → `.decisions/config.yaml` → env (`OPENROUTER_API_KEY`, `DECISIONS_ENDPOINT`, `DECISIONS_MODEL`, `DECISIONS_REPLAY`). The key can also live in `~/.config/decisions/credentials` (mode 600), so the agent never has to handle it.
+- **Egress:** consent is recorded in `.system1/config.yaml`. The tool applies gitignore-style excludes plus defaults (`.env*`, `*.pem` and similar), and scrubs secrets with regexes. A state over the limit is refused, never truncated.
+- **Config layering:** defaults → `~/.config/system1/config.yaml` → `.system1/config.yaml` → env (`OPENROUTER_API_KEY`, `SYSTEM1_ENDPOINT`, `SYSTEM1_MODEL`, `SYSTEM1_REPLAY`). The key can also live in `~/.config/system1/credentials` (mode 600), so the agent never has to handle it.
 
 ## Milestones (each about one session; the detailed doc is written at the start of that session)
 
@@ -203,17 +204,17 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 ## Open questions
 
 1. ~~The `--keep` filter language~~ **Answered in M3:** the shorthand only, with the full tool input available as JSON through `--input` (0015).
-2. ~~How to handle Codex sandbox network~~ **Answered in M0:** a narrow `prefix_rule(pattern=["decide"], decision="allow")` works under the default sandbox. **Answered in M4:** a plugin cannot ship it (none of 190 cached Codex plugins use anything but `skills`, `apps` and `mcpServers`). `decide doctor` prints the exact line and path. `setup` writes it to `$CODEX_HOME/rules/decisions.rules` with consent (M5).
+2. ~~How to handle Codex sandbox network~~ **Answered in M0:** a narrow `prefix_rule(pattern=["decide"], decision="allow")` works under the default sandbox. **Answered in M4:** a plugin cannot ship it (none of 190 cached Codex plugins use anything but `skills`, `apps` and `mcpServers`). `decide doctor` prints the exact line and path. `setup` writes it to `$CODEX_HOME/rules/system1.rules` with consent (M5).
 3. Can Codex plugins ship subagents (M7)? ~~How does Pi mark a skill user-only~~ **Answered in M0:** Pi honours `disable-model-invocation`.
 4. ~~Which generic specs go into v1 (M5)?~~ **Answered in M5:** none. Ad-hoc questions are the main path, and specs are saved in the user's repo through `design`. Revisit once real use shows questions that recur across repos.
-5. ~~Should `decisions-core` be published separately or bundled into the CLI (M6)?~~ **Answered in M6:** published separately, alongside the CLI (whose bundle still inlines it) and a Pi package.
-6. ~~Is a separate Pi npm package needed?~~ **Answered in M6:** yes, a slim `@garygentry/decisions-pi` is published, so `pi install npm:…` pulls no devDependencies. Whether `pi install git:` of the pushed repo also works is checked during M6.
-7. ~~**New in M0:** neither Codex nor Pi puts plugin `bin/` on PATH. How does a user get `decide` there?~~ **Answered in M4:** `npm i -g @garygentry/decisions@<version>`. `decide doctor` detects the gap and prints that command, and the shim falls back to a global install before `npx`. `setup` may run the install with consent (M5). Publishing is M6.
+5. ~~Should `system1-core` be published separately or bundled into the CLI (M6)?~~ **Answered in M6:** published separately, alongside the CLI (whose bundle still inlines it) and a Pi package.
+6. ~~Is a separate Pi npm package needed?~~ **Answered in M6:** yes, a slim `@garygentry/system1-pi` is published, so `pi install npm:…` pulls no devDependencies. Whether `pi install git:` of the pushed repo also works is checked during M6.
+7. ~~**New in M0:** neither Codex nor Pi puts plugin `bin/` on PATH. How does a user get `decide` there?~~ **Answered in M4:** `npm i -g @garygentry/system1@<version>`. `decide doctor` detects the gap and prints that command, and the shim falls back to a global install before `npx`. `setup` may run the install with consent (M5). Publishing is M6.
 
 ## Verification
 
 - `pnpm typecheck && pnpm test` runs offline against fixtures.
 - `pnpm generate && git diff --exit-code`.
-- `claude plugin validate plugins/decisions --strict`, plus an Agent Plugins schema check of `plugin.json`.
+- `claude plugin validate plugins/system1 --strict`, plus an Agent Plugins schema check of `plugin.json`.
 - `tools/smoke/{claude,codex,pi}.sh` run headless and assert that the agent ran `decide` through the skill (replay mode) and got a parsed result.
 - A live suite runs only when `OPENROUTER_API_KEY` is set, records fixtures and reports measured cost.

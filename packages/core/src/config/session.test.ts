@@ -32,12 +32,12 @@ describe("detectSession", () => {
     expect(detectHarness(claudeInPi)).toBe("claude")
   })
 
-  it("lets DECISIONS_SESSION override detection, and ignores blanks", () => {
-    expect(detectSession({ ...CLAUDE, DECISIONS_SESSION: "ci-42" })).toEqual({
+  it("lets SYSTEM1_SESSION override detection, and ignores blanks", () => {
+    expect(detectSession({ ...CLAUDE, SYSTEM1_SESSION: "ci-42" })).toEqual({
       id: "ci-42",
       origin: "env",
     })
-    expect(detectSession({ ...CLAUDE, DECISIONS_SESSION: "  " })?.id).toBe("claude:c1")
+    expect(detectSession({ ...CLAUDE, SYSTEM1_SESSION: "  " })?.id).toBe("claude:c1")
     expect(detectSession({ CLAUDE_CODE_SESSION_ID: "" })).toBeUndefined()
   })
 })

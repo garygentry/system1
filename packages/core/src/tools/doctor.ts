@@ -95,7 +95,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           name: "key",
           status: "warn",
           detail: "no API key: only replay works",
-          fix: "set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/decisions/credentials (chmod 600)",
+          fix: "set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (chmod 600)",
         },
   )
   checks.push(
@@ -126,7 +126,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
       name: "config",
       status: "fail",
       detail: `endpoint ${config.endpoint}: ${error instanceof Error ? error.message : String(error)}`,
-      fix: "correct DECISIONS_ENDPOINT or `endpoint` in the config file",
+      fix: "correct SYSTEM1_ENDPOINT or `endpoint` in the config file",
     })
     return report(ctx, false)
   }
@@ -163,18 +163,14 @@ function pathCheck(harness: Harness | null, env: NodeJS.ProcessEnv): DoctorCheck
       name: "path",
       status: "warn",
       detail: "decide is not on PATH, so the decisions plugin's bin/ is not loaded",
-      fix: "install the decisions plugin from its marketplace, or start Claude Code with `--plugin-dir <checkout>/plugins/decisions`",
+      fix: "install the decisions plugin from its marketplace, or start Claude Code with `--plugin-dir <checkout>/plugins/system1`",
     }
   }
-  const install = `npm i -g ${CLI_PACKAGE}@${VERSION}`
   return {
     name: "path",
     status: "warn",
     detail: "decide is not on PATH. Codex and Pi do not add plugin bin/ to PATH",
-    fix:
-      VERSION === "0.0.0"
-        ? `${CLI_PACKAGE} is not published yet: put <checkout>/plugins/decisions/bin on PATH`
-        : install,
+    fix: `npm i -g ${CLI_PACKAGE}@${VERSION}`,
   }
 }
 
@@ -217,10 +213,7 @@ async function versionCheck(
     name: "path-version",
     status: "warn",
     detail: `decide on PATH is ${found}, but this one is ${VERSION}: agents will run the one on PATH`,
-    fix:
-      VERSION === "0.0.0"
-        ? `point PATH at the checkout's plugins/decisions/bin, or remove the other decide (${path})`
-        : `npm i -g ${CLI_PACKAGE}@${VERSION}`,
+    fix: `npm i -g ${CLI_PACKAGE}@${VERSION}, or remove the other decide (${path})`,
   }
 }
 
@@ -232,16 +225,16 @@ function networkFix(
 ): string {
   // An HTTP answer means the network works; the problem is what was asked for.
   if (httpStatus === 404)
-    return "the endpoint does not know this model: check DECISIONS_MODEL / `model` and DECISIONS_ENDPOINT / `endpoint`"
+    return "the endpoint does not know this model: check SYSTEM1_MODEL / `model` and SYSTEM1_ENDPOINT / `endpoint`"
   if (httpStatus !== undefined && httpStatus >= 500)
     return `the provider answered HTTP ${httpStatus}: retry later`
   if (httpStatus !== undefined)
-    return `the endpoint answered HTTP ${httpStatus}: check DECISIONS_ENDPOINT / \`endpoint\``
+    return `the endpoint answered HTTP ${httpStatus}: check SYSTEM1_ENDPOINT / \`endpoint\``
   // Only a sandboxed Codex shell gets the rule: outside the sandbox (or with
   // the rule applied) a failure is an ordinary network problem. The flag also
   // beats the nesting heuristic (Codex inside Pi looks like Pi).
   if (sandboxed) {
-    return `add \`${CODEX_RULE}\` to ${env.CODEX_HOME?.trim() || "~/.codex"}/rules/decisions.rules, then restart Codex (it covers commands that start with decide; a pipe into decide stays offline)`
+    return `add \`${CODEX_RULE}\` to ${env.CODEX_HOME?.trim() || "~/.codex"}/rules/system1.rules, then restart Codex (it covers commands that start with decide; a pipe into decide stays offline)`
   }
   if (harness === "claude")
     return "allow outbound access to openrouter.ai in Claude Code's sandbox settings"

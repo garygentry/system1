@@ -8,7 +8,7 @@ import type {
   SkippedSummary,
   SpecCheckResult,
   Usage,
-} from "@garygentry/decisions-core"
+} from "@garygentry/system1-core"
 
 /**
  * The `brief` format: what an agent reads. One line per result, undecided

@@ -41,7 +41,7 @@ export function createContext(options: ContextOptions = {}): ToolContext {
   const env = options.env ?? process.env
   const cwd = options.cwd ?? process.cwd()
   const config = loadConfig({ cwd, env, ...(options.home ? { home: options.home } : {}) })
-  const bundled = env.DECISIONS_SPECS_PATH?.trim() || options.bundledSpecs
+  const bundled = env.SYSTEM1_SPECS_PATH?.trim() || options.bundledSpecs
   return {
     cwd,
     config,

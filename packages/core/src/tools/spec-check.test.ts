@@ -31,8 +31,8 @@ examples:
 
 function rig(spec = SPEC, { consent = true, key = true } = {}) {
   const cwd = temp({
-    ...(consent ? { ".decisions/config.yaml": CONSENT } : {}),
-    ".decisions/specs/authy.yaml": spec,
+    ...(consent ? { ".system1/config.yaml": CONSENT } : {}),
+    ".system1/specs/authy.yaml": spec,
     "src/auth.ts": "export const auth = () => {}",
   })
   const model = fakeDecisionsFetch()

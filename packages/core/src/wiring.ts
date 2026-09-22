@@ -20,17 +20,17 @@ export interface ConnectionConfig {
   model: string
   /** Never printed; only its presence is ever reported. */
   apiKey: string | undefined
-  /** `DECISIONS_REPLAY` forces replay even when a key is present. */
+  /** `SYSTEM1_REPLAY` forces replay even when a key is present. */
   replay: boolean
 }
 
 /** Env-only connection settings, for `ping` (which must work with no config at all). */
 export function resolveConnection(env: NodeJS.ProcessEnv = process.env): ConnectionConfig {
   return {
-    endpoint: nonEmpty(env.DECISIONS_ENDPOINT) ?? DEFAULT_ENDPOINT,
-    model: nonEmpty(env.DECISIONS_MODEL) ?? DEFAULT_MODEL,
+    endpoint: nonEmpty(env.SYSTEM1_ENDPOINT) ?? DEFAULT_ENDPOINT,
+    model: nonEmpty(env.SYSTEM1_MODEL) ?? DEFAULT_MODEL,
     apiKey: nonEmpty(env.OPENROUTER_API_KEY),
-    replay: /^(1|true|yes)$/i.test(env.DECISIONS_REPLAY ?? ""),
+    replay: /^(1|true|yes)$/i.test(env.SYSTEM1_REPLAY ?? ""),
   }
 }
 

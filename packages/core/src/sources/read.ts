@@ -20,7 +20,7 @@ export interface ReadResult {
 const DEFAULT_MAX_FILE_BYTES = 2_000_000
 
 /** Never content: dependencies, git internals, and our own state (config, fixtures, ledger). */
-const ALWAYS_IGNORED = ["**/node_modules/**", "**/.git/**", "**/.decisions/**"]
+const ALWAYS_IGNORED = ["**/node_modules/**", "**/.git/**", "**/.system1/**"]
 
 export async function readSources(
   specs: readonly SourceSpec[],

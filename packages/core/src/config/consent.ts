@@ -4,13 +4,13 @@ import { parseDocument } from "yaml"
 import { DecisionsError } from "../errors.js"
 import { type Consent, repoConfigPath } from "./load.js"
 
-const HEADER = `# decisions — per-repo configuration. See https://github.com/garygentry/decisions
+const HEADER = `# decisions — per-repo configuration. See https://github.com/garygentry/system1
 # egress.consent records that this repo agreed to send content to the decision
 # model's provider (OpenRouter). Path excludes and secret scrubbing always apply.
 `
 
 /**
- * Record (or revoke) egress consent in `<repo>/.decisions/config.yaml`,
+ * Record (or revoke) egress consent in `<repo>/.system1/config.yaml`,
  * preserving whatever else the file holds, comments included.
  */
 export function setConsent(

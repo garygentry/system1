@@ -14,7 +14,7 @@ const questions = { relevant: { type: "noul", instructions: "The file handles au
 
 function repo(files: Record<string, string>, { consent = true, key = true } = {}) {
   const cwd = temp({
-    ...(consent ? { ".decisions/config.yaml": CONSENT } : { ".decisions/.keep": "" }),
+    ...(consent ? { ".system1/config.yaml": CONSENT } : { ".system1/.keep": "" }),
     ...files,
   })
   const model = fakeDecisionsFetch()
@@ -134,7 +134,7 @@ describe("many", () => {
     expect(replayed.source).toBe("replay")
     expect(replayed.kept).toEqual(live.kept)
     expect(replayed.usage.cost).toBe(0)
-    expect(existsSync(join(cwd, ".decisions/fixtures/adhoc"))).toBe(true)
+    expect(existsSync(join(cwd, ".system1/fixtures/adhoc"))).toBe(true)
   })
 
   it("uses a spec's questions, source, keep and namespace", async () => {
@@ -145,11 +145,11 @@ describe("many", () => {
       'keep: ["relevant>=0.7"]',
       "source: { glob: ['src/*'] }",
     ].join("\n")
-    const { cwd, ctx } = repo({ ...FILES, ".decisions/specs/auth-files.yaml": spec })
+    const { cwd, ctx } = repo({ ...FILES, ".system1/specs/auth-files.yaml": spec })
     const r = await runMany(ctx, { spec: "auth-files", mode: "record" })
     expect(r.spec).toBe("auth-files")
     expect(r.kept.map((k) => k.id)).toEqual(["src/auth.ts"])
-    expect(existsSync(join(cwd, ".decisions/fixtures/auth-files"))).toBe(true)
+    expect(existsSync(join(cwd, ".system1/fixtures/auth-files"))).toBe(true)
   })
 
   it("rejects conflicting or incomplete input", async () => {
@@ -203,15 +203,15 @@ describe("usage", () => {
     await runMany(ctx, { questions, sources: [{ kind: "glob", patterns: ["src/*"] }] })
     const u = runUsage(ctx)
     expect(u).toMatchObject({ basis: "measured", calls: 4, liveCalls: 4 })
-    expect(
-      readFileSync(join(cwd, ".decisions/usage.jsonl"), "utf8").trim().split("\n"),
-    ).toHaveLength(4)
+    expect(readFileSync(join(cwd, ".system1/usage.jsonl"), "utf8").trim().split("\n")).toHaveLength(
+      4,
+    )
     expect(() => runUsage(ctx, { since: "not a date" })).toThrow(/not a date/)
     expect(() => runUsage(ctx, { session: "current" })).toThrow(/no current session/)
   })
 
   it("records the detected harness session and filters by `current`", async () => {
-    const cwd = temp({ ".decisions/config.yaml": CONSENT, ...FILES })
+    const cwd = temp({ ".system1/config.yaml": CONSENT, ...FILES })
     const model = fakeDecisionsFetch()
     const ctx = (session: string) =>
       createContext({

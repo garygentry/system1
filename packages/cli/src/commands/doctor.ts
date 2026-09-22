@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process"
-import { type DoctorResult, runDoctor } from "@garygentry/decisions-core"
+import { type DoctorResult, runDoctor } from "@garygentry/system1-core"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
 import type { Io } from "../io.js"
@@ -40,7 +40,7 @@ function brief(r: DoctorResult): string {
 
 /**
  * `<path> version`, bounded: a hung or broken install must not hang doctor.
- * `DECISIONS_NO_NPX` stops the plugin shim from falling back to `npx`, which
+ * `SYSTEM1_NO_NPX` stops the plugin shim from falling back to `npx`, which
  * would download a package just to answer a version check.
  */
 export function probeVersion(
@@ -59,7 +59,7 @@ export function probeVersion(
     const child = execFile(
       path,
       ["version"],
-      { env: { ...env, DECISIONS_NO_NPX: "1" }, timeout: timeoutMs, killSignal: "SIGKILL" },
+      { env: { ...env, SYSTEM1_NO_NPX: "1" }, timeout: timeoutMs, killSignal: "SIGKILL" },
       // Empty output is passed on as "": doctor tells it apart from a failure.
       (error, stdout) => done(error ? undefined : (stdout.trim().split("\n")[0] ?? "")),
     )

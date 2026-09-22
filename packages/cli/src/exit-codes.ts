@@ -1,4 +1,4 @@
-import type { ErrorCode } from "@garygentry/decisions-core/errors"
+import type { ErrorCode } from "@garygentry/system1-core/errors"
 
 /**
  * Process exit codes: part of the CLI contract hooks and scripts rely on

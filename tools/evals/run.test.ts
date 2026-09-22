@@ -10,7 +10,7 @@ describe("loadedSkills", () => {
       {
         type: "assistant",
         message: {
-          content: [{ type: "tool_use", name: "Skill", input: { skill: "decisions:ask" } }],
+          content: [{ type: "tool_use", name: "Skill", input: { skill: "system1:ask" } }],
         },
       },
       {
@@ -64,7 +64,7 @@ describe("loadedSkills: false positives the review found", () => {
         type: "assistant",
         message: {
           content: [
-            { type: "tool_use", id: "t3", name: "Skill", input: { skill: "decisions:setup" } },
+            { type: "tool_use", id: "t3", name: "Skill", input: { skill: "system1:setup" } },
           ],
         },
       },
@@ -102,8 +102,8 @@ describe("loadedSkills: false positives the review found", () => {
 describe("workDir", () => {
   it("refuses empty, relative-into-repo and in-repo paths", () => {
     const root = "/r/repo"
-    expect(workDir(undefined, root)).toMatch(/decisions-evals$/)
-    expect(workDir("", root)).toMatch(/decisions-evals$/)
+    expect(workDir(undefined, root)).toMatch(/system1-evals$/)
+    expect(workDir("", root)).toMatch(/system1-evals$/)
     expect(() => workDir("/r/repo", root)).toThrow(/outside/)
     expect(() => workDir("/r/repo/", root)).toThrow(/outside/)
     expect(() => workDir("/r/repo/x", root)).toThrow(/outside/)
@@ -143,7 +143,7 @@ describe("routing.yaml", () => {
   it("never names a skill or the CLI in a prompt", () => {
     for (const c of loadCases()) {
       if (c.skill === "setup" && c.polarity === "negative") continue // mentions decide on purpose
-      expect(c.prompt, c.prompt).not.toMatch(/\bdecide\b|\bskill\b|\$ask|\/decisions\b/)
+      expect(c.prompt, c.prompt).not.toMatch(/\bdecide\b|\bskill\b|\$ask|\/system1\b/)
     }
   })
 })

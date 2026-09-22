@@ -1,7 +1,7 @@
 {
-  "name": "decisions-monorepo",
+  "name": "system1-monorepo",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Decision-model tools for coding agents (Claude Code, Codex, Pi). Also a Pi package: skills are exposed via the `pi` key.",
   "type": "module",
   "license": "MIT",
@@ -14,11 +14,11 @@
   ],
   "pi": {
     "skills": [
-      "./plugins/decisions/skills"
+      "./plugins/system1/skills"
     ]
   },
   "scripts": {
-    "build": "tsc -b && pnpm -F @garygentry/decisions exec node bundle.mjs",
+    "build": "tsc -b && pnpm -F @garygentry/system1 exec node bundle.mjs",
     "typecheck": "tsc -b && tsc -p tsconfig.tools.json",
     "lint": "biome check .",
     "format": "biome check --write .",

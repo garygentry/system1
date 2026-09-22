@@ -1,10 +1,10 @@
 ---
 name: setup
-description: Set up or troubleshoot the decisions toolkit. Checks the `decide` CLI, API key, repo egress consent and network access from this shell, and walks the user through fixing each problem with their consent. Use only when the user explicitly asks to set up, configure, check or troubleshoot decisions.
+description: Set up or troubleshoot System 1, the decision-model toolkit. Checks the `decide` CLI, API key, repo egress consent and network access from this shell, and walks the user through fixing each problem with their consent. Use only when the user explicitly asks to set up, configure, check or troubleshoot decisions.
 disable-model-invocation: true
 ---
 
-# Set up decisions
+# Set up System 1
 
 Take the user from "installed" to "live-ready", or tell them exactly what's missing. **You make each change to the machine only after the user has said yes to that specific change.** Two things are never yours to do: granting egress consent, and handling the API key.
 
@@ -14,9 +14,9 @@ Take the user from "installed" to "live-ready", or tell them exactly what's miss
 decide doctor --format brief
 ```
 
-- **`decide: command not found`:** the CLI isn't on PATH. Tell the user the decisions CLI isn't installed for this shell.
+- **`decide: command not found`:** the CLI isn't on PATH. Tell the user the System 1 CLI isn't installed for this shell.
   - A plugin install puts `decide` on PATH in some hosts, but not all.
-  - Where the plugin doesn't, the user installs it globally: `npm i -g @garygentry/decisions`. If the package isn't published yet, the user puts `plugins/decisions/bin` from a checkout of the decisions repo on PATH instead.
+  - Where the plugin doesn't, the user installs it globally: `npm i -g @garygentry/system1`. If the package isn't published yet, the user puts `plugins/system1/bin` from a checkout of the decisions repo on PATH instead.
   - Offer to run that install. Run it only after a yes, then run `doctor` again.
 - **Otherwise:** the first line gives the overall state (`healthy` or `PROBLEMS FOUND`, then `live ready` or `replay only`). Each check follows as `ok`, `warn` or `fail`, with a `fix:` line for each problem.
   - Show the user the output as printed.
@@ -54,7 +54,7 @@ Show the `fix:` line. Sandbox allowlists, proxies and firewalls are the user's s
 
 1. Tell the user where the key goes, in whichever form they prefer:
    - the `OPENROUTER_API_KEY` environment variable;
-   - `~/.config/decisions/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. Any other format makes every `decide` command fail with a config error.
+   - `~/.config/system1/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. Any other format makes every `decide` command fail with a config error.
 2. **Never ask for the key in the conversation, and never print, echo or write it yourself.**
 3. Without a key, only replay of recorded answers works. That's a supported mode, not an error.
 
@@ -73,7 +73,7 @@ Egress consent is the user's decision, given once per repo.
    decide config egress allow
    ```
 
-   Consent is recorded in `.decisions/config.yaml`. Committing that file shares the consent with everyone who clones the repo. That's the team's call, so point it out and don't decide it for them.
+   Consent is recorded in `.system1/config.yaml`. Committing that file shares the consent with everyone who clones the repo. That's the team's call, so point it out and don't decide it for them.
 
 4. **Never run `decide config egress allow` yourself, with or without `--confirm`.**
 
@@ -83,15 +83,15 @@ Show the problem and its `fix:` line. The user corrects the file or variable nam
 
 ## 3. Housekeeping (optional)
 
-If this repo has a `.decisions/` directory, suggest adding these lines to `.gitignore`:
+If this repo has a `.system1/` directory, suggest adding these lines to `.gitignore`:
 
 ```
-.decisions/fixtures/adhoc/
-.decisions/usage.jsonl
+.system1/fixtures/adhoc/
+.system1/usage.jsonl
 ```
 
 - **Why:** one-off answers and the spend ledger are per-machine.
-- **Stays committed:** each saved spec's `.decisions/fixtures/<spec>/` directory is its offline test data.
+- **Stays committed:** each saved spec's `.system1/fixtures/<spec>/` directory is its offline test data.
 - Edit `.gitignore` only after a yes.
 
 ## 4. Confirm

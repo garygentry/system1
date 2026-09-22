@@ -144,11 +144,11 @@ describe("createDecider", () => {
 })
 
 describe("createDeciderFromEnv", () => {
-  it("replays when DECISIONS_REPLAY is set even with a key", () => {
+  it("replays when SYSTEM1_REPLAY is set even with a key", () => {
     const decider = createDeciderFromEnv({
       cwd: tempDir(),
       home: tempDir(),
-      env: { OPENROUTER_API_KEY: "k", DECISIONS_REPLAY: "1" },
+      env: { OPENROUTER_API_KEY: "k", SYSTEM1_REPLAY: "1" },
     })
     expect(decider.mode).toBe("replay")
   })
@@ -166,7 +166,7 @@ describe("createDeciderFromEnv", () => {
       createDeciderFromEnv({
         cwd: tempDir(),
         home: tempDir(),
-        env: { DECISIONS_MODEL: "nope/nope" },
+        env: { SYSTEM1_MODEL: "nope/nope" },
       }),
     ).toThrow(expect.objectContaining({ code: "unknown-model" }))
   })

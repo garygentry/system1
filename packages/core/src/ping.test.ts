@@ -20,8 +20,8 @@ describe("resolveConnection", () => {
 
   it("prefers env overrides and ignores blank values", () => {
     const resolved = resolveConnection({
-      DECISIONS_ENDPOINT: "https://example.test/api/alpha/decisions",
-      DECISIONS_MODEL: " ",
+      SYSTEM1_ENDPOINT: "https://example.test/api/alpha/decisions",
+      SYSTEM1_MODEL: " ",
       OPENROUTER_API_KEY: "sk-test",
     })
     expect(resolved.endpoint).toBe("https://example.test/api/alpha/decisions")
@@ -68,10 +68,10 @@ describe("ping", () => {
 })
 
 describe("resolveConnection replay flag", () => {
-  it.each(["1", "true", "YES"])("treats DECISIONS_REPLAY=%s as replay", (value) => {
-    expect(resolveConnection({ DECISIONS_REPLAY: value }).replay).toBe(true)
+  it.each(["1", "true", "YES"])("treats SYSTEM1_REPLAY=%s as replay", (value) => {
+    expect(resolveConnection({ SYSTEM1_REPLAY: value }).replay).toBe(true)
   })
   it("defaults to not replaying", () => {
-    expect(resolveConnection({ DECISIONS_REPLAY: "0" }).replay).toBe(false)
+    expect(resolveConnection({ SYSTEM1_REPLAY: "0" }).replay).toBe(false)
   })
 })

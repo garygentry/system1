@@ -8,7 +8,7 @@ import {
   loadSpec,
   runSpecCheck,
   type SpecCheckResult,
-} from "@garygentry/decisions-core"
+} from "@garygentry/system1-core"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
 import { briefSpecCheck } from "../format.js"

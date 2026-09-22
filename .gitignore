@@ -6,8 +6,10 @@ coverage/
 .env.*
 !.env.example
 screenshots/
-.decisions/usage.jsonl
+.system1/config.yaml
+.system1/usage.jsonl
 .remember/
 .claude/settings.local.json
 .smoke/
-.decisions/fixtures/adhoc/
+.system1/fixtures/adhoc/
+packages/pi/skills/

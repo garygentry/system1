@@ -73,8 +73,8 @@ export function createOpenRouterTransport(options: TransportOptions): Transport 
             headers: {
               Authorization: `Bearer ${options.apiKey}`,
               "Content-Type": "application/json",
-              "HTTP-Referer": "https://github.com/garygentry/decisions",
-              "X-Title": "decisions",
+              "HTTP-Referer": "https://github.com/garygentry/system1",
+              "X-Title": "system1",
             },
             body: JSON.stringify(request),
             signal: composite,

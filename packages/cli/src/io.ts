@@ -1,4 +1,4 @@
-import type { ContextOptions } from "@garygentry/decisions-core"
+import type { ContextOptions } from "@garygentry/system1-core"
 
 /** Everything the CLI touches in the outside world, injectable for tests. */
 export interface Io extends ContextOptions {

@@ -20,9 +20,9 @@ function rig(
   const cwd = mkdtempSync(join(tmpdir(), "decide-cli-"))
   const home = mkdtempSync(join(tmpdir(), "decide-home-"))
   dirs.push(cwd, home)
-  mkdirSync(join(cwd, ".decisions"), { recursive: true })
+  mkdirSync(join(cwd, ".system1"), { recursive: true })
   if (consent)
-    writeFileSync(join(cwd, ".decisions/config.yaml"), "egress:\n  consent: { granted: true }\n")
+    writeFileSync(join(cwd, ".system1/config.yaml"), "egress:\n  consent: { granted: true }\n")
   for (const [p, c] of Object.entries(files)) {
     mkdirSync(join(cwd, p, ".."), { recursive: true })
     writeFileSync(join(cwd, p), c)
@@ -214,7 +214,7 @@ describe("decide many", () => {
     const many = Object.fromEntries(Array.from({ length: 5 }, (_, i) => [`f${i}.txt`, "x"]))
     const { cwd, io, json } = rig(many)
     writeFileSync(
-      join(cwd, ".decisions/config.yaml"),
+      join(cwd, ".system1/config.yaml"),
       "egress:\n  consent: { granted: true }\nbudget: { maxCalls: 2 }\n",
     )
     expect(await main(["many", "--glob", "*.txt", "--question", Q], io)).toBe(4)
@@ -249,6 +249,18 @@ describe("decide ask", () => {
     expect(out.join("\n")).toContain("verdict: kept")
   })
 
+  it("rejects flags that only apply to many", async () => {
+    const { io, json } = rig({ "src/auth.ts": "auth code" })
+    for (const flag of ["--dry-run", "--confirm"]) {
+      expect(await main(["ask", "--file", "src/auth.ts", "--question", Q, flag], io)).toBe(2)
+      expect(json().error.message).toMatch(/applies to `decide many`/)
+    }
+    expect(await main(["ask", "--file", "src/auth.ts", "--question", Q, "--limit", "1"], io)).toBe(
+      2,
+    )
+    expect(json().error.message).toMatch(/--limit applies/)
+  })
+
   it("rejects a stray positional, suggesting --text", async () => {
     const { io, json } = rig()
     expect(await main(["ask", "hello", "--question", Q], io)).toBe(2)
@@ -266,7 +278,7 @@ describe("decide config egress", () => {
   it("grants when a human is at the terminal, and reports status", async () => {
     const { cwd, io, out } = rig({}, { consent: false, interactive: true })
     expect(await main(["config", "egress", "allow"], io)).toBe(0)
-    expect(readFileSync(join(cwd, ".decisions/config.yaml"), "utf8")).toContain("granted: true")
+    expect(readFileSync(join(cwd, ".system1/config.yaml"), "utf8")).toContain("granted: true")
     await main(["config", "egress", "status", "--format", "brief"], io)
     expect(out.at(-1)).toMatch(/^egress consent: granted/)
   })
@@ -284,8 +296,8 @@ describe("decide spec", () => {
     const spec =
       "description: Auth.\nquestions:\n  relevant: { type: noul, instructions: Handles auth. }\n"
     const { io, json } = rig({
-      ".decisions/specs/auth.yaml": spec,
-      ".decisions/specs/broken.yaml": "questions: {}\n",
+      ".system1/specs/auth.yaml": spec,
+      ".system1/specs/broken.yaml": "questions: {}\n",
     })
     await main(["spec", "list"], io)
     expect(json().result.specs.map((s: { name: string }) => s.name)).toEqual(["auth", "broken"])
@@ -362,7 +374,7 @@ examples:
   - { id: helper, state: "string helper", expect: { relevant: true } }
 `
   it("records with --live, then replays offline; a mismatch is exit 0 with passed false", async () => {
-    const live = rig({ ".decisions/specs/auth.yaml": spec })
+    const live = rig({ ".system1/specs/auth.yaml": spec })
     expect(await main(["spec", "check", "auth", "--live"], live.io)).toBe(0)
     expect(live.json().result).toMatchObject({
       source: "live",
@@ -383,8 +395,8 @@ examples:
   it("a replay miss is exit 6; no examples or bad usage is exit 2", async () => {
     const { io, json } = rig(
       {
-        ".decisions/specs/auth.yaml": spec,
-        ".decisions/specs/bare.yaml":
+        ".system1/specs/auth.yaml": spec,
+        ".system1/specs/bare.yaml":
           "description: x\nquestions:\n  a: { type: noul, instructions: A. }\n",
       },
       { key: false },
@@ -408,7 +420,7 @@ describe("probeVersion", () => {
 
   it("reads the first line, and never lets the shim fall back to npx", async () => {
     expect(await probeVersion(script('echo "1.2.3"'), {})).toBe("1.2.3")
-    expect(await probeVersion(script('echo "no_npx=$DECISIONS_NO_NPX"'), {})).toBe("no_npx=1")
+    expect(await probeVersion(script('echo "no_npx=$SYSTEM1_NO_NPX"'), {})).toBe("no_npx=1")
   })
 
   it("gives up on a child that ignores its timeout", async () => {
@@ -426,7 +438,7 @@ questions:
 examples:
   - { id: up, file: "../../etc/hostname" }
 `
-    const { io, json } = rig({ ".decisions/specs/s.yaml": spec })
+    const { io, json } = rig({ ".system1/specs/s.yaml": spec })
     expect(await main(["spec", "validate", "s"], io)).toBe(2)
     expect(json().error.message).toContain("outside the repo")
     // It still loads for ask and many.
@@ -455,7 +467,7 @@ describe("decide doctor", () => {
 
   it("stays exit 0 when a check fails, and says so", async () => {
     const { io, out } = rig()
-    const env = { ...io.env, DECISIONS_ENDPOINT: "notaurl" }
+    const env = { ...io.env, SYSTEM1_ENDPOINT: "notaurl" }
     expect(await main(["doctor", "--format", "brief"], { ...io, env })).toBe(0)
     expect(out.at(-1)).toMatch(/^decide doctor: PROBLEMS FOUND · replay only/)
     expect(out.at(-1)).toMatch(/fail config: endpoint notaurl/)

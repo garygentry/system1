@@ -6,7 +6,7 @@ import {
   resolveConnection,
   runUsage,
   TOOL_SCHEMAS,
-} from "@garygentry/decisions-core"
+} from "@garygentry/system1-core"
 import type { Format } from "../envelope.js"
 import { EXIT, type ExitCode } from "../exit-codes.js"
 import type { Io } from "../io.js"

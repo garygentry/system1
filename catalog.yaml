@@ -1,20 +1,21 @@
 # Source of truth for everything `tools/generate.ts` emits.
 # Change the version here and run `pnpm generate`; never edit generated manifests.
-version: 0.0.0
+version: 0.1.0
 owner:
   name: Gary Gentry
   email: gary@garygentry.net
-repository: https://github.com/garygentry/decisions
+repository: https://github.com/garygentry/system1
 license: MIT
 npm:
   scope: "@garygentry"
-  cli: decisions            # -> @garygentry/decisions (bin: decide)
-  core: decisions-core      # -> @garygentry/decisions-core
+  cli: system1              # -> @garygentry/system1 (bin: decide)
+  core: system1-core        # -> @garygentry/system1-core
+  pi: system1-pi            # -> @garygentry/system1-pi (skills only, for `pi install npm:`)
 marketplace:
-  name: decisions
+  name: system1
 plugin:
-  name: decisions
-  displayName: Decisions
+  name: system1
+  displayName: System 1
   description: >-
     Route closed judgements (pick one, rate this, yes/no) to a decision model
     instead of reading everything yourself. Typed, calibrated answers in ~300 ms

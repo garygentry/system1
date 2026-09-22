@@ -36,6 +36,6 @@ describe("generate", () => {
   it("pins the shim to the catalog version", () => {
     const catalog = loadCatalog()
     const shim = render(catalog).find((o) => o.path.endsWith("bin/decide"))
-    expect(shim?.content).toContain(`@garygentry/decisions@${catalog.version}`)
+    expect(shim?.content).toContain(`@garygentry/system1@${catalog.version}`)
   })
 })

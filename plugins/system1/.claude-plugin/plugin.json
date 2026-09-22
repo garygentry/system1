@@ -1,14 +1,13 @@
 {
-  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "decisions",
-  "version": "0.0.0",
+  "name": "system1",
+  "version": "0.1.0",
   "description": "Route closed judgements (pick one, rate this, yes/no) to a decision model instead of reading everything yourself. Typed, calibrated answers in ~300 ms for a fraction of a cent, via the `decide` CLI.",
   "author": {
     "name": "Gary Gentry",
     "email": "gary@garygentry.net"
   },
-  "homepage": "https://github.com/garygentry/decisions",
-  "repository": "https://github.com/garygentry/decisions",
+  "homepage": "https://github.com/garygentry/system1",
+  "repository": "https://github.com/garygentry/system1",
   "license": "MIT",
   "keywords": [
     "decisions",
@@ -17,5 +16,6 @@
     "classification",
     "triage",
     "agents"
-  ]
+  ],
+  "displayName": "System 1"
 }

@@ -96,6 +96,10 @@ When a `many` run fails for every item with the same code, that code is raised f
   - Exit 6: any example with no recorded answer. The message names `--live`.
 - `decide schema spec-check` prints its input schema.
 
+## `ask` rejects fan-out flags (added in M6)
+
+`--dry-run`, `--confirm`, `--sort`, `--limit`, `--fields` and `--concurrency` belong to `many`. `ask` is one state and one call, so it exits 2 instead of accepting them silently. Before this, `ask --dry-run` made a real call.
+
 ## `--split join` (added in M5, additive)
 
 `join` builds one state from every source, such as a diff plus a test log for a criteria check. Each source is split by file and passed through excludes **first**, so a secret-shaped file is never folded in. Each part is headed by `--- <id> ---`, and the item id is `joined(<n>)`.
@@ -106,4 +110,4 @@ A `many` result row with no `path` (e.g. piped `--stdin`), or covering a single 
 
 ## `doctor` path-version check (added in M5)
 
-When `decide` is on PATH, `doctor` runs it with `version` and warns if it differs from the running version. The probe has a 2 s timeout and kills the process after it. It sets `DECISIONS_NO_NPX=1`, so the plugin shim won't fall back to downloading the package with `npx`. It's a warning, because agents run the one on PATH. The CLI supplies the probe, so the engine itself still spawns only `git` (0014).
+When `decide` is on PATH, `doctor` runs it with `version` and warns if it differs from the running version. The probe has a 2 s timeout and kills the process after it. It sets `SYSTEM1_NO_NPX=1`, so the plugin shim won't fall back to downloading the package with `npx`. It's a warning, because agents run the one on PATH. The CLI supplies the probe, so the engine itself still spawns only `git` (0014).

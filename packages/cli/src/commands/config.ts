@@ -6,7 +6,7 @@ import {
   loadConfig,
   repoConfigPath,
   setConsent,
-} from "@garygentry/decisions-core"
+} from "@garygentry/system1-core"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
 import type { Io } from "../io.js"
@@ -117,10 +117,10 @@ function brief(r: ConfigResult): string {
   return [
     `repo: ${r.repoRoot}`,
     `model: ${r.model} via ${r.endpoint}`,
-    `key: ${r.apiKey}${r.replay ? " · DECISIONS_REPLAY forces replay" : ""}`,
+    `key: ${r.apiKey}${r.replay ? " · SYSTEM1_REPLAY forces replay" : ""}`,
     `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted — run `decide config egress allow`"}`,
     `excludes: ${r.egress.defaultExcludes} default${r.egress.exclude.length ? ` + ${r.egress.exclude.join(", ")}` : ""}`,
     `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency}`,
-    `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "DECISIONS_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
+    `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "SYSTEM1_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
   ].join("\n")
 }

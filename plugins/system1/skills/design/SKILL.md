@@ -1,11 +1,11 @@
 ---
 name: design
-description: Save a decision-model question set as a reusable spec in this repo, with thresholds, a default source and examples checked against recorded answers, or repair a saved spec that gives wrong or undecided answers. Use when the user wants to keep, save, name or reuse a `decide` question, turn a recurring judgement into a spec, write or edit a file in `.decisions/specs/`, or fix a spec whose answers look wrong. For a one-off question, use the `ask` skill instead.
+description: Save a decision-model question set as a reusable spec in this repo, with thresholds, a default source and examples checked against recorded answers, or repair a saved spec that gives wrong or undecided answers. Use when the user wants to keep, save, name or reuse a `decide` question, turn a recurring judgement into a spec, write or edit a file in `.system1/specs/`, or fix a spec whose answers look wrong. For a one-off question, use the `ask` skill instead.
 ---
 
 # Design a spec
 
-A **spec** is a question set saved in `.decisions/specs/<name>.yaml`. It records the questions, the thresholds (each with the reason for it), an optional default source, and examples. Once saved, anyone can run it with `decide many --spec <name>`. It can be tested offline with `decide spec check <name>`. It changes only through a reviewed diff.
+A **spec** is a question set saved in `.system1/specs/<name>.yaml`. It records the questions, the thresholds (each with the reason for it), an optional default source, and examples. Once saved, anyone can run it with `decide many --spec <name>`. It can be tested offline with `decide spec check <name>`. It changes only through a reviewed diff.
 
 Question craft is covered by the `ask` skill's references. Read `question-craft.md`, `primitives.md` and `thresholds.md` there before drafting.
 
@@ -65,14 +65,14 @@ Question craft is covered by the `ask` skill's references. Read `question-craft.
    Change the example itself only if it really was mislabelled.
 5. **Repeat steps 3–4** until the examples pass for the right reasons.
    - Recorded answers are keyed by the exact state and questions, so rewording a question records new ones.
-   - The answers for the old wording stay behind unused. Before committing, clear `.decisions/fixtures/<name>/` and record once more, so only live answers are kept.
+   - The answers for the old wording stay behind unused. Before committing, clear `.system1/fixtures/<name>/` and record once more, so only live answers are kept.
 6. **Check it offline:**
 
    ```sh
    decide spec check <name> --format brief
    ```
 
-   Then tell the user to commit both the spec and `.decisions/fixtures/<name>/`. The recorded answers make `decide spec check <name>` an offline regression test, with no key needed.
+   Then tell the user to commit both the spec and `.system1/fixtures/<name>/`. The recorded answers make `decide spec check <name>` an offline regression test, with no key needed.
 
 ## Repairing a spec
 

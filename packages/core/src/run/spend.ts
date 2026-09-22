@@ -31,7 +31,7 @@ export function sumUsage(usages: ReadonlyArray<Usage | undefined>): Usage {
 }
 
 /**
- * Measured spend, persisted as append-only JSONL (default `.decisions/usage.jsonl`).
+ * Measured spend, persisted as append-only JSONL (default `.system1/usage.jsonl`).
  *
  * A file rather than process memory because the CLI is a fresh process per call:
  * "what has this session cost" has to survive between invocations. Replayed

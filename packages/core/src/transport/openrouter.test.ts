@@ -33,7 +33,7 @@ describe("openrouter transport", () => {
     expect(result.response.answers.blast_radius).toMatchObject({ choice: "read_only" })
     const headers = calls[0]?.headers as Record<string, string>
     expect(headers.Authorization).toBe("Bearer sk-test")
-    expect(headers["X-Title"]).toBe("decisions")
+    expect(headers["X-Title"]).toBe("system1")
     expect(JSON.parse(String(calls[0]?.body))).toEqual(request)
   })
 

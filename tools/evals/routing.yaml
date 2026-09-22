@@ -11,7 +11,7 @@
 # packages) and fixture-changes/src (except http/) come from make-fixture.py,
 # seeded, so they're reproducible. src/http, test/, TASK.md, README.md and
 # test-output.log are written by hand. Two design positives name the spec file
-# (.decisions/specs/timeouts.yaml): a user repairing a spec would say where it is.
+# (.system1/specs/timeouts.yaml): a user repairing a spec would say where it is.
 # It is never run, and it only talks to example.com. Don't "fix" those defects:
 # the prompts depend on them, and a comment would give the answer away.
 #
@@ -45,9 +45,9 @@ ask:
 design:
   positive:
     - 'Save the "catch block swallows the error" check as a reusable spec in this repo so we can run it again later.'
-    - 'The saved spec .decisions/specs/timeouts.yaml flags files that are fine. Repair it so it only flags network calls without a timeout.'
+    - 'The saved spec .system1/specs/timeouts.yaml flags files that are fine. Repair it so it only flags network calls without a timeout.'
     - 'Turn the ticket routing question (billing, auth, infra, other) into a named spec for this repo, with a few examples.'
-    - 'Add examples with expected answers to .decisions/specs/timeouts.yaml and check them.'
+    - 'Add examples with expected answers to .system1/specs/timeouts.yaml and check them.'
   negative:
     - 'Which files under src/ log a password or other secret?'
     - 'Write a GitHub Actions workflow that runs npm test on every push.'

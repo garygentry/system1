@@ -1,13 +1,27 @@
 {
-  "name": "@garygentry/decisions-core",
-  "version": "0.0.0",
+  "name": "@garygentry/system1-core",
+  "version": "0.1.0",
   "description": "Engine for decision-model calls: model profiles, transport, sources, fixtures, spend.",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
+  "author": {
+    "name": "Gary Gentry",
+    "email": "gary@garygentry.net"
+  },
+  "homepage": "https://github.com/garygentry/system1",
+  "keywords": [
+    "decisions",
+    "decision-model",
+    "jev",
+    "classification",
+    "triage",
+    "agents",
+    "library"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/garygentry/decisions",
+    "url": "https://github.com/garygentry/system1",
     "directory": "packages/core"
   },
   "engines": {
@@ -41,5 +55,8 @@
   },
   "devDependencies": {
     "@types/picomatch": "^4.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
