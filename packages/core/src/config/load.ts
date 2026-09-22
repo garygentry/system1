@@ -257,6 +257,8 @@ function profileList(layer: Layer, file: string): ModelProfile[] {
       usdPerOutputToken: 0,
       priceAsOf: "unknown",
       calibrated: true,
+      // Same wire contract as Jev unless the config says otherwise.
+      maxChoices: 255,
       ...profile,
     } as ModelProfile
   })

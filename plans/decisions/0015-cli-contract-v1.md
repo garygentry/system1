@@ -70,7 +70,7 @@ When a `many` run fails for every item with the same code, that code is raised f
 
 ## Question sets (added in M5, additive)
 
-- **Input:** `--questions <file|->` on `ask` and `many` reads a question set as YAML or JSON. It is the same map as a spec's `questions:`, and a whole spec-shaped document is also accepted (its `questions:` is used). Relative paths resolve against the working directory.
+- **Input:** `--questions <file|-|inline>` on `ask` and `many` reads a question set as YAML or JSON. A value that spans several lines, or starts with `{`, is the question set itself, so stdin stays free for the content being judged. It is the same map as a spec's `questions:`, and a whole spec-shaped document is also accepted (its `questions:` is used). Relative paths resolve against the working directory.
 - **Conflicts:** it can't be combined with `--spec` or `--question`, and `--questions -` can't be combined with `--stdin` or `--input -`. Each is exit 2.
 
 ## `spec check` (added in M5, additive)
@@ -91,6 +91,10 @@ When a `many` run fails for every item with the same code, that code is raised f
   - Exit 2: a spec with no examples, or an `expect` that doesn't fit its question (`spec validate` reports the same).
   - Exit 6: any example with no recorded answer. The message names `--live`.
 - `decide schema spec-check` prints its input schema.
+
+## Excerpts for items with no file (added in M5, additive)
+
+A `many` result row with no `path` (e.g. piped `--stdin`), or covering a single line (e.g. `--split row`), carries an `excerpt`: the first 120 characters of its scrubbed text, with whitespace collapsed. `brief` prints it after the answers. Without it, an id like `stdin:12` can't be traced back to the text.
 
 ## `doctor` path-version check (added in M5)
 

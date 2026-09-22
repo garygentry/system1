@@ -1,7 +1,8 @@
 # Shared helpers for the headless harness smoke tests. Sourced, not run.
 # Each test drives a real agent (it spends that harness's model tokens) and
 # asserts the agent ran `decide` through one of the plugin's skills:
-#   ping  `decide ping` via the ping skill: live network from the agent's shell
+#   setup `decide ping` via the user-only setup skill, invoked by name the way
+#         each harness does it: live network from the agent's shell
 #   many  `decide many --spec smoke` via the ask skill, in replay (no key, no spend)
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -10,7 +11,11 @@ TIMEOUT=${SMOKE_TIMEOUT:-240}
 
 # Markers match only real CLI output, never SKILL.md text (Codex echoes skills).
 PING_MARKER="decide ping: ok — [^ ]+ reachable in [0-9]+ ms"
-PING_PROMPT="Use the ping skill from the decisions plugin to check the decisions setup. Print the line it outputs verbatim."
+# setup is user-only, so each harness prepends its own explicit invocation.
+# The prompt never mentions doctor: a doctor line in the output shows the
+# agent followed the skill's steps rather than just running ping.
+SETUP_PROMPT="Check only: make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
+DOCTOR_MARKER="decide doctor: (healthy|PROBLEMS FOUND) · "
 MANY_MARKER="decide many: 1 kept of 3 · 0 undecided · 2 dropped · replay "
 MANY_PROMPT="Use the ask skill from the decisions plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 
@@ -29,6 +34,13 @@ global_install() { export PATH="$REPO/plugins/decisions/bin:$PATH"; }
 fixture_repo() { # $1 = dir
   rm -rf "$1"
   cp -R "$REPO/tools/smoke/fixture-repo" "$1"
+  git -C "$1" init -q
+}
+
+# An empty repo of its own, so the agent can't wander into this repo's
+# AGENTS.md, plans or skill sources (Codex did, before this).
+empty_repo() { # $1 = dir
+  rm -rf "$1"; mkdir -p "$1"
   git -C "$1" init -q
 }
 

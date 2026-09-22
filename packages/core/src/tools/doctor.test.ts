@@ -137,6 +137,19 @@ describe("which", () => {
       throw new Error("ENOENT")
     })
     expect(check(broken, "path-version")).toMatchObject({ status: "warn" })
+    const silent = await run(async () => "")
+    expect(check(silent, "path-version")).toMatchObject({ status: "warn" })
+    const codex = await runDoctor({
+      cwd: temp(),
+      home: temp(),
+      env: { PATH, CODEX_SANDBOX_NETWORK_DISABLED: "1" },
+      fetch: reachable,
+      probeVersion: async () => "",
+    })
+    expect(check(codex, "path-version")).toMatchObject({
+      status: "ok",
+      detail: expect.stringContaining("Codex sandbox"),
+    })
     expect(broken.healthy).toBe(true)
     // No probe, or nothing on PATH: no check.
     expect(check(await doctor({ PATH }, reachable), "path-version")).toBeUndefined()

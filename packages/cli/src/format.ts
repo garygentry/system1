@@ -40,6 +40,11 @@ function where(row: Pick<ResultRow, "id">): string {
   return row.id
 }
 
+/** Piped rows have no file to point at, so their text follows the answers. */
+function quoted(row: Pick<ResultRow, "excerpt">): string {
+  return row.excerpt ? `  "${row.excerpt}"` : ""
+}
+
 export function briefMany(r: ManyResult): string {
   const lines: string[] = []
   if (r.dryRun) {
@@ -56,12 +61,13 @@ export function briefMany(r: ManyResult): string {
     )
     if (r.kept.length) {
       lines.push("kept:")
-      for (const row of r.kept) lines.push(`  ${where(row)}  ${briefAnswers(row.answers)}`)
+      for (const row of r.kept)
+        lines.push(`  ${where(row)}  ${briefAnswers(row.answers)}${quoted(row)}`)
     }
     if (r.undecided.length) {
       lines.push("undecided (too flat to judge; read these yourself):")
       for (const row of r.undecided)
-        lines.push(`  ${where(row)}  ${briefAnswers(row.answers, row.questions)}`)
+        lines.push(`  ${where(row)}  ${briefAnswers(row.answers, row.questions)}${quoted(row)}`)
     }
     if (r.failed.length) {
       lines.push("failed:")

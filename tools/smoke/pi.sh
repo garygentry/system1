@@ -8,9 +8,10 @@ drive() { # $1 = workdir, $2 = prompt, $3 = output file
     && timeout "$TIMEOUT" pi -p --approve --no-session "$2" </dev/null) >"$3" 2>&1 || true
 }
 status=0
-rm -rf "$SMOKE/pi"; mkdir -p "$SMOKE/pi"
-drive "$SMOKE/pi" "$PING_PROMPT" "$SMOKE/pi/ping.txt"
-assert_marker pi:ping "$PING_MARKER" "$SMOKE/pi/ping.txt" || status=1
+empty_repo "$SMOKE/pi"
+drive "$SMOKE/pi" "/skill:setup $SETUP_PROMPT" "$SMOKE/pi/ping.txt"
+assert_marker pi:setup "$PING_MARKER" "$SMOKE/pi/ping.txt" || status=1
+assert_marker pi:setup-skill "$DOCTOR_MARKER" "$SMOKE/pi/ping.txt" || status=1
 fixture_repo "$SMOKE/pi-many"
 (replay_env; drive "$SMOKE/pi-many" "$MANY_PROMPT" "$SMOKE/pi-many.txt")
 assert_marker pi:many "$MANY_MARKER" "$SMOKE/pi-many.txt" || status=1

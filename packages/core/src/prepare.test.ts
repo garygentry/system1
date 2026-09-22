@@ -75,4 +75,19 @@ describe("budget", () => {
   it("lets an explicit confirmation through", () => {
     expect(() => checkBudget(project(profile, Array(500).fill(700)), budget, true)).not.toThrow()
   })
+
+  it("refuses a choice with more options than the model accepts, before reading anything", async () => {
+    const criteria = Object.fromEntries(
+      Array.from({ length: 256 }, (_, i) => [`o${i}`, `Option ${i}`]),
+    )
+    await expect(
+      prepare({
+        sources: [{ kind: "text", text: "x" }],
+        split: { kind: "file" },
+        questions: { pick: { type: "choice", instructions: "Which?", criteria } },
+        profile,
+        cwd: temp(),
+      }),
+    ).rejects.toMatchObject({ code: "invalid-request", details: { options: 256, maxChoices: 255 } })
+  })
 })

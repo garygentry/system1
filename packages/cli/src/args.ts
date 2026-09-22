@@ -104,9 +104,12 @@ export function buildInput(
   if (values.question?.length) input.questions = parseQuestions(values.question)
   if (values.questions !== undefined) {
     const ref = values.questions
+    // Inline YAML/JSON (anything multi-line, or a JSON object) leaves stdin free
+    // for the content being judged.
+    const inline = ref.includes("\n") || ref.trimStart().startsWith("{")
     input.questions = parseQuestionSet(
-      ref === "-" ? readStdin() : readText(resolve(cwd, ref), ref, "--questions"),
-      `--questions ${ref}`,
+      inline ? ref : ref === "-" ? readStdin() : readText(resolve(cwd, ref), ref, "--questions"),
+      inline ? "--questions (inline)" : `--questions ${ref}`,
     )
   }
   if (sources.length) input.sources = sources

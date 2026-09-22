@@ -1,6 +1,7 @@
 import { applyExcludes } from "./egress/exclude.js"
 import { type ScrubCounts, scrubState } from "./egress/scrub.js"
 import { assertStateFits } from "./egress/size.js"
+import { DecisionsError } from "./errors.js"
 import type { ModelProfile } from "./model/profiles.js"
 import type { QuestionSet } from "./model/types.js"
 import { assertQuestionSet } from "./model/validate.js"
@@ -37,6 +38,7 @@ export interface Prepared {
  */
 export async function prepare(input: PrepareInput): Promise<Prepared> {
   assertQuestionSet(input.questions)
+  assertChoicesFit(input.questions, input.profile)
   const read = await readSources(input.sources, {
     cwd: input.cwd,
     ...(input.maxFileBytes ? { maxFileBytes: input.maxFileBytes } : {}),
@@ -67,5 +69,20 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
       items: redactedItems,
     },
     projection: project(input.profile, tokens),
+  }
+}
+
+/** Refused before any call, so a fan-out never fails N times on the same limit. */
+function assertChoicesFit(questions: QuestionSet, profile: ModelProfile): void {
+  for (const [name, q] of Object.entries(questions)) {
+    if (q.type !== "choice") continue
+    const n = Object.keys(q.criteria).length
+    if (n > profile.maxChoices) {
+      throw new DecisionsError(
+        "invalid-request",
+        `Question "${name}" has ${n} options; ${profile.id} accepts at most ${profile.maxChoices}. Narrow the candidates first (e.g. screen them with a noul), then pick among the survivors.`,
+        { question: name, options: n, maxChoices: profile.maxChoices },
+      )
+    }
   }
 }

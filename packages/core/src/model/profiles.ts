@@ -15,6 +15,8 @@ export interface ModelProfile {
   transport: "openrouter-decisions"
   /** Hard cap on one state. Oversized states are refused, never truncated. */
   maxStateTokens: number
+  /** Most options one choice question may have (the provider refuses more). */
+  maxChoices: number
   /** Listed price, USD per input token. Used only for *projected* costs. */
   usdPerInputToken: number
   usdPerOutputToken: number
@@ -32,6 +34,8 @@ export const PROFILES: readonly ModelProfile[] = [
     displayName: "TypeSafe Jev 1.13",
     transport: "openrouter-decisions",
     maxStateTokens: 32_000,
+    // Measured 2026-09-22: 400 options is refused upstream with "at most 255 choices".
+    maxChoices: 255,
     usdPerInputToken: 0.042 / 1_000_000,
     usdPerOutputToken: 0,
     priceAsOf: "2026-09-19",

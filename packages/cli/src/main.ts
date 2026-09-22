@@ -26,7 +26,7 @@ Commands:
 Questions:  --spec <name|path>  |  --question name:noul:<text>
             --question name:choice:<text>:key=desc|key=desc|none=None of these
             --question name:score:<text>:level 0|level 1|level 2
-            --questions <file|->  (a question set as YAML or JSON; richer than --question)
+            --questions <file|-|inline YAML/JSON>  (a question set; richer than --question)
             --input <file|->  (full tool input as JSON; flags override it)
 Sources:    --glob <pattern>…  --file <path[:L1-L2]>…  --jsonl <path>
             --diff <range> [--staged]  --text <text>  --stdin

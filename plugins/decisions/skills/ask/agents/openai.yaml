@@ -1,6 +1,6 @@
 interface:
   display_name: "Decisions: ask"
-  short_description: "Screen many files with a closed question via the decide CLI"
-  default_prompt: "Use $ask to run a decisions spec over this repo and report what it kept."
+  short_description: "Hand closed judgements (yes/no, pick one, rate) to a fast decision model via the decide CLI"
+  default_prompt: "Use $ask to screen these items with a closed question instead of reading them all."
 policy:
   allow_implicit_invocation: true

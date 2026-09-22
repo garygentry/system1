@@ -42,7 +42,8 @@ function brief(r: DoctorResult): string {
 export function probeVersion(path: string, env: NodeJS.ProcessEnv): Promise<string | undefined> {
   return new Promise((resolve) => {
     execFile(path, ["version"], { env, timeout: 2000 }, (error, stdout) => {
-      resolve(error ? undefined : stdout.trim().split("\n")[0])
+      // Empty output is passed on as "": doctor tells it apart from a failure.
+      resolve(error ? undefined : (stdout.trim().split("\n")[0] ?? ""))
     })
   })
 }

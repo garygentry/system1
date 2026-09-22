@@ -61,7 +61,9 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
     pathCheck(harness, env),
   ]
   const onPath = which("decide", env.PATH ?? "")
-  if (onPath && options.probeVersion) checks.push(await versionCheck(onPath, options.probeVersion))
+  if (onPath && options.probeVersion) {
+    checks.push(await versionCheck(onPath, options.probeVersion, env))
+  }
   const report = (ctx: ToolContext | undefined, live: boolean): DoctorResult => ({
     healthy: !checks.some((c) => c.status === "fail"),
     live,
@@ -179,11 +181,23 @@ function pathCheck(harness: Harness | null, env: NodeJS.ProcessEnv): DoctorCheck
 async function versionCheck(
   path: string,
   probe: (path: string) => Promise<string | undefined>,
+  env: NodeJS.ProcessEnv,
 ): Promise<DoctorCheck> {
-  let found: string | undefined
+  let raw: string | undefined
   try {
-    found = (await probe(path))?.trim() || undefined
+    raw = await probe(path)
   } catch {}
+  const found = raw?.trim() || undefined
+  // Measured with Codex 0.152: inside its Linux sandbox, a child process that
+  // node spawns exits 0 with empty stdout (even `node -e "console.log(1)"`), so
+  // nothing can be learned there. Say so rather than warn about a false problem.
+  if (raw !== undefined && found === undefined && env.CODEX_SANDBOX_NETWORK_DISABLED === "1") {
+    return {
+      name: "path-version",
+      status: "ok",
+      detail: "not checked: the Codex sandbox hides a child process's output",
+    }
+  }
   if (found === undefined) {
     return {
       name: "path-version",
@@ -227,7 +241,7 @@ function networkFix(
   // the rule applied) a failure is an ordinary network problem. The flag also
   // beats the nesting heuristic (Codex inside Pi looks like Pi).
   if (sandboxed) {
-    return `add \`${CODEX_RULE}\` to ${env.CODEX_HOME?.trim() || "~/.codex"}/rules/decisions.rules, then restart Codex`
+    return `add \`${CODEX_RULE}\` to ${env.CODEX_HOME?.trim() || "~/.codex"}/rules/decisions.rules, then restart Codex (it covers commands that start with decide; a pipe into decide stays offline)`
   }
   if (harness === "claude")
     return "allow outbound access to openrouter.ai in Claude Code's sandbox settings"

@@ -158,6 +158,38 @@ describe("decide many", () => {
       ),
     ).toBe(0)
     expect(json().result.kept.map((k: { id: string }) => k.id)).toEqual(["stdin:1"])
+    // Piped rows have no file to point at, so each carries its text.
+    expect(json().result.kept[0].excerpt).toBe("line about auth")
+    expect(json().result.undecided[0].excerpt).toBe("maybe line")
+  })
+
+  it("brief shows a piped row's text; file rows carry no excerpt", async () => {
+    const piped = rig({}, { stdin: "line about auth\nplain line" })
+    await main(
+      [
+        "many",
+        "--stdin",
+        "--split",
+        "row",
+        "--question",
+        Q,
+        "--keep",
+        "relevant>=0.7",
+        "--format",
+        "brief",
+      ],
+      piped.io,
+    )
+    expect(piped.out.at(-1)).toContain('stdin:1  relevant=0.95  "line about auth"')
+    const files = rig({ "src/auth.ts": "auth code" })
+    await main(["many", "--glob", "src/*", "--question", Q], files.io)
+    expect(files.json().result.kept[0]).not.toHaveProperty("excerpt")
+    const rows = rig({ "hits.txt": "src/a.ts:3: auth check\nsrc/b.ts:9: plain" })
+    await main(["many", "--file", "hits.txt", "--split", "row", "--question", Q], rows.io)
+    expect(rows.json().result.kept[0]).toMatchObject({
+      id: "hits.txt:1",
+      excerpt: "src/a.ts:3: auth check",
+    })
   })
 
   it.each([
@@ -288,6 +320,14 @@ describe("decide --questions", () => {
     const { io, json } = rig(files, { stdin: QS })
     expect(await main(["ask", "--file", "src/auth.ts", "--questions", "-"], io)).toBe(0)
     expect(json().result.answers.relevant.noul).toBe(0.95)
+  })
+
+  it("takes the set inline, leaving stdin for the content", async () => {
+    const { io, json } = rig(files, { stdin: "auth token check" })
+    expect(await main(["ask", "--stdin", "--questions", QS], io)).toBe(0)
+    expect(json().result.answers.relevant.noul).toBe(0.95)
+    const one = '{"relevant":{"type":"noul","instructions":"Handles auth."}}'
+    expect(await main(["ask", "--stdin", "--questions", one], io)).toBe(0)
   })
 
   it("rejects mixing question sources, and two readers of stdin", async () => {

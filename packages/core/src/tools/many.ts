@@ -15,8 +15,15 @@ export interface ResultRow {
   id: string
   path?: string
   lines?: LineRange
+  /**
+   * The start of the (scrubbed) text, for items whose id doesn't lead back to
+   * it: piped items, and single lines such as grep hits split by row.
+   */
+  excerpt?: string
   answers: Answers
 }
+
+const EXCERPT = 120
 
 export interface SkippedSummary {
   total: number
@@ -167,8 +174,26 @@ function row(item: Item, answers: Answers): ResultRow {
     id: item.id,
     ...(item.path ? { path: item.path } : {}),
     ...(item.lines ? { lines: item.lines } : {}),
+    ...(traceable(item) ? {} : { excerpt: excerpt(item.state) }),
     answers,
   }
+}
+
+/**
+ * Whether the id alone leads back to the text. Piped items have no file, and a
+ * single line (a row of grep output, a log line) is only useful with its text.
+ */
+function traceable(item: Item): boolean {
+  if (item.path === undefined) return false
+  const oneLine = item.lines !== undefined && item.lines.start === item.lines.end
+  return item.id === item.path || !oneLine
+}
+
+function excerpt(state: Item["state"]): string {
+  const text = (typeof state === "string" ? state : JSON.stringify(state))
+    .replace(/\s+/g, " ")
+    .trim()
+  return text.length > EXCERPT ? `${text.slice(0, EXCERPT - 1)}…` : text
 }
 
 function counts(
