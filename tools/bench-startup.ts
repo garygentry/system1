@@ -4,7 +4,7 @@
  * network, no key, no spend.
  *
  *   pnpm bench:startup            # 15 runs each
- *   pnpm bench:startup -- 40      # 40 runs each
+ *   pnpm bench:startup 40         # 40 runs each
  *
  * Absolute times swing with machine load, so compare the overhead column.
  */
@@ -14,7 +14,12 @@ import { join } from "node:path"
 
 const ROOT = join(import.meta.dirname, "..")
 const BUNDLE = join(ROOT, "packages/cli/dist/bundle/decide.mjs")
-const RUNS = Number(process.argv[2] ?? 15)
+const runsArg = process.argv.slice(2).filter((a) => a !== "--")[0]
+const RUNS = runsArg === undefined ? 15 : Number(runsArg)
+if (!Number.isInteger(RUNS) || RUNS < 1) {
+  console.error(`bench: runs must be a positive integer, got "${runsArg}"`)
+  process.exit(2)
+}
 const TARGET_MS = 150
 
 if (!existsSync(BUNDLE)) {

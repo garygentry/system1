@@ -100,10 +100,47 @@
 - **Smoke workdirs must be their own git repos.** `.smoke/` is gitignored by the parent repo, so a plain copy there had all of its files withheld as gitignored (`withheld: 3 (gitignored 3)`).
 - The `ask` skill is a deliberate placeholder so the smoke tests have a real skill to drive. M5 replaces its body.
 
+## Adversarial review (before merge)
+
+Three independent reviewers covered: session detection and `doctor`; the shim and the smoke tests; the bundle and startup path. I reproduced every finding before fixing it.
+
+**Fixed**
+- **Session detection:** Claude Code started inside Pi was attributed to Pi. Claude overwrites `AI_AGENT` too, so this case can be told apart. Both detectors now share one `innermost()` rule.
+- **`doctor`:**
+  - A new `live` flag sits next to `healthy`, and the brief headline says `live ready` or `replay only`. A missing key or missing consent is still a warning, because replay-only is a supported mode (0010).
+  - The network fix now depends on the HTTP status: 404 points at model/endpoint config, and 5xx says "retry later".
+  - The Codex rule is suggested only when `CODEX_SANDBOX_NETWORK_DISABLED=1`. That flag also beats the nesting heuristic.
+  - A broken config (a bad endpoint URL, malformed YAML) is now a `config` check that fails, instead of a crash with exit 1.
+  - The PATH advice fits the harness: Claude gets plugin instructions, and while the package is unpublished at 0.0.0 the fix points at the checkout. A directory named `decide` on PATH is ignored.
+  - The CLI doctor test had been passing by accident (a `SyntaxError` in the fake fetch). Key-leak tests now use a distinctive secret.
+- **Shim:**
+  - It now resolves `$0` through symlinks, so a `~/bin/decide` symlink finds the checkout.
+  - The `DECISIONS_SHIM` env guard is replaced by skipping every shim copy by its marker line, plus the shim's own directory.
+  - It requires a regular file and doesn't glob PATH entries.
+- **The worst shim bug came from my own retest.** A failing `grep` made the marker check fall through, and the shim exec'd itself forever. Now only grep's "no match" (exit 1) lets a candidate run. Verified under dash and bash with broken and missing `grep`.
+- **Smoke:**
+  - The Claude run no longer gets the repo `bin/` on PATH, so it proves the plugin's own `bin/` wiring.
+  - `OPENROUTER_API_KEY` is unset for every run.
+  - The `ask` skill says to omit `--glob` unless the user names files. Codex had added `--glob '**/*'` and swept in the README.
+- **Bundle:**
+  - `bundle.test.ts` runs the built bundle for version, help, contract errors (exit 2 and 6) and the heavy chunks. Before this, CI never executed the bundle.
+  - The CLI package now ships only `dist/bundle`, with core as a devDependency, since the bundle inlines it.
+  - Spec lookup is anchored to the package root, so it can never pick up `node_modules/plugins/…`.
+  - The bundle is built beside the live one and swapped in, so a concurrent `decide` never finds it missing.
+  - `bench-startup` accepts `-- N` and rejects runs that aren't numbers.
+- **0015** now documents `doctor`'s exit semantics.
+
+**Deferred**
+- `doctor` doesn't compare the version of the `decide` found on PATH with the running one. Doing so means spawning it; revisit with `setup` (M5).
+- The smoke markers prove `decide` ran and printed real output, not that the agent went through the skill rather than calling `decide` directly.
+- The smoke scripts need GNU `timeout`, which macOS doesn't ship by default.
+- With `grep` missing entirely, the shim skips a real global install and falls through to `npx`. That's safe, never a loop.
+- Node 22.23 spins forever when its compile cache would live under `/proc`. That's a Node bug, unlikely in practice.
+
 ## Acceptance
 
 - [x] Session detection has unit tests covering each harness, nesting, and the override. The ledger records `claude:…` from a real Claude session (a live `ask` for $0.000012).
 - [x] Bench: `version`/`help` median overhead is +3 ms (load 4) or +50 ms (load 15), under 150 ms. `many --replay` is measured and recorded. `ping` is dominated by the network, so the bench gates `version` and `help` instead.
 - [x] `decide doctor` has tests for each branch, and was run for real under Claude, Codex (with and without the rule) and Pi.
 - [x] `pnpm smoke`: 6 of 6 pass.
-- [x] `pnpm check` passes (231 tests). The ROADMAP M4 row and open questions 2 and 7 are updated.
+- [x] `pnpm check` passes (242 tests after the review fixes). The ROADMAP M4 row and open questions 2 and 7 are updated.

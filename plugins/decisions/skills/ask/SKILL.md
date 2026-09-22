@@ -21,7 +21,7 @@ To run one over its default files:
 decide many --spec <name> --format brief
 ```
 
-To point the spec at different files, add `--glob '<pattern>'`.
+Only if the user names other files, add `--glob '<pattern>'`. Otherwise leave it out: the spec's own file selection is part of its design.
 
 ## Reading the output
 

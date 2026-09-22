@@ -49,6 +49,8 @@ Every command prints exactly one JSON envelope (the `json` format, which is the 
 
 When a `many` run fails for every item with the same code, that code is raised for the whole run.
 
+`doctor` (added in M4) is a report, not an operation. A failed check is a finding, so the envelope stays `ok` and the exit code is 0. `result.healthy` is false when any check failed, and `result.live` says whether a live decision would be sent. Scripts that need a gate check those fields, or use `ping`, which exits 5 when the endpoint is unreachable.
+
 ## Projection syntax
 
 - `--keep <question>[.<field>]<op><value>`, repeatable and ANDed.

@@ -1,4 +1,4 @@
-import { createContext, type DoctorResult, runDoctor } from "@garygentry/decisions-core"
+import { type DoctorResult, runDoctor } from "@garygentry/decisions-core"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
 import type { Io } from "../io.js"
@@ -14,20 +14,20 @@ export function runDoctorCommand(io: Io, format: Format): Promise<ExitCode> {
     io,
     "doctor",
     format,
-    () => {
-      const ctx = createContext({ ...io, cwd: io.cwd ?? process.cwd(), env: io.env })
-      return runDoctor(ctx, {
+    () =>
+      runDoctor({
+        ...io,
+        cwd: io.cwd ?? process.cwd(),
         env: io.env,
         ...(process.argv[1] ? { cliPath: process.argv[1] } : {}),
-      })
-    },
+      }),
     (r, f) => (f === "brief" ? brief(r) : undefined),
   )
 }
 
 function brief(r: DoctorResult): string {
   const lines = [
-    `decide doctor: ${r.healthy ? "healthy" : "PROBLEMS FOUND"} · harness ${r.harness ?? "none"} · session ${r.session ?? "none"}`,
+    `decide doctor: ${r.healthy ? "healthy" : "PROBLEMS FOUND"} · ${r.live ? "live ready" : "replay only"} · harness ${r.harness ?? "none"} · session ${r.session ?? "none"}`,
   ]
   for (const c of r.checks) {
     lines.push(`  ${c.status.padEnd(4)} ${c.name}: ${c.detail}`)

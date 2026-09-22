@@ -9,6 +9,8 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
 
+const SECRET = "sk-or-TESTSECRET-cli"
+
 /** A temp repo plus a fake endpoint: "auth" → 0.95, "maybe" → 0.5, else 0.05. */
 function rig(
   files: Record<string, string> = {},
@@ -25,7 +27,9 @@ function rig(
     writeFileSync(join(cwd, p), c)
   }
   const out: string[] = []
-  const fetchImpl = (async (_url: string, init: RequestInit) => {
+  const fetchImpl = (async (_url: string, init?: RequestInit) => {
+    // `ping` / `doctor` probe the public model listing with a GET.
+    if (!init?.body) return Response.json({ data: { endpoints: [{ context_length: 32000 }] } })
     const body = JSON.parse(String(init.body)) as {
       state: string
       questions: Record<string, unknown>
@@ -42,7 +46,7 @@ function rig(
   const io = {
     out: (t: string) => out.push(t),
     err: () => {},
-    env: key ? { OPENROUTER_API_KEY: "k" } : {},
+    env: key ? { OPENROUTER_API_KEY: SECRET } : {},
     cwd,
     home,
     fetch: fetchImpl,
@@ -237,7 +241,7 @@ describe("decide config egress", () => {
   it("config show never prints the key", async () => {
     const { io, out } = rig()
     await main(["config"], io)
-    expect(out.join("")).not.toContain('"k"')
+    expect(out.join("")).not.toContain(SECRET)
     expect(JSON.parse(out[0] ?? "").result.apiKey).toBe("present (env)")
   })
 })
@@ -262,10 +266,9 @@ describe("decide spec", () => {
 describe("decide doctor", () => {
   it("reports findings in an ok envelope with exit 0, never the key", async () => {
     const { io, out, json } = rig()
-    // The rig's fake endpoint cannot answer ping's GET, so the network check fails.
     expect(await main(["doctor"], io)).toBe(0)
     const r = json()
-    expect(r).toMatchObject({ ok: true, command: "doctor", result: { healthy: false } })
+    expect(r).toMatchObject({ ok: true, command: "doctor", result: { healthy: true, live: true } })
     expect(r.result.checks.map((c: { name: string }) => c.name)).toEqual([
       "cli",
       "path",
@@ -273,9 +276,17 @@ describe("decide doctor", () => {
       "consent",
       "network",
     ])
-    expect(out.join("\n")).not.toContain('"k"')
     expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
-    expect(out.at(-1)).toMatch(/^decide doctor: PROBLEMS FOUND · harness none/)
-    expect(out.at(-1)).toMatch(/fail network: .*\n {7}fix: check that this machine/)
+    expect(out.at(-1)).toMatch(/^decide doctor: healthy · live ready · harness none/)
+    expect(out.at(-1)).toMatch(/ok {3}network: .* reachable/)
+    expect(out.join("\n")).not.toContain(SECRET)
+  })
+
+  it("stays exit 0 when a check fails, and says so", async () => {
+    const { io, out } = rig()
+    const env = { ...io.env, DECISIONS_ENDPOINT: "notaurl" }
+    expect(await main(["doctor", "--format", "brief"], { ...io, env })).toBe(0)
+    expect(out.at(-1)).toMatch(/^decide doctor: PROBLEMS FOUND · replay only/)
+    expect(out.at(-1)).toMatch(/fail config: endpoint notaurl/)
   })
 })

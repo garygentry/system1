@@ -146,35 +146,50 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
  * tool's PATH), and the entry the smoke tests put on PATH for Codex and Pi.
  *
  * Resolution order: an explicit override, then a repo checkout's bundle (dev
- * and smoke), then a global install, then the pinned npm release. The global
- * lookup skips this file, and `DECISIONS_SHIM` stops two shim copies (say, a
- * cached plugin and a checkout) from calling each other forever.
+ * and smoke), then a global install, then the pinned npm release.
+ * - `$0` is resolved through symlinks first, so `ln -s <checkout>/…/bin/decide
+ *   ~/bin/decide` still finds the checkout.
+ * - The global lookup skips its own directory and every copy of this shim
+ *   (recognised by its marker line); when grep cannot tell, it skips too, so
+ *   shims can never exec each other. It wants a regular executable file and
+ *   does not glob PATH entries.
  */
 function shim(catalog: Catalog): string {
   const pinned = `${cliPackageName(catalog)}@${catalog.version}`
   return `#!/bin/sh
 # GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
-# Runs the decisions CLI pinned to this plugin's version.
+# ${SHIM_MARKER}
 set -e
 if [ -n "\${DECISIONS_CLI:-}" ]; then
   exec node "$DECISIONS_CLI" "$@"
 fi
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+self=$0
+while [ -L "$self" ]; do
+  link=$(readlink "$self")
+  case $link in
+    /*) self=$link ;;
+    *) self=$(dirname -- "$self")/$link ;;
+  esac
+done
+here=$(CDPATH= cd -- "$(dirname -- "$self")" && pwd -P)
 dev="$here/../../../packages/cli/dist/bundle/decide.mjs"
 if [ -f "$dev" ]; then
   exec node "$dev" "$@"
 fi
-if [ -z "\${DECISIONS_SHIM:-}" ]; then
-  export DECISIONS_SHIM=1
-  old_ifs=$IFS; IFS=:
-  for dir in $PATH; do
-    [ -n "$dir" ] && [ -x "$dir/decide" ] || continue
-    [ "$(CDPATH= cd -- "$dir" && pwd -P)" = "$here" ] && continue
-    IFS=$old_ifs
-    exec "$dir/decide" "$@"
-  done
-  IFS=$old_ifs
-fi
+set -f
+old_ifs=$IFS; IFS=:
+for dir in $PATH; do
+  cand="$dir/decide"
+  [ -n "$dir" ] && [ -f "$cand" ] && [ -x "$cand" ] || continue
+  [ "$(CDPATH= cd -- "$dir" 2>/dev/null && pwd -P)" = "$here" ] && continue
+  # grep: 0 = a shim, 1 = not a shim, 2 = can't tell. Only exec on 1, so a
+  # missing or broken grep can never make shims exec each other.
+  rc=0; grep -qs "${SHIM_MARKER}" "$cand" || rc=$?
+  [ "$rc" -eq 1 ] || continue
+  IFS=$old_ifs; set +f
+  exec "$cand" "$@"
+done
+IFS=$old_ifs; set +f
 if command -v npx >/dev/null 2>&1; then
   exec npx --yes "${pinned}" "$@"
 fi
@@ -182,6 +197,9 @@ echo "decide: the decisions CLI is not installed. Install it with: npm i -g ${pi
 exit 127
 `
 }
+
+/** Identifies a copy of the shim, so the global lookup can skip it. */
+const SHIM_MARKER = "decisions-shim: runs the decisions CLI pinned to this plugin's version"
 
 export function drift(outputs: Output[], root = ROOT): string[] {
   return outputs

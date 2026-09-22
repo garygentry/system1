@@ -16,15 +16,13 @@
     "decide": "./dist/bundle/decide.mjs"
   },
   "files": [
-    "dist"
+    "dist/bundle"
   ],
   "scripts": {
     "build": "tsc -b && node bundle.mjs"
   },
-  "dependencies": {
-    "@garygentry/decisions-core": "workspace:*"
-  },
   "devDependencies": {
+    "@garygentry/decisions-core": "workspace:*",
     "esbuild": "^0.28.2"
   }
 }

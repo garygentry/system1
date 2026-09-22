@@ -26,6 +26,10 @@ describe("detectSession", () => {
       "pi:p1",
     )
     expect(detectSession({ ...CLAUDE, PI_SESSION_ID: "p1", AI_AGENT: "pi" })?.id).toBe("pi:p1")
+    // Claude overwrites AI_AGENT too: Claude started inside Pi is Claude.
+    const claudeInPi = { PI_SESSION_ID: "p1", PI_CODING_AGENT: "true", CLAUDECODE: "1", ...CLAUDE }
+    expect(detectSession(claudeInPi)?.id).toBe("claude:c1")
+    expect(detectHarness(claudeInPi)).toBe("claude")
   })
 
   it("lets DECISIONS_SESSION override detection, and ignores blanks", () => {

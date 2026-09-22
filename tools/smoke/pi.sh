@@ -2,6 +2,7 @@
 # Pi: project-scoped install of the repo as a Pi package (root package.json `pi`
 # key), so global Pi settings are untouched. Pi has no shell sandbox.
 . "$(dirname -- "$0")/lib.sh"
+global_install
 drive() { # $1 = workdir, $2 = prompt, $3 = output file
   (cd "$1" && pi install -l "$REPO" >/dev/null 2>&1 \
     && timeout "$TIMEOUT" pi -p --approve --no-session "$2" </dev/null) >"$3" 2>&1 || true

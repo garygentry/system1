@@ -28,11 +28,10 @@ importers:
         version: 2.9.1
 
   packages/cli:
-    dependencies:
+    devDependencies:
       '@garygentry/decisions-core':
         specifier: workspace:*
         version: link:../core
-    devDependencies:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2

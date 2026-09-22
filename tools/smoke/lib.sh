@@ -12,10 +12,15 @@ TIMEOUT=${SMOKE_TIMEOUT:-240}
 PING_MARKER="decide ping: ok — [^ ]+ reachable in [0-9]+ ms"
 PING_PROMPT="Use the ping skill from the decisions plugin to check the decisions setup. Print the line it outputs verbatim."
 MANY_MARKER="decide many: 1 kept of 3 · 0 undecided · 2 dropped · replay "
-MANY_PROMPT="Use the ask skill from the decisions plugin to run the smoke spec over this repo. Print the first line of its output verbatim."
+MANY_PROMPT="Use the ask skill from the decisions plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
+
+# No run needs the key: ping is keyless and many replays. Keep it out of every
+# agent shell so nothing can be sent live by accident.
+unset OPENROUTER_API_KEY
 
 # Codex and Pi do not add plugin bin/ to PATH; stand in for a global install.
-export PATH="$REPO/plugins/decisions/bin:$PATH"
+# Claude must not get this: its smoke proves the plugin's own bin/ wiring.
+global_install() { export PATH="$REPO/plugins/decisions/bin:$PATH"; }
 
 [ -f "$REPO/packages/cli/dist/bundle/decide.mjs" ] || { echo "smoke: run \`pnpm build\` first" >&2; exit 2; }
 
@@ -27,11 +32,8 @@ fixture_repo() { # $1 = dir
   git -C "$1" init -q
 }
 
-# Replay only: no key reaches the agent's shell, so nothing can be sent.
-replay_env() {
-  unset OPENROUTER_API_KEY
-  export DECISIONS_REPLAY=1
-}
+# Replay only: answers come from the fixture repo's committed fixtures.
+replay_env() { export DECISIONS_REPLAY=1; }
 
 assert_marker() { # $1 = label, $2 = marker, $3 = output file
   if grep -Eq "$2" "$3"; then

@@ -4,6 +4,7 @@
 # read-only sandbox. Network for `decide` comes from a narrow exec-policy rule,
 # the same one `decide doctor` prints and `setup` will offer to write.
 . "$(dirname -- "$0")/lib.sh"
+global_install
 export CODEX_HOME="$SMOKE/codex-home"
 rm -rf "$CODEX_HOME"; mkdir -p "$CODEX_HOME/rules" "$SMOKE/codex"
 ln -s "$HOME/.codex/auth.json" "$CODEX_HOME/auth.json"
