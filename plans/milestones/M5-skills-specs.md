@@ -1,6 +1,6 @@
 # M5 — Skills: asking well, saving specs, setup
 
-**Status:** in progress (2026-09-22). The decisions below came from interviewing the user.
+**Status:** done, pending the adversarial review and merge (2026-09-22). The decisions below came from interviewing the user.
 **Goal:** Partway through any task, an agent recognises a closed judgement, writes a good question for it, hands it to `decide`, and reads the answer correctly, in Claude Code, Codex and Pi. A question that proves its worth can be saved as a spec in the repo and repaired against examples. `setup` takes a user from "installed" to "live-ready".
 
 ## First principles
@@ -14,7 +14,7 @@
 | # | Question | Decision |
 |---|---|---|
 | D1 | Bundled specs in v1? | **None.** Ad-hoc questions are the main path. Specs live in the user's repo (or at the user level), saved through `design`. This answers open question 4, and drops the bundled-spec fixture plumbing from M5. |
-| D2 | How does an agent hand over a question richer than a one-line noul? | A **new `--questions <file\|->` flag** takes a question set as YAML or JSON, in the same shape as a spec's `questions:`, from a file or a heredoc. `--question` stays for quick asks. |
+| D2 | How does an agent hand over a question richer than a one-line noul? | A **new `--questions <file\|-\|inline>` flag** takes a question set as YAML or JSON, in the same shape as a spec's `questions:`. It can come from a file, from stdin, or inline, and the inline form leaves stdin free for content. `--question` stays for quick asks. |
 | D3 | Where does question-craft guidance live? | **In `ask`** (as references), because every ad-hoc call needs it. `design` narrows to saving a question as a durable repo spec, with examples, and repairing a spec that misbehaves. |
 | D4 | Which decision kinds does `ask` target (and the evals cover)? | All four: **screening many items**; **judging one piece of text**; **checking criteria against evidence**; **picking among candidates**. |
 | D5 | How far may `setup` change the machine? | **Writes only with consent, one change at a time.** After an explicit yes it may add the Codex `prefix_rule`, or run the global install. It never grants egress consent and never handles the key. |
@@ -127,7 +127,7 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
   - **Claude:** detect the loaded skill from `--output-format stream-json`.
   - **Codex and Pi:** find out how each exposes a loaded skill (transcript, JSON events, or a file read of `SKILL.md`). This is the first eval task. If a harness can't expose it reliably, write that down and use the best proxy, e.g. whether a `decide` call was made, labelled as a proxy.
 - **Pass bar:** at least 7 of 8 positives, and every negative, per skill and harness. The results table is recorded here.
-- **`validate.ts`:** checks that every skill has an eval entry with the minimum number of positives and negatives.
+- **Minimum prompt counts:** `tools/evals/run.test.ts` checks that every skill has the minimum number of positives and negatives, so `pnpm test` enforces them.
 
 ## Out of scope
 
@@ -152,6 +152,28 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
   - Pi: a `read` tool call on it, from `--mode json`.
   - No proxy was needed.
 
+## Routing evals: final (2026-09-22, round 4)
+
+Run with the shipped `ask` description, and with Claude isolated from user settings (the new default):
+
+| Skill | Claude (Sonnet) | Claude (Opus) | Codex | Pi | Bar |
+|---|---|---|---|---|---|
+| `ask` positive | 7/8 | 7/8 | 8/8 | 8/8 | ≥ 7/8 |
+| `ask` negative | 8/8 | 8/8 | 8/8 | 8/8 | 8/8 |
+| `design` positive | 4/4 | 4/4 | 4/4 | 4/4 | ≥ 3/4 |
+| `design` negative | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 |
+| `setup` negative | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 |
+
+**What closed the Claude gap.** Probes on Claude's misses (Sonnet) moved from 0/4 to 2/4 to 4/4 across these description rounds. The user chose to keep iterating the text rather than add a hook.
+
+- **A:** open with *when* to load it ("whenever the user asks you to classify, route, triage…"), and add "even if they never mention decisions or decide".
+- **B:** lead with "Load this skill before you read through a file … of many items to judge each one yourself", and name "is the task done".
+- **C, D:** name the command-by-command verdict, "is this safe to commit", and "one package, file, helper or option out of hundreds".
+
+**The environment matters too.** My global hook rewrites `git diff` to `rtk git diff`, which falls outside `--allowedTools`. Under my user settings, Claude couldn't read a diff at all. Claude runs now skip user settings by default (`EVAL_CLAUDE_USER_SETTINGS=1` opts back in).
+
+**Claude's remaining single misses vary between runs:** the pre-commit check on Sonnet, CI triage on Opus.
+
 ## Routing evals (2026-09-22, round 3: volume versions of the two universal misses, cost-first `ask` description)
 
 `pnpm eval:routing <harness> --only ask`. Round 2 had shown that `design` and `setup` pass everywhere, so this round covers `ask` only.
@@ -163,7 +185,7 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
 
 - **Codex and Pi route every positive**, so the prompts are fair.
 - **Claude with only this plugin loaded** (`EVAL_CLAUDE_ISOLATED=1`, 21 skills in the session) still missed all 3 probe prompts. A crowded skill list isn't the cause: Claude chooses to do the work itself.
-- **The Claude gap is open.** Neither lever the user picked, a reworked description or Opus, closed it. The remaining lever, a SessionStart hint hook, was not chosen.
+- **After round 3, the Claude gap was still open.** Neither lever tried so far had closed it. Round 4 closed it with further description work.
 
 ## Routing evals (2026-09-22, round 2: harder positives)
 
@@ -210,11 +232,11 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
 
 ## Acceptance
 
-- [ ] `--questions` and `spec check` are implemented and tested, and 0015 is amended (additively).
-- [ ] `doctor` has the `path-version` check, with tests.
-- [ ] The `ask` skill (body plus 4 references), `design` and `setup` pass `pnpm validate` and `claude plugin validate --strict`. `ping` is gone.
-- [ ] `pnpm smoke` passes in all three harnesses.
-- [ ] The routing evals meet the pass bar in Claude, Codex and Pi, or a documented proxy is used where a harness can't expose skill loading. The results table is recorded here.
-- [ ] One live end-to-end ad-hoc ask per use case (D4) is recorded here, with its measured cost.
-- [ ] The ROADMAP M5 row and open question 4 are updated. `pnpm check` passes.
+- [x] `--questions` and `spec check` are implemented and tested, and 0015 is amended (additively).
+- [x] `doctor` has the `path-version` check, with tests.
+- [x] The `ask` skill (body plus 4 references), `design` and `setup` pass `pnpm validate` and `claude plugin validate --strict`. `ping` is gone.
+- [x] `pnpm smoke` passes in all three harnesses: 9 of 9, with `setup` invoked by name, the doctor marker, and `many`.
+- [x] The routing evals meet the pass bar in Claude, Codex and Pi, or a documented proxy is used where a harness can't expose skill loading. The results table is recorded here.
+- [x] One live end-to-end ad-hoc ask per use case (D4) is recorded here, with its measured cost.
+- [x] The ROADMAP M5 row and open question 4 are updated. `pnpm check` passes.
 - [ ] The work is on branch `m5-skills-specs`, gets an adversarial review before it merges, and the fixes are recorded here.

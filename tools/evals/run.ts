@@ -185,9 +185,11 @@ async function drive(harness: Harness, dir: string, prompt: string, codexHome?: 
         "-p",
         "--plugin-dir",
         join(ROOT, "plugins/decisions"),
-        // EVAL_CLAUDE_ISOLATED=1 skips user settings (and the plugins they
-        // enable), to tell a routing problem apart from a crowded skill list.
-        ...(process.env.EVAL_CLAUDE_ISOLATED ? ["--setting-sources", "project,local"] : []),
+        // User settings are skipped by default: their plugins crowd the skill
+        // list, and their hooks can rewrite commands past --allowedTools (an
+        // `rtk git diff` rewrite once blocked every git call). Set
+        // EVAL_CLAUDE_USER_SETTINGS=1 to measure inside your own setup.
+        ...(process.env.EVAL_CLAUDE_USER_SETTINGS ? [] : ["--setting-sources", "project,local"]),
         "--output-format",
         "stream-json",
         "--verbose",
