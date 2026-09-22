@@ -54,7 +54,7 @@ Show the `fix:` line. Sandbox allowlists, proxies and firewalls are the user's s
 
 1. Tell the user where the key goes, in whichever form they prefer:
    - the `OPENROUTER_API_KEY` environment variable;
-   - `~/.config/decisions/credentials`, containing only the key, with `chmod 600`.
+   - `~/.config/decisions/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. Any other format makes every `decide` command fail with a config error.
 2. **Never ask for the key in the conversation, and never print, echo or write it yourself.**
 3. Without a key, only replay of recorded answers works. That's a supported mode, not an error.
 
@@ -67,11 +67,13 @@ Egress consent is the user's decision, given once per repo.
    - files that look like secrets (`.env*`, keys, credentials) are excluded;
    - secret-shaped strings are scrubbed from everything sent;
    - oversized items are refused, never truncated.
-3. **Give them the command to run themselves,** in this repo:
+3. **Give them the command to run themselves,** in their own terminal at this repo's root. It asks them to confirm, so it needs a real terminal:
 
    ```sh
    decide config egress allow
    ```
+
+   Consent is recorded in `.decisions/config.yaml`. Committing that file shares the consent with everyone who clones the repo. That's the team's call, so point it out and don't decide it for them.
 
 4. **Never run `decide config egress allow` yourself, with or without `--confirm`.**
 

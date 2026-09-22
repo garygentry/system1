@@ -17,7 +17,7 @@ export type Expectation =
   | { kind: "choice"; value: string }
   | { kind: "level"; value: number }
   | { kind: "range"; lo: number; hi: number }
-  | { kind: "filter"; filter: Filter }
+  | { kind: "filter"; filter: Filter; text: string }
   | { kind: "undecided" }
 
 const OPERATOR = /^\s*(>=|<=|!=|>|<|=|in\s)/
@@ -54,6 +54,7 @@ function parseOne(name: string, question: Question, raw: unknown): Expectation {
     return {
       kind: "filter",
       filter: parseFilter(`${name}${raw.startsWith("in") ? " " : ""}${raw}`, { [name]: question }),
+      text: raw.trim(),
     }
   }
   switch (question.type) {
@@ -115,7 +116,7 @@ export function describeExpectation(expectation: Expectation): string {
     case "undecided":
       return "undecided"
     case "filter":
-      return expectation.filter.source
+      return expectation.text
     case "range":
       return `[${expectation.lo}, ${expectation.hi}]`
     default:

@@ -38,12 +38,35 @@ function brief(r: DoctorResult): string {
   return lines.join("\n")
 }
 
-/** `<path> version`, bounded: a hung or broken install must not hang doctor. */
-export function probeVersion(path: string, env: NodeJS.ProcessEnv): Promise<string | undefined> {
+/**
+ * `<path> version`, bounded: a hung or broken install must not hang doctor.
+ * `DECISIONS_NO_NPX` stops the plugin shim from falling back to `npx`, which
+ * would download a package just to answer a version check.
+ */
+export function probeVersion(
+  path: string,
+  env: NodeJS.ProcessEnv,
+  timeoutMs = 2000,
+): Promise<string | undefined> {
   return new Promise((resolve) => {
-    execFile(path, ["version"], { env, timeout: 2000 }, (error, stdout) => {
+    let settled = false
+    const done = (value: string | undefined) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve(value)
+    }
+    const child = execFile(
+      path,
+      ["version"],
+      { env: { ...env, DECISIONS_NO_NPX: "1" }, timeout: timeoutMs, killSignal: "SIGKILL" },
       // Empty output is passed on as "": doctor tells it apart from a failure.
-      resolve(error ? undefined : (stdout.trim().split("\n")[0] ?? ""))
-    })
+      (error, stdout) => done(error ? undefined : (stdout.trim().split("\n")[0] ?? "")),
+    )
+    // Don't wait for a child that ignores its kill to actually exit.
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL")
+      done(undefined)
+    }, timeoutMs + 200)
   })
 }

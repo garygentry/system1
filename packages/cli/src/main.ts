@@ -30,7 +30,7 @@ Questions:  --spec <name|path>  |  --question name:noul:<text>
             --input <file|->  (full tool input as JSON; flags override it)
 Sources:    --glob <pattern>…  --file <path[:L1-L2]>…  --jsonl <path>
             --diff <range> [--staged]  --text <text>  --stdin
-Split:      --split file|hunk|row|lines:N[/overlap]           (default: file)
+Split:      --split file|hunk|row|join|lines:N[/overlap]      (default: file; join = one state)
 Project:    --keep 'relevant>=0.7'…  --sort relevant:desc  --limit N  --fields a,b
 Run:        --dry-run  --confirm  --record | --replay | --live  --model <id>  --concurrency N
 

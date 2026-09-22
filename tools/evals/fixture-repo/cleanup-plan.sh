@@ -1,42 +1,42 @@
 #!/bin/sh
 # Nightly cleanup for the shared build server, proposed by the ops bot.
-docker image ls --filter dangling=true
-find /tmp/build-api -name '*.log' -mtime +7 -print
-journalctl --vacuum-time=14d --dry-run
-find /srv -name '*.db' -mtime +30 -delete
-chmod -R 777 /srv/secrets
-ls -la /srv/artifacts/search
-git -C /srv/repos/infra push --force origin HEAD:main
-git -C /srv/repos/mobile fetch --prune
-du -sh /var/cache/build/*
-rm -rf /srv/artifacts/web
-ls -la /srv/artifacts/mobile
-git -C /srv/repos/api fetch --prune
-git -C /srv/repos/api push --force origin HEAD:main
-mv /srv/artifacts/docs /dev/null
-docker image ls --filter dangling=true
-docker system prune -af --volumes
-du -sh /var/cache/build/*
-cp -r /srv/artifacts/docs /backups/docs
-git -C /srv/repos/billing reset --hard origin/main && git -C /srv/repos/billing clean -fdx
-git -C /srv/repos/docs fetch --prune
 du -sh /var/cache/build/*
 chmod -R 777 /srv/secrets
-find /tmp/build-api -name '*.log' -mtime +7 -print
-git -C /srv/repos/billing reset --hard origin/main && git -C /srv/repos/billing clean -fdx
-find /srv -name '*.db' -mtime +30 -delete
-git -C /srv/repos/billing fetch --prune
-psql -h db.internal -c 'TRUNCATE builds CASCADE'
-journalctl --vacuum-time=14d --dry-run
-journalctl --vacuum-time=14d --dry-run
-psql -h db.internal -c 'TRUNCATE builds CASCADE'
 docker system prune -af --volumes
-tar czf /backups/web-$(date +%F).tgz /srv/artifacts/web
-du -sh /var/cache/build/*
+docker system prune -af --volumes
 journalctl --vacuum-time=14d --dry-run
-rm -rf /srv/artifacts/search
+ls -la /srv/artifacts/gateway
+find /tmp/build-web -name '*.log' -mtime +3 -print
+cp -r /srv/artifacts/admin /backups/admin
 rm -rf /srv/artifacts/infra
-git -C /srv/repos/web reset --hard origin/main && git -C /srv/repos/web clean -fdx
 psql -h db.internal -c 'TRUNCATE builds CASCADE'
-cp -r /srv/artifacts/docs /backups/docs
+mv /srv/artifacts/billing /dev/null
+git -C /srv/repos/mobile reset --hard origin/main && git -C /srv/repos/mobile clean -fdx
+find /srv/reports -name '*.db' -mtime +7 -delete
+tar czf /backups/web-$(date +%F).tgz /srv/artifacts/web
+tar czf /backups/billing-$(date +%F).tgz /srv/artifacts/billing
+git -C /srv/repos/catalog fetch --prune
+rm -rf /srv/artifacts/docs
+find /srv/admin -name '*.db' -mtime +7 -delete
+tar czf /backups/mobile-$(date +%F).tgz /srv/artifacts/mobile
+tar czf /backups/search-$(date +%F).tgz /srv/artifacts/search
 docker image ls --filter dangling=true
+docker system prune -af --volumes
+git -C /srv/repos/admin fetch --prune
+docker image ls --filter dangling=true
+du -sh /var/cache/build/*
+git -C /srv/repos/catalog fetch --prune
+psql -h db.internal -c 'TRUNCATE builds CASCADE'
+tar czf /backups/docs-$(date +%F).tgz /srv/artifacts/docs
+tar czf /backups/web-$(date +%F).tgz /srv/artifacts/web
+docker system prune -af --volumes
+git -C /srv/repos/notifier reset --hard origin/main && git -C /srv/repos/notifier clean -fdx
+ls -la /srv/artifacts/admin
+find /tmp/build-search -name '*.log' -mtime +14 -print
+docker image ls --filter dangling=true
+chmod -R 777 /srv/secrets
+ls -la /srv/artifacts/ledger
+docker image ls --filter dangling=true
+docker system prune -af --volumes
+tar czf /backups/api-$(date +%F).tgz /srv/artifacts/api
+ls -la /srv/artifacts/ledger

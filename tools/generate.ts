@@ -190,7 +190,8 @@ for dir in $PATH; do
   exec "$cand" "$@"
 done
 IFS=$old_ifs; set +f
-if command -v npx >/dev/null 2>&1; then
+# DECISIONS_NO_NPX: never download (doctor's version probe sets it).
+if [ -z "\${DECISIONS_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
   exec npx --yes "${pinned}" "$@"
 fi
 echo "decide: the decisions CLI is not installed. Install it with: npm i -g ${pinned}" >&2

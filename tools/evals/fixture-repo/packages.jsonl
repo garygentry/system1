@@ -1,252 +1,252 @@
-{"name": "@shop/pdf-pro-0", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/image-pro-1", "description": "Helpers for image work. It is deprecated; new code should not depend on it. Owned by the search team. Stable."}
-{"name": "@shop/i18n-next-2", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/cache-utils-3", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the billing team. Unmaintained since 2024."}
-{"name": "@shop/rate-limit-kit-4", "description": "Helpers for rate-limit work. It runs work on the calling thread only. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/cache-kit-5", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the billing team. Beta."}
-{"name": "@shop/i18n-kit-6", "description": "Helpers for i18n work. It runs work on the calling thread only. Owned by the mobile team. Beta."}
-{"name": "@shop/image-next-7", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Beta."}
-{"name": "@shop/log-lite-8", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Stable."}
-{"name": "@shop/cache-next-9", "description": "Helpers for cache work. It keeps everything in memory, so state is lost when the process exits. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/queue-core-10", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/http-next-11", "description": "Helpers for http work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/csv-pro-12", "description": "Helpers for csv work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Stable."}
-{"name": "@shop/cache-core-13", "description": "Helpers for cache work. It is a thin wrapper over the vendor SDK. Owned by the search team. Stable."}
-{"name": "@shop/image-kit-14", "description": "Helpers for image work. It is deprecated; new code should not depend on it. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/i18n-lite-15", "description": "Helpers for i18n work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Stable."}
-{"name": "@shop/queue-next-16", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Beta."}
-{"name": "@shop/i18n-core-17", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the web team. Stable."}
-{"name": "@shop/log-pro-18", "description": "Helpers for log work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Beta."}
-{"name": "@shop/mail-utils-19", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/queue-pro-20", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Beta."}
-{"name": "@shop/log-pro-21", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Stable."}
-{"name": "@shop/mail-kit-22", "description": "Helpers for mail work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Used by 3 services."}
-{"name": "@shop/metrics-next-23", "description": "Helpers for metrics work. It is deprecated; new code should not depend on it. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/metrics-pro-24", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the worker team. Stable."}
-{"name": "@shop/config-pro-25", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the infra team. Stable."}
-{"name": "@shop/i18n-kit-26", "description": "Helpers for i18n work. It keeps everything in memory, so state is lost when the process exits. Owned by the docs team. Beta."}
-{"name": "@shop/log-utils-27", "description": "Helpers for log work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/log-next-28", "description": "Helpers for log work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Unmaintained since 2024."}
-{"name": "@shop/http-legacy-29", "description": "Helpers for http work. It runs work on the calling thread only. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/i18n-legacy-30", "description": "Helpers for i18n work. It keeps everything in memory, so state is lost when the process exits. Owned by the infra team. Stable."}
-{"name": "@shop/image-lite-31", "description": "Helpers for image work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Used by 3 services."}
-{"name": "@shop/pdf-pro-32", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Stable."}
-{"name": "@shop/cache-legacy-33", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/cache-next-34", "description": "Helpers for cache work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Beta."}
-{"name": "@shop/rate-limit-lite-35", "description": "Helpers for rate-limit work. It writes to local disk under ./var. Owned by the infra team. Stable."}
-{"name": "@shop/image-pro-36", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Beta."}
-{"name": "@shop/log-pro-37", "description": "Helpers for log work. It runs work on the calling thread only. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/i18n-next-38", "description": "Helpers for i18n work. It runs work on the calling thread only. Owned by the search team. Beta."}
-{"name": "@shop/retry-core-39", "description": "Helpers for retry work. It runs work on the calling thread only. Owned by the api team. Used by 3 services."}
-{"name": "@shop/image-utils-40", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Unmaintained since 2024."}
-{"name": "@shop/log-next-41", "description": "Helpers for log work. It runs work on the calling thread only. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/feature-flag-pro-42", "description": "Helpers for feature-flag work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Used by 3 services."}
-{"name": "@shop/rate-limit-legacy-43", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Unmaintained since 2024."}
-{"name": "@shop/log-core-44", "description": "Helpers for log work. It writes to local disk under ./var. Owned by the search team. Beta."}
-{"name": "@shop/queue-kit-45", "description": "Helpers for queue work. It is deprecated; new code should not depend on it. Owned by the billing team. Stable."}
-{"name": "@shop/image-core-46", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/http-core-47", "description": "Helpers for http work. It is deprecated; new code should not depend on it. Owned by the mobile team. Stable."}
-{"name": "@shop/metrics-kit-48", "description": "Helpers for metrics work. It writes to local disk under ./var. Owned by the docs team. Stable."}
-{"name": "@shop/http-legacy-49", "description": "Helpers for http work. It runs work on the calling thread only. Owned by the docs team. Beta."}
-{"name": "@shop/log-kit-50", "description": "Helpers for log work. It runs work on the calling thread only. Owned by the api team. Used by 3 services."}
-{"name": "@shop/auth-legacy-51", "description": "Helpers for auth work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Used by 3 services."}
-{"name": "@shop/queue-pro-52", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Stable."}
-{"name": "@shop/auth-core-53", "description": "Helpers for auth work. It runs work on the calling thread only. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/config-core-54", "description": "Helpers for config work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Stable."}
-{"name": "@shop/queue-kit-55", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/rate-limit-next-56", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/metrics-pro-57", "description": "Helpers for metrics work. It is deprecated; new code should not depend on it. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/csv-core-58", "description": "Helpers for csv work. It keeps everything in memory, so state is lost when the process exits. Owned by the infra team. Used by 3 services."}
-{"name": "@shop/log-next-59", "description": "Helpers for log work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Beta."}
-{"name": "@shop/log-lite-60", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Stable."}
-{"name": "@shop/feature-flag-lite-61", "description": "Helpers for feature-flag work. It writes to local disk under ./var. Owned by the search team. Used by 3 services."}
-{"name": "@shop/cache-core-62", "description": "Helpers for cache work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Used by 3 services."}
-{"name": "@shop/pdf-lite-63", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Beta."}
-{"name": "@shop/rate-limit-next-64", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the billing team. Beta."}
-{"name": "@shop/log-core-65", "description": "Helpers for log work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Used by 3 services."}
-{"name": "@shop/image-pro-66", "description": "Helpers for image work. It is deprecated; new code should not depend on it. Owned by the search team. Beta."}
-{"name": "@shop/pdf-kit-67", "description": "Helpers for pdf work. It runs work on the calling thread only. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/csv-lite-68", "description": "Helpers for csv work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the api team. Used by 3 services."}
-{"name": "@shop/image-utils-69", "description": "Helpers for image work. It runs work on the calling thread only. Owned by the web team. Stable."}
-{"name": "@shop/rate-limit-pro-70", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Unmaintained since 2024."}
+{"name": "@shop/auth-lite-0", "description": "Helpers for auth work. It keeps everything in memory, so state is lost when the process exits. Owned by the exports team. Beta."}
+{"name": "@shop/http-lite-1", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Stable."}
+{"name": "@shop/i18n-utils-2", "description": "Helpers for i18n work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Used by 3 services."}
+{"name": "@shop/http-next-3", "description": "Helpers for http work. It is a thin wrapper over the vendor SDK. Owned by the media team. Stable."}
+{"name": "@shop/auth-kit-4", "description": "Helpers for auth work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/metrics-legacy-5", "description": "Helpers for metrics work. It writes to local disk under ./var. Owned by the media team. Stable."}
+{"name": "@shop/config-pro-6", "description": "Helpers for config work. It writes to local disk under ./var. Owned by the reports team. Used by 3 services."}
+{"name": "@shop/metrics-pro-7", "description": "Helpers for metrics work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the media team. Beta."}
+{"name": "@shop/http-kit-8", "description": "Helpers for http work. It is deprecated; new code should not depend on it. Owned by the gateway team. Unmaintained since 2024."}
+{"name": "@shop/log-core-9", "description": "Helpers for log work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Beta."}
+{"name": "@shop/csv-pro-10", "description": "Helpers for csv work. It runs work on the calling thread only. Owned by the billing team. Beta."}
+{"name": "@shop/cache-legacy-11", "description": "Helpers for cache work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Used by 3 services."}
+{"name": "@shop/metrics-pro-12", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the gateway team. Beta."}
+{"name": "@shop/config-legacy-13", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the web team. Beta."}
+{"name": "@shop/auth-lite-14", "description": "Helpers for auth work. It keeps everything in memory, so state is lost when the process exits. Owned by the media team. Used by 3 services."}
+{"name": "@shop/auth-legacy-15", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the notifier team. Unmaintained since 2024."}
+{"name": "@shop/cache-utils-16", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the worker team. Stable."}
+{"name": "@shop/retry-kit-17", "description": "Helpers for retry work. It runs work on the calling thread only. Owned by the billing team. Beta."}
+{"name": "@shop/i18n-lite-18", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Used by 3 services."}
+{"name": "@shop/pdf-utils-19", "description": "Helpers for pdf work. It writes to local disk under ./var. Owned by the admin team. Stable."}
+{"name": "@shop/metrics-lite-20", "description": "Helpers for metrics work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the media team. Stable."}
+{"name": "@shop/config-legacy-21", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Stable."}
+{"name": "@shop/retry-legacy-22", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the notifier team. Stable."}
+{"name": "@shop/http-lite-23", "description": "Helpers for http work. It runs work on the calling thread only. Owned by the worker team. Used by 3 services."}
+{"name": "@shop/auth-kit-24", "description": "Helpers for auth work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Stable."}
+{"name": "@shop/pdf-legacy-25", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Stable."}
+{"name": "@shop/rate-limit-kit-26", "description": "Helpers for rate-limit work. It writes to local disk under ./var. Owned by the worker team. Stable."}
+{"name": "@shop/i18n-lite-27", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the api team. Stable."}
+{"name": "@shop/mail-legacy-28", "description": "Helpers for mail work. It is a thin wrapper over the vendor SDK. Owned by the exports team. Beta."}
+{"name": "@shop/image-legacy-29", "description": "Helpers for image work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/config-core-30", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Unmaintained since 2024."}
+{"name": "@shop/csv-kit-31", "description": "Helpers for csv work. It writes to local disk under ./var. Owned by the mobile team. Beta."}
+{"name": "@shop/pdf-utils-32", "description": "Helpers for pdf work. It writes to local disk under ./var. Owned by the search team. Beta."}
+{"name": "@shop/cache-pro-33", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the media team. Used by 3 services."}
+{"name": "@shop/queue-pro-34", "description": "Helpers for queue work. It is deprecated; new code should not depend on it. Owned by the docs team. Used by 3 services."}
+{"name": "@shop/mail-pro-35", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the media team. Used by 3 services."}
+{"name": "@shop/retry-kit-36", "description": "Helpers for retry work. It keeps everything in memory, so state is lost when the process exits. Owned by the docs team. Stable."}
+{"name": "@shop/http-next-37", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/metrics-utils-38", "description": "Helpers for metrics work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
+{"name": "@shop/image-kit-39", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the notifier team. Stable."}
+{"name": "@shop/pdf-kit-40", "description": "Helpers for pdf work. It is deprecated; new code should not depend on it. Owned by the billing team. Stable."}
+{"name": "@shop/i18n-pro-41", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Beta."}
+{"name": "@shop/i18n-lite-42", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the api team. Unmaintained since 2024."}
+{"name": "@shop/metrics-core-43", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/config-core-44", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the infra team. Used by 3 services."}
+{"name": "@shop/metrics-lite-45", "description": "Helpers for metrics work. It writes to local disk under ./var. Owned by the web team. Beta."}
+{"name": "@shop/mail-next-46", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the admin team. Stable."}
+{"name": "@shop/mail-legacy-47", "description": "Helpers for mail work. It writes to local disk under ./var. Owned by the catalog team. Unmaintained since 2024."}
+{"name": "@shop/config-kit-48", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the media team. Beta."}
+{"name": "@shop/config-next-49", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the worker team. Stable."}
+{"name": "@shop/i18n-legacy-50", "description": "Helpers for i18n work. It is a thin wrapper over the vendor SDK. Owned by the ledger team. Stable."}
+{"name": "@shop/image-core-51", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the web team. Stable."}
+{"name": "@shop/cache-lite-52", "description": "Helpers for cache work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Used by 3 services."}
+{"name": "@shop/csv-core-53", "description": "Helpers for csv work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
+{"name": "@shop/i18n-kit-54", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the admin team. Unmaintained since 2024."}
+{"name": "@shop/mail-core-55", "description": "Helpers for mail work. It writes to local disk under ./var. Owned by the catalog team. Used by 3 services."}
+{"name": "@shop/i18n-kit-56", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the notifier team. Unmaintained since 2024."}
+{"name": "@shop/retry-pro-57", "description": "Helpers for retry work. It runs work on the calling thread only. Owned by the billing team. Used by 3 services."}
+{"name": "@shop/i18n-lite-58", "description": "Helpers for i18n work. It keeps everything in memory, so state is lost when the process exits. Owned by the media team. Stable."}
+{"name": "@shop/auth-legacy-59", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the catalog team. Beta."}
+{"name": "@shop/rate-limit-kit-60", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the infra team. Beta."}
+{"name": "@shop/pdf-lite-61", "description": "Helpers for pdf work. It writes to local disk under ./var. Owned by the gateway team. Stable."}
+{"name": "@shop/http-legacy-62", "description": "Helpers for http work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the ledger team. Beta."}
+{"name": "@shop/auth-next-63", "description": "Helpers for auth work. It runs work on the calling thread only. Owned by the ledger team. Used by 3 services."}
+{"name": "@shop/i18n-utils-64", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the gateway team. Used by 3 services."}
+{"name": "@shop/auth-legacy-65", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the worker team. Unmaintained since 2024."}
+{"name": "@shop/retry-kit-66", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/rate-limit-utils-67", "description": "Helpers for rate-limit work. It writes to local disk under ./var. Owned by the ledger team. Stable."}
+{"name": "@shop/csv-kit-68", "description": "Helpers for csv work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Unmaintained since 2024."}
+{"name": "@shop/mail-lite-69", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Beta."}
+{"name": "@shop/feature-flag-core-70", "description": "Helpers for feature-flag work. It writes to local disk under ./var. Owned by the infra team. Used by 3 services."}
+{"name": "@shop/metrics-kit-71", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Beta."}
+{"name": "@shop/log-pro-72", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the media team. Stable."}
+{"name": "@shop/mail-pro-73", "description": "Helpers for mail work. It runs work on the calling thread only. Owned by the admin team. Used by 3 services."}
+{"name": "@shop/metrics-core-74", "description": "Helpers for metrics work. It writes to local disk under ./var. Owned by the admin team. Used by 3 services."}
+{"name": "@shop/feature-flag-pro-75", "description": "Helpers for feature-flag work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the ledger team. Used by 3 services."}
+{"name": "@shop/pdf-next-76", "description": "Helpers for pdf work. It runs work on the calling thread only. Owned by the worker team. Beta."}
+{"name": "@shop/http-next-77", "description": "Helpers for http work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Beta."}
+{"name": "@shop/log-next-78", "description": "Helpers for log work. It is deprecated; new code should not depend on it. Owned by the api team. Unmaintained since 2024."}
+{"name": "@shop/pdf-next-79", "description": "Helpers for pdf work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Beta."}
+{"name": "@shop/http-kit-80", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the gateway team. Unmaintained since 2024."}
+{"name": "@shop/http-next-81", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the admin team. Used by 3 services."}
 {"name": "@shop/timekeeper", "description": "Runs registered tasks at recurring wall-clock times. Pending and future runs are persisted in Postgres, so they resume after a deploy or a crash. Owned by the infra team. Stable."}
-{"name": "@shop/rate-limit-utils-71", "description": "Helpers for rate-limit work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/config-lite-72", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the api team. Used by 3 services."}
-{"name": "@shop/config-legacy-73", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/retry-next-74", "description": "Helpers for retry work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/rate-limit-pro-75", "description": "Helpers for rate-limit work. It runs work on the calling thread only. Owned by the api team. Used by 3 services."}
-{"name": "@shop/retry-pro-76", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/config-next-77", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/retry-next-78", "description": "Helpers for retry work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Beta."}
-{"name": "@shop/retry-core-79", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/rate-limit-legacy-80", "description": "Helpers for rate-limit work. It runs work on the calling thread only. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/queue-lite-81", "description": "Helpers for queue work. It runs work on the calling thread only. Owned by the api team. Beta."}
-{"name": "@shop/config-legacy-82", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the worker team. Stable."}
-{"name": "@shop/i18n-legacy-83", "description": "Helpers for i18n work. It is deprecated; new code should not depend on it. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/metrics-utils-84", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/image-pro-85", "description": "Helpers for image work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/metrics-legacy-86", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the worker team. Beta."}
-{"name": "@shop/csv-kit-87", "description": "Helpers for csv work. It is a thin wrapper over the vendor SDK. Owned by the web team. Beta."}
-{"name": "@shop/i18n-core-88", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the api team. Stable."}
-{"name": "@shop/retry-pro-89", "description": "Helpers for retry work. It runs work on the calling thread only. Owned by the search team. Beta."}
-{"name": "@shop/image-utils-90", "description": "Helpers for image work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Used by 3 services."}
-{"name": "@shop/mail-pro-91", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the api team. Used by 3 services."}
-{"name": "@shop/pdf-next-92", "description": "Helpers for pdf work. It writes to local disk under ./var. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/log-pro-93", "description": "Helpers for log work. It runs work on the calling thread only. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/csv-legacy-94", "description": "Helpers for csv work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/image-pro-95", "description": "Helpers for image work. It is deprecated; new code should not depend on it. Owned by the infra team. Stable."}
-{"name": "@shop/retry-kit-96", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Beta."}
-{"name": "@shop/config-pro-97", "description": "Helpers for config work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the api team. Stable."}
-{"name": "@shop/rate-limit-utils-98", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Beta."}
-{"name": "@shop/http-lite-99", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the docs team. Stable."}
-{"name": "@shop/pdf-next-100", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/http-core-101", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the api team. Unmaintained since 2024."}
-{"name": "@shop/csv-lite-102", "description": "Helpers for csv work. It is a thin wrapper over the vendor SDK. Owned by the billing team. Unmaintained since 2024."}
-{"name": "@shop/pdf-kit-103", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Stable."}
-{"name": "@shop/config-kit-104", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/auth-utils-105", "description": "Helpers for auth work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/config-utils-106", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/pdf-kit-107", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Stable."}
-{"name": "@shop/config-lite-108", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the infra team. Stable."}
-{"name": "@shop/queue-pro-109", "description": "Helpers for queue work. It writes to local disk under ./var. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/auth-core-110", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Stable."}
-{"name": "@shop/mail-lite-111", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the mobile team. Stable."}
-{"name": "@shop/pdf-lite-112", "description": "Helpers for pdf work. It is a thin wrapper over the vendor SDK. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/cache-legacy-113", "description": "Helpers for cache work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Used by 3 services."}
-{"name": "@shop/config-utils-114", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/metrics-kit-115", "description": "Helpers for metrics work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Beta."}
-{"name": "@shop/cache-kit-116", "description": "Helpers for cache work. It keeps everything in memory, so state is lost when the process exits. Owned by the worker team. Stable."}
-{"name": "@shop/log-core-117", "description": "Helpers for log work. It runs work on the calling thread only. Owned by the web team. Stable."}
-{"name": "@shop/retry-core-118", "description": "Helpers for retry work. It writes to local disk under ./var. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/i18n-pro-119", "description": "Helpers for i18n work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Beta."}
-{"name": "@shop/feature-flag-kit-120", "description": "Helpers for feature-flag work. It is a thin wrapper over the vendor SDK. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/image-next-121", "description": "Helpers for image work. It runs work on the calling thread only. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/image-pro-122", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Unmaintained since 2024."}
-{"name": "@shop/mail-kit-123", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Stable."}
-{"name": "@shop/pdf-core-124", "description": "Helpers for pdf work. It writes to local disk under ./var. Owned by the billing team. Unmaintained since 2024."}
-{"name": "@shop/mail-legacy-125", "description": "Helpers for mail work. It writes to local disk under ./var. Owned by the api team. Beta."}
-{"name": "@shop/config-legacy-126", "description": "Helpers for config work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Beta."}
-{"name": "@shop/image-next-127", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the web team. Used by 3 services."}
-{"name": "@shop/csv-pro-128", "description": "Helpers for csv work. It writes to local disk under ./var. Owned by the search team. Stable."}
-{"name": "@shop/image-lite-129", "description": "Helpers for image work. It runs work on the calling thread only. Owned by the worker team. Beta."}
-{"name": "@shop/metrics-legacy-130", "description": "Helpers for metrics work. It is deprecated; new code should not depend on it. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/retry-kit-131", "description": "Helpers for retry work. It is deprecated; new code should not depend on it. Owned by the web team. Used by 3 services."}
-{"name": "@shop/queue-utils-132", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/metrics-legacy-133", "description": "Helpers for metrics work. It runs work on the calling thread only. Owned by the api team. Unmaintained since 2024."}
-{"name": "@shop/retry-core-134", "description": "Helpers for retry work. It writes to local disk under ./var. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/metrics-legacy-135", "description": "Helpers for metrics work. It is deprecated; new code should not depend on it. Owned by the search team. Used by 3 services."}
-{"name": "@shop/i18n-kit-136", "description": "Helpers for i18n work. It is deprecated; new code should not depend on it. Owned by the web team. Used by 3 services."}
-{"name": "@shop/config-legacy-137", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the infra team. Stable."}
-{"name": "@shop/feature-flag-core-138", "description": "Helpers for feature-flag work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Stable."}
-{"name": "@shop/feature-flag-lite-139", "description": "Helpers for feature-flag work. It runs work on the calling thread only. Owned by the web team. Stable."}
-{"name": "@shop/config-kit-140", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Stable."}
-{"name": "@shop/image-core-141", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the search team. Used by 3 services."}
-{"name": "@shop/config-lite-142", "description": "Helpers for config work. It writes to local disk under ./var. Owned by the worker team. Stable."}
-{"name": "@shop/cache-legacy-143", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the docs team. Beta."}
-{"name": "@shop/http-lite-144", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the docs team. Beta."}
-{"name": "@shop/pdf-legacy-145", "description": "Helpers for pdf work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/rate-limit-lite-146", "description": "Helpers for rate-limit work. It runs work on the calling thread only. Owned by the search team. Stable."}
-{"name": "@shop/http-next-147", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Stable."}
-{"name": "@shop/http-utils-148", "description": "Helpers for http work. It is a thin wrapper over the vendor SDK. Owned by the api team. Used by 3 services."}
-{"name": "@shop/auth-pro-149", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/image-core-150", "description": "Helpers for image work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the api team. Stable."}
-{"name": "@shop/mail-utils-151", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the api team. Used by 3 services."}
-{"name": "@shop/auth-kit-152", "description": "Helpers for auth work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Unmaintained since 2024."}
-{"name": "@shop/cache-pro-153", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/config-utils-154", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/log-next-155", "description": "Helpers for log work. It writes to local disk under ./var. Owned by the mobile team. Beta."}
-{"name": "@shop/metrics-pro-156", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Used by 3 services."}
-{"name": "@shop/http-pro-157", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the docs team. Stable."}
-{"name": "@shop/queue-lite-158", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Used by 3 services."}
-{"name": "@shop/config-utils-159", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/csv-core-160", "description": "Helpers for csv work. It writes to local disk under ./var. Owned by the infra team. Stable."}
-{"name": "@shop/queue-legacy-161", "description": "Helpers for queue work. It runs work on the calling thread only. Owned by the search team. Beta."}
+{"name": "@shop/log-legacy-82", "description": "Helpers for log work. It keeps everything in memory, so state is lost when the process exits. Owned by the admin team. Unmaintained since 2024."}
+{"name": "@shop/csv-utils-83", "description": "Helpers for csv work. It is a thin wrapper over the vendor SDK. Owned by the exports team. Unmaintained since 2024."}
+{"name": "@shop/image-core-84", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the notifier team. Stable."}
+{"name": "@shop/log-kit-85", "description": "Helpers for log work. It writes to local disk under ./var. Owned by the catalog team. Unmaintained since 2024."}
+{"name": "@shop/mail-legacy-86", "description": "Helpers for mail work. It writes to local disk under ./var. Owned by the media team. Stable."}
+{"name": "@shop/config-kit-87", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the api team. Unmaintained since 2024."}
+{"name": "@shop/feature-flag-legacy-88", "description": "Helpers for feature-flag work. It keeps everything in memory, so state is lost when the process exits. Owned by the media team. Beta."}
+{"name": "@shop/csv-utils-89", "description": "Helpers for csv work. It writes to local disk under ./var. Owned by the notifier team. Stable."}
+{"name": "@shop/rate-limit-legacy-90", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the admin team. Beta."}
+{"name": "@shop/i18n-next-91", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/retry-core-92", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the worker team. Beta."}
+{"name": "@shop/csv-pro-93", "description": "Helpers for csv work. It runs work on the calling thread only. Owned by the infra team. Stable."}
+{"name": "@shop/i18n-legacy-94", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the media team. Stable."}
+{"name": "@shop/retry-pro-95", "description": "Helpers for retry work. It writes to local disk under ./var. Owned by the ledger team. Beta."}
+{"name": "@shop/mail-utils-96", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the search team. Unmaintained since 2024."}
+{"name": "@shop/rate-limit-lite-97", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the admin team. Used by 3 services."}
+{"name": "@shop/auth-utils-98", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the exports team. Unmaintained since 2024."}
+{"name": "@shop/queue-next-99", "description": "Helpers for queue work. It writes to local disk under ./var. Owned by the media team. Unmaintained since 2024."}
+{"name": "@shop/http-kit-100", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the exports team. Stable."}
+{"name": "@shop/auth-kit-101", "description": "Helpers for auth work. It keeps everything in memory, so state is lost when the process exits. Owned by the ledger team. Stable."}
+{"name": "@shop/metrics-legacy-102", "description": "Helpers for metrics work. It is a thin wrapper over the vendor SDK. Owned by the media team. Unmaintained since 2024."}
+{"name": "@shop/rate-limit-next-103", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the search team. Used by 3 services."}
+{"name": "@shop/mail-pro-104", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Unmaintained since 2024."}
+{"name": "@shop/i18n-legacy-105", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the admin team. Beta."}
+{"name": "@shop/log-next-106", "description": "Helpers for log work. It runs work on the calling thread only. Owned by the web team. Beta."}
+{"name": "@shop/feature-flag-next-107", "description": "Helpers for feature-flag work. It is a thin wrapper over the vendor SDK. Owned by the exports team. Unmaintained since 2024."}
+{"name": "@shop/i18n-kit-108", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the exports team. Beta."}
+{"name": "@shop/metrics-kit-109", "description": "Helpers for metrics work. It writes to local disk under ./var. Owned by the api team. Stable."}
+{"name": "@shop/queue-pro-110", "description": "Helpers for queue work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/feature-flag-next-111", "description": "Helpers for feature-flag work. It is deprecated; new code should not depend on it. Owned by the worker team. Stable."}
+{"name": "@shop/cache-legacy-112", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the search team. Beta."}
+{"name": "@shop/cache-core-113", "description": "Helpers for cache work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Stable."}
+{"name": "@shop/config-kit-114", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/mail-kit-115", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/i18n-next-116", "description": "Helpers for i18n work. It is deprecated; new code should not depend on it. Owned by the infra team. Used by 3 services."}
+{"name": "@shop/pdf-legacy-117", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Stable."}
+{"name": "@shop/mail-legacy-118", "description": "Helpers for mail work. It is a thin wrapper over the vendor SDK. Owned by the catalog team. Beta."}
+{"name": "@shop/image-lite-119", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the notifier team. Unmaintained since 2024."}
+{"name": "@shop/cache-next-120", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the docs team. Used by 3 services."}
+{"name": "@shop/metrics-next-121", "description": "Helpers for metrics work. It runs work on the calling thread only. Owned by the admin team. Stable."}
+{"name": "@shop/rate-limit-lite-122", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the api team. Used by 3 services."}
+{"name": "@shop/retry-legacy-123", "description": "Helpers for retry work. It is deprecated; new code should not depend on it. Owned by the exports team. Stable."}
+{"name": "@shop/http-core-124", "description": "Helpers for http work. It is a thin wrapper over the vendor SDK. Owned by the search team. Used by 3 services."}
+{"name": "@shop/mail-lite-125", "description": "Helpers for mail work. It runs work on the calling thread only. Owned by the notifier team. Beta."}
+{"name": "@shop/metrics-legacy-126", "description": "Helpers for metrics work. It writes to local disk under ./var. Owned by the notifier team. Used by 3 services."}
+{"name": "@shop/metrics-pro-127", "description": "Helpers for metrics work. It is a thin wrapper over the vendor SDK. Owned by the web team. Stable."}
+{"name": "@shop/auth-utils-128", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the infra team. Unmaintained since 2024."}
+{"name": "@shop/mail-core-129", "description": "Helpers for mail work. It is a thin wrapper over the vendor SDK. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/queue-lite-130", "description": "Helpers for queue work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Stable."}
+{"name": "@shop/log-pro-131", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the search team. Unmaintained since 2024."}
+{"name": "@shop/rate-limit-pro-132", "description": "Helpers for rate-limit work. It is a thin wrapper over the vendor SDK. Owned by the billing team. Beta."}
+{"name": "@shop/http-kit-133", "description": "Helpers for http work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/cache-kit-134", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the gateway team. Beta."}
+{"name": "@shop/feature-flag-utils-135", "description": "Helpers for feature-flag work. It is deprecated; new code should not depend on it. Owned by the infra team. Stable."}
+{"name": "@shop/queue-pro-136", "description": "Helpers for queue work. It is deprecated; new code should not depend on it. Owned by the search team. Stable."}
+{"name": "@shop/rate-limit-core-137", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the api team. Unmaintained since 2024."}
+{"name": "@shop/i18n-lite-138", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Stable."}
+{"name": "@shop/metrics-lite-139", "description": "Helpers for metrics work. It runs work on the calling thread only. Owned by the gateway team. Beta."}
+{"name": "@shop/http-next-140", "description": "Helpers for http work. It runs work on the calling thread only. Owned by the ledger team. Stable."}
+{"name": "@shop/cache-legacy-141", "description": "Helpers for cache work. It is deprecated; new code should not depend on it. Owned by the mobile team. Used by 3 services."}
+{"name": "@shop/config-next-142", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the exports team. Stable."}
+{"name": "@shop/http-next-143", "description": "Helpers for http work. It runs work on the calling thread only. Owned by the notifier team. Used by 3 services."}
+{"name": "@shop/rate-limit-pro-144", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the gateway team. Used by 3 services."}
+{"name": "@shop/queue-pro-145", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the notifier team. Stable."}
+{"name": "@shop/config-next-146", "description": "Helpers for config work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the admin team. Stable."}
+{"name": "@shop/log-utils-147", "description": "Helpers for log work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the ledger team. Used by 3 services."}
+{"name": "@shop/feature-flag-utils-148", "description": "Helpers for feature-flag work. It writes to local disk under ./var. Owned by the reports team. Stable."}
+{"name": "@shop/config-legacy-149", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the exports team. Unmaintained since 2024."}
+{"name": "@shop/mail-next-150", "description": "Helpers for mail work. It is a thin wrapper over the vendor SDK. Owned by the docs team. Beta."}
+{"name": "@shop/cache-kit-151", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the notifier team. Used by 3 services."}
+{"name": "@shop/retry-next-152", "description": "Helpers for retry work. It keeps everything in memory, so state is lost when the process exits. Owned by the media team. Unmaintained since 2024."}
+{"name": "@shop/csv-utils-153", "description": "Helpers for csv work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the reports team. Unmaintained since 2024."}
+{"name": "@shop/rate-limit-kit-154", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the infra team. Beta."}
+{"name": "@shop/i18n-utils-155", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the media team. Stable."}
+{"name": "@shop/metrics-utils-156", "description": "Helpers for metrics work. It is deprecated; new code should not depend on it. Owned by the gateway team. Unmaintained since 2024."}
+{"name": "@shop/i18n-lite-157", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the ledger team. Beta."}
+{"name": "@shop/config-lite-158", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the exports team. Used by 3 services."}
+{"name": "@shop/config-legacy-159", "description": "Helpers for config work. It writes to local disk under ./var. Owned by the gateway team. Beta."}
+{"name": "@shop/cache-utils-160", "description": "Helpers for cache work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Stable."}
+{"name": "@shop/queue-kit-161", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the ledger team. Unmaintained since 2024."}
+{"name": "@shop/mail-core-162", "description": "Helpers for mail work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/auth-core-163", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the api team. Stable."}
+{"name": "@shop/i18n-lite-164", "description": "Helpers for i18n work. It runs work on the calling thread only. Owned by the reports team. Used by 3 services."}
+{"name": "@shop/config-core-165", "description": "Helpers for config work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the gateway team. Unmaintained since 2024."}
+{"name": "@shop/image-pro-166", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the mobile team. Unmaintained since 2024."}
+{"name": "@shop/csv-core-167", "description": "Helpers for csv work. It keeps everything in memory, so state is lost when the process exits. Owned by the admin team. Beta."}
+{"name": "@shop/auth-lite-168", "description": "Helpers for auth work. It runs work on the calling thread only. Owned by the catalog team. Beta."}
+{"name": "@shop/metrics-core-169", "description": "Helpers for metrics work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Used by 3 services."}
+{"name": "@shop/config-kit-170", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the worker team. Stable."}
+{"name": "@shop/retry-legacy-171", "description": "Helpers for retry work. It is a thin wrapper over the vendor SDK. Owned by the media team. Used by 3 services."}
+{"name": "@shop/metrics-kit-172", "description": "Helpers for metrics work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Beta."}
+{"name": "@shop/auth-core-173", "description": "Helpers for auth work. It runs work on the calling thread only. Owned by the billing team. Beta."}
+{"name": "@shop/log-core-174", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the ledger team. Unmaintained since 2024."}
+{"name": "@shop/pdf-pro-175", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the catalog team. Unmaintained since 2024."}
+{"name": "@shop/pdf-pro-176", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the ledger team. Stable."}
+{"name": "@shop/image-legacy-177", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the notifier team. Used by 3 services."}
+{"name": "@shop/i18n-legacy-178", "description": "Helpers for i18n work. It is deprecated; new code should not depend on it. Owned by the media team. Beta."}
 {"name": "@shop/ticker", "description": "Runs registered tasks at recurring wall-clock times. Keeps its timetable in memory, so a restart forgets pending runs. Owned by the web team. Stable."}
-{"name": "@shop/image-utils-162", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Beta."}
-{"name": "@shop/auth-lite-163", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Beta."}
-{"name": "@shop/rate-limit-next-164", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the api team. Stable."}
-{"name": "@shop/cache-pro-165", "description": "Helpers for cache work. It writes to local disk under ./var. Owned by the api team. Beta."}
-{"name": "@shop/auth-utils-166", "description": "Helpers for auth work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/rate-limit-utils-167", "description": "Helpers for rate-limit work. It writes to local disk under ./var. Owned by the mobile team. Beta."}
-{"name": "@shop/pdf-kit-168", "description": "Helpers for pdf work. It is deprecated; new code should not depend on it. Owned by the worker team. Unmaintained since 2024."}
-{"name": "@shop/auth-next-169", "description": "Helpers for auth work. It writes to local disk under ./var. Owned by the search team. Used by 3 services."}
-{"name": "@shop/pdf-next-170", "description": "Helpers for pdf work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Beta."}
-{"name": "@shop/queue-next-171", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the worker team. Stable."}
-{"name": "@shop/queue-next-172", "description": "Helpers for queue work. It runs work on the calling thread only. Owned by the worker team. Beta."}
-{"name": "@shop/queue-next-173", "description": "Helpers for queue work. It writes to local disk under ./var. Owned by the infra team. Beta."}
-{"name": "@shop/image-pro-174", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the search team. Beta."}
-{"name": "@shop/rate-limit-pro-175", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/retry-legacy-176", "description": "Helpers for retry work. It writes to local disk under ./var. Owned by the search team. Used by 3 services."}
-{"name": "@shop/retry-utils-177", "description": "Helpers for retry work. It keeps everything in memory, so state is lost when the process exits. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/image-legacy-178", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/cache-utils-179", "description": "Helpers for cache work. It writes to local disk under ./var. Owned by the worker team. Beta."}
-{"name": "@shop/cache-utils-180", "description": "Helpers for cache work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Beta."}
-{"name": "@shop/metrics-lite-181", "description": "Helpers for metrics work. It is a thin wrapper over the vendor SDK. Owned by the api team. Stable."}
-{"name": "@shop/rate-limit-kit-182", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/i18n-core-183", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Beta."}
-{"name": "@shop/config-pro-184", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Unmaintained since 2024."}
-{"name": "@shop/pdf-pro-185", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the web team. Used by 3 services."}
-{"name": "@shop/log-core-186", "description": "Helpers for log work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Stable."}
-{"name": "@shop/pdf-kit-187", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Stable."}
-{"name": "@shop/rate-limit-core-188", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/config-utils-189", "description": "Helpers for config work. It writes to local disk under ./var. Owned by the search team. Beta."}
-{"name": "@shop/pdf-kit-190", "description": "Helpers for pdf work. It runs work on the calling thread only. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/metrics-next-191", "description": "Helpers for metrics work. It runs work on the calling thread only. Owned by the infra team. Stable."}
-{"name": "@shop/mail-legacy-192", "description": "Helpers for mail work. It runs work on the calling thread only. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/csv-next-193", "description": "Helpers for csv work. It is deprecated; new code should not depend on it. Owned by the billing team. Stable."}
-{"name": "@shop/csv-lite-194", "description": "Helpers for csv work. It writes to local disk under ./var. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/pdf-next-195", "description": "Helpers for pdf work. It writes to local disk under ./var. Owned by the docs team. Unmaintained since 2024."}
-{"name": "@shop/config-kit-196", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the docs team. Beta."}
-{"name": "@shop/http-kit-197", "description": "Helpers for http work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the worker team. Stable."}
-{"name": "@shop/mail-core-198", "description": "Helpers for mail work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Stable."}
-{"name": "@shop/log-kit-199", "description": "Helpers for log work. It is a thin wrapper over the vendor SDK. Owned by the api team. Beta."}
-{"name": "@shop/queue-next-200", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/feature-flag-utils-201", "description": "Helpers for feature-flag work. It is a thin wrapper over the vendor SDK. Owned by the search team. Stable."}
-{"name": "@shop/queue-core-202", "description": "Helpers for queue work. It writes to local disk under ./var. Owned by the api team. Used by 3 services."}
-{"name": "@shop/mail-legacy-203", "description": "Helpers for mail work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the worker team. Beta."}
-{"name": "@shop/config-utils-204", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/feature-flag-pro-205", "description": "Helpers for feature-flag work. It writes to local disk under ./var. Owned by the worker team. Beta."}
-{"name": "@shop/feature-flag-lite-206", "description": "Helpers for feature-flag work. It is deprecated; new code should not depend on it. Owned by the api team. Stable."}
-{"name": "@shop/feature-flag-core-207", "description": "Helpers for feature-flag work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Beta."}
-{"name": "@shop/retry-core-208", "description": "Helpers for retry work. It is a thin wrapper over the vendor SDK. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/auth-kit-209", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the api team. Used by 3 services."}
-{"name": "@shop/mail-lite-210", "description": "Helpers for mail work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Unmaintained since 2024."}
-{"name": "@shop/image-next-211", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the web team. Stable."}
-{"name": "@shop/mail-lite-212", "description": "Helpers for mail work. It writes to local disk under ./var. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/log-legacy-213", "description": "Helpers for log work. It is deprecated; new code should not depend on it. Owned by the web team. Stable."}
-{"name": "@shop/image-core-214", "description": "Helpers for image work. It is deprecated; new code should not depend on it. Owned by the web team. Used by 3 services."}
-{"name": "@shop/queue-pro-215", "description": "Helpers for queue work. It runs work on the calling thread only. Owned by the mobile team. Stable."}
-{"name": "@shop/http-legacy-216", "description": "Helpers for http work. It is a thin wrapper over the vendor SDK. Owned by the search team. Used by 3 services."}
-{"name": "@shop/rate-limit-utils-217", "description": "Helpers for rate-limit work. It is deprecated; new code should not depend on it. Owned by the web team. Beta."}
-{"name": "@shop/log-next-218", "description": "Helpers for log work. It keeps everything in memory, so state is lost when the process exits. Owned by the search team. Beta."}
-{"name": "@shop/queue-lite-219", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the infra team. Stable."}
-{"name": "@shop/http-core-220", "description": "Helpers for http work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Used by 3 services."}
-{"name": "@shop/log-utils-221", "description": "Helpers for log work. It writes to local disk under ./var. Owned by the search team. Beta."}
-{"name": "@shop/log-legacy-222", "description": "Helpers for log work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/pdf-pro-223", "description": "Helpers for pdf work. It is deprecated; new code should not depend on it. Owned by the worker team. Beta."}
-{"name": "@shop/auth-core-224", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the search team. Stable."}
-{"name": "@shop/http-legacy-225", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the infra team. Unmaintained since 2024."}
-{"name": "@shop/mail-utils-226", "description": "Helpers for mail work. It writes to local disk under ./var. Owned by the api team. Stable."}
-{"name": "@shop/pdf-lite-227", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Beta."}
-{"name": "@shop/image-kit-228", "description": "Helpers for image work. It runs work on the calling thread only. Owned by the infra team. Beta."}
-{"name": "@shop/rate-limit-lite-229", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the worker team. Used by 3 services."}
-{"name": "@shop/feature-flag-core-230", "description": "Helpers for feature-flag work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Used by 3 services."}
-{"name": "@shop/feature-flag-core-231", "description": "Helpers for feature-flag work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Used by 3 services."}
-{"name": "@shop/i18n-utils-232", "description": "Helpers for i18n work. It is deprecated; new code should not depend on it. Owned by the worker team. Used by 3 services."}
-{"name": "@shop/queue-pro-233", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the infra team. Beta."}
-{"name": "@shop/pdf-utils-234", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the infra team. Stable."}
-{"name": "@shop/image-next-235", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the search team. Used by 3 services."}
-{"name": "@shop/pdf-core-236", "description": "Helpers for pdf work. It is deprecated; new code should not depend on it. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/cache-core-237", "description": "Helpers for cache work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Beta."}
-{"name": "@shop/i18n-core-238", "description": "Helpers for i18n work. It is deprecated; new code should not depend on it. Owned by the search team. Used by 3 services."}
-{"name": "@shop/rate-limit-utils-239", "description": "Helpers for rate-limit work. It runs work on the calling thread only. Owned by the docs team. Stable."}
-{"name": "@shop/feature-flag-lite-240", "description": "Helpers for feature-flag work. It is deprecated; new code should not depend on it. Owned by the web team. Used by 3 services."}
-{"name": "@shop/image-lite-241", "description": "Helpers for image work. It is deprecated; new code should not depend on it. Owned by the docs team. Used by 3 services."}
-{"name": "@shop/rate-limit-pro-242", "description": "Helpers for rate-limit work. It is a thin wrapper over the vendor SDK. Owned by the web team. Stable."}
-{"name": "@shop/image-core-243", "description": "Helpers for image work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Unmaintained since 2024."}
-{"name": "@shop/queue-utils-244", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Beta."}
-{"name": "@shop/log-core-245", "description": "Helpers for log work. It is deprecated; new code should not depend on it. Owned by the api team. Beta."}
-{"name": "@shop/queue-core-246", "description": "Helpers for queue work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Beta."}
-{"name": "@shop/cache-core-247", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the mobile team. Unmaintained since 2024."}
-{"name": "@shop/i18n-pro-248", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the billing team. Used by 3 services."}
-{"name": "@shop/image-next-249", "description": "Helpers for image work. It writes to local disk under ./var. Owned by the worker team. Stable."}
+{"name": "@shop/mail-lite-179", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the reports team. Unmaintained since 2024."}
+{"name": "@shop/config-pro-180", "description": "Helpers for config work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Stable."}
+{"name": "@shop/image-kit-181", "description": "Helpers for image work. It is a thin wrapper over the vendor SDK. Owned by the admin team. Stable."}
+{"name": "@shop/metrics-core-182", "description": "Helpers for metrics work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Stable."}
+{"name": "@shop/retry-pro-183", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the notifier team. Unmaintained since 2024."}
+{"name": "@shop/log-pro-184", "description": "Helpers for log work. It is deprecated; new code should not depend on it. Owned by the notifier team. Stable."}
+{"name": "@shop/retry-next-185", "description": "Helpers for retry work. It is a thin wrapper over the vendor SDK. Owned by the gateway team. Unmaintained since 2024."}
+{"name": "@shop/queue-utils-186", "description": "Helpers for queue work. It writes to local disk under ./var. Owned by the gateway team. Unmaintained since 2024."}
+{"name": "@shop/mail-kit-187", "description": "Helpers for mail work. It is a thin wrapper over the vendor SDK. Owned by the notifier team. Beta."}
+{"name": "@shop/auth-next-188", "description": "Helpers for auth work. It runs work on the calling thread only. Owned by the web team. Stable."}
+{"name": "@shop/pdf-pro-189", "description": "Helpers for pdf work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/cache-lite-190", "description": "Helpers for cache work. It writes to local disk under ./var. Owned by the mobile team. Unmaintained since 2024."}
+{"name": "@shop/config-lite-191", "description": "Helpers for config work. It runs work on the calling thread only. Owned by the media team. Stable."}
+{"name": "@shop/queue-core-192", "description": "Helpers for queue work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Used by 3 services."}
+{"name": "@shop/log-legacy-193", "description": "Helpers for log work. It keeps everything in memory, so state is lost when the process exits. Owned by the billing team. Stable."}
+{"name": "@shop/rate-limit-utils-194", "description": "Helpers for rate-limit work. It is a thin wrapper over the vendor SDK. Owned by the infra team. Used by 3 services."}
+{"name": "@shop/pdf-next-195", "description": "Helpers for pdf work. It runs work on the calling thread only. Owned by the ledger team. Used by 3 services."}
+{"name": "@shop/i18n-next-196", "description": "Helpers for i18n work. It runs work on the calling thread only. Owned by the worker team. Used by 3 services."}
+{"name": "@shop/auth-next-197", "description": "Helpers for auth work. It keeps everything in memory, so state is lost when the process exits. Owned by the gateway team. Beta."}
+{"name": "@shop/csv-utils-198", "description": "Helpers for csv work. It writes to local disk under ./var. Owned by the search team. Beta."}
+{"name": "@shop/i18n-kit-199", "description": "Helpers for i18n work. It runs work on the calling thread only. Owned by the exports team. Stable."}
+{"name": "@shop/retry-legacy-200", "description": "Helpers for retry work. It keeps everything in memory, so state is lost when the process exits. Owned by the docs team. Stable."}
+{"name": "@shop/csv-legacy-201", "description": "Helpers for csv work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the reports team. Unmaintained since 2024."}
+{"name": "@shop/pdf-core-202", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the gateway team. Beta."}
+{"name": "@shop/rate-limit-legacy-203", "description": "Helpers for rate-limit work. It keeps everything in memory, so state is lost when the process exits. Owned by the catalog team. Used by 3 services."}
+{"name": "@shop/feature-flag-next-204", "description": "Helpers for feature-flag work. It runs work on the calling thread only. Owned by the catalog team. Stable."}
+{"name": "@shop/cache-next-205", "description": "Helpers for cache work. It keeps everything in memory, so state is lost when the process exits. Owned by the admin team. Stable."}
+{"name": "@shop/i18n-next-206", "description": "Helpers for i18n work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the search team. Stable."}
+{"name": "@shop/metrics-lite-207", "description": "Helpers for metrics work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the billing team. Unmaintained since 2024."}
+{"name": "@shop/cache-pro-208", "description": "Helpers for cache work. It keeps everything in memory, so state is lost when the process exits. Owned by the api team. Beta."}
+{"name": "@shop/rate-limit-utils-209", "description": "Helpers for rate-limit work. It is a thin wrapper over the vendor SDK. Owned by the exports team. Beta."}
+{"name": "@shop/metrics-core-210", "description": "Helpers for metrics work. It runs work on the calling thread only. Owned by the web team. Stable."}
+{"name": "@shop/rate-limit-core-211", "description": "Helpers for rate-limit work. It is a thin wrapper over the vendor SDK. Owned by the admin team. Unmaintained since 2024."}
+{"name": "@shop/auth-utils-212", "description": "Helpers for auth work. It is a thin wrapper over the vendor SDK. Owned by the worker team. Stable."}
+{"name": "@shop/cache-legacy-213", "description": "Helpers for cache work. It is a thin wrapper over the vendor SDK. Owned by the billing team. Beta."}
+{"name": "@shop/config-kit-214", "description": "Helpers for config work. It is deprecated; new code should not depend on it. Owned by the search team. Used by 3 services."}
+{"name": "@shop/csv-legacy-215", "description": "Helpers for csv work. It keeps everything in memory, so state is lost when the process exits. Owned by the web team. Unmaintained since 2024."}
+{"name": "@shop/csv-kit-216", "description": "Helpers for csv work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the catalog team. Beta."}
+{"name": "@shop/pdf-legacy-217", "description": "Helpers for pdf work. It keeps everything in memory, so state is lost when the process exits. Owned by the media team. Stable."}
+{"name": "@shop/http-core-218", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the media team. Unmaintained since 2024."}
+{"name": "@shop/feature-flag-core-219", "description": "Helpers for feature-flag work. It runs work on the calling thread only. Owned by the catalog team. Unmaintained since 2024."}
+{"name": "@shop/http-next-220", "description": "Helpers for http work. It keeps everything in memory, so state is lost when the process exits. Owned by the ledger team. Stable."}
+{"name": "@shop/auth-pro-221", "description": "Helpers for auth work. It runs work on the calling thread only. Owned by the docs team. Beta."}
+{"name": "@shop/i18n-next-222", "description": "Helpers for i18n work. It keeps everything in memory, so state is lost when the process exits. Owned by the ledger team. Used by 3 services."}
+{"name": "@shop/metrics-legacy-223", "description": "Helpers for metrics work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the docs team. Beta."}
+{"name": "@shop/csv-kit-224", "description": "Helpers for csv work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Stable."}
+{"name": "@shop/http-utils-225", "description": "Helpers for http work. It writes to local disk under ./var. Owned by the admin team. Used by 3 services."}
+{"name": "@shop/auth-next-226", "description": "Helpers for auth work. It writes to local disk under ./var. Owned by the media team. Stable."}
+{"name": "@shop/queue-lite-227", "description": "Helpers for queue work. It runs work on the calling thread only. Owned by the catalog team. Beta."}
+{"name": "@shop/auth-lite-228", "description": "Helpers for auth work. It writes to local disk under ./var. Owned by the infra team. Stable."}
+{"name": "@shop/csv-utils-229", "description": "Helpers for csv work. It is a thin wrapper over the vendor SDK. Owned by the gateway team. Beta."}
+{"name": "@shop/cache-legacy-230", "description": "Helpers for cache work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the notifier team. Unmaintained since 2024."}
+{"name": "@shop/retry-next-231", "description": "Helpers for retry work. It is deprecated; new code should not depend on it. Owned by the notifier team. Stable."}
+{"name": "@shop/rate-limit-kit-232", "description": "Helpers for rate-limit work. It runs work on the calling thread only. Owned by the media team. Stable."}
+{"name": "@shop/config-kit-233", "description": "Helpers for config work. It keeps everything in memory, so state is lost when the process exits. Owned by the exports team. Stable."}
+{"name": "@shop/queue-utils-234", "description": "Helpers for queue work. It keeps everything in memory, so state is lost when the process exits. Owned by the mobile team. Stable."}
+{"name": "@shop/auth-kit-235", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the reports team. Beta."}
+{"name": "@shop/retry-kit-236", "description": "Helpers for retry work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the infra team. Used by 3 services."}
+{"name": "@shop/config-next-237", "description": "Helpers for config work. It is a thin wrapper over the vendor SDK. Owned by the web team. Stable."}
+{"name": "@shop/i18n-legacy-238", "description": "Helpers for i18n work. It writes to local disk under ./var. Owned by the worker team. Beta."}
+{"name": "@shop/auth-lite-239", "description": "Helpers for auth work. It keeps everything in memory, so state is lost when the process exits. Owned by the catalog team. Beta."}
+{"name": "@shop/mail-pro-240", "description": "Helpers for mail work. It runs work on the calling thread only. Owned by the exports team. Unmaintained since 2024."}
+{"name": "@shop/auth-pro-241", "description": "Helpers for auth work. It is deprecated; new code should not depend on it. Owned by the exports team. Stable."}
+{"name": "@shop/mail-legacy-242", "description": "Helpers for mail work. It runs work on the calling thread only. Owned by the search team. Used by 3 services."}
+{"name": "@shop/feature-flag-pro-243", "description": "Helpers for feature-flag work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the exports team. Used by 3 services."}
+{"name": "@shop/rate-limit-lite-244", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the mobile team. Stable."}
+{"name": "@shop/mail-lite-245", "description": "Helpers for mail work. It is deprecated; new code should not depend on it. Owned by the search team. Unmaintained since 2024."}
+{"name": "@shop/cache-pro-246", "description": "Helpers for cache work. It runs work on the calling thread only. Owned by the ledger team. Used by 3 services."}
+{"name": "@shop/rate-limit-pro-247", "description": "Helpers for rate-limit work. It stores its state in Postgres and picks up where it left off after a restart. Owned by the worker team. Unmaintained since 2024."}
+{"name": "@shop/log-lite-248", "description": "Helpers for log work. It is deprecated; new code should not depend on it. Owned by the gateway team. Stable."}
+{"name": "@shop/csv-core-249", "description": "Helpers for csv work. It keeps everything in memory, so state is lost when the process exits. Owned by the admin team. Stable."}

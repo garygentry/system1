@@ -66,6 +66,17 @@ describe("loadConfig", () => {
     })
   })
 
+  it("defaults maxChoices, and refuses one that isn't a whole number of at least 2", () => {
+    const base =
+      "{ id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2"
+    const ok = setup(`profiles:\n  - ${base} }\n`)
+    expect(loadConfig({ cwd: ok.repo, env: {}, home: ok.home }).profiles[0]?.maxChoices).toBe(255)
+    for (const bad of ['"x"', "null", "0", "1.5"]) {
+      const b = setup(`profiles:\n  - ${base}, maxChoices: ${bad} }\n`)
+      expect(() => loadConfig({ cwd: b.repo, env: {}, home: b.home }), bad).toThrow(/maxChoices/)
+    }
+  })
+
   describe("API key", () => {
     it("prefers the environment", () => {
       const { repo, home } = setup()

@@ -5,12 +5,13 @@
 #         each harness does it: live network from the agent's shell
 #   many  `decide many --spec smoke` via the ask skill, in replay (no key, no spend)
 set -eu
-REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 # Outside this repo: Codex and Pi read AGENTS.md from parent directories, and
 # this repo's plans would steer the agent. Never /tmp either (Codex refuses a
 # CODEX_HOME there).
 SMOKE="${DECISIONS_SMOKE_DIR:-$HOME/.cache/decisions-smoke}"
-case "$SMOKE" in "$REPO"/*) echo "smoke: DECISIONS_SMOKE_DIR must be outside $REPO" >&2; exit 2 ;; esac
+mkdir -p "$SMOKE" && SMOKE=$(CDPATH= cd -- "$SMOKE" && pwd -P)
+case "$SMOKE" in "$REPO"|"$REPO"/*) echo "smoke: DECISIONS_SMOKE_DIR must be outside $REPO" >&2; exit 2 ;; esac
 TIMEOUT=${SMOKE_TIMEOUT:-240}
 
 # Markers match only real CLI output, never SKILL.md text (Codex echoes skills).
@@ -26,6 +27,8 @@ MANY_PROMPT="Use the ask skill from the decisions plugin to run the smoke spec o
 # No run needs the key: ping is keyless and many replays. Keep it out of every
 # agent shell so nothing can be sent live by accident.
 unset OPENROUTER_API_KEY
+# Nothing from a parent harness (session ids, effort, entrypoints) leaks in.
+for v in $(env | sed -n 's/^\(CLAUDE[A-Z_]*\|CODEX_[A-Z_]*\|PI_[A-Z_]*\|AI_AGENT\)=.*/\1/p'); do unset "$v"; done
 
 # Codex and Pi do not add plugin bin/ to PATH; stand in for a global install.
 # Claude must not get this: its smoke proves the plugin's own bin/ wiring.

@@ -90,4 +90,18 @@ describe("budget", () => {
       }),
     ).rejects.toMatchObject({ code: "invalid-request", details: { options: 256, maxChoices: 255 } })
   })
+
+  it("join: one state from every source, after excludes, each part headed by its id", async () => {
+    const cwd = temp({ "a.ts": "alpha", "b.log": "beta", ".env.production": "SECRET=1" })
+    const r = await prepare({
+      sources: [{ kind: "glob", patterns: ["**/*"] }],
+      split: { kind: "join" },
+      questions,
+      profile,
+      cwd,
+    })
+    expect(r.items).toHaveLength(1)
+    expect(r.items[0]?.state).toBe("--- a.ts ---\nalpha\n\n--- b.log ---\nbeta")
+    expect(r.skipped.map((s) => [s.path, s.reason])).toEqual([[".env.production", "excluded"]])
+  })
 })

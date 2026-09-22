@@ -124,4 +124,41 @@ examples:
     expect(r.examples[0]).toMatchObject({ id: "env", status: "withheld" })
     expect(r.passed).toBe(false)
   })
+
+  it("withholds an example whose file is outside the repo or too large, and still checks the rest", async () => {
+    const spec = `description: x
+questions:
+  a: { type: noul, instructions: A. }
+examples:
+  - { id: outside, file: "../../../../etc/hostname", expect: { a: true } }
+  - { id: huge, file: big.txt, expect: { a: true } }
+  - { id: fine, state: "auth", expect: { a: true } }
+  - { id: row, state: { text: "auth row" }, expect: { a: true } }
+`
+    const { ctx, model, cwd } = rig(spec)
+    const { writeFileSync } = await import("node:fs")
+    writeFileSync(`${cwd}/big.txt`, "x ".repeat(80_000))
+    const r = await runSpecCheck(ctx, { spec: "authy", mode: "record" })
+    expect(model.calls).toBe(2)
+    expect(Object.fromEntries(r.examples.map((e) => [e.id, e.status]))).toEqual({
+      outside: "withheld",
+      huge: "withheld",
+      fine: "pass",
+      row: "pass",
+    })
+    expect(r.examples[0]?.reason).toContain("outside the repo")
+    expect(r.examples[1]?.reason).toMatch(/tokens/)
+  })
+
+  it("reports a filter expectation as written", async () => {
+    const spec = `description: x
+questions:
+  a: { type: noul, instructions: A. }
+examples:
+  - { id: e, state: "plain", expect: { a: ">=0.9" } }
+`
+    const { ctx } = rig(spec)
+    const r = await runSpecCheck(ctx, { spec: "authy", mode: "record" })
+    expect(r.examples[0]?.failures).toEqual([{ question: "a", expected: ">=0.9" }])
+  })
 })

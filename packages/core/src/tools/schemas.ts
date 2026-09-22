@@ -76,7 +76,7 @@ export const SpecCheckInput = Type.Object({
   /** Spec name (repo → user → bundled) or path. */
   spec: Type.String({ minLength: 1 }),
   /** `replay` (default) checks against committed fixtures; `record` captures fresh answers. */
-  mode: Type.Optional(Mode),
+  mode: Type.Optional(Type.Union([Type.Literal("replay"), Type.Literal("record")])),
   model: Type.Optional(Type.String()),
   /** Proceed past the spend guard. */
   confirm: Type.Optional(Type.Boolean()),

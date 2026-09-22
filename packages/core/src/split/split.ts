@@ -14,10 +14,12 @@ export type SplitSpec =
   | { kind: "hunk" }
   | { kind: "lines"; size: number; overlap: number }
   | { kind: "row" }
+  /** Every source as one state, joined after excludes (see `prepare`). */
+  | { kind: "join" }
 
-/** Parse `file`, `hunk`, `row`, `lines:40` or `lines:40/10`. */
+/** Parse `file`, `hunk`, `row`, `join`, `lines:40` or `lines:40/10`. */
 export function parseSplit(text: string): SplitSpec {
-  if (text === "file" || text === "hunk" || text === "row") return { kind: text }
+  if (text === "file" || text === "hunk" || text === "row" || text === "join") return { kind: text }
   const match = /^lines:(\d+)(?:\/(\d+))?$/.exec(text)
   if (match) {
     const size = Number(match[1])
@@ -32,12 +34,28 @@ export function parseSplit(text: string): SplitSpec {
   }
   throw new DecisionsError(
     "invalid-request",
-    `Unknown split "${text}" (file, hunk, row, lines:N[/overlap])`,
+    `Unknown split "${text}" (file, hunk, row, join, lines:N[/overlap])`,
   )
 }
 
 export function split(documents: readonly Document[], spec: SplitSpec): Item[] {
-  return documents.flatMap((doc) => splitOne(doc, spec))
+  // `join` splits by file first, so excludes still see each file on its own.
+  const each: SplitSpec = spec.kind === "join" ? { kind: "file" } : spec
+  return documents.flatMap((doc) => splitOne(doc, each))
+}
+
+/**
+ * One item from many, each part headed by its id. Used by `join` after
+ * excludes have run, so a secret-shaped file is never folded in.
+ */
+export function joinItems(items: readonly Item[]): Item[] {
+  if (items.length <= 1) return [...items]
+  const text = items
+    .map(
+      (i) => `--- ${i.id} ---\n${typeof i.state === "string" ? i.state : JSON.stringify(i.state)}`,
+    )
+    .join("\n\n")
+  return [{ id: `joined(${items.length})`, state: text }]
 }
 
 function splitOne(doc: Document, spec: SplitSpec): Item[] {
@@ -46,8 +64,9 @@ function splitOne(doc: Document, spec: SplitSpec): Item[] {
   const start = doc.startLine ?? 1
   switch (spec.kind) {
     case "file":
+    case "join":
     case "row":
-      if (spec.kind === "file")
+      if (spec.kind === "file" || spec.kind === "join")
         return [base(doc, doc.id, text, doc.kind === "file" ? span(start, text) : undefined)]
       return text
         .split("\n")

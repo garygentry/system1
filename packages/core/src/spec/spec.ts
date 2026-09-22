@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs"
-import { basename, extname, isAbsolute, join, resolve } from "node:path"
+import { basename, extname, isAbsolute, join, relative, resolve } from "node:path"
 import { type Static, Type } from "typebox"
 import { Value } from "typebox/value"
 import { parse } from "yaml"
@@ -7,6 +7,7 @@ import { DecisionsError } from "../errors.js"
 import type { QuestionSet } from "../model/types.js"
 import { assertQuestionSet } from "../model/validate.js"
 import { parseFilter, parseSort } from "../project/project.js"
+import { parseFileRef } from "../sources/read.js"
 import { parseExpect } from "./expect.js"
 
 /**
@@ -37,8 +38,8 @@ export const SpecSchema = Type.Object({
     Type.Array(
       Type.Object({
         id: Type.String({ minLength: 1 }),
-        /** The text to judge. Give this or `file`. */
-        state: Type.Optional(Type.String()),
+        /** The text (or a JSON value, sent as its JSON text) to judge. Give this or `file`. */
+        state: Type.Optional(Type.Unknown()),
         /** A repo file to judge, `path` or `path:START-END`. Give this or `state`. */
         file: Type.Optional(Type.String()),
         expect: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
@@ -97,7 +98,6 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
   const questions = spec.questions as QuestionSet
   for (const text of spec.keep ?? []) wrap(file, () => parseFilter(text, questions))
   if (spec.sort) wrap(file, () => parseSort(spec.sort as string, questions))
-  checkExamples(file, spec, questions)
   const name = basename(file, extname(file))
   if (!NAME.test(name)) {
     throw new DecisionsError(
@@ -109,7 +109,12 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
   return { ...spec, questions, name, file, origin }
 }
 
-function checkExamples(file: string, spec: SpecFile, questions: QuestionSet): void {
+/**
+ * Problems with a spec's examples. Checked by `spec validate` and `spec check`
+ * only, so a bad example never stops `ask` or `many` from using the spec.
+ * With `repoRoot`, each example `file` must also exist inside the repo.
+ */
+export function exampleProblems(spec: Spec, repoRoot?: string): string[] {
   const problems: string[] = []
   const ids = new Set<string>()
   for (const [i, example] of (spec.examples ?? []).entries()) {
@@ -121,20 +126,40 @@ function checkExamples(file: string, spec: SpecFile, questions: QuestionSet): vo
     }
     if (example.expect) {
       try {
-        parseExpect(example.expect, questions, where)
+        parseExpect(example.expect, spec.questions, where)
       } catch (error) {
         problems.push((error as Error).message)
       }
     }
+    if (example.file !== undefined && repoRoot) {
+      const why = exampleFileProblem(example.file, repoRoot)
+      if (why) problems.push(`${where}: file ${example.file} ${why}`)
+    }
   }
+  return problems
+}
+
+/**
+ * Why an example's `file` can't be used, or undefined. Only files inside the
+ * repo: a committed spec must not be able to read (and send) anything else.
+ */
+export function exampleFileProblem(ref: string, repoRoot: string): string | undefined {
+  const { path } = parseFileRef(ref)
+  const full = resolve(repoRoot, path)
+  const rel = relative(repoRoot, full)
+  if (isAbsolute(path) || rel.startsWith("..") || isAbsolute(rel)) return "is outside the repo"
+  if (!existsSync(full)) return "does not exist"
+  return undefined
+}
+
+/** @throws DecisionsError `invalid-request` listing every example problem. */
+export function assertExamples(spec: Spec, repoRoot?: string): void {
+  const problems = exampleProblems(spec, repoRoot)
   if (problems.length > 0) {
     throw new DecisionsError(
       "invalid-request",
-      `${file}: invalid examples:\n  ${problems.join("\n  ")}`,
-      {
-        file,
-        problems,
-      },
+      `${spec.file}: invalid examples:\n  ${problems.join("\n  ")}`,
+      { file: spec.file, problems },
     )
   }
 }

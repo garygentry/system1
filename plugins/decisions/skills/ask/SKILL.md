@@ -52,12 +52,16 @@ name:
 
 - **Sources:** `--glob`, `--file path[:L1-L2]`, `--diff <range>`, `--jsonl`, `--text`, `--stdin`.
 - **Splitting a source into items:** `--split file|hunk|row|lines:N`.
+- **Several sources as one state:** `--split join`, e.g. a diff plus a test log for a criteria check. Excludes still apply to each file first.
 - **Filtering and ranking** (`many` only): `--keep`, `--sort`, `--limit`.
+- **Inline `--questions` YAML:** keep it inside single quotes. Don't put an apostrophe or `: ` inside a value. For anything longer, write the YAML to a file and pass `--questions <file>`.
 - **Saved question sets:** `decide spec list --format brief` lists them, and `--spec <name>` uses one. Add a source only when the user names one; the spec's own default source is part of its design.
 
 ## Reading the answers
 
-- **The first line** of `brief` output summarises the run: what was kept, undecided and dropped; whether the answers were `live` or a `replay`; and the measured cost. Report it as printed.
+- **The first line** of `brief` output summarises the run. Report it as printed.
+  - For `many`, it gives the counts kept, undecided and dropped, then `live` or `replay`, then the measured cost.
+  - For `ask`, it gives the item, then `live` or `replay`, the latency and the measured cost. Each answer follows on its own line, and a flat one is marked `UNDECIDED`.
 - **Undecided** items came back too flat to call either way. **Read them yourself, or show them to the user.** Never count them as kept or dropped.
 - **A noul of 0.5** means "can't tell". The model is decisive, so values of 1.0 and 0.0 are common, and they aren't a sign of error.
 - **Score levels start at 0.** The score is a weighted mean, so it can fall between levels.

@@ -20,17 +20,30 @@ import {
   writeFileSync,
 } from "node:fs"
 import { homedir } from "node:os"
-import { dirname, join } from "node:path"
+import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..")
 const EVALS = join(ROOT, "tools/evals")
-const WORK = process.env.DECISIONS_EVAL_DIR ?? join(homedir(), ".cache/decisions-evals")
+const WORK = workDir(process.env.DECISIONS_EVAL_DIR)
 const TIMEOUT_MS = Number(process.env.EVAL_TIMEOUT_MS ?? 240_000)
 const SKILLS = ["ask", "design", "setup"] as const
 type Skill = (typeof SKILLS)[number]
 type Harness = "claude" | "codex" | "pi"
+
+/**
+ * Resolved, and refused when it is empty or anywhere inside this repo: every
+ * run deletes and recreates directories under it.
+ */
+export function workDir(raw: string | undefined, root = ROOT): string {
+  const dir = resolve(raw?.trim() ? raw : join(homedir(), ".cache/decisions-evals"))
+  const rel = relative(root, dir)
+  if (rel === "" || !(rel.startsWith("..") || resolve(rel) === rel)) {
+    throw new Error(`DECISIONS_EVAL_DIR must be outside ${root} (got ${dir})`)
+  }
+  return dir
+}
 
 export interface Case {
   skill: Skill
@@ -56,48 +69,104 @@ export function loadCases(file: string = join(EVALS, "routing.yaml")): Case[] {
   )
 }
 
-/** Which plugin skills a session loaded, read from its JSON event stream. */
+/** Which of this plugin's skills a session loaded, read from its JSON event stream. */
 export function loadedSkills(harness: Harness, output: string): Set<Skill> {
   const found = new Set<Skill>()
-  const byPath = (text: string) => {
-    for (const s of SKILLS) if (text.includes(`skills/${s}/SKILL.md`)) found.add(s)
-  }
-  for (const line of output.split("\n")) {
-    let event: unknown
+  const events = output.split("\n").flatMap((line) => {
     try {
-      event = JSON.parse(line)
+      return [JSON.parse(line) as unknown]
     } catch {
-      continue
+      return []
     }
+  })
+  const failed = failedToolIds(events)
+  for (const event of events) {
     for (const call of toolCalls(harness, event)) {
+      if (call.id && failed.has(call.id)) continue // refused, e.g. a user-only skill
       if (call.name === "Skill") {
-        const name = String((call.input as { skill?: string }).skill ?? "")
-          .split(":")
-          .pop()
-        if (SKILLS.includes(name as Skill)) found.add(name as Skill)
+        // Only this plugin's skills: Claude also has built-ins such as `design`.
+        const m = /^decisions:(\w+)$/.exec(String((call.input as { skill?: string }).skill ?? ""))
+        if (m && SKILLS.includes(m[1] as Skill)) found.add(m[1] as Skill)
+        continue
       }
-      byPath(JSON.stringify(call.input))
+      for (const skill of SKILLS) if (reads(call, skill)) found.add(skill)
     }
   }
   return found
 }
 
 /**
- * Whether the session actually ran to an end. Without this, a harness that
- * fails to start (a bad flag, no auth) "passes" every negative.
+ * A read of the skill's SKILL.md: a file-read tool on it, or a shell command
+ * that prints it. A search that merely names the path (`grep … SKILL.md`)
+ * doesn't count.
+ */
+function reads(call: { name: string; input: unknown }, skill: Skill): boolean {
+  const path = `skills/${skill}/SKILL.md`
+  if (call.name === "Read" || call.name === "read") {
+    const input = call.input as { file_path?: string; path?: string }
+    return String(input.file_path ?? input.path ?? "").endsWith(path)
+  }
+  if (call.name === "exec" || call.name === "bash" || call.name === "Bash") {
+    const command = String(
+      typeof call.input === "string"
+        ? call.input
+        : ((call.input as { command?: string }).command ?? ""),
+    )
+    return new RegExp(
+      `\\b(cat|sed|head|less|nl|bat)\\b[^|;&]*${path.replace(/[/.]/g, "\\$&")}`,
+    ).test(command)
+  }
+  return false
+}
+
+/** Claude tool calls whose result came back as an error. */
+function failedToolIds(events: unknown[]): Set<string> {
+  const ids = new Set<string>()
+  for (const e of events as Array<{ type?: string; message?: { content?: unknown } }>) {
+    if (e?.type !== "user" || !Array.isArray(e.message?.content)) continue
+    for (const c of e.message.content as Array<{
+      type?: string
+      tool_use_id?: string
+      is_error?: boolean
+    }>) {
+      if (c.type === "tool_result" && c.is_error && c.tool_use_id) ids.add(c.tool_use_id)
+    }
+  }
+  return ids
+}
+
+/**
+ * Whether the session ran to a clean end. Without this, a harness that fails
+ * to start, or dies on an API error, "passes" every negative.
  */
 export function completed(harness: Harness, output: string): boolean {
-  const marker = {
-    claude: '"type":"result"',
-    codex: '"type":"turn.completed"',
-    pi: '"type":"agent_end"',
-  }[harness]
-  return output.includes(marker)
+  const events = output.split("\n").flatMap((line) => {
+    try {
+      return [JSON.parse(line) as Record<string, unknown>]
+    } catch {
+      return []
+    }
+  })
+  if (harness === "claude") {
+    return events.some((e) => e.type === "result" && e.subtype === "success" && e.is_error !== true)
+  }
+  if (harness === "codex") {
+    const failed = events.some((e) => e.type === "turn.failed" || e.type === "error")
+    return !failed && events.some((e) => e.type === "turn.completed")
+  }
+  const end = events.find((e) => e.type === "agent_end") as { stopReason?: string } | undefined
+  const last = [...events].reverse().find((e) => e.type === "message_end") as
+    | { message?: { stopReason?: string } }
+    | undefined
+  return end !== undefined && end.stopReason !== "error" && last?.message?.stopReason !== "error"
 }
 
 /** Tool calls only: a skill's path in a system prompt or a reply doesn't count. */
-function toolCalls(harness: Harness, event: unknown): Array<{ name: string; input: unknown }> {
-  type Content = { type?: string; name?: string; input?: unknown }
+function toolCalls(
+  harness: Harness,
+  event: unknown,
+): Array<{ id?: string; name: string; input: unknown }> {
+  type Content = { type?: string; id?: string; name?: string; input?: unknown }
   type Event = {
     type?: string
     message?: { content?: Content[] }
@@ -109,7 +178,7 @@ function toolCalls(harness: Harness, event: unknown): Array<{ name: string; inpu
   if (harness === "claude" && e.type === "assistant") {
     return (e.message?.content ?? [])
       .filter((c) => c.type === "tool_use")
-      .map((c) => ({ name: String(c.name), input: c.input }))
+      .map((c) => ({ ...(c.id ? { id: c.id } : {}), name: String(c.name), input: c.input }))
   }
   if (harness === "codex" && e.item?.type === "command_execution" && e.type === "item.started") {
     return [{ name: "exec", input: e.item.command }]
@@ -140,25 +209,83 @@ function run(
   timeoutMs = 60_000,
 ): Promise<string> {
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] })
+    // Its own process group, so a timeout also kills whatever it spawned
+    // (a grandchild holding stdout open would otherwise keep us waiting).
+    const child = spawn(cmd, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"], detached: true })
     let out = ""
-    child.stdout.on("data", (d) => (out += d))
-    child.stderr.on("data", (d) => (out += d))
-    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs)
-    child.on("close", () => {
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
       clearTimeout(timer)
       resolve(out)
-    })
+    }
+    child.stdout.on("data", (d) => (out += d))
+    child.stderr.on("data", (d) => (out += d))
+    const timer = setTimeout(() => {
+      try {
+        process.kill(-(child.pid as number), "SIGKILL")
+      } catch {}
+      finish()
+    }, timeoutMs)
+    child.on("close", finish)
   })
 }
 
 function baseEnv(): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, DECISIONS_REPLAY: "1" }
-  delete env.OPENROUTER_API_KEY
-  // Parent-harness session ids would mislabel the runs.
-  delete env.CLAUDE_CODE_SESSION_ID
-  delete env.CLAUDECODE
+  const env: NodeJS.ProcessEnv = {}
+  // Nothing from a parent harness (session ids, effort, entrypoints) leaks in.
+  for (const [k, v] of Object.entries(process.env)) {
+    if (/^(CLAUDE|CODEX_|PI_|AI_AGENT$|OPENROUTER_API_KEY$|DECISIONS_)/.test(k)) continue
+    env[k] = v
+  }
+  env.DECISIONS_REPLAY = "1"
+  // The shim runs this checkout's CLI without its path leading back here.
+  env.DECISIONS_CLI = join(ROOT, "packages/cli/dist/bundle/decide.mjs")
+  env.PATH = `${join(PKG, "plugins/decisions/bin")}:${env.PATH}`
   return env
+}
+
+/**
+ * A copy of the plugin outside the repo. Pointing harnesses at the checkout
+ * let agents wander from the skill's path into this repo's plans and source.
+ */
+const PKG = join(WORK, "pkg")
+function stagePlugin(): void {
+  rmSync(PKG, { recursive: true, force: true })
+  cpSync(join(ROOT, "plugins/decisions"), join(PKG, "plugins/decisions"), { recursive: true })
+  cpSync(join(ROOT, ".agents"), join(PKG, ".agents"), { recursive: true })
+  writeFileSync(
+    join(PKG, "package.json"),
+    JSON.stringify({
+      name: "decisions-eval",
+      private: true,
+      pi: { skills: ["./plugins/decisions/skills"] },
+    }),
+  )
+}
+
+/** Pi reads packages from its agent dir: give it one with only auth and the model. */
+function setupPiAgent(): string {
+  const dir = join(WORK, "pi-agent")
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
+  const real = join(homedir(), ".pi/agent")
+  for (const f of ["auth.json", "models-store.json"]) {
+    if (existsSync(join(real, f))) symlinkSync(join(real, f), join(dir, f))
+  }
+  const settings = JSON.parse(readFileSync(join(real, "settings.json"), "utf8")) as Record<
+    string,
+    unknown
+  >
+  writeFileSync(
+    join(dir, "settings.json"),
+    JSON.stringify({
+      defaultProvider: settings.defaultProvider,
+      defaultModel: settings.defaultModel,
+    }),
+  )
+  return dir
 }
 
 async function setupCodexHome(): Promise<string> {
@@ -171,12 +298,12 @@ async function setupCodexHome(): Promise<string> {
     'prefix_rule(pattern = ["decide"], decision = "allow")\n',
   )
   const env = { ...baseEnv(), CODEX_HOME: home }
-  await run("codex", ["plugin", "marketplace", "add", ROOT], WORK, env)
+  await run("codex", ["plugin", "marketplace", "add", PKG], WORK, env)
   await run("codex", ["plugin", "add", "decisions@decisions"], WORK, env)
   return home
 }
 
-async function drive(harness: Harness, dir: string, prompt: string, codexHome?: string) {
+async function drive(harness: Harness, dir: string, prompt: string, home?: string) {
   const env = baseEnv()
   if (harness === "claude") {
     return run(
@@ -184,7 +311,7 @@ async function drive(harness: Harness, dir: string, prompt: string, codexHome?: 
       [
         "-p",
         "--plugin-dir",
-        join(ROOT, "plugins/decisions"),
+        join(PKG, "plugins/decisions"),
         // User settings are skipped by default: their plugins crowd the skill
         // list, and their hooks can rewrite commands past --allowedTools (an
         // `rtk git diff` rewrite once blocked every git call). Set
@@ -212,23 +339,24 @@ async function drive(harness: Harness, dir: string, prompt: string, codexHome?: 
       TIMEOUT_MS,
     )
   }
-  // Codex and Pi don't put plugin bin/ on PATH; stand in for a global install.
-  env.PATH = `${join(ROOT, "plugins/decisions/bin")}:${env.PATH}`
+  // Codex and Pi don't put plugin bin/ on PATH: baseEnv's PATH stands in for
+  // a global install.
   if (harness === "codex") {
     return run(
       "codex",
       ["exec", "--json", "--skip-git-repo-check", prompt],
       dir,
-      { ...env, CODEX_HOME: codexHome },
+      { ...env, CODEX_HOME: home },
       TIMEOUT_MS,
     )
   }
-  await run("pi", ["install", "-l", ROOT], dir, env)
+  const piEnv = { ...env, PI_CODING_AGENT_DIR: home }
+  await run("pi", ["install", "-l", PKG], dir, piEnv)
   return run(
     "pi",
     ["-p", "--mode", "json", "--approve", "--no-session", prompt],
     dir,
-    env,
+    piEnv,
     TIMEOUT_MS,
   )
 }
@@ -248,13 +376,14 @@ async function pool<T, R>(items: T[], width: number, fn: (item: T, i: number) =>
 }
 
 async function evaluate(harness: Harness, cases: Case[], width: number) {
-  const codexHome = harness === "codex" ? await setupCodexHome() : undefined
+  const home =
+    harness === "codex" ? await setupCodexHome() : harness === "pi" ? setupPiAgent() : undefined
   const logs = join(WORK, harness)
   mkdirSync(logs, { recursive: true })
   const rows = await pool(cases, width, async (c, i) => {
     const dir = join(WORK, "runs", `${harness}-${i}`)
     await prepare(dir)
-    const output = await drive(harness, dir, c.prompt, codexHome)
+    const output = await drive(harness, dir, c.prompt, home)
     writeFileSync(join(logs, `${i}-${c.skill}-${c.polarity}.jsonl`), output)
     const loaded = loadedSkills(harness, output)
     const ran = completed(harness, output)
@@ -300,7 +429,7 @@ async function main() {
   const harnesses: Harness[] = target === "all" ? ["claude", "codex", "pi"] : [target as Harness]
   const cases = loadCases(process.env.EVAL_ROUTING).filter((c) => !only || c.skill === only)
   mkdirSync(WORK, { recursive: true })
-  if (WORK.startsWith(ROOT)) throw new Error(`DECISIONS_EVAL_DIR must be outside ${ROOT}`)
+  stagePlugin()
   let ok = true
   const summaries: Array<[Harness, Awaited<ReturnType<typeof evaluate>>]> = []
   for (const h of harnesses) summaries.push([h, await evaluate(h, cases, width)])

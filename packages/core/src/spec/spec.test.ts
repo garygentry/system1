@@ -1,7 +1,14 @@
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { useTempDirs, writeTree } from "../testkit/tmp.js"
-import { listSpecs, loadSpec, parseQuestionSet, parseSpec } from "./spec.js"
+import {
+  assertExamples,
+  exampleProblems,
+  listSpecs,
+  loadSpec,
+  parseQuestionSet,
+  parseSpec,
+} from "./spec.js"
 
 const temp = useTempDirs()
 
@@ -115,20 +122,38 @@ describe("spec examples", () => {
     expect(spec.examples).toHaveLength(4)
   })
 
-  it("collects every example problem at once", () => {
-    expect(() =>
-      parseSpec(
-        withExamples(`  - { id: a, expect: { relevant: true } }
+  it("collects every example problem at once, without stopping the spec from loading", () => {
+    const spec = parseSpec(
+      withExamples(`  - { id: a, expect: { relevant: true } }
   - { id: a, state: "x", file: "y" }
   - { id: c, state: "x", expect: { nope: true } }
   - { id: d, state: "x", expect: { relevant: fix } }
 `),
-        "s.yaml",
-        "repo",
-      ),
-    ).toThrow(
+      "s.yaml",
+      "repo",
+    )
+    expect(() => assertExamples(spec)).toThrow(
       /exactly one of state or file[\s\S]*duplicate id[\s\S]*"nope", which is not a question[\s\S]*a noul takes true or false/,
     )
+  })
+
+  it("accepts a structured state, and refuses example files outside the repo or missing", () => {
+    const root = temp({ "src/a.ts": "x" })
+    const spec = parseSpec(
+      withExamples(`  - { id: row, state: { title: "login broken" }, expect: { relevant: true } }
+  - { id: ok, file: "src/a.ts" }
+  - { id: up, file: "../../etc/hostname" }
+  - { id: abs, file: "/etc/hostname" }
+  - { id: gone, file: "src/missing.ts" }
+`),
+      "s.yaml",
+      "repo",
+    )
+    expect(exampleProblems(spec, root)).toEqual([
+      "examples[2] (up): file ../../etc/hostname is outside the repo",
+      "examples[3] (abs): file /etc/hostname is outside the repo",
+      "examples[4] (gone): file src/missing.ts does not exist",
+    ])
   })
 
   it("checks choice keys and score levels against the question", () => {
@@ -139,7 +164,7 @@ questions:
 examples:
   - { id: a, state: x, expect: { kind: bug, risk: 5 } }
 `
-    expect(() => parseSpec(spec, "s.yaml", "repo")).toThrow(
+    expect(() => assertExamples(parseSpec(spec, "s.yaml", "repo"))).toThrow(
       /"bug", which is not one of its options \(fix, feat\)[\s\S]*a level 0–1/,
     )
   })

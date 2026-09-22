@@ -25,6 +25,29 @@ def maybe(text, p=0.5):
     return text if R.random() < p else ""
 
 
+# Variation, so no corpus collapses into a handful of distinct texts that an
+# agent could dedupe and judge by template (a reviewer caught 80 CI failures
+# reducing to 9 messages).
+CONTEXTS = ["on my iPad", "since the last update", "on Android 15", "for the third day running", "at work",
+            "on the web version", "after reinstalling", "with a slow connection", "on two different phones", ""]
+PEOPLE = ["my partner", "a colleague", "our finance team", "my son", "the whole office", "a friend of mine"]
+
+
+def vary(text):
+    """Reword a template: a context clause somewhere, a person, filler, case and punctuation."""
+    words = text.split(" ")
+    ctx = R.choice(CONTEXTS)
+    if ctx:
+        at = R.randint(0, len(words))
+        words.insert(at, ctx + ("," if at == 0 else ""))
+    if R.random() < 0.3:
+        words.insert(0, pick("Honestly,", "So", "Well,", "FYI", "Ugh,", "Quick one:"))
+    if R.random() < 0.25:
+        words.append(f"({R.choice(PEOPLE)} sees it too)")
+    out = " ".join(w for w in words if w)
+    return out.lower() if R.random() < 0.1 else out
+
+
 def sentence(*parts):
     text = " ".join(p for p in parts if p).strip()
     return text[0].upper() + text[1:]
@@ -79,7 +102,7 @@ def tickets(n=300):
     for i in range(n):
         team = R.choice(list(TICKETS))
         body = R.choice(TICKETS[team]).format(amt=f"${R.randint(5, 400)}.{R.randint(0, 99):02d}", product=R.choice(PRODUCTS))
-        text = sentence(R.choice(OPENERS), body + pick(".", "!", "?", "...", ""), R.choice(CLOSERS))
+        text = sentence(R.choice(OPENERS), vary(body) + pick(".", "!", "?", "...", ""), R.choice(CLOSERS))
         rows.append({"id": f"T-{1000 + i}", "text": text})
     return rows
 
@@ -111,7 +134,7 @@ def reviews(n=400):
         bug = R.random() < 0.3
         core = R.choice(REVIEWS_BUG if bug else REVIEWS_NOT_BUG)
         extra = maybe(pick("Otherwise fine.", "Uninstalling.", "Been using it for years.", "Pixel 8, latest version.", "Please fix."), 0.6)
-        rows.append({"id": f"R-{i + 1}", "stars": R.randint(1, 5), "text": sentence(core + ".", extra)})
+        rows.append({"id": f"R-{i + 1}", "stars": R.randint(1, 5), "text": sentence(vary(core) + ".", extra)})
     return rows
 
 
@@ -149,6 +172,9 @@ def commits(n=300):
     lines = []
     for i in range(n):
         subject = R.choice(BEHAVIOUR if R.random() < 0.35 else NON_BEHAVIOUR)
+        scope = R.choice(["", "", "billing: ", "api: ", "web: ", "jobs: ", "chore: ", "fix: "])
+        ref = R.choice(["", "", f" (#{R.randint(100, 2999)})", f" [{R.choice(['OPS', 'BILL', 'WEB'])}-{R.randint(10, 999)}]"])
+        subject = f"{scope}{subject[0].lower() if scope else subject[0]}{subject[1:]}{ref}"
         sha = "".join(R.choice("0123456789abcdef") for _ in range(7))
         body = R.choice(BODIES)
         # Some behaviour changes wrongly say "no functional change"; some refactors mention customers.
@@ -182,6 +208,12 @@ def failures(n=80):
         kind = R.choice(list(FAILURES))
         lines = [f"FAIL {pick('src', 'test')}/{pick('cart', 'orders', 'auth', 'ui', 'search')}/{R.randint(1, 40)}.test.ts"]
         lines.append(R.choice(FAILURES[kind]).format(n=R.randint(10, 400)))
+        lines.append(pick(
+            f"  at {pick('cart', 'orders', 'auth', 'ui', 'search')}.test.ts:{R.randint(5, 300)}",
+            f"  test: {pick('adds', 'removes', 'renders', 'refunds', 'syncs')} {pick('an item', 'the order', 'a session', 'the list', 'totals')}",
+            f"  retry {R.randint(1, 3)} of 3 · worker {R.randint(1, 8)} · seed {R.randint(1000, 9999)}",
+            f"  node {pick('20.11', '22.4', '22.23')} on {pick('ubuntu-22.04', 'ubuntu-24.04', 'macos-14')}",
+        ))
         lines += [f"    at {pick('run', 'step', 'handler', 'next')} (node_modules/x/index.js:{R.randint(1, 900)}:{R.randint(1, 60)})" for _ in range(R.randint(2, 6))]
         rows.append({"id": f"F-{i + 1}", "output": "\n".join(lines)})
     return rows
@@ -193,28 +225,29 @@ SAFE_CMDS = [
     "ls -la /srv/artifacts/{d}",
     "git -C /srv/repos/{d} fetch --prune",
     "docker image ls --filter dangling=true",
-    "find /tmp/build-{d} -name '*.log' -mtime +7 -print",
+    "find /tmp/build-{d} -name '*.log' -mtime +{n} -print",
     "tar czf /backups/{d}-$(date +%F).tgz /srv/artifacts/{d}",
-    "journalctl --vacuum-time=14d --dry-run",
+    "journalctl --vacuum-time={n}d --dry-run",
     "cp -r /srv/artifacts/{d} /backups/{d}",
 ]
 RISKY_CMDS = [
     "rm -rf /srv/artifacts/{d}",
     "git -C /srv/repos/{d} reset --hard origin/main && git -C /srv/repos/{d} clean -fdx",
     "docker system prune -af --volumes",
-    "find /srv -name '*.db' -mtime +30 -delete",
+    "find /srv/{d} -name '*.db' -mtime +{n} -delete",
     "psql -h db.internal -c 'TRUNCATE builds CASCADE'",
     "git -C /srv/repos/{d} push --force origin HEAD:main",
     "mv /srv/artifacts/{d} /dev/null",
     "chmod -R 777 /srv/secrets",
 ]
-DIRS = ["web", "api", "worker", "mobile", "docs", "infra", "billing", "search"]
+DIRS = ["web", "api", "worker", "mobile", "docs", "infra", "billing", "search", "admin", "reports",
+        "media", "ledger", "gateway", "notifier", "catalog", "exports"]
 
 
 def cleanup_plan(n=40):
     lines = ["#!/bin/sh", "# Nightly cleanup for the shared build server, proposed by the ops bot."]
     for _ in range(n):
-        cmd = R.choice(SAFE_CMDS if R.random() < 0.6 else RISKY_CMDS).format(d=R.choice(DIRS))
+        cmd = R.choice(SAFE_CMDS if R.random() < 0.6 else RISKY_CMDS).format(d=R.choice(DIRS), n=R.choice([3, 7, 14, 30, 90]))
         lines.append(cmd)
     return lines
 
@@ -256,6 +289,11 @@ def change_overlay():
     """The uncommitted change for the criteria prompts: timeouts added across
     every module that lacked one, with a stray debug log in two of them."""
     changes = os.path.join(os.path.dirname(__file__), "fixture-changes")
+    import shutil
+    # Only the generated part: fixture-changes/src/http and test/ are written by hand.
+    for d in os.listdir(os.path.join(changes, "src")):
+        if d != "http":
+            shutil.rmtree(os.path.join(changes, "src", d))
     src = os.path.join(ROOT, "src")
     touched = 0
     for d in sorted(os.listdir(src)):

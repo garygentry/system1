@@ -1,300 +1,300 @@
-29a1284 Rename OrderSvc to OrderService — Customers reported this in support.
-edc7f1e Round prices half-up rather than half-even — No functional change.
-43421c9 Allow refunds on partially shipped orders
-844f81e Add tests for the coupon parser — Part of the cleanup epic.
-32dedef Rename OrderSvc to OrderService — Customers reported this in support.
-1676129 Fix typos in the README — Part of the cleanup epic.
-5fc4f2d Skip inventory sync for archived products
-4057412 Add tests for the coupon parser — Part of the cleanup epic.
-e5570c4 Reformat with the new prettier config
-92f9fcc Retry payment webhooks up to 5 times instead of 3 — No functional change.
-0966976 Fix typos in the README — Customers reported this in support.
-5742b22 Bump eslint to 9.12 — Customers reported this in support.
-8fef5ee Reformat with the new prettier config — Follow-up to the incident review.
-4b60d94 Add tests for the coupon parser — Part of the cleanup epic.
-fb4b280 Expire sessions after 30 minutes of inactivity
-5cb8643 Document the webhook retry policy — No functional change.
-b7cf3b4 Skip inventory sync for archived products — Follow-up to the incident review.
-9b0aa1c Bump eslint to 9.12 — Customers reported this in support.
-77c03fe Document the webhook retry policy — No functional change.
-cfb06f5 Reformat with the new prettier config
-0ed0eee Stop sending the welcome email to invited users
-628976f Fix typos in the README — Follow-up to the incident review.
-c32a75f Stop sending the welcome email to invited users — Customers reported this in support.
-9d14318 Retry payment webhooks up to 5 times instead of 3 — Follow-up to the incident review.
-5b44982 Skip inventory sync for archived products — Customers reported this in support.
-2a9f096 Return 404 instead of 500 when an order is missing — Customers reported this in support.
-2b502d7 Allow refunds on partially shipped orders — Follow-up to the incident review.
-5088e4e Round prices half-up rather than half-even
-ab6082a Extract the price formatting into a helper — Follow-up to the incident review.
-f9bd725 Retry payment webhooks up to 5 times instead of 3 — Follow-up to the incident review.
-4ae966b Add tests for the coupon parser — No functional change.
-1e831ce Return 404 instead of 500 when an order is missing — Part of the cleanup epic.
-2882c9e Add tests for the coupon parser
-5a84c8d Add tests for the coupon parser — Follow-up to the incident review.
-fb2e8a7 Extract the price formatting into a helper — No functional change.
-abce7c6 Allow refunds on partially shipped orders — Part of the cleanup epic.
-7c09c4d Round prices half-up rather than half-even
-682dd35 Move fixtures into test/fixtures — Follow-up to the incident review.
-81743c0 Retry payment webhooks up to 5 times instead of 3 — Follow-up to the incident review.
-1f84de9 Expire sessions after 30 minutes of inactivity — Customers reported this in support.
-4fbd6cd Extract the price formatting into a helper — No functional change.
-8c4bfe7 Move fixtures into test/fixtures — Follow-up to the incident review.
-6c4d391 Document the webhook retry policy — Part of the cleanup epic.
-dfa71c3 Reformat with the new prettier config
-1fa79d6 Add tests for the coupon parser
-667a803 Expire sessions after 30 minutes of inactivity
-039b507 Stop sending the welcome email to invited users — Customers reported this in support.
-f04763f Round prices half-up rather than half-even
-7b565cb Allow refunds on partially shipped orders — Customers reported this in support.
-ba4fd68 Document the webhook retry policy — No functional change.
-a6d23a9 Extract the price formatting into a helper — Customers reported this in support.
-c3f5455 Expire sessions after 30 minutes of inactivity — No functional change.
-95f4054 Extract the price formatting into a helper — Part of the cleanup epic.
-f05ba92 Extract the price formatting into a helper — No functional change.
-96ad7f6 Round prices half-up rather than half-even — Customers reported this in support.
-236441d Extract the price formatting into a helper — No functional change.
-31c1a26 Retry payment webhooks up to 5 times instead of 3
-c4c0174 Bump eslint to 9.12
-f1b1b0c Fix typos in the README — Part of the cleanup epic.
-3eb22ab Retry payment webhooks up to 5 times instead of 3 — Part of the cleanup epic.
-9ae3116 Skip inventory sync for archived products — No functional change.
-78c8edc Add tests for the coupon parser — No functional change.
-4e7d5b8 Expire sessions after 30 minutes of inactivity — Part of the cleanup epic.
-f2fd6c6 Return 404 instead of 500 when an order is missing — Part of the cleanup epic.
-65ae3f8 Skip inventory sync for archived products — Follow-up to the incident review.
-c05a9d1 Stop sending the welcome email to invited users
-067be9c Extract the price formatting into a helper — Part of the cleanup epic.
-d86db34 Extract the price formatting into a helper — No functional change.
-e01efe5 Expire sessions after 30 minutes of inactivity
-8b5bfb5 Return 404 instead of 500 when an order is missing — No functional change.
-0cee852 Return 404 instead of 500 when an order is missing — Customers reported this in support.
-b8a92c3 Round prices half-up rather than half-even — No functional change.
-823b967 Move fixtures into test/fixtures — Part of the cleanup epic.
-29a1e5f Document the webhook retry policy
-13389c1 Rename OrderSvc to OrderService — Part of the cleanup epic.
-233b820 Add tests for the coupon parser — Follow-up to the incident review.
-a8fc371 Reformat with the new prettier config — Customers reported this in support.
-22626a8 Rename OrderSvc to OrderService
-deeb0bb Reformat with the new prettier config
-09ee22b Bump eslint to 9.12 — Follow-up to the incident review.
-0c62e56 Retry payment webhooks up to 5 times instead of 3 — Part of the cleanup epic.
-d23b8b3 Add tests for the coupon parser — Customers reported this in support.
-5db3dbc Return 404 instead of 500 when an order is missing — No functional change.
-0dc7973 Expire sessions after 30 minutes of inactivity
-0c9c3dd Reformat with the new prettier config — Part of the cleanup epic.
-189033b Reformat with the new prettier config
-21f5c68 Add tests for the coupon parser — Follow-up to the incident review.
-abf19f0 Move fixtures into test/fixtures — Part of the cleanup epic.
-ced63ee Add tests for the coupon parser — No functional change.
-562cec8 Round prices half-up rather than half-even
-18abcf9 Document the webhook retry policy
-2a423cd Allow refunds on partially shipped orders — Follow-up to the incident review.
-2279632 Rename OrderSvc to OrderService
-45b7717 Fix typos in the README — No functional change.
-45d1c80 Move fixtures into test/fixtures — No functional change.
-65ffc44 Add tests for the coupon parser — No functional change.
-be35e5f Add tests for the coupon parser — No functional change.
-00be44b Add tests for the coupon parser — Part of the cleanup epic.
-dc789e1 Extract the price formatting into a helper — No functional change.
-f071fb4 Bump eslint to 9.12 — Part of the cleanup epic.
-722bdb8 Add tests for the coupon parser
-4e46b73 Return 404 instead of 500 when an order is missing — Follow-up to the incident review.
-6f44326 Reformat with the new prettier config
-4b37627 Round prices half-up rather than half-even — No functional change.
-bc82a70 Extract the price formatting into a helper — Customers reported this in support.
-1336158 Round prices half-up rather than half-even — No functional change.
-a30e9c2 Reformat with the new prettier config
-99c26d2 Round prices half-up rather than half-even — Part of the cleanup epic.
-b7ced69 Skip inventory sync for archived products — Customers reported this in support.
-ad037c2 Expire sessions after 30 minutes of inactivity
-13050a6 Bump eslint to 9.12 — Follow-up to the incident review.
-36323f8 Document the webhook retry policy — Part of the cleanup epic.
-a6ae631 Allow refunds on partially shipped orders — Follow-up to the incident review.
-c9d0015 Rename OrderSvc to OrderService — No functional change.
-f9c6ab0 Add tests for the coupon parser
-d85f192 Document the webhook retry policy — Part of the cleanup epic.
-c5a9bb9 Round prices half-up rather than half-even — Follow-up to the incident review.
-2d2af08 Add tests for the coupon parser — Follow-up to the incident review.
-59a2064 Add tests for the coupon parser — Part of the cleanup epic.
-3368376 Stop sending the welcome email to invited users — Customers reported this in support.
-416a0ef Reformat with the new prettier config — Part of the cleanup epic.
-fc10fed Reformat with the new prettier config — Part of the cleanup epic.
-e42469d Extract the price formatting into a helper
-77632dd Rename OrderSvc to OrderService
-3d5ab99 Add tests for the coupon parser — Customers reported this in support.
-aa87f33 Skip inventory sync for archived products — Customers reported this in support.
-cca80b7 Rename OrderSvc to OrderService — Follow-up to the incident review.
-8e25ed3 Rename OrderSvc to OrderService
-1c4bced Rename OrderSvc to OrderService
-bc08a2d Document the webhook retry policy
-fb9df3a Rename OrderSvc to OrderService — Customers reported this in support.
-06a3874 Add tests for the coupon parser
-099987e Rename OrderSvc to OrderService — No functional change.
-ebab2e9 Document the webhook retry policy — Follow-up to the incident review.
-eb6420f Fix typos in the README
-c9eb475 Round prices half-up rather than half-even — Part of the cleanup epic.
-cdb5a3f Add tests for the coupon parser — Follow-up to the incident review.
-2ab23c1 Bump eslint to 9.12 — No functional change.
-2d661ec Rename OrderSvc to OrderService
-bd13e0a Reformat with the new prettier config — Customers reported this in support.
-f574085 Allow refunds on partially shipped orders
-3dfc94d Stop sending the welcome email to invited users — No functional change.
-f9470d7 Reformat with the new prettier config — No functional change.
-864310f Document the webhook retry policy — Follow-up to the incident review.
-2556e58 Move fixtures into test/fixtures
-e7464eb Bump eslint to 9.12 — Follow-up to the incident review.
-3da7d3c Extract the price formatting into a helper
-4a05183 Bump eslint to 9.12
-6a8bc84 Skip inventory sync for archived products
-b793ed5 Reformat with the new prettier config — No functional change.
-b1cc7ee Fix typos in the README
-dd61f3f Rename OrderSvc to OrderService — Follow-up to the incident review.
-d7944a0 Rename OrderSvc to OrderService — Part of the cleanup epic.
-5eac09e Reformat with the new prettier config — Customers reported this in support.
-9728759 Document the webhook retry policy
-4183ad1 Stop sending the welcome email to invited users
-f936fce Document the webhook retry policy — Part of the cleanup epic.
-6ed07e1 Retry payment webhooks up to 5 times instead of 3
-dbaea0f Move fixtures into test/fixtures
-6a413a3 Move fixtures into test/fixtures — Customers reported this in support.
-86aa9f7 Stop sending the welcome email to invited users — No functional change.
-0335527 Return 404 instead of 500 when an order is missing
-361e31e Return 404 instead of 500 when an order is missing — Part of the cleanup epic.
-2eb59da Move fixtures into test/fixtures
-ce53d9d Fix typos in the README — Part of the cleanup epic.
-a115b37 Move fixtures into test/fixtures — No functional change.
-e85e565 Extract the price formatting into a helper — No functional change.
-5afe889 Bump eslint to 9.12
-32a5397 Return 404 instead of 500 when an order is missing
-98c9613 Bump eslint to 9.12
-20065ba Document the webhook retry policy — Follow-up to the incident review.
-7cff4e3 Skip inventory sync for archived products — Follow-up to the incident review.
-f573ecf Retry payment webhooks up to 5 times instead of 3 — No functional change.
-70eeea1 Move fixtures into test/fixtures — Customers reported this in support.
-8aaee3a Retry payment webhooks up to 5 times instead of 3 — Customers reported this in support.
-2cbb2f9 Document the webhook retry policy — Part of the cleanup epic.
-e3e75b7 Document the webhook retry policy — Customers reported this in support.
-f8bf778 Reformat with the new prettier config
-d702ba1 Expire sessions after 30 minutes of inactivity — No functional change.
-cfa2201 Document the webhook retry policy — Follow-up to the incident review.
-f15f98f Return 404 instead of 500 when an order is missing — Follow-up to the incident review.
-9847eba Bump eslint to 9.12 — Part of the cleanup epic.
-ccabfe6 Stop sending the welcome email to invited users
-3cf9a7d Reformat with the new prettier config — Part of the cleanup epic.
-e543c27 Fix typos in the README — Customers reported this in support.
-cc95d83 Extract the price formatting into a helper — No functional change.
-ca31beb Rename OrderSvc to OrderService
-40939d0 Move fixtures into test/fixtures
-0ede2e9 Add tests for the coupon parser — Customers reported this in support.
-457bb4a Skip inventory sync for archived products
-cf2d0c6 Rename OrderSvc to OrderService — Part of the cleanup epic.
-839bb1f Reformat with the new prettier config
-19d93a6 Bump eslint to 9.12 — Part of the cleanup epic.
-e28386f Allow refunds on partially shipped orders — Part of the cleanup epic.
-089f370 Extract the price formatting into a helper — Customers reported this in support.
-1a0cb98 Move fixtures into test/fixtures — Follow-up to the incident review.
-73de078 Allow refunds on partially shipped orders — Follow-up to the incident review.
-fb933ea Document the webhook retry policy — Follow-up to the incident review.
-526d63f Reformat with the new prettier config — Part of the cleanup epic.
-6fe5b54 Bump eslint to 9.12 — Customers reported this in support.
-2dc1a93 Move fixtures into test/fixtures — No functional change.
-82ab1bb Document the webhook retry policy
-eb684f3 Fix typos in the README
-9e3cf42 Allow refunds on partially shipped orders — Part of the cleanup epic.
-85af199 Extract the price formatting into a helper — No functional change.
-ebd9d95 Document the webhook retry policy
-d48e8b8 Allow refunds on partially shipped orders
-7465594 Document the webhook retry policy — Part of the cleanup epic.
-f212d4b Stop sending the welcome email to invited users
-826d32b Return 404 instead of 500 when an order is missing
-fdb418f Skip inventory sync for archived products — Follow-up to the incident review.
-3e9e74a Round prices half-up rather than half-even
-35f773d Retry payment webhooks up to 5 times instead of 3
-4ee0e10 Return 404 instead of 500 when an order is missing — Part of the cleanup epic.
-6b442f8 Skip inventory sync for archived products — Part of the cleanup epic.
-772a75d Allow refunds on partially shipped orders — Customers reported this in support.
-9370ac9 Reformat with the new prettier config
-d8c2f85 Return 404 instead of 500 when an order is missing
-dbd68c7 Stop sending the welcome email to invited users — No functional change.
-54b0713 Add tests for the coupon parser — Customers reported this in support.
-b9cbc17 Bump eslint to 9.12 — Customers reported this in support.
-2f3aa68 Reformat with the new prettier config — No functional change.
-46fd7b2 Bump eslint to 9.12
-a1d7c71 Bump eslint to 9.12
-be38acf Round prices half-up rather than half-even
-c0128ae Return 404 instead of 500 when an order is missing — Customers reported this in support.
-b7b6763 Document the webhook retry policy — No functional change.
-14025d1 Move fixtures into test/fixtures — Follow-up to the incident review.
-26ed7b8 Expire sessions after 30 minutes of inactivity — Follow-up to the incident review.
-ddcdd1e Skip inventory sync for archived products — Customers reported this in support.
-e838b01 Move fixtures into test/fixtures
-3f7e89d Rename OrderSvc to OrderService — Part of the cleanup epic.
-64ca158 Skip inventory sync for archived products — Part of the cleanup epic.
-4cc623b Move fixtures into test/fixtures — Customers reported this in support.
-51c47e6 Fix typos in the README — Follow-up to the incident review.
-f39cb36 Document the webhook retry policy — Follow-up to the incident review.
-fe2522b Bump eslint to 9.12 — No functional change.
-53dd2b6 Allow refunds on partially shipped orders — Follow-up to the incident review.
-67f3057 Retry payment webhooks up to 5 times instead of 3 — Follow-up to the incident review.
-d37c557 Document the webhook retry policy — Part of the cleanup epic.
-b446e70 Allow refunds on partially shipped orders — Part of the cleanup epic.
-b3c2f7d Skip inventory sync for archived products — Follow-up to the incident review.
-42824c3 Allow refunds on partially shipped orders
-d4ed1c8 Allow refunds on partially shipped orders
-9c2161e Reformat with the new prettier config — Follow-up to the incident review.
-0df8f41 Rename OrderSvc to OrderService — Part of the cleanup epic.
-90a2e1e Expire sessions after 30 minutes of inactivity — Part of the cleanup epic.
-3152ff9 Allow refunds on partially shipped orders — No functional change.
-bbaff5c Add tests for the coupon parser — Customers reported this in support.
-e0b53d8 Allow refunds on partially shipped orders
-cdc2f8d Bump eslint to 9.12 — Part of the cleanup epic.
-e135b6d Move fixtures into test/fixtures — Part of the cleanup epic.
-4c9047a Expire sessions after 30 minutes of inactivity — No functional change.
-ec1e1bd Add tests for the coupon parser — Part of the cleanup epic.
-d9cb569 Extract the price formatting into a helper — Part of the cleanup epic.
-3566877 Rename OrderSvc to OrderService
-9ae9f93 Document the webhook retry policy — No functional change.
-bb85d75 Skip inventory sync for archived products — Follow-up to the incident review.
-abb3281 Move fixtures into test/fixtures
-425c1f5 Document the webhook retry policy
-dfe4df5 Skip inventory sync for archived products — No functional change.
-97848ea Add tests for the coupon parser — Follow-up to the incident review.
-4d233bb Document the webhook retry policy — Customers reported this in support.
-b1633d6 Return 404 instead of 500 when an order is missing — Part of the cleanup epic.
-d12f21d Rename OrderSvc to OrderService — Customers reported this in support.
-0b7b946 Extract the price formatting into a helper
-38a4c07 Rename OrderSvc to OrderService — Follow-up to the incident review.
-251489e Move fixtures into test/fixtures
-4499fe3 Add tests for the coupon parser — No functional change.
-86664f8 Move fixtures into test/fixtures
-d8f4055 Fix typos in the README
-0d513bf Rename OrderSvc to OrderService — Follow-up to the incident review.
-e177645 Fix typos in the README — No functional change.
-40d6e66 Stop sending the welcome email to invited users — Customers reported this in support.
-b6bf5b1 Move fixtures into test/fixtures — No functional change.
-4c5c374 Round prices half-up rather than half-even — Customers reported this in support.
-b77145d Add tests for the coupon parser — Part of the cleanup epic.
-9b49a49 Reformat with the new prettier config — Follow-up to the incident review.
-7355547 Expire sessions after 30 minutes of inactivity
-a63cf46 Fix typos in the README
-28973e8 Round prices half-up rather than half-even
-aeb5a3a Extract the price formatting into a helper — Customers reported this in support.
-1386074 Expire sessions after 30 minutes of inactivity
-29b441a Move fixtures into test/fixtures — No functional change.
-0036d75 Reformat with the new prettier config — Follow-up to the incident review.
-6f5a24d Stop sending the welcome email to invited users — No functional change.
-79473ad Reformat with the new prettier config — Follow-up to the incident review.
-0842f66 Bump eslint to 9.12 — Customers reported this in support.
-ef4a037 Allow refunds on partially shipped orders — Follow-up to the incident review.
-8ce64aa Bump eslint to 9.12
-3094f26 Skip inventory sync for archived products — Part of the cleanup epic.
-63f0195 Return 404 instead of 500 when an order is missing — Customers reported this in support.
-f563f5d Rename OrderSvc to OrderService — No functional change.
-3ac4844 Move fixtures into test/fixtures — No functional change.
-923d68c Reformat with the new prettier config — Part of the cleanup epic.
-2835ade Allow refunds on partially shipped orders
-150a8ac Reformat with the new prettier config — Part of the cleanup epic.
-54f5961 Rename OrderSvc to OrderService — Part of the cleanup epic.
-9677380 Add tests for the coupon parser — No functional change.
-a2984e8 Round prices half-up rather than half-even — Customers reported this in support.
+9896e85 jobs: retry payment webhooks up to 5 times instead of 3 — Follow-up to the incident review.
+5ab9241 Add tests for the coupon parser — Part of the cleanup epic.
+9d9c608 api: move fixtures into test/fixtures
+bad82fa fix: add tests for the coupon parser — Part of the cleanup epic.
+7a5477d billing: document the webhook retry policy
+05421a9 Bump eslint to 9.12 [BILL-147] — Part of the cleanup epic.
+8f3609d billing: allow refunds on partially shipped orders (#2972) — Customers reported this in support.
+7889e98 fix: retry payment webhooks up to 5 times instead of 3 — Part of the cleanup epic.
+37a9b28 chore: round prices half-up rather than half-even — Part of the cleanup epic.
+fd2fcaf web: extract the price formatting into a helper — No functional change.
+feb2f1b fix: reformat with the new prettier config [BILL-649] — Follow-up to the incident review.
+4f144a2 jobs: allow refunds on partially shipped orders — Part of the cleanup epic.
+ea365c9 fix: reformat with the new prettier config — Customers reported this in support.
+afc5cdd billing: stop sending the welcome email to invited users [BILL-166] — Part of the cleanup epic.
+19bc4f9 billing: allow refunds on partially shipped orders
+54ff299 jobs: add tests for the coupon parser
+4702bf8 billing: bump eslint to 9.12
+095f1c2 web: extract the price formatting into a helper [BILL-776] — Customers reported this in support.
+97dc384 Extract the price formatting into a helper (#1049) — No functional change.
+a65bb6b web: extract the price formatting into a helper (#163)
+3d16fa8 web: extract the price formatting into a helper [OPS-850] — Part of the cleanup epic.
+ad8b9cc billing: bump eslint to 9.12
+7fc5ba3 Fix typos in the README [OPS-408] — Customers reported this in support.
+0bf9a57 fix: reformat with the new prettier config
+0de7c54 api: extract the price formatting into a helper
+e9b1546 Reformat with the new prettier config [WEB-540] — Part of the cleanup epic.
+cf46a20 chore: skip inventory sync for archived products — Part of the cleanup epic.
+12d25da web: reformat with the new prettier config — Customers reported this in support.
+f08a043 web: move fixtures into test/fixtures — Follow-up to the incident review.
+e64725d Extract the price formatting into a helper
+7cea38e api: expire sessions after 30 minutes of inactivity
+0248646 billing: allow refunds on partially shipped orders — Follow-up to the incident review.
+62ac333 jobs: rename OrderSvc to OrderService (#1208) — Part of the cleanup epic.
+a6e428e jobs: fix typos in the README (#2782) — Part of the cleanup epic.
+26a5f11 billing: fix typos in the README — Customers reported this in support.
+41b60c3 Move fixtures into test/fixtures (#102) — Customers reported this in support.
+ac2d273 billing: retry payment webhooks up to 5 times instead of 3
+36d0ca4 billing: retry payment webhooks up to 5 times instead of 3 (#2006)
+316cca6 Fix typos in the README (#2046)
+771983c api: allow refunds on partially shipped orders (#2155) — Part of the cleanup epic.
+302e9bb api: stop sending the welcome email to invited users [OPS-607] — Customers reported this in support.
+09a26e5 Add tests for the coupon parser — Customers reported this in support.
+379b543 Bump eslint to 9.12 (#1280) — No functional change.
+02dca48 web: rename OrderSvc to OrderService (#1665) — Part of the cleanup epic.
+8252d16 billing: rename OrderSvc to OrderService — Part of the cleanup epic.
+d4c38e8 chore: stop sending the welcome email to invited users [BILL-99] — Customers reported this in support.
+d50f1b7 Bump eslint to 9.12 [OPS-166]
+9a69eb9 billing: skip inventory sync for archived products [BILL-69]
+65c3cf5 fix: document the webhook retry policy
+45662f6 jobs: add tests for the coupon parser [OPS-754] — Customers reported this in support.
+8e10c1f Reformat with the new prettier config — Follow-up to the incident review.
+123ce35 fix: extract the price formatting into a helper (#1962)
+1017271 web: document the webhook retry policy — No functional change.
+8a0f0c5 chore: retry payment webhooks up to 5 times instead of 3 (#641) — Customers reported this in support.
+3ac7dce Add tests for the coupon parser — No functional change.
+251844a Skip inventory sync for archived products (#1014)
+e9af1a0 chore: extract the price formatting into a helper [WEB-315]
+33ac2b8 web: return 404 instead of 500 when an order is missing (#2481) — Customers reported this in support.
+d964c8d jobs: extract the price formatting into a helper [WEB-937]
+13d4bfe jobs: extract the price formatting into a helper (#266) — Follow-up to the incident review.
+415e607 Return 404 instead of 500 when an order is missing [BILL-749]
+63c4780 chore: fix typos in the README — Follow-up to the incident review.
+bfbf91e billing: reformat with the new prettier config — Part of the cleanup epic.
+c71ba00 Reformat with the new prettier config — Customers reported this in support.
+cc0e21a Bump eslint to 9.12 [WEB-961]
+5beb1a4 billing: reformat with the new prettier config — Part of the cleanup epic.
+b86d750 chore: rename OrderSvc to OrderService (#738) — No functional change.
+4589ab2 jobs: expire sessions after 30 minutes of inactivity [BILL-598] — Follow-up to the incident review.
+cd7b7b3 Rename OrderSvc to OrderService (#1950) — Follow-up to the incident review.
+4fd28af chore: skip inventory sync for archived products (#1253) — Follow-up to the incident review.
+a2e5a1b api: move fixtures into test/fixtures [WEB-167] — Customers reported this in support.
+1826751 web: skip inventory sync for archived products [WEB-765]
+0dc9dbd chore: bump eslint to 9.12 — No functional change.
+723bdf6 billing: stop sending the welcome email to invited users
+b7695d6 jobs: document the webhook retry policy
+a1b4bc5 jobs: skip inventory sync for archived products [BILL-273] — Customers reported this in support.
+2788692 Bump eslint to 9.12
+2d8fcc7 jobs: add tests for the coupon parser — No functional change.
+88e8d86 Move fixtures into test/fixtures [OPS-841]
+3691b30 fix: extract the price formatting into a helper [OPS-282] — Part of the cleanup epic.
+908718f web: reformat with the new prettier config [OPS-822] — No functional change.
+77fd788 Move fixtures into test/fixtures (#1404)
+302b057 api: retry payment webhooks up to 5 times instead of 3
+4cd9dac Round prices half-up rather than half-even — No functional change.
+5de6356 api: document the webhook retry policy — Follow-up to the incident review.
+1ae6e2a api: skip inventory sync for archived products [WEB-779]
+a6080c6 api: allow refunds on partially shipped orders (#1654)
+6afceb5 Move fixtures into test/fixtures
+0113a03 web: expire sessions after 30 minutes of inactivity — Customers reported this in support.
+9784503 Stop sending the welcome email to invited users [OPS-501]
+44faf08 billing: expire sessions after 30 minutes of inactivity (#1157)
+9ee7f28 Retry payment webhooks up to 5 times instead of 3 — No functional change.
+ff2d4d6 Expire sessions after 30 minutes of inactivity (#1485)
+65cf3ea chore: reformat with the new prettier config — Follow-up to the incident review.
+0e87f7e web: rename OrderSvc to OrderService (#2865)
+6007e8f Return 404 instead of 500 when an order is missing [WEB-971]
+27f99c6 Skip inventory sync for archived products — Customers reported this in support.
+e8c7501 billing: extract the price formatting into a helper — Customers reported this in support.
+b6c6f7e billing: allow refunds on partially shipped orders — Follow-up to the incident review.
+b38b68d fix: reformat with the new prettier config (#1527) — No functional change.
+4cbd236 api: extract the price formatting into a helper — No functional change.
+7d1efcb Bump eslint to 9.12
+48f3117 Stop sending the welcome email to invited users — Part of the cleanup epic.
+eda30dc fix: stop sending the welcome email to invited users (#645) — No functional change.
+9e75868 api: extract the price formatting into a helper — Customers reported this in support.
+7355c36 Extract the price formatting into a helper — No functional change.
+30073b9 api: rename OrderSvc to OrderService [WEB-478] — Customers reported this in support.
+d754920 fix: add tests for the coupon parser (#938) — No functional change.
+c8e6c2b billing: round prices half-up rather than half-even [OPS-933]
+03877e4 Allow refunds on partially shipped orders
+a0f718e Rename OrderSvc to OrderService — Part of the cleanup epic.
+5083b09 api: rename OrderSvc to OrderService [WEB-116] — No functional change.
+e75b6ce web: bump eslint to 9.12
+84bc720 fix: add tests for the coupon parser
+7b35b2f api: document the webhook retry policy (#2671)
+5b1c1b6 Bump eslint to 9.12 (#1447)
+936d303 Bump eslint to 9.12 [WEB-515]
+0a1a88a fix: retry payment webhooks up to 5 times instead of 3 (#2168) — Part of the cleanup epic.
+dc1fb65 Rename OrderSvc to OrderService — No functional change.
+217ff6d Add tests for the coupon parser — Follow-up to the incident review.
+76e1af7 billing: extract the price formatting into a helper [OPS-134] — Part of the cleanup epic.
+1120306 fix: bump eslint to 9.12 (#2545) — No functional change.
+301b30b fix: bump eslint to 9.12 (#2638) — Follow-up to the incident review.
+7a6ce5c Return 404 instead of 500 when an order is missing — Customers reported this in support.
+e41bcd7 web: rename OrderSvc to OrderService — Customers reported this in support.
+b2f549d Skip inventory sync for archived products — Follow-up to the incident review.
+5925cab chore: move fixtures into test/fixtures
+bc9ec7a fix: move fixtures into test/fixtures
+5d5635a billing: allow refunds on partially shipped orders
+383a079 web: document the webhook retry policy — Part of the cleanup epic.
+3a34feb web: skip inventory sync for archived products (#115) — Customers reported this in support.
+68f41d1 Document the webhook retry policy
+7c2e3c8 web: reformat with the new prettier config [WEB-395] — No functional change.
+039c03a api: stop sending the welcome email to invited users (#1661) — Customers reported this in support.
+300bf0f Move fixtures into test/fixtures [BILL-583]
+cd9075f fix: extract the price formatting into a helper (#2653)
+274c663 Expire sessions after 30 minutes of inactivity — Follow-up to the incident review.
+efc6e9b fix: stop sending the welcome email to invited users (#1429)
+d0eb393 api: bump eslint to 9.12 — Part of the cleanup epic.
+81a6dfb Extract the price formatting into a helper (#2657) — Customers reported this in support.
+2647f6b Bump eslint to 9.12 — Follow-up to the incident review.
+507b8fb api: fix typos in the README [BILL-689] — No functional change.
+aae9d6a billing: move fixtures into test/fixtures (#2394) — Follow-up to the incident review.
+ffba718 Rename OrderSvc to OrderService [WEB-351] — No functional change.
+4d2950b Document the webhook retry policy — Customers reported this in support.
+7989a90 web: rename OrderSvc to OrderService — Part of the cleanup epic.
+8068476 api: allow refunds on partially shipped orders
+2fa4e6a web: allow refunds on partially shipped orders [WEB-95] — Part of the cleanup epic.
+682389a jobs: document the webhook retry policy — Part of the cleanup epic.
+4e46472 fix: skip inventory sync for archived products (#2863) — No functional change.
+bd6648a jobs: return 404 instead of 500 when an order is missing (#2993) — Part of the cleanup epic.
+93d6db0 Expire sessions after 30 minutes of inactivity [BILL-441] — Part of the cleanup epic.
+5100670 jobs: extract the price formatting into a helper — Follow-up to the incident review.
+0fa65d2 chore: move fixtures into test/fixtures — Part of the cleanup epic.
+e74c674 web: round prices half-up rather than half-even [BILL-922] — Part of the cleanup epic.
+eaa07d3 web: move fixtures into test/fixtures [OPS-294]
+1b29583 chore: rename OrderSvc to OrderService — Follow-up to the incident review.
+f9ebcc5 jobs: rename OrderSvc to OrderService (#280)
+ee1ea0a Fix typos in the README — Follow-up to the incident review.
+ec5d93c chore: skip inventory sync for archived products [WEB-96] — Customers reported this in support.
+a26ea1b fix: skip inventory sync for archived products — Follow-up to the incident review.
+a2dce08 fix: fix typos in the README
+cc97f40 web: reformat with the new prettier config
+d0156ff fix: retry payment webhooks up to 5 times instead of 3 (#163)
+90bdf61 fix: round prices half-up rather than half-even (#2706) — No functional change.
+603fc8f web: return 404 instead of 500 when an order is missing
+e49f591 Fix typos in the README [OPS-976] — Part of the cleanup epic.
+22e53c9 chore: stop sending the welcome email to invited users (#1417) — No functional change.
+3bbbbc8 web: skip inventory sync for archived products — Customers reported this in support.
+035d48e Expire sessions after 30 minutes of inactivity [WEB-106]
+cb68d81 web: round prices half-up rather than half-even — Customers reported this in support.
+cbb1e28 Retry payment webhooks up to 5 times instead of 3
+8b56498 chore: fix typos in the README (#2048) — Follow-up to the incident review.
+f198fe7 fix: rename OrderSvc to OrderService
+994ddac Rename OrderSvc to OrderService — Follow-up to the incident review.
+0c5e258 chore: reformat with the new prettier config [OPS-421] — Customers reported this in support.
+9b5dc7a chore: bump eslint to 9.12 — Customers reported this in support.
+97f76cd Reformat with the new prettier config [OPS-811]
+c517cd3 web: round prices half-up rather than half-even
+afa4107 Add tests for the coupon parser [OPS-802] — Follow-up to the incident review.
+4b9dcd1 jobs: skip inventory sync for archived products [BILL-106]
+280b905 Add tests for the coupon parser [OPS-896]
+7cfe9cc billing: move fixtures into test/fixtures — Customers reported this in support.
+8545111 api: extract the price formatting into a helper [WEB-910] — Part of the cleanup epic.
+c265322 Round prices half-up rather than half-even (#142)
+f916cc6 billing: retry payment webhooks up to 5 times instead of 3 — Customers reported this in support.
+83925c2 Fix typos in the README — Follow-up to the incident review.
+6121431 billing: skip inventory sync for archived products — No functional change.
+b830c14 jobs: add tests for the coupon parser
+7027ab7 Document the webhook retry policy
+04aed24 billing: rename OrderSvc to OrderService [BILL-807] — Customers reported this in support.
+da98b9d web: document the webhook retry policy
+eb2d33c Fix typos in the README
+380c2a2 Allow refunds on partially shipped orders — Follow-up to the incident review.
+19968bb web: document the webhook retry policy (#1289)
+4240532 billing: document the webhook retry policy [OPS-937]
+c1ee9c5 Expire sessions after 30 minutes of inactivity [OPS-653] — No functional change.
+350c30b chore: add tests for the coupon parser
+0b052cc Reformat with the new prettier config (#1628) — Part of the cleanup epic.
+196a3a1 fix: round prices half-up rather than half-even [WEB-657]
+5f35f5a web: document the webhook retry policy
+20ebff9 jobs: rename OrderSvc to OrderService [WEB-54] — Follow-up to the incident review.
+eff58bf Document the webhook retry policy — Part of the cleanup epic.
+a38ae12 fix: rename OrderSvc to OrderService (#324) — No functional change.
+4885247 api: extract the price formatting into a helper
+0ccca33 chore: bump eslint to 9.12 (#2963) — Customers reported this in support.
+82e756f Add tests for the coupon parser — Follow-up to the incident review.
+42473e6 web: allow refunds on partially shipped orders (#2064) — No functional change.
+1472296 web: document the webhook retry policy — No functional change.
+a64277a chore: extract the price formatting into a helper — No functional change.
+1b1f0d1 Move fixtures into test/fixtures (#1916) — Part of the cleanup epic.
+85ac049 billing: document the webhook retry policy (#527) — Customers reported this in support.
+52c4e52 billing: fix typos in the README
+ec81014 Expire sessions after 30 minutes of inactivity [OPS-142] — Part of the cleanup epic.
+b0d229a Reformat with the new prettier config — Customers reported this in support.
+ab5e760 billing: round prices half-up rather than half-even (#2030) — Part of the cleanup epic.
+5abcac9 web: retry payment webhooks up to 5 times instead of 3 (#2594)
+c0864e4 chore: round prices half-up rather than half-even — Follow-up to the incident review.
+0a92af7 billing: round prices half-up rather than half-even (#405)
+1fb8a93 Allow refunds on partially shipped orders (#2421) — No functional change.
+49c18d1 api: add tests for the coupon parser
+b0eaee0 Add tests for the coupon parser
+28b52f8 Document the webhook retry policy (#675) — No functional change.
+1160dbd Skip inventory sync for archived products (#1638)
+6b1fdff billing: fix typos in the README [WEB-857] — No functional change.
+ed4ae82 chore: extract the price formatting into a helper (#2963) — No functional change.
+6e3368f Add tests for the coupon parser — No functional change.
+3f9ac26 Bump eslint to 9.12 [OPS-248] — Follow-up to the incident review.
+d111f2b api: reformat with the new prettier config [BILL-911] — No functional change.
+e7ec02b web: bump eslint to 9.12
+e0cef82 Extract the price formatting into a helper (#2514)
+a3cbc6a Expire sessions after 30 minutes of inactivity [WEB-209] — No functional change.
+966da8b web: add tests for the coupon parser — Part of the cleanup epic.
+b9796f5 billing: fix typos in the README — Follow-up to the incident review.
+eb15122 web: round prices half-up rather than half-even — No functional change.
+9acfc4d billing: fix typos in the README (#2159) — No functional change.
+afbda0f chore: add tests for the coupon parser — Customers reported this in support.
+4dcd632 api: extract the price formatting into a helper — Customers reported this in support.
+a479317 Document the webhook retry policy — Customers reported this in support.
+17d752a Skip inventory sync for archived products
+69542f1 fix: move fixtures into test/fixtures (#188)
+1b43f87 web: return 404 instead of 500 when an order is missing — Follow-up to the incident review.
+6c3e504 api: retry payment webhooks up to 5 times instead of 3 — No functional change.
+b97f4e7 chore: rename OrderSvc to OrderService [OPS-835]
+c97392f billing: reformat with the new prettier config (#340) — Follow-up to the incident review.
+da46de3 jobs: reformat with the new prettier config
+31255a6 Fix typos in the README (#1006)
+0e9c1e3 billing: fix typos in the README [WEB-361]
+ab36480 Rename OrderSvc to OrderService [WEB-40]
+a90f33f jobs: allow refunds on partially shipped orders (#1576)
+d6d9d8f jobs: allow refunds on partially shipped orders (#2633) — Follow-up to the incident review.
+1c9bf54 Stop sending the welcome email to invited users — No functional change.
+9da625f jobs: fix typos in the README — No functional change.
+458c067 api: rename OrderSvc to OrderService (#2873)
+78d5a99 Fix typos in the README — Part of the cleanup epic.
+ed714a0 api: fix typos in the README — Customers reported this in support.
+5013df5 Add tests for the coupon parser (#1486) — Customers reported this in support.
+a632222 chore: round prices half-up rather than half-even (#1484)
+4538f49 web: document the webhook retry policy [BILL-295] — Follow-up to the incident review.
+752c41a Retry payment webhooks up to 5 times instead of 3 (#439) — No functional change.
+95452e5 web: expire sessions after 30 minutes of inactivity (#2339) — Part of the cleanup epic.
+2967530 chore: stop sending the welcome email to invited users — Follow-up to the incident review.
+f6ade18 billing: document the webhook retry policy [BILL-889]
+b90559b web: extract the price formatting into a helper — No functional change.
+1930c93 billing: reformat with the new prettier config (#1044)
+f31fa3f fix: document the webhook retry policy (#630) — Customers reported this in support.
+f06b8f3 Add tests for the coupon parser (#1740) — Customers reported this in support.
+5603678 Bump eslint to 9.12 — Customers reported this in support.
+4ee83b4 web: fix typos in the README
+4315beb jobs: extract the price formatting into a helper — No functional change.
+62f12c0 Extract the price formatting into a helper
+e4b4b96 jobs: document the webhook retry policy (#196) — Customers reported this in support.
+424ed68 web: add tests for the coupon parser — Part of the cleanup epic.
+7cbd9a0 jobs: extract the price formatting into a helper — Part of the cleanup epic.
+9cacf0c billing: document the webhook retry policy [OPS-232] — Follow-up to the incident review.
+5237825 Return 404 instead of 500 when an order is missing (#1930)
+9bda530 fix: allow refunds on partially shipped orders (#800) — Follow-up to the incident review.
+42fb5c6 fix: add tests for the coupon parser — Customers reported this in support.
+d7b30a3 Reformat with the new prettier config — No functional change.
+320cb66 fix: return 404 instead of 500 when an order is missing — No functional change.
+1255692 billing: fix typos in the README — Follow-up to the incident review.
+4d8a36c billing: rename OrderSvc to OrderService — Follow-up to the incident review.
+2767c58 fix: fix typos in the README — Follow-up to the incident review.
+8f69fd1 Extract the price formatting into a helper [BILL-749]
+1abe610 billing: reformat with the new prettier config
+bb0a8b7 jobs: stop sending the welcome email to invited users
+bd8cf08 chore: expire sessions after 30 minutes of inactivity
+59a258f fix: document the webhook retry policy [WEB-221] — No functional change.
+2cd1c23 Stop sending the welcome email to invited users
+3e11ae2 Fix typos in the README (#2709) — No functional change.
+9414a83 web: skip inventory sync for archived products (#1453) — Follow-up to the incident review.
+2a355f8 web: bump eslint to 9.12 — Customers reported this in support.
+de89663 api: extract the price formatting into a helper — Customers reported this in support.
+54c64fc billing: move fixtures into test/fixtures [OPS-812]
+54772e7 api: skip inventory sync for archived products
+692fd10 fix: reformat with the new prettier config (#2358)
+9b00f9b web: rename OrderSvc to OrderService — Customers reported this in support.
+64d4b1c billing: retry payment webhooks up to 5 times instead of 3 — Part of the cleanup epic.
+d6fcb36 billing: allow refunds on partially shipped orders
+3e4a20d api: expire sessions after 30 minutes of inactivity — Follow-up to the incident review.

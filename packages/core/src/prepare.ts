@@ -8,7 +8,7 @@ import { assertQuestionSet } from "./model/validate.js"
 import { type Projection, project } from "./run/budget.js"
 import { readSources } from "./sources/read.js"
 import type { Item, Skipped, SourceSpec } from "./sources/types.js"
-import { type SplitSpec, split } from "./split/split.js"
+import { joinItems, type SplitSpec, split } from "./split/split.js"
 
 export interface PrepareInput {
   sources: readonly SourceSpec[]
@@ -43,7 +43,9 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
     cwd: input.cwd,
     ...(input.maxFileBytes ? { maxFileBytes: input.maxFileBytes } : {}),
   })
-  const { items: kept, excluded } = applyExcludes(split(read.documents, input.split), input.exclude)
+  const filtered = applyExcludes(split(read.documents, input.split), input.exclude)
+  const excluded = filtered.excluded
+  const kept = input.split.kind === "join" ? joinItems(filtered.items) : filtered.items
 
   const byKind: ScrubCounts = {}
   let redactedItems = 0

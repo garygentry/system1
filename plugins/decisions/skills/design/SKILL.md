@@ -46,15 +46,18 @@ Question craft is covered by the `ask` skill's references. Read `question-craft.
    decide spec validate <name> --format brief
    ```
 
-   Fix every problem it lists before going on.
+   Fix every problem it lists before going on. It also checks that each example `file` exists inside the repo.
 3. **Record answers for the examples.** This makes real calls. It needs a key and the repo's egress consent, and costs about $0.00003 per example:
 
    ```sh
    decide spec check <name> --live --format brief
    ```
 
-   If it exits 3, the repo has no consent. Tell the user they can run the `setup` skill, and stop. Never grant consent yourself.
-4. **Read the distributions before trusting the result.** A `pass` with a 0.55 noul, or a choice split 0.5/0.45, is a warning. For each `FAIL` or `UNDECIDED`:
+   If it fails, stop and tell the user why, by exit code:
+   - **Exit 3:** the repo has no egress consent. Suggest the `setup` skill, and never grant consent yourself.
+   - **Exit 2 with `no-key`:** live calls need an API key. Suggest the `setup` skill.
+   - **Exit 4:** the spend guard stopped it. Show the projection, and let the user decide.
+4. **Read the distributions before trusting the result.** A `pass` with a 0.6 noul, or a choice split 0.5/0.45, is a warning. For each `FAIL` or `UNDECIDED`:
    - suspect the question first;
    - find the literal reading of your words that explains the answer;
    - rewrite the criteria, split the question, or add the missing way out.

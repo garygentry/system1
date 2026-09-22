@@ -9,7 +9,7 @@ import { type AnswerSource, sumUsage } from "../run/spend.js"
 import { parseFileRef } from "../sources/read.js"
 import type { SourceSpec } from "../sources/types.js"
 import { describeExpectation, type Expectation, meets, parseExpect } from "../spec/expect.js"
-import { loadSpec } from "../spec/spec.js"
+import { assertExamples, exampleFileProblem, loadSpec } from "../spec/spec.js"
 import { parseSplit } from "../split/split.js"
 import { checkInput, deciderFor, type ToolContext } from "./context.js"
 import { type SkippedSummary, summariseSkipped } from "./many.js"
@@ -65,47 +65,73 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
       `Spec "${spec.name}" has no examples to check. Add some under examples: (id, state or file, expect).`,
     )
   }
+  // Structural problems (a bad expect, a duplicate id) make the spec
+  // uncheckable. A problem with one example's file only withholds that one.
+  assertExamples(spec)
   const profile = resolveProfile(input.model ?? ctx.config.model, allProfiles(ctx.config))
+  const root = ctx.config.repoRoot
 
-  const prepared: Array<{ id: string; expect: Record<string, Expectation>; prep: Prepared }> = []
+  type Ready = { id: string; expect: Record<string, Expectation>; prep?: Prepared; reason?: string }
+  const prepared: Ready[] = []
   for (const example of examples) {
+    const expect = example.expect ? parseExpect(example.expect, spec.questions, example.id) : {}
+    const refused = example.file !== undefined ? exampleFileProblem(example.file, root) : undefined
+    if (refused) {
+      prepared.push({ id: example.id, expect, reason: `${example.file} ${refused}` })
+      continue
+    }
     const source: SourceSpec =
       example.file !== undefined
         ? { kind: "file", ...parseFileRef(example.file) }
-        : { kind: "text", text: example.state ?? "", id: example.id }
-    prepared.push({
-      id: example.id,
-      expect: example.expect ? parseExpect(example.expect, spec.questions, example.id) : {},
-      prep: await prepare({
+        : {
+            kind: "text",
+            // A structured state is sent as its JSON text.
+            text: typeof example.state === "string" ? example.state : JSON.stringify(example.state),
+            id: example.id,
+          }
+    try {
+      const prep = await prepare({
         sources: [source],
         split: parseSplit("file"),
         questions: spec.questions,
         profile,
-        cwd: ctx.config.repoRoot,
+        cwd: root,
         exclude: ctx.config.egress.exclude,
-      }),
-    })
+      })
+      const [item, ...rest] = prep.items
+      const why = prep.skipped[0]
+      prepared.push(
+        item && rest.length === 0
+          ? { id: example.id, expect, prep }
+          : {
+              id: example.id,
+              expect,
+              reason: why ? `${why.path} ${why.reason}` : `gave ${prep.items.length} states, not 1`,
+            },
+      )
+    } catch (error) {
+      // An oversized or unreadable example is that example's problem, not the run's.
+      if (!isDecisionsError(error) || !["state-too-large", "source-error"].includes(error.code)) {
+        throw error
+      }
+      prepared.push({ id: example.id, expect, reason: error.message.split("\n")[0] })
+    }
   }
 
   const decider = deciderFor(ctx, profile, input.mode ?? "replay")
   if (decider.mode !== "replay") {
-    assertConsent(ctx.config.egress.consent, ctx.config.repoRoot)
-    const tokens = prepared.map((p) => p.prep.projection.estimatedInputTokens)
+    assertConsent(ctx.config.egress.consent, root)
+    const tokens = prepared.flatMap((p) => (p.prep ? [p.prep.projection.estimatedInputTokens] : []))
     checkBudget(project(profile, tokens), ctx.config.budget, input.confirm ?? false)
   }
 
   const results: ExampleResult[] = []
   const usages: Usage[] = []
   let misses = 0
-  for (const { id, expect, prep } of prepared) {
-    const [item, ...rest] = prep.items
-    if (!item || rest.length > 0) {
-      const why = prep.skipped[0]
-      results.push({
-        id,
-        status: "withheld",
-        reason: why ? `${why.path} ${why.reason}` : `gave ${prep.items.length} states, not 1`,
-      })
+  for (const { id, expect, prep, reason } of prepared) {
+    const item = prep?.items[0]
+    if (!prep || !item) {
+      results.push({ id, status: "withheld", reason: reason ?? "not sent" })
       continue
     }
     try {
@@ -151,7 +177,7 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
     counts,
     examples: results,
     usage: sumUsage(usages),
-    skipped: summariseSkipped(prepared.flatMap((p) => p.prep.skipped)),
+    skipped: summariseSkipped(prepared.flatMap((p) => p.prep?.skipped ?? [])),
   }
 }
 

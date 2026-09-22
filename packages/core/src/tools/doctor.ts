@@ -95,7 +95,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           name: "key",
           status: "warn",
           detail: "no API key: only replay works",
-          fix: "set OPENROUTER_API_KEY, or put the key in ~/.config/decisions/credentials (mode 600)",
+          fix: "set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/decisions/credentials (chmod 600)",
         },
   )
   checks.push(

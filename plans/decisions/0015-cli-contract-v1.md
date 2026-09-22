@@ -76,8 +76,12 @@ When a `many` run fails for every item with the same code, that code is raised f
 ## `spec check` (added in M5, additive)
 
 - **Usage:** `decide spec check <name|path> [--live|--replay] [--confirm] [--model <id>]` runs a spec's `examples` and compares each against its `expect`.
-- **Modes:** replay is the default. `--live` records fresh answers into the spec's fixture namespace, after the same consent and spend-guard checks as `many`.
-- **Examples:** each example gives exactly one of `state` (text) or `file` (`path[:START-END]`, which goes through the same excludes, scrubbing and size checks as any source). An example whose file is withheld is reported as `withheld`, never sent.
+- **Modes:** replay is the default; the input schema accepts only `replay` and `record`. `--live` records fresh answers into the spec's fixture namespace, after the same consent and spend-guard checks as `many`.
+- **Examples:** each example gives exactly one of `state` or `file`.
+  - `state` is text, or a JSON value, which is sent as its JSON text.
+  - `file` is `path[:START-END]`. It must be inside the repo, and it goes through the same excludes, scrubbing and size checks as any source.
+  - An example whose file is outside the repo, missing, excluded or too large is reported as `withheld`, with a reason, and never sent. The other examples still run.
+  - Example problems are reported by `spec validate` and `spec check` only. A spec with a bad example still loads for `ask` and `many`.
 - **`expect`**, per question:
   - `true`/`false` for a noul, compared at 0.5;
   - an option key for a choice, compared with the winner;
@@ -92,10 +96,14 @@ When a `many` run fails for every item with the same code, that code is raised f
   - Exit 6: any example with no recorded answer. The message names `--live`.
 - `decide schema spec-check` prints its input schema.
 
+## `--split join` (added in M5, additive)
+
+`join` builds one state from every source, such as a diff plus a test log for a criteria check. Each source is split by file and passed through excludes **first**, so a secret-shaped file is never folded in. Each part is headed by `--- <id> ---`, and the item id is `joined(<n>)`.
+
 ## Excerpts for items with no file (added in M5, additive)
 
 A `many` result row with no `path` (e.g. piped `--stdin`), or covering a single line (e.g. `--split row`), carries an `excerpt`: the first 120 characters of its scrubbed text, with whitespace collapsed. `brief` prints it after the answers. Without it, an id like `stdin:12` can't be traced back to the text.
 
 ## `doctor` path-version check (added in M5)
 
-When `decide` is on PATH, `doctor` runs it with `version` (2 s timeout) and warns if it differs from the running version. It's a warning, because agents run the one on PATH. The CLI supplies the probe, so the engine itself still spawns only `git` (0014).
+When `decide` is on PATH, `doctor` runs it with `version` and warns if it differs from the running version. The probe has a 2 s timeout and kills the process after it. It sets `DECISIONS_NO_NPX=1`, so the plugin shim won't fall back to downloading the package with `npx`. It's a warning, because agents run the one on PATH. The CLI supplies the probe, so the engine itself still spawns only `git` (0014).

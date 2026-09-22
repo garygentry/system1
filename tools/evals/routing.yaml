@@ -8,8 +8,10 @@
 # planted on purpose for the prompts to find: fetches without timeouts,
 # swallowed errors, and a password in a URL and a log line (src/auth/login.ts).
 # The volume data (tickets, reviews, commits, failures, the cleanup plan,
-# packages) and the
-# uncommitted change come from make-fixture.py, seeded, so they're reproducible.
+# packages) and fixture-changes/src (except http/) come from make-fixture.py,
+# seeded, so they're reproducible. src/http, test/, TASK.md, README.md and
+# test-output.log are written by hand. Two design positives name the spec file
+# (.decisions/specs/timeouts.yaml): a user repairing a spec would say where it is.
 # It is never run, and it only talks to example.com. Don't "fix" those defects:
 # the prompts depend on them, and a comment would give the answer away.
 #

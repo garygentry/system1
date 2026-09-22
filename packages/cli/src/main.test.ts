@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
+import { probeVersion } from "./commands/doctor.js"
 import { main } from "./main.js"
 
 const dirs: string[] = []
@@ -393,6 +394,43 @@ examples:
     expect(await main(["spec", "check", "bare"], io)).toBe(2)
     expect(await main(["spec", "check"], io)).toBe(2)
     expect(await main(["spec", "check", "auth", "--live", "--replay"], io)).toBe(2)
+  })
+})
+
+describe("probeVersion", () => {
+  const script = (body: string) => {
+    const dir = mkdtempSync(join(tmpdir(), "decide-probe-"))
+    dirs.push(dir)
+    const file = join(dir, "decide")
+    writeFileSync(file, `#!/bin/sh\n${body}\n`, { mode: 0o755 })
+    return file
+  }
+
+  it("reads the first line, and never lets the shim fall back to npx", async () => {
+    expect(await probeVersion(script('echo "1.2.3"'), {})).toBe("1.2.3")
+    expect(await probeVersion(script('echo "no_npx=$DECISIONS_NO_NPX"'), {})).toBe("no_npx=1")
+  })
+
+  it("gives up on a child that ignores its timeout", async () => {
+    const started = Date.now()
+    expect(await probeVersion(script("trap '' TERM; sleep 5"), {}, 300)).toBeUndefined()
+    expect(Date.now() - started).toBeLessThan(2000)
+  })
+})
+
+describe("decide spec validate", () => {
+  it("fails on an example file that is missing or outside the repo", async () => {
+    const spec = `description: x
+questions:
+  a: { type: noul, instructions: A. }
+examples:
+  - { id: up, file: "../../etc/hostname" }
+`
+    const { io, json } = rig({ ".decisions/specs/s.yaml": spec })
+    expect(await main(["spec", "validate", "s"], io)).toBe(2)
+    expect(json().error.message).toContain("outside the repo")
+    // It still loads for ask and many.
+    expect(await main(["many", "--spec", "s", "--text", "x", "--dry-run"], io)).toBe(0)
   })
 })
 

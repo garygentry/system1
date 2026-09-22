@@ -58,6 +58,8 @@ export type { Expectation } from "./spec/expect.js"
 export { describeExpectation, meets, parseExpect } from "./spec/expect.js"
 export type { Spec, SpecDirs, SpecFile, SpecListing } from "./spec/spec.js"
 export {
+  assertExamples,
+  exampleProblems,
   listSpecs,
   loadSpec,
   parseQuestionSet,

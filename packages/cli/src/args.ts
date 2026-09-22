@@ -211,7 +211,11 @@ function readText(path: string, ref: string, flag = "--input"): string {
   try {
     return readFileSync(path, "utf8")
   } catch {
-    throw new DecisionsError("invalid-request", `${flag}: cannot read ${ref}`)
+    const hint =
+      flag === "--questions" && /:\s/.test(ref)
+        ? " (inline questions must be JSON, or YAML spanning several lines)"
+        : ""
+    throw new DecisionsError("invalid-request", `${flag}: cannot read ${ref}${hint}`)
   }
 }
 

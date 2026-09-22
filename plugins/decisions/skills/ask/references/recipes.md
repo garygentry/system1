@@ -2,7 +2,9 @@
 
 Each recipe is a complete command. Replace the paths and the wording, and keep the structure. Add `--format brief` to get output meant for reading; the default is JSON.
 
-**Run `decide` as its own command.** Some sandboxes, Codex's among them, give network access only to commands that start with `decide`. There, `something | decide …` runs without network and fails with a DNS or connection error. So these recipes save the content to a file first, then pass it with `--file`. Where piping works, `… | decide … --stdin` is equivalent.
+**Run `decide` as its own command.** Some sandboxes, Codex's among them, give network access only to commands that start with `decide`. There, `something | decide …` or `prep && decide …` runs without network and fails with a DNS or connection error.
+
+So when content needs preparing, these recipes show two blocks. Run the first, then run the second as a separate command. Where piping works, `… | decide … --stdin` is equivalent.
 
 ## Screen many items
 
@@ -26,6 +28,9 @@ decide many --glob 'src/**/*.ts' \
 
 ```sh
 grep -rn 'catch' src > /tmp/hits.txt
+```
+
+```sh
 decide many --file /tmp/hits.txt --split row \
   --question 'swallowed:noul:The line catches an error and discards it without logging or rethrowing.' \
   --keep 'swallowed>=0.7' --format brief
@@ -43,6 +48,9 @@ decide many --diff main --split hunk \
 
 ```sh
 tail -60 test-output.log > /tmp/failure.txt
+```
+
+```sh
 decide ask --file /tmp/failure.txt --format brief --questions '
 failure:
   type: choice
@@ -57,11 +65,14 @@ failure:
 
 ## Check criteria against evidence
 
-Put the evidence together in one file, and give one noul per criterion, each with explicit criteria:
+Send the diff and the test output as one state with `--split join`, and give one noul per criterion, each with explicit criteria. Pass the diff with `--diff`, not as a saved file: that way the excludes still keep secret-shaped files (`.env*`, keys) out of it.
 
 ```sh
-{ git diff HEAD; echo '--- test output ---'; tail -40 test-output.log; } > /tmp/evidence.txt
-decide ask --file /tmp/evidence.txt --format brief --questions '
+tail -40 test-output.log > /tmp/test-tail.txt
+```
+
+```sh
+decide ask --diff HEAD --file /tmp/test-tail.txt --split join --format brief --questions '
 tests_added:
   type: noul
   instructions: The diff adds or changes a test that exercises the new behaviour.

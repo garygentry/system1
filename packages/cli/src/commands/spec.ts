@@ -1,7 +1,9 @@
 import { parseArgs } from "node:util"
 import {
+  assertExamples,
   createContext,
   DecisionsError,
+  exampleProblems,
   listSpecs,
   loadSpec,
   runSpecCheck,
@@ -49,14 +51,18 @@ export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<
         format,
         () => {
           const c = ctx()
+          const root = c.config.repoRoot
           if (ref) {
             const spec = loadSpec(ref, c.specDirs, c.cwd)
+            assertExamples(spec, root)
             return { valid: [spec.name], invalid: [] as Array<{ name: string; error: string }> }
           }
           const all = listSpecs(c.specDirs)
-          const invalid = all
-            .filter((s) => s.error)
-            .map((s) => ({ name: s.name, error: s.error as string }))
+          const invalid = all.flatMap((s) => {
+            if (s.error) return [{ name: s.name, error: s.error }]
+            const problems = exampleProblems(loadSpec(s.file, c.specDirs, c.cwd), root)
+            return problems.length ? [{ name: s.name, error: problems.join("\n") }] : []
+          })
           if (invalid.length) {
             throw new DecisionsError(
               "invalid-request",

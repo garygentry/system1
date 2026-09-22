@@ -251,6 +251,16 @@ function profileList(layer: Layer, file: string): ModelProfile[] {
         { file },
       )
     }
+    if (
+      profile.maxChoices !== undefined &&
+      !(Number.isInteger(profile.maxChoices) && (profile.maxChoices as number) >= 2)
+    ) {
+      throw new DecisionsError(
+        "config-error",
+        `${file}: profiles[${i}].maxChoices must be a whole number of at least 2`,
+        { file },
+      )
+    }
     return {
       displayName: profile.id as string,
       transport: "openrouter-decisions",
