@@ -18,7 +18,7 @@
     ]
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && pnpm -F @garygentry/decisions exec node bundle.mjs",
     "typecheck": "tsc -b && tsc -p tsconfig.tools.json",
     "lint": "biome check .",
     "format": "biome check --write .",
@@ -28,6 +28,7 @@
     "validate": "tsx tools/validate.ts",
     "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm test && pnpm generate:check && pnpm validate",
     "smoke": "sh tools/smoke/all.sh",
+    "bench:startup": "tsx tools/bench-startup.ts",
     "test:live": "vitest run --config vitest.live.config.ts --silent=false"
   },
   "devDependencies": {

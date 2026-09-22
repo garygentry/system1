@@ -6,7 +6,6 @@ import {
   resolveConnection,
   runUsage,
   TOOL_SCHEMAS,
-  VERSION,
 } from "@garygentry/decisions-core"
 import type { Format } from "../envelope.js"
 import { EXIT, type ExitCode } from "../exit-codes.js"
@@ -47,16 +46,6 @@ export function runUsageCommand(argv: string[], io: Io, format: Format): Promise
         ? `usage (measured): ${r.calls} call(s) — ${r.liveCalls} live, ${r.replayCalls} replayed · ` +
           `$${r.cost.toFixed(6)} · ${r.input_tokens} input tokens${r.session ? ` · session ${r.session}` : ""}`
         : undefined,
-  )
-}
-
-export function runVersionCommand(io: Io, format: Format): Promise<ExitCode> {
-  return emit(
-    io,
-    "version",
-    format,
-    () => ({ version: VERSION }),
-    (r, f) => (f === "json" ? undefined : r.version),
   )
 }
 

@@ -66,6 +66,7 @@ export const ManyInput = Type.Object({
 })
 
 export const UsageInput = Type.Object({
+  /** A session id, or `current` for the one this process detected. */
   session: Type.Optional(Type.String()),
   /** ISO date or timestamp. */
   since: Type.Optional(Type.String()),

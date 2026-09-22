@@ -1,4 +1,4 @@
-import { DecisionsError, isDecisionsError } from "@garygentry/decisions-core"
+import { DecisionsError, isDecisionsError } from "@garygentry/decisions-core/errors"
 import { FORMATS, type Format, fail, ok } from "./envelope.js"
 import { EXIT, type ExitCode, exitFor } from "./exit-codes.js"
 import type { Io } from "./io.js"

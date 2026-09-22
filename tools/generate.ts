@@ -129,7 +129,7 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
     { path: `${PLUGIN_DIR}/bin/decide`, content: shim(catalog), executable: true },
     {
       path: "packages/core/src/version.ts",
-      content: `// GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)\nexport const VERSION = "${version}"\n`,
+      content: `// GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)\nexport const VERSION = "${version}"\n/** The npm package that provides \`decide\`. */\nexport const CLI_PACKAGE = "${cliPackageName(catalog)}"\n`,
     },
   ]
 
@@ -145,10 +145,13 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
  * The `decide` on PATH inside Claude Code (plugin `bin/` is added to the Bash
  * tool's PATH), and the entry the smoke tests put on PATH for Codex and Pi.
  *
- * Resolution order: an explicit override, then a repo checkout's build (dev and
- * smoke), then the pinned npm release.
+ * Resolution order: an explicit override, then a repo checkout's bundle (dev
+ * and smoke), then a global install, then the pinned npm release. The global
+ * lookup skips this file, and `DECISIONS_SHIM` stops two shim copies (say, a
+ * cached plugin and a checkout) from calling each other forever.
  */
 function shim(catalog: Catalog): string {
+  const pinned = `${cliPackageName(catalog)}@${catalog.version}`
   return `#!/bin/sh
 # GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
 # Runs the decisions CLI pinned to this plugin's version.
@@ -156,12 +159,27 @@ set -e
 if [ -n "\${DECISIONS_CLI:-}" ]; then
   exec node "$DECISIONS_CLI" "$@"
 fi
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-dev="$here/../../../packages/cli/dist/bin.js"
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+dev="$here/../../../packages/cli/dist/bundle/decide.mjs"
 if [ -f "$dev" ]; then
   exec node "$dev" "$@"
 fi
-exec npx --yes "${cliPackageName(catalog)}@${catalog.version}" "$@"
+if [ -z "\${DECISIONS_SHIM:-}" ]; then
+  export DECISIONS_SHIM=1
+  old_ifs=$IFS; IFS=:
+  for dir in $PATH; do
+    [ -n "$dir" ] && [ -x "$dir/decide" ] || continue
+    [ "$(CDPATH= cd -- "$dir" && pwd -P)" = "$here" ] && continue
+    IFS=$old_ifs
+    exec "$dir/decide" "$@"
+  done
+  IFS=$old_ifs
+fi
+if command -v npx >/dev/null 2>&1; then
+  exec npx --yes "${pinned}" "$@"
+fi
+echo "decide: the decisions CLI is not installed. Install it with: npm i -g ${pinned}" >&2
+exit 127
 `
 }
 

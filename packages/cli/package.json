@@ -13,15 +13,18 @@
     "node": ">=22"
   },
   "bin": {
-    "decide": "./dist/bin.js"
+    "decide": "./dist/bundle/decide.mjs"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b && node bundle.mjs"
   },
   "dependencies": {
     "@garygentry/decisions-core": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

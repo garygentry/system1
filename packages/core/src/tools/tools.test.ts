@@ -207,5 +207,26 @@ describe("usage", () => {
       readFileSync(join(cwd, ".decisions/usage.jsonl"), "utf8").trim().split("\n"),
     ).toHaveLength(4)
     expect(() => runUsage(ctx, { since: "not a date" })).toThrow(/not a date/)
+    expect(() => runUsage(ctx, { session: "current" })).toThrow(/no current session/)
+  })
+
+  it("records the detected harness session and filters by `current`", async () => {
+    const cwd = temp({ ".decisions/config.yaml": CONSENT, ...FILES })
+    const model = fakeDecisionsFetch()
+    const ctx = (session: string) =>
+      createContext({
+        cwd,
+        home: temp(),
+        env: { OPENROUTER_API_KEY: "k", CLAUDE_CODE_SESSION_ID: session },
+        fetch: model.fetch,
+      })
+    await runMany(ctx("s1"), { questions, sources: [{ kind: "glob", patterns: ["src/*"] }] })
+    await runAsk(ctx("s2"), { questions, sources: [{ kind: "text", text: "one more" }] })
+    expect(runUsage(ctx("s1"), { session: "current" })).toMatchObject({
+      session: "claude:s1",
+      calls: 4,
+    })
+    expect(runUsage(ctx("s2"), { session: "current" })).toMatchObject({ calls: 1 })
+    expect(runUsage(ctx("s2"))).toMatchObject({ calls: 5 })
   })
 })

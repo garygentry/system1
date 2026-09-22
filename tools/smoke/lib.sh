@@ -1,24 +1,44 @@
 # Shared helpers for the headless harness smoke tests. Sourced, not run.
 # Each test drives a real agent (it spends that harness's model tokens) and
-# asserts the agent ran `decide ping` through the plugin's skill.
+# asserts the agent ran `decide` through one of the plugin's skills:
+#   ping  `decide ping` via the ping skill: live network from the agent's shell
+#   many  `decide many --spec smoke` via the ask skill, in replay (no key, no spend)
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 SMOKE="$REPO/.smoke"          # gitignored scratch; never /tmp (Codex refuses it)
-MARKER="decide ping: ok — [^ ]+ reachable in [0-9]+ ms"   # only real CLI output matches
-PROMPT="Use the ping skill from the decisions plugin to check the decisions setup. Print the line it outputs verbatim."
 TIMEOUT=${SMOKE_TIMEOUT:-240}
+
+# Markers match only real CLI output, never SKILL.md text (Codex echoes skills).
+PING_MARKER="decide ping: ok — [^ ]+ reachable in [0-9]+ ms"
+PING_PROMPT="Use the ping skill from the decisions plugin to check the decisions setup. Print the line it outputs verbatim."
+MANY_MARKER="decide many: 1 kept of 3 · 0 undecided · 2 dropped · replay "
+MANY_PROMPT="Use the ask skill from the decisions plugin to run the smoke spec over this repo. Print the first line of its output verbatim."
 
 # Codex and Pi do not add plugin bin/ to PATH; stand in for a global install.
 export PATH="$REPO/plugins/decisions/bin:$PATH"
 
-[ -f "$REPO/packages/cli/dist/bin.js" ] || { echo "smoke: run \`pnpm build\` first" >&2; exit 2; }
+[ -f "$REPO/packages/cli/dist/bundle/decide.mjs" ] || { echo "smoke: run \`pnpm build\` first" >&2; exit 2; }
 
-assert_marker() { # $1 = harness, $2 = output file
-  if grep -Eq "$MARKER" "$2"; then
-    echo "smoke[$1]: PASS — $(grep -Em1 "$MARKER" "$2")"
+# A fresh copy of the fixture repo: its own git repo (so the parent's ignore
+# rules for .smoke/ don't withhold its files), with committed replay fixtures.
+fixture_repo() { # $1 = dir
+  rm -rf "$1"
+  cp -R "$REPO/tools/smoke/fixture-repo" "$1"
+  git -C "$1" init -q
+}
+
+# Replay only: no key reaches the agent's shell, so nothing can be sent.
+replay_env() {
+  unset OPENROUTER_API_KEY
+  export DECISIONS_REPLAY=1
+}
+
+assert_marker() { # $1 = label, $2 = marker, $3 = output file
+  if grep -Eq "$2" "$3"; then
+    echo "smoke[$1]: PASS — $(grep -Em1 "$2" "$3")"
   else
     echo "smoke[$1]: FAIL — marker not found. Last output:" >&2
-    tail -20 "$2" >&2
+    tail -20 "$3" >&2
     return 1
   fi
 }

@@ -14,6 +14,8 @@ export {
   repoConfigPath,
   userConfigDir,
 } from "./config/load.js"
+export type { DetectedSession, Harness } from "./config/session.js"
+export { detectHarness, detectSession } from "./config/session.js"
 export type { DecideInput, DecideMode, Decider, DeciderOptions, DecisionResult } from "./decide.js"
 export { createDecider } from "./decide.js"
 export { applyExcludes, DEFAULT_EXCLUDES, isExcluded } from "./egress/exclude.js"
@@ -60,6 +62,8 @@ export type { AskResult } from "./tools/ask.js"
 export { runAsk } from "./tools/ask.js"
 export type { ContextOptions, ToolContext } from "./tools/context.js"
 export { createContext, deciderFor } from "./tools/context.js"
+export type { CheckStatus, DoctorCheck, DoctorOptions, DoctorResult } from "./tools/doctor.js"
+export { CODEX_RULE, runDoctor, which } from "./tools/doctor.js"
 export type { ManyResult, ResultRow, SkippedSummary } from "./tools/many.js"
 export { runMany, summariseSkipped } from "./tools/many.js"
 export type { ToolName } from "./tools/schemas.js"
@@ -72,7 +76,7 @@ export {
   DEFAULT_TIMEOUT_MS,
   RETRY_STATUSES,
 } from "./transport/openrouter.js"
-export { VERSION } from "./version.js"
+export { CLI_PACKAGE, VERSION } from "./version.js"
 export type { ConnectionConfig, EnvDeciderOptions } from "./wiring.js"
 export {
   createDeciderFromEnv,

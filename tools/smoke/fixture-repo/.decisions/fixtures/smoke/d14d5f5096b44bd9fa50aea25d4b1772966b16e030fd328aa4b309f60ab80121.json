@@ -1,0 +1,31 @@
+{
+  "v": 1,
+  "key": "d14d5f5096b44bd9fa50aea25d4b1772966b16e030fd328aa4b309f60ab80121",
+  "recordedAt": "2026-09-22T04:26:53.658Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "/** Minimal leveled logger that writes JSON lines to stderr. */\nexport function log(level: \"info\" | \"warn\" | \"error\", message: string): void {\n  process.stderr.write(`${JSON.stringify({ level, message, at: new Date().toISOString() })}\\n`)\n}\n",
+    "questions": {
+      "moves_money": {
+        "type": "noul",
+        "instructions": "The code charges, refunds or transfers money."
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "moves_money": {
+        "type": "noul",
+        "noul": 0
+      }
+    },
+    "usage": {
+      "input_tokens": 337,
+      "output_tokens": 21,
+      "cost": 0.000014154
+    },
+    "id": "gen-dec-1790051213-wtII8rrkD50HGngULd20",
+    "provider": "TypeSafe"
+  }
+}

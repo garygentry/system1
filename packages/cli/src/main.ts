@@ -1,13 +1,6 @@
-import { DecisionsError, VERSION } from "@garygentry/decisions-core"
-import { runConfigCommand } from "./commands/config.js"
-import { runAskCommand, runManyCommand } from "./commands/decide.js"
-import {
-  runPingCommand,
-  runSchemaCommand,
-  runUsageCommand,
-  runVersionCommand,
-} from "./commands/misc.js"
-import { runSpecCommand } from "./commands/spec.js"
+// Deep imports keep the startup path off the core barrel (see bundle.mjs).
+import { DecisionsError } from "@garygentry/decisions-core/errors"
+import { VERSION } from "@garygentry/decisions-core/version"
 import type { Format } from "./envelope.js"
 import { EXIT, type ExitCode } from "./exit-codes.js"
 import type { Io } from "./io.js"
@@ -27,6 +20,7 @@ Commands:
   spec      list | show <name> | validate [name|path]
   schema    Print the JSON Schema of a tool's input (ask, many, usage)
   ping      Check the endpoint is reachable (no key, no spend)
+  doctor    Check decide works from this shell; prints the fix for each problem
   version   Print the version
 
 Questions:  --spec <name|path>  |  --question name:noul:<text>
@@ -69,27 +63,34 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
     io.out(HELP)
     return EXIT.ok
   }
+  // Command modules load on demand: startup is dominated by module loading,
+  // so `version` and `help` must not pay for TypeBox, yaml and the globbers.
   switch (command) {
     case "ask":
-      return runAskCommand(rest, io, format)
+      return (await import("./commands/decide.js")).runAskCommand(rest, io, format)
     case "many":
-      return runManyCommand(rest, io, format)
+      return (await import("./commands/decide.js")).runManyCommand(rest, io, format)
     case "usage":
-      return runUsageCommand(rest, io, format)
+      return (await import("./commands/misc.js")).runUsageCommand(rest, io, format)
     case "config":
-      return runConfigCommand(rest, io, format)
+      return (await import("./commands/config.js")).runConfigCommand(rest, io, format)
     case "spec":
-      return runSpecCommand(rest, io, format)
+      return (await import("./commands/spec.js")).runSpecCommand(rest, io, format)
     case "schema":
-      return runSchemaCommand(rest, io, format)
+      return (await import("./commands/misc.js")).runSchemaCommand(rest, io, format)
     case "ping":
-      return runPingCommand(io, format)
+      return (await import("./commands/misc.js")).runPingCommand(io, format)
+    case "doctor":
+      return (await import("./commands/doctor.js")).runDoctorCommand(io, format)
     case "version":
     case "--version":
     case "-v":
-      return runVersionCommand(
+      return emit(
         io,
+        "version",
         format === "json" && !argv.includes("--format") ? "brief" : format,
+        () => ({ version: VERSION }),
+        (r, f) => (f === "json" ? undefined : r.version),
       )
     default:
       return emit(io, command, format, () => {

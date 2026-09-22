@@ -102,6 +102,7 @@ function show(io: Io, cwd: string) {
     apiKey: config.apiKey ? `present (${config.apiKeySource})` : "absent (replay only)",
     replay: config.replay,
     session: config.session ?? null,
+    sessionOrigin: config.sessionOrigin ?? null,
     files: config.layers,
     specDirs: ctx.specDirs,
   }
@@ -120,5 +121,6 @@ function brief(r: ConfigResult): string {
     `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted — run `decide config egress allow`"}`,
     `excludes: ${r.egress.defaultExcludes} default${r.egress.exclude.length ? ` + ${r.egress.exclude.join(", ")}` : ""}`,
     `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency}`,
+    `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "DECISIONS_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
   ].join("\n")
 }

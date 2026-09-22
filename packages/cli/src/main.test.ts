@@ -258,3 +258,24 @@ describe("decide spec", () => {
     expect(json().error.details.invalid[0].name).toBe("broken")
   })
 })
+
+describe("decide doctor", () => {
+  it("reports findings in an ok envelope with exit 0, never the key", async () => {
+    const { io, out, json } = rig()
+    // The rig's fake endpoint cannot answer ping's GET, so the network check fails.
+    expect(await main(["doctor"], io)).toBe(0)
+    const r = json()
+    expect(r).toMatchObject({ ok: true, command: "doctor", result: { healthy: false } })
+    expect(r.result.checks.map((c: { name: string }) => c.name)).toEqual([
+      "cli",
+      "path",
+      "key",
+      "consent",
+      "network",
+    ])
+    expect(out.join("\n")).not.toContain('"k"')
+    expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/^decide doctor: PROBLEMS FOUND · harness none/)
+    expect(out.at(-1)).toMatch(/fail network: .*\n {7}fix: check that this machine/)
+  })
+})

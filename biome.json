@@ -13,6 +13,7 @@
       "!.agents",
       "!plugins/decisions/plugin.json",
       "!.smoke",
+      "!tools/smoke/fixture-repo",
       "!.remember",
       "!.claude"
     ]

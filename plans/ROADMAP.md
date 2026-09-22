@@ -182,7 +182,7 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M1** | Core: model, profiles, transport, fixtures, spend ledger | **done 2026-09-22**, see `milestones/M1-core-model-transport.md` |
 | **M2** | Core: config, sources, splitters, egress, budget guard | **done 2026-09-22**, see `milestones/M2-sources-egress-budget.md` |
 | **M3** | Tool definitions + spec format + CLI contract | **done 2026-09-22**, see `milestones/M3-tools-spec-cli.md` |
-| **M4** | CLI hardening + harness wiring | Startup under 150 ms. `bin` shim. `brief` format. Per-harness smoke tests: each agent runs `decide ask` in replay mode through a skill. Codex network path solved |
+| **M4** | CLI hardening + harness wiring | **done 2026-09-22**, see `milestones/M4-cli-harness.md` |
 | **M5** | Skills + generic specs | `setup`, `ask`, `design` (plus `primitives.md`, `question-craft.md`, `thresholds.md`, `shapes.md`). Generic specs, each with examples and fixtures. Routing evals, positive and negative |
 | **M6** | Release 0.1.0 | npm publish. Marketplace installs from GitHub on all three. README install matrix. A live end-to-end run per harness |
 | M7 | Phase 2: `scout` + `opportunity-scout` + `question-critic`; agent generator | outline |
@@ -203,12 +203,12 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 ## Open questions
 
 1. ~~The `--keep` filter language~~ **Answered in M3:** the shorthand only, with the full tool input available as JSON through `--input` (0015).
-2. ~~How to handle Codex sandbox network~~ **Answered in M0:** a narrow `prefix_rule(pattern=["decide"], decision="allow")` works under the default sandbox. Still open: can a plugin ship that rule, or must `setup` write it to `~/.codex/rules/` (M4/M5)?
+2. ~~How to handle Codex sandbox network~~ **Answered in M0:** a narrow `prefix_rule(pattern=["decide"], decision="allow")` works under the default sandbox. **Answered in M4:** a plugin cannot ship it (none of 190 cached Codex plugins use anything but `skills`, `apps` and `mcpServers`). `decide doctor` prints the exact line and path. `setup` writes it to `$CODEX_HOME/rules/decisions.rules` with consent (M5).
 3. Can Codex plugins ship subagents (M7)? ~~How does Pi mark a skill user-only~~ **Answered in M0:** Pi honours `disable-model-invocation`.
 4. Which generic specs go into v1 (M5)?
 5. Should `decisions-core` be published separately or bundled into the CLI (M6)?
 6. Is a separate Pi npm package needed? A local-path install works. A `git:` install runs `npm install` on the root, which would pull devDependencies, so a slim published package may be better (M6).
-7. **New in M0:** neither Codex nor Pi puts plugin `bin/` on PATH. How does a user get `decide` there: `npm i -g`, or should `setup` do it with consent (M4/M5)?
+7. ~~**New in M0:** neither Codex nor Pi puts plugin `bin/` on PATH. How does a user get `decide` there?~~ **Answered in M4:** `npm i -g @garygentry/decisions@<version>`. `decide doctor` detects the gap and prints that command, and the shim falls back to a global install before `npx`. `setup` may run the install with consent (M5). Publishing is M6.
 
 ## Verification
 

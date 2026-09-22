@@ -15,6 +15,7 @@ import { parse } from "yaml"
 import { DecisionsError } from "../errors.js"
 import { DEFAULT_MODEL_ID, type ModelProfile, PROFILES } from "../model/profiles.js"
 import { DEFAULT_ENDPOINT, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
+import { type DetectedSession, detectSession } from "./session.js"
 
 export interface Consent {
   granted: boolean
@@ -55,7 +56,9 @@ export interface ResolvedConfig extends DecisionsConfig {
   apiKey: string | undefined
   apiKeySource: "env" | "credentials" | undefined
   replay: boolean
+  /** `DECISIONS_SESSION`, else the harness session id (`claude:…`, `codex:…`, `pi:…`). */
   session: string | undefined
+  sessionOrigin: DetectedSession["origin"] | undefined
   /** Which files contributed, for `decide config`. */
   layers: { user?: string; repo?: string; credentials?: string }
 }
@@ -131,7 +134,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
   }
 
   const key = resolveApiKey(env, userDir)
-  const session = nonEmpty(env.DECISIONS_SESSION)
+  const session = detectSession(env)
   return {
     ...merged,
     model: nonEmpty(env.DECISIONS_MODEL) ?? merged.model,
@@ -140,7 +143,8 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
     apiKey: key?.value,
     apiKeySource: key?.source,
     replay: /^(1|true|yes)$/i.test(env.DECISIONS_REPLAY ?? ""),
-    session,
+    session: session?.id,
+    sessionOrigin: session?.origin,
     layers: {
       ...(user ? { user: userFile } : {}),
       ...(repo ? { repo: repoFile } : {}),

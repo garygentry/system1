@@ -1,0 +1,11 @@
+description: Smoke-test spec. Which source files move money? Answers come from committed replay fixtures.
+questions:
+  moves_money:
+    type: noul
+    instructions: The code charges, refunds or transfers money.
+keep: ["moves_money>=0.7"]
+sort: moves_money:desc
+policy:
+  thresholds:
+    moves_money: { value: 0.7, why: "Smoke test only; any clear split works." }
+source: { glob: ["src/**/*.ts"], split: file }

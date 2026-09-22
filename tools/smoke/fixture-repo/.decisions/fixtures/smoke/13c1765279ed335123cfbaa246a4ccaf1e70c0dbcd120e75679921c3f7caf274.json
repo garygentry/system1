@@ -1,0 +1,31 @@
+{
+  "v": 1,
+  "key": "13c1765279ed335123cfbaa246a4ccaf1e70c0dbcd120e75679921c3f7caf274",
+  "recordedAt": "2026-09-22T04:26:53.685Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "import { gateway } from \"./gateway\"\n\n/** Charge a card and record the payment. Refunds reverse the charge in full. */\nexport async function charge(customerId: string, cents: number): Promise<string> {\n  const receipt = await gateway.charge({ customerId, amount: cents, currency: \"usd\" })\n  return receipt.id\n}\n\nexport async function refund(receiptId: string): Promise<void> {\n  await gateway.refund({ receiptId })\n}\n",
+    "questions": {
+      "moves_money": {
+        "type": "noul",
+        "instructions": "The code charges, refunds or transfers money."
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "moves_money": {
+        "type": "noul",
+        "noul": 0.96
+      }
+    },
+    "usage": {
+      "input_tokens": 378,
+      "output_tokens": 21,
+      "cost": 0.000015876
+    },
+    "id": "gen-dec-1790051213-HlF7o8EDVv3p6gWHtX5R",
+    "provider": "TypeSafe"
+  }
+}

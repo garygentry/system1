@@ -5,9 +5,24 @@ set -e
 if [ -n "${DECISIONS_CLI:-}" ]; then
   exec node "$DECISIONS_CLI" "$@"
 fi
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-dev="$here/../../../packages/cli/dist/bin.js"
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+dev="$here/../../../packages/cli/dist/bundle/decide.mjs"
 if [ -f "$dev" ]; then
   exec node "$dev" "$@"
 fi
-exec npx --yes "@garygentry/decisions@0.0.0" "$@"
+if [ -z "${DECISIONS_SHIM:-}" ]; then
+  export DECISIONS_SHIM=1
+  old_ifs=$IFS; IFS=:
+  for dir in $PATH; do
+    [ -n "$dir" ] && [ -x "$dir/decide" ] || continue
+    [ "$(CDPATH= cd -- "$dir" && pwd -P)" = "$here" ] && continue
+    IFS=$old_ifs
+    exec "$dir/decide" "$@"
+  done
+  IFS=$old_ifs
+fi
+if command -v npx >/dev/null 2>&1; then
+  exec npx --yes "@garygentry/decisions@0.0.0" "$@"
+fi
+echo "decide: the decisions CLI is not installed. Install it with: npm i -g @garygentry/decisions@0.0.0" >&2
+exit 127

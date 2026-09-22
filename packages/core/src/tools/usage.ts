@@ -17,15 +17,24 @@ export function runUsage(ctx: ToolContext, rawInput: unknown = {}): UsageResult 
   if (since && Number.isNaN(since.getTime())) {
     throw new DecisionsError("invalid-request", `--since "${input.since}" is not a date`)
   }
+  const session = input.session === "current" ? currentSession(ctx) : input.session
   const ledger = ledgerFor(ctx)
   return {
     basis: "measured",
     ...ledger.summary({
-      ...(input.session ? { session: input.session } : {}),
+      ...(session ? { session } : {}),
       ...(since ? { since } : {}),
     }),
     ledger: ledger.file,
-    ...(input.session ? { session: input.session } : {}),
+    ...(session ? { session } : {}),
     ...(input.since ? { since: input.since } : {}),
   }
+}
+
+function currentSession(ctx: ToolContext): string {
+  if (ctx.config.session) return ctx.config.session
+  throw new DecisionsError(
+    "invalid-request",
+    "no current session: not running under Claude Code, Codex or Pi, and DECISIONS_SESSION is not set",
+  )
 }

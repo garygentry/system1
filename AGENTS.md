@@ -9,7 +9,7 @@ Before starting, read `plans/ROADMAP.md`, then the current `plans/milestones/Mn-
 | Path | What it is |
 |---|---|
 | `packages/core` | `@garygentry/decisions-core`, the engine library (model profiles, transport, sources, fixtures, spend) |
-| `packages/cli` | `@garygentry/decisions`, the `decide` CLI (`bin.ts` entry, `main.ts` testable core, `commands/*`) |
+| `packages/cli` | `@garygentry/decisions`, the `decide` CLI (`entry.ts` → `bin.ts` → `main.ts`, the testable core, then `commands/*` loaded lazily). `bundle.mjs` builds `dist/bundle/decide.mjs`, the entry that `bin` and the shim run |
 | `plugins/decisions/skills/` | Agent Skills, authored once and shared by every harness |
 | `plugins/decisions/{plugin.json,.claude-plugin,.codex-plugin,bin/decide}` | **Generated** |
 | `.claude-plugin/`, `.agents/plugins/` | **Generated** marketplaces (Claude Code, Codex) |
@@ -37,8 +37,9 @@ pnpm check      # build · typecheck · lint · test · generate:check · valida
 pnpm generate   # after editing catalog.yaml or the generator
 pnpm test:live  # one real decision call (~$0.00003); loads this repo's .env, skipped without a key
 pnpm smoke      # local only: drives real Claude/Codex/Pi sessions (spends their tokens)
-node packages/cli/dist/bin.js ping --format brief
-node --env-file=.env packages/cli/dist/bin.js many --glob 'src/**/*.ts' --question 'q:noul:…' --keep 'q>=0.7' --format brief
+pnpm bench:startup   # decide startup overhead over bare node (target < 150 ms)
+node packages/cli/dist/bundle/decide.mjs ping --format brief
+node --env-file=.env packages/cli/dist/bundle/decide.mjs many --glob 'src/**/*.ts' --question 'q:noul:…' --keep 'q>=0.7' --format brief
 ```
 
 Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome. Tests sit next to their source as `*.test.ts`, run offline, and use injected `fetch`.
@@ -47,4 +48,5 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
 
 - **Claude Code** puts plugin `bin/` on the Bash PATH, so `decide` resolves to the generated shim. Test with `claude -p --plugin-dir plugins/decisions`.
 - **Codex** copies the plugin into its cache and does **not** put `bin/` on PATH, so users need `decide` installed globally. In the default sandbox the shell has no network. The narrow fix is a rules file with `prefix_rule(pattern = ["decide"], decision = "allow")`. `CODEX_HOME` must not be under `/tmp`.
+- **Session ids** (verified in M4): Claude sets `CLAUDE_CODE_SESSION_ID`, Codex sets `CODEX_THREAD_ID` and Pi sets `PI_SESSION_ID`. A parent harness's variables leak into child harnesses, so `core/config/session.ts` picks the innermost one. `decide doctor` reports the harness, the session and a fix for each problem.
 - **Pi** reads skills through the root `package.json` `pi` key (`pi install <path>`). There is no sandbox and no plugin `bin/`, so `decide` also has to be on PATH. Pi honours `disable-model-invocation`.

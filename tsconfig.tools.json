@@ -12,5 +12,6 @@
     "vitest.live.config.ts",
     "packages/*/src/**/*.test.ts",
     "packages/*/src/testdata/**/*.ts"
-  ]
+  ],
+  "exclude": ["tools/smoke/fixture-repo"]
 }
