@@ -1,11 +1,22 @@
 // Refuses to publish a package whose build output is missing or stale.
 // `npm publish` runs this through each package's prepublishOnly hook.
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { execFileSync } from "node:child_process"
+import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
 const pkgDir = process.cwd()
 const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"))
 const problems = []
+
+// Build rather than guess whether the output is current: `tsc -b` skips
+// rewriting files it would emit identically, so timestamps lie.
+if (pkg.scripts?.build) {
+  try {
+    execFileSync("npm", ["run", "--silent", "build"], { cwd: pkgDir, stdio: "inherit" })
+  } catch {
+    problems.push("build failed")
+  }
+}
 
 const required = [
   ...(pkg.bin ? Object.values(pkg.bin) : []),
@@ -17,18 +28,6 @@ const required = [
 for (const rel of required) {
   if (!existsSync(join(pkgDir, rel))) problems.push(`missing ${rel} (run \`pnpm build\`)`)
 }
-
-// Stale check: any source newer than the newest build output.
-const newest = (dir) => {
-  if (!existsSync(dir)) return 0
-  return readdirSync(dir, { withFileTypes: true, recursive: true })
-    .filter((e) => e.isFile())
-    .map((e) => statSync(join(e.parentPath ?? e.path, e.name)).mtimeMs)
-    .reduce((a, b) => Math.max(a, b), 0)
-}
-const src = newest(join(pkgDir, "src"))
-const out = newest(join(pkgDir, "dist"))
-if (src && out && src > out) problems.push("dist is older than src (run `pnpm build`)")
 
 if (problems.length) {
   console.error(`${pkg.name}: refusing to publish\n  ${problems.join("\n  ")}`)
