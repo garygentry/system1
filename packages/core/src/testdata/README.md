@@ -1,0 +1,1 @@
+Real Jev responses recorded by jev-poc (guardrail demo, `ls -la src/`, 2026-09-17 build), with the exact question set they answered. Used to test response parsing against genuine output rather than invented shapes.

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decisions: ping"
+  short_description: "Check the decisions CLI can reach the decision model"
+  default_prompt: "Use $ping to check that the decisions CLI is installed and can reach the decision model endpoint."
+policy:
+  allow_implicit_invocation: true

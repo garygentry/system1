@@ -1,0 +1,43 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { dirname } from "node:path"
+import { parseDocument } from "yaml"
+import { DecisionsError } from "../errors.js"
+import { type Consent, repoConfigPath } from "./load.js"
+
+const HEADER = `# decisions — per-repo configuration. See https://github.com/garygentry/decisions
+# egress.consent records that this repo agreed to send content to the decision
+# model's provider (OpenRouter). Path excludes and secret scrubbing always apply.
+`
+
+/**
+ * Record (or revoke) egress consent in `<repo>/.decisions/config.yaml`,
+ * preserving whatever else the file holds, comments included.
+ */
+export function setConsent(
+  repoRoot: string,
+  granted: boolean,
+  by?: string,
+  now = new Date(),
+): Consent {
+  const file = repoConfigPath(repoRoot)
+  const doc = existsSync(file) ? parseDocument(readFileSync(file, "utf8")) : parseDocument(HEADER)
+  const consent: Consent = { granted, at: now.toISOString(), ...(by ? { by } : {}) }
+  doc.setIn(["egress", "consent"], consent)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, doc.toString())
+  return consent
+}
+
+/**
+ * @throws DecisionsError `egress-refused` when this repo has not consented.
+ */
+export function assertConsent(consent: Consent, repoRoot: string): void {
+  if (consent.granted) return
+  throw new DecisionsError(
+    "egress-refused",
+    `This repo has not agreed to send content to the decision model's provider. ` +
+      `Run \`decide config egress allow\` in ${repoRoot} (or use the setup skill) to consent. ` +
+      `Replay of recorded answers works without consent.`,
+    { repoRoot },
+  )
+}

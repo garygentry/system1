@@ -1,0 +1,9 @@
+# decisions — per-repo configuration. See https://github.com/garygentry/decisions
+# egress.consent records that this repo agreed to send content to the decision
+# model's provider (OpenRouter). Path excludes and secret scrubbing always apply.
+
+egress:
+  consent:
+    granted: true
+    at: 2026-09-22T03:16:02.719Z
+    by: gary (via Claude, M3 live acceptance)

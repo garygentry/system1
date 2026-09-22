@@ -1,0 +1,32 @@
+{
+  "name": "decisions",
+  "version": "0.0.0",
+  "description": "Route closed judgements (pick one, rate this, yes/no) to a decision model instead of reading everything yourself. Typed, calibrated answers in ~300 ms for a fraction of a cent, via the `decide` CLI.",
+  "author": {
+    "name": "Gary Gentry",
+    "email": "gary@garygentry.net"
+  },
+  "homepage": "https://github.com/garygentry/decisions",
+  "repository": "https://github.com/garygentry/decisions",
+  "license": "MIT",
+  "keywords": [
+    "decisions",
+    "decision-model",
+    "jev",
+    "classification",
+    "triage",
+    "agents"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Decisions",
+    "shortDescription": "Cheap, typed decisions for coding agents",
+    "longDescription": "Route closed judgements (pick one, rate this, yes/no) to a decision model instead of reading everything yourself. Typed, calibrated answers in ~300 ms for a fraction of a cent, via the `decide` CLI.",
+    "developerName": "Gary Gentry",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/garygentry/decisions"
+  }
+}

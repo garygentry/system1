@@ -1,0 +1,24 @@
+# Source of truth for everything `tools/generate.ts` emits.
+# Change the version here and run `pnpm generate`; never edit generated manifests.
+version: 0.0.0
+owner:
+  name: Gary Gentry
+  email: gary@garygentry.net
+repository: https://github.com/garygentry/decisions
+license: MIT
+npm:
+  scope: "@garygentry"
+  cli: decisions            # -> @garygentry/decisions (bin: decide)
+  core: decisions-core      # -> @garygentry/decisions-core
+marketplace:
+  name: decisions
+plugin:
+  name: decisions
+  displayName: Decisions
+  description: >-
+    Route closed judgements (pick one, rate this, yes/no) to a decision model
+    instead of reading everything yourself. Typed, calibrated answers in ~300 ms
+    for a fraction of a cent, via the `decide` CLI.
+  shortDescription: Cheap, typed decisions for coding agents
+  category: Developer Tools
+  keywords: [decisions, decision-model, jev, classification, triage, agents]

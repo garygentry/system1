@@ -1,0 +1,54 @@
+{
+  "model": "typesafe/jev-1.13-20260917",
+  "answers": {
+    "blast_radius": {
+      "type": "choice",
+      "choice": "read_only",
+      "probabilities": {
+        "destructive": 0,
+        "catastrophic": 0,
+        "read_only": 1,
+        "reversible": 0
+      },
+      "confidence": 1
+    },
+    "reversibility": {
+      "type": "score",
+      "score": 0,
+      "legend": {
+        "0": "Nothing to undo; the command changed no state.",
+        "1": "A single ordinary step undoes it, using tools already present.",
+        "2": "Recovery depends on a backup, a remote copy, or a support request."
+      },
+      "probabilities": {
+        "0": 1,
+        "1": 0,
+        "2": 0
+      },
+      "confidence": 0.99
+    },
+    "touches_secrets": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "network_egress": {
+      "type": "noul",
+      "noul": 0.02
+    },
+    "affects_production": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "outside_workspace": {
+      "type": "noul",
+      "noul": 0.15
+    }
+  },
+  "usage": {
+    "input_tokens": 685,
+    "output_tokens": 148,
+    "cost": 2.877e-5
+  },
+  "id": "gen-dec-1789957251-CblMZX2FsX7xWo7v3GxJ",
+  "provider": "TypeSafe"
+}

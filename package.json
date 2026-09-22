@@ -1,0 +1,46 @@
+{
+  "name": "decisions-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Decision-model tools for coding agents (Claude Code, Codex, Pi). Also a Pi package: skills are exposed via the `pi` key.",
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "skills": [
+      "./plugins/decisions/skills"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.tools.json",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "generate": "tsx tools/generate.ts",
+    "generate:check": "tsx tools/generate.ts --check",
+    "validate": "tsx tools/validate.ts",
+    "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm test && pnpm generate:check && pnpm validate",
+    "smoke": "sh tools/smoke/all.sh",
+    "test:live": "vitest run --config vitest.live.config.ts --silent=false"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1",
+    "yaml": "^2.9.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

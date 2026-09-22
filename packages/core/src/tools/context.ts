@@ -1,0 +1,170 @@
+import { join } from "node:path"
+import { Value } from "typebox/value"
+import {
+  allProfiles,
+  loadConfig,
+  type ResolvedConfig,
+  stateDir,
+  userConfigDir,
+} from "../config/load.js"
+import { createDecider, type DecideMode, type Decider } from "../decide.js"
+import { DecisionsError } from "../errors.js"
+import { FixtureStore } from "../fixtures/store.js"
+import { type ModelProfile, resolveProfile } from "../model/profiles.js"
+import type { QuestionSet } from "../model/types.js"
+import { parseFilter, parseSort } from "../project/project.js"
+import { SpendLedger } from "../run/spend.js"
+import type { SourceSpec } from "../sources/types.js"
+import { loadSpec, type Spec, type SpecDirs, specDirs } from "../spec/spec.js"
+import { parseSplit, type SplitSpec } from "../split/split.js"
+import { createOpenRouterTransport } from "../transport/openrouter.js"
+import { TOOL_SCHEMAS, type ToolName } from "./schemas.js"
+
+/** Everything a tool needs, resolved once per invocation. */
+export interface ToolContext {
+  cwd: string
+  config: ResolvedConfig
+  specDirs: SpecDirs
+  fetch?: typeof fetch
+}
+
+export interface ContextOptions {
+  cwd?: string
+  env?: NodeJS.ProcessEnv
+  home?: string
+  /** Specs shipped with the plugin/CLI. */
+  bundledSpecs?: string
+  fetch?: typeof fetch
+}
+
+export function createContext(options: ContextOptions = {}): ToolContext {
+  const env = options.env ?? process.env
+  const cwd = options.cwd ?? process.cwd()
+  const config = loadConfig({ cwd, env, ...(options.home ? { home: options.home } : {}) })
+  const bundled = env.DECISIONS_SPECS_PATH?.trim() || options.bundledSpecs
+  return {
+    cwd,
+    config,
+    specDirs: specDirs(config.repoRoot, userConfigDir(env, options.home), bundled),
+    ...(options.fetch ? { fetch: options.fetch } : {}),
+  }
+}
+
+/** Validate tool input against its schema, reporting every problem. */
+export function checkInput<T>(tool: ToolName, input: unknown): T {
+  const schema = TOOL_SCHEMAS[tool]
+  const problems = [...Value.Errors(schema, input)].map(
+    (e) => `${e.instancePath || "/"} ${e.message}`,
+  )
+  if (problems.length > 0) {
+    throw new DecisionsError(
+      "invalid-request",
+      `Invalid ${tool} input:\n  ${problems.join("\n  ")}`,
+      { problems },
+    )
+  }
+  return input as T
+}
+
+export interface Resolved {
+  spec?: Spec
+  namespace: string
+  questions: QuestionSet
+  sources: SourceSpec[]
+  split: SplitSpec
+  keep: ReturnType<typeof parseFilter>[]
+  sort?: ReturnType<typeof parseSort>
+  profile: ModelProfile
+}
+
+/** Merge a spec's defaults with explicit input. Explicit input wins; inline questions and a spec conflict. */
+export function resolveRequest(
+  ctx: ToolContext,
+  input: {
+    spec?: string
+    questions?: Record<string, unknown>
+    sources?: SourceSpec[]
+    split?: string
+    keep?: string[]
+    sort?: string
+    model?: string
+  },
+): Resolved {
+  if (input.spec && input.questions) {
+    throw new DecisionsError("invalid-request", "Give either a spec or inline questions, not both")
+  }
+  const spec = input.spec ? loadSpec(input.spec, ctx.specDirs, ctx.cwd) : undefined
+  const questions = (spec?.questions ?? input.questions) as QuestionSet | undefined
+  if (!questions) {
+    throw new DecisionsError(
+      "invalid-request",
+      "No questions: pass --spec <name>, --question, or --input with questions",
+    )
+  }
+  const sources = input.sources?.length ? input.sources : specSources(spec)
+  if (sources.length === 0) {
+    throw new DecisionsError(
+      "invalid-request",
+      "No source: pass --glob, --file, --jsonl, --diff, --text or --stdin (or use a spec with a source)",
+    )
+  }
+  const keepText = input.keep ?? spec?.keep ?? []
+  const sortText = input.sort ?? spec?.sort
+  const profile = resolveProfile(input.model ?? ctx.config.model, allProfiles(ctx.config))
+  return {
+    ...(spec ? { spec } : {}),
+    namespace: spec?.name ?? "adhoc",
+    questions,
+    sources,
+    split: parseSplit(input.split ?? spec?.source?.split ?? "file"),
+    keep: keepText.map((k) => parseFilter(k, questions)),
+    ...(sortText ? { sort: parseSort(sortText, questions) } : {}),
+    profile,
+  }
+}
+
+function specSources(spec: Spec | undefined): SourceSpec[] {
+  const s = spec?.source
+  if (!s) return []
+  return [
+    ...(s.glob ? [{ kind: "glob" as const, patterns: s.glob }] : []),
+    ...(s.file ? [{ kind: "file" as const, path: s.file }] : []),
+    ...(s.jsonl ? [{ kind: "jsonl" as const, path: s.jsonl }] : []),
+    ...(s.diff !== undefined
+      ? [{ kind: "diff" as const, ...(s.diff ? { range: s.diff } : {}) }]
+      : []),
+  ]
+}
+
+/** A decider wired to this context's config: transport only with a key, consent from the repo. */
+export function deciderFor(
+  ctx: ToolContext,
+  profile: ModelProfile,
+  mode: DecideMode = "auto",
+): Decider {
+  const { config } = ctx
+  const dir = stateDir(config.repoRoot)
+  return createDecider({
+    profile,
+    egressConsent: config.egress.consent.granted,
+    repoRoot: config.repoRoot,
+    ...(config.apiKey
+      ? {
+          transport: createOpenRouterTransport({
+            endpoint: config.endpoint,
+            apiKey: config.apiKey,
+            timeoutMs: config.timeoutMs,
+            ...(ctx.fetch ? { fetch: ctx.fetch } : {}),
+          }),
+        }
+      : {}),
+    fixtures: new FixtureStore(join(dir, "fixtures")),
+    ledger: new SpendLedger(join(dir, "usage.jsonl")),
+    mode: config.replay ? "replay" : mode,
+    ...(config.session ? { session: config.session } : {}),
+  })
+}
+
+export function ledgerFor(ctx: ToolContext): SpendLedger {
+  return new SpendLedger(join(stateDir(ctx.config.repoRoot), "usage.jsonl"))
+}

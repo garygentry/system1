@@ -1,0 +1,13 @@
+#!/bin/sh
+# GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
+# Runs the decisions CLI pinned to this plugin's version.
+set -e
+if [ -n "${DECISIONS_CLI:-}" ]; then
+  exec node "$DECISIONS_CLI" "$@"
+fi
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+dev="$here/../../../packages/cli/dist/bin.js"
+if [ -f "$dev" ]; then
+  exec node "$dev" "$@"
+fi
+exec npx --yes "@garygentry/decisions@0.0.0" "$@"

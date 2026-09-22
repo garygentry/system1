@@ -1,0 +1,27 @@
+{
+  "name": "@garygentry/decisions",
+  "version": "0.0.0",
+  "description": "The `decide` CLI: typed, calibrated decisions for coding agents, hooks and CI.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/garygentry/decisions",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "decide": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@garygentry/decisions-core": "workspace:*"
+  }
+}

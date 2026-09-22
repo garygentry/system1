@@ -1,0 +1,39 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!plans",
+      "!**/*.md",
+      "!**/package.json",
+      "!**/.claude-plugin",
+      "!**/.codex-plugin",
+      "!.agents",
+      "!plugins/decisions/plugin.json",
+      "!.smoke",
+      "!.remember",
+      "!.claude"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "quoteStyle": "double"
+    }
+  },
+  "linter": {
+    "enabled": true
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  }
+}
