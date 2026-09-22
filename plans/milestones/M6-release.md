@@ -114,6 +114,20 @@ Three of five verdicts were "hold publication": egress ("I would not publish thi
 - **Spend accounting for failed attempts.** The ledger records what the provider reported for successful calls; whether a failed attempt is billed is unverified, so `usage` says what it covers rather than guessing.
 - **`decide usage` completeness wording** and the historical numbers in M5: those runs are labelled measured and dated, and are not being re-run.
 
+## Routing evals on the release candidate (2026-09-22)
+
+| | Claude (Sonnet) | Codex | Pi | Bar |
+|---|---|---|---|---|
+| `ask` positive | **6/8** | 8/8 | 8/8 | ≥ 7/8 |
+| `ask` negative | 8/8 | 8/8 | 8/8 | 8/8 |
+| `design`, `setup` | 4/4, 4/4, 4/4 | same | same | |
+
+**Claude's two misses are both criteria checks over a 22-line diff** ("is the task in TASK.md done", and the pre-commit rules check). It hands off every batch task and both pick-from-many cases; it declines only when asked to re-check a small diff it just made.
+
+**A fifth description round was tried and reverted.** Leading with "before you report a task done, check it with this skill rather than grading your own work" moved Claude to 7/8, but dropped `ask` negatives in **Codex and Pi from 8/8 to 5/8**: it then triggered on "write a function", "rename this function" and "add a .gitignore entry". Over-triggering is the worse failure, since it spends money and sends code for tasks that need no judgement, so the wording went back. The user accepted 6/8 for the release.
+
+Note: Pi's `design` and `setup` results in that run were void, because its Codex-backed provider returned "The usage limit has been reached" partway through. Its `ask` negatives were real completed sessions.
+
 ## Phase 3 — publish and verify
 
 1. `pnpm check`, `pnpm smoke` and `pnpm eval:routing all` green on the final candidate.
