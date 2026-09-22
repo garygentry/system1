@@ -19,7 +19,22 @@
 
 ## Phase 1 — prepare the release candidate (nothing published)
 
-**Done so far:** consent untracked, `ask` rejects fan-out flags, version 0.1.0, `packages/pi` generated, publish metadata and per-package READMEs, the README rewritten, pack and publish dry runs clean, the packed CLI installed to a scratch prefix and `doctor` run from it, and the whole project renamed to System 1 ([0016](../decisions/0016-name-system1.md)). Left: push to GitHub.
+**Done (2026-09-22).** Nothing is on npm.
+
+1. **Consent:** `.system1/config.yaml` is untracked and gitignored, so a fresh clone starts with no consent. `AGENTS.md` says contributors grant their own.
+2. **`ask` rejects fan-out flags:** `--dry-run`, `--confirm`, `--sort`, `--limit`, `--fields` and `--concurrency` exit 2 with a message naming `many`. Before, `ask --dry-run` made a real call. Recorded in 0015.
+3. **The rename to System 1** ([0016](../decisions/0016-name-system1.md)), decided mid-phase: repo, npm names, plugin and marketplace, `.system1/`, `SYSTEM1_*`, the user config directory and `X-Title`. The `decide` command, the skill names and the spec format are unchanged, and the `openrouter-decisions` transport id stays, because it names the provider's API.
+4. **Version 0.1.0** everywhere from `catalog.yaml`. `doctor`'s "not published yet" branches are gone.
+5. **`packages/pi`** is generated: the `pi` key plus a `prepack` that copies the skills, so they are authored once. The copy is gitignored.
+6. **Publish metadata:** `publishConfig.access: public`, author, homepage, keywords, and a README and LICENSE in each package.
+7. **README** rewritten: what it is, a real measured run over this repo, the three skills, the install matrix per harness, the key, and what gets sent.
+8. **Dry runs:** `npm pack` gives 163 kB (CLI, 13 files), 88 kB (core, 159) and 13 kB (pi, 13). `npm publish --dry-run` is clean for all three with public access. The packed CLI installed to a scratch prefix runs `decide doctor` and reports 0.1.0.
+9. **Pushed to GitHub:** `garygentry/system1`, public, `main`.
+10. **Installs from GitHub verified**, in isolated config directories:
+    - Codex: `codex plugin marketplace add garygentry/system1` then `codex plugin add system1@system1` → skills at 0.1.0.
+    - Claude Code: `claude plugin marketplace add garygentry/system1` then `claude plugin install system1@system1` → skills plus the executable `bin/decide` shim.
+    - Pi: `pi install git:github.com/garygentry/system1` → skills, with no devDependencies pulled. **This answers the doubt behind open question 6:** the git install works, so the npm Pi package is a convenience rather than a requirement.
+11. **`pnpm check` (282 tests) and `pnpm smoke` (9 of 9) pass after the rename.**
 
 1. **Consent and hygiene (D6):** untrack `.system1/config.yaml`, add it to `.gitignore`, re-grant locally, and note in `AGENTS.md` that contributors grant their own consent.
 2. **`ask --dry-run` (D7):** exit 2 with a message naming `many`, with a test. Record it in 0015.
