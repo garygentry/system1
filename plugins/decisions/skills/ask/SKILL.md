@@ -1,6 +1,6 @@
 ---
 name: ask
-description: Hand a closed judgement (yes/no, pick one of N, or rate on a scale you define) to a fast, calibrated decision model through the `decide` CLI, instead of reading everything yourself. Use when you are about to read many files, search hits, log lines, failures or items to make the same judgement about each; when you need one quick typed verdict about a piece of text, a diff or a command; when you are checking criteria against evidence such as "is this task actually done"; or when you are picking the best fit from a list of candidates. Not for generating text, counting, arithmetic, dates or exact matching.
+description: Load this before reading or grepping through many items yourself to make the same judgement about each. It hands closed judgements (yes/no, pick one of N, rate on a scale) to a fast, calibrated decision model through the `decide` CLI, at about 300 ms and $0.00003 per item. Use it when classifying, routing, filtering, triaging or ranking more than about ten files, search hits, log lines, tickets, failures or rows by a rule that needs understanding rather than an exact pattern; when giving a verdict on a long log or diff; when checking acceptance criteria against evidence, such as "is this task actually done"; or when picking the best fit from a list of candidates. Not for generating text, counting, arithmetic, dates or exact matching.
 ---
 
 # Ask the decision model
@@ -16,7 +16,7 @@ description: Hand a closed judgement (yes/no, pick one of N, or rate on a scale 
 Use it when the answer is a label, a yes/no or a level, and the model only has to read text you can point it at.
 
 - **Screen many items.** Filter or rank files, search hits, log lines, failures or issues by a rule you can say in a sentence. Examples: "which of these files touch billing", or "which of these errors are timeouts".
-- **Judge one piece of text.** For example: does this output show an error? Is this command destructive? Is this comment asking for a change?
+- **Judge one long piece of text, or give a verdict that gates an action.** Use it when the text is too long to be worth reading, such as a CI log or a big diff. Also use it when a calibrated, recorded verdict matters more than your own impression, such as "is this command destructive" before running it. For example: does this log show a real failure or a flaky one?
 - **Check criteria against evidence.** Put one yes/no per criterion into a single call over the evidence (a diff plus the test output, a log, a PR description). For example: "is the task actually done", "did this change add tests".
 - **Pick among candidates.** A choice whose options are the candidates, asked over the text that describes the need. For example: which of these files should I edit? Which of these approaches fits the constraint?
 

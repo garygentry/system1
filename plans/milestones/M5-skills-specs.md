@@ -1,6 +1,6 @@
 # M5 — Skills: asking well, saving specs, setup
 
-**Status:** planned (2026-09-22). The decisions below came from interviewing the user.
+**Status:** in progress (2026-09-22). The decisions below came from interviewing the user.
 **Goal:** Partway through any task, an agent recognises a closed judgement, writes a good question for it, hands it to `decide`, and reads the answer correctly, in Claude Code, Codex and Pi. A question that proves its worth can be saved as a spec in the repo and repaired against examples. `setup` takes a user from "installed" to "live-ready".
 
 ## First principles
@@ -136,10 +136,64 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
 - The `question-critic` agent, `scout` and the agent generator (M7). Shapes beyond single and fanout (M9).
 - Publishing (M6).
 
-## Open, to settle while building
+## Settled while building
 
-- **How many options can a choice have?** "Pick among candidates" needs to know. `validate.ts` enforces no maximum. Measure one live call with about 20 options, and document the practical limit in `recipes.md`.
-- **How Pi exposes skill loading, for the evals, and how it invokes a user-only skill headless, for smoke.**
+- **Choice option limit: 255.** Measured live on 2026-09-22 with one state and one choice listing N file names:
+  - At 20, 60 and 150 options, the right file won each time (0.79–0.83 confidence), in 346–478 ms, for $0.000028–$0.000130.
+  - At 400 options, upstream refused with "at most 255 choices".
+  - The profile now carries `maxChoices: 255`, and `prepare()` refuses a larger choice before any call.
+- **Skill invocation by name:**
+  - Claude: `/decisions:setup`.
+  - Codex: `$decisions:setup`. Codex names plugin skills `<plugin>:<skill>`, and hides a user-only skill from the model.
+  - Pi: `/skill:setup`. This works in `-p`.
+- **How each harness shows that a skill loaded, for the evals:**
+  - Claude: a `Skill` tool call in `stream-json`.
+  - Codex: a command that reads `skills/<name>/SKILL.md`, from `exec --json`.
+  - Pi: a `read` tool call on it, from `--mode json`.
+  - No proxy was needed.
+
+## Routing evals (2026-09-22, round 2: harder positives)
+
+`pnpm eval:routing all`, with Claude on Sonnet, and Codex and Pi on their defaults. The fixture comes from `tools/evals/make-fixture.py`.
+
+| Skill | Claude | Codex | Pi | Bar |
+|---|---|---|---|---|
+| `ask` positive | **2/8** | **6/8** | **6/8** | ≥ 7/8 |
+| `ask` negative | 8/8 | 8/8 | 8/8 | 8/8 |
+| `design` positive | 4/4 | 4/4 | 4/4 | ≥ 3/4 |
+| `design` negative | 4/4 | 4/4 | 4/4 | 4/4 |
+| `setup` negative | 4/4 | 4/4 | 4/4 | 4/4 |
+
+- **Missed in every harness:** the `git clean` risk verdict and the choice among 100 helpers. All three agents judged these themselves: an obvious command, and a list short enough to read. These prompts test the prompt, not the skill.
+- **Missed only by Claude:** commits (300), CI failures (80), and both criteria checks. Claude did the work itself, at a harness-measured $0.13–$0.61 and 11–164 s per task. `decide` would cost about $0.001–$0.01 for the same items.
+- **Round 1** (templated fixture, and before the sharper description): Claude 0/8 and Codex 7/8 on `ask` positives, with every negative held. Claude answered with grep, and on that fixture grep was enough.
+
+## Live end to end, one run per use case (2026-09-22, this repo, measured)
+
+| Use case | Command shape | Result | Cost |
+|---|---|---|---|
+| Screen files | `many --glob 'packages/core/src/**/*.ts' --question no_timeout…` | 57 files → 3 kept, 2 undecided, 52 dropped · 2.3 s | $0.003412 |
+| Rank by relevance | `many --glob … --keep 'relevant>=0.3' --sort --limit 5` | `args.ts` and the flag-parsing commands at 0.98–0.99 | $0.000944 |
+| Screen lines | grep hits, `--split row`, `swallowed>=0.7` | 24 rows → 6 kept · 1.1 s | $0.000304 |
+| Judge one text | a vitest log, `failure` choice | `none` (1.0): the suite passed | $0.000019 |
+| Criteria against evidence | this branch's diff and test log, 3 nouls | `tests_added` 0.98, `tests_pass` 0.97, `no_debug_left` 0.91 | $0.000286 |
+| Pick among candidates | "add a --timeout flag", 3 files plus none | `args` (1.0) | $0.000017 |
+
+## Found along the way
+
+- **The Codex `prefix_rule` covers only commands that start with `decide`.**
+  - `a && decide …` runs with network, but `echo … | decide …` doesn't.
+  - Codex chained `doctor` with a `print` inside a single script, and lost the network for all of it.
+  - **Fix:** the recipes now pass content with `--file` instead of pipes, and `ask` and `setup` say to run `decide` as its own command. The `doctor` fix for Codex says pipes stay offline.
+- **Inside the Codex Linux sandbox, a child process spawned by node prints nothing and exits 0,** even `node -e "console.log(1)"`. `path-version` therefore reports "not checked" there, instead of a false warning.
+- **Harness workdirs inside this repo were contaminated.**
+  - Pi read `plans/ROADMAP.md` through our `AGENTS.md`, even from a nested git repo.
+  - Codex did the same from a workdir that wasn't a git repo.
+  - The first Codex smoke of `setup` "passed" without loading the skill. It said "the named setup skill isn't available", and ran `ping` itself.
+  - **Fix:** smoke and eval workdirs now live under `~/.cache/`. The smoke also asserts a `decide doctor:` line, which only the skill asks for, so it proves the skill ran.
+- **Piped rows came back as bare ids** (`stdin:10`), with nothing to trace them by. `many` rows now carry an `excerpt` when the id doesn't lead back to the text.
+- **Routing depends on volume.** With an 11-file fixture, Codex rightly read the files itself, which is what `ask` tells it to do. The eval fixture was scaled up to 86 source files, 200 tickets and a 2,000-line log.
+- **`--allowedTools` in `claude -p` is variadic, and swallows a prompt that follows it.** The first Claude eval run never started, and every negative "passed". The runner now puts a flag after the tool list, and counts a session with no end-of-session event as an error.
 
 ## Acceptance
 

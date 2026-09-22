@@ -1,0 +1,61 @@
+# Routing evals: does each skill load when it should, and stay unloaded when it
+# shouldn't? Prompts are written the way a user would type them, and never
+# name a skill or `decide`. Run with `pnpm eval:routing [claude|codex|pi|all]`.
+# Local only: every prompt drives a real agent session (harness tokens), in
+# replay with no key, so no decision calls are made.
+#
+# The fixture repo (tools/evals/fixture-repo) is a fake codebase with defects
+# planted on purpose for the prompts to find: fetches without timeouts,
+# swallowed errors, and a password in a URL and a log line (src/auth/login.ts).
+# The volume data (tickets, reviews, commits, failures, helpers) and the
+# uncommitted change come from make-fixture.py, seeded, so they're reproducible.
+# It is never run, and it only talks to example.com. Don't "fix" those defects:
+# the prompts depend on them, and a comment would give the answer away.
+#
+# `positive`: the skill must load. `negative`: it must not.
+# Minimums (checked by tools/evals/run.test.ts, so `pnpm test` enforces them): ask 8/8, design 4/4, setup 0/4.
+
+ask:
+  positive:
+    # screen or route many items of varied free text
+    - 'Route each of the support tickets in tickets.jsonl to the team that should handle it: billing, auth, infra or other.'
+    - 'reviews.jsonl has 400 app store reviews. Which of them report a concrete bug, as opposed to complaints about price, feature requests or praise?'
+    - 'commits.txt lists the last 300 commits. Which of them change runtime behaviour, rather than being refactors, docs, tests or formatting?'
+    - 'Triage every CI failure in failures.jsonl: is each one flaky, a real regression, or an infrastructure problem?'
+    # a calibrated verdict that gates an action
+    - 'I''m about to run `git clean -fdx && git reset --hard origin/main` in this repo. Give me a calibrated risk verdict first, is it destructive?'
+    # criteria against evidence
+    - 'Is the task in TASK.md actually done? Check each acceptance criterion against the uncommitted changes and test-output.log.'
+    - 'Before I commit, check the current uncommitted diff against these rules, one verdict each: no debugging output, every changed request has a timeout, no secrets.'
+    # pick among candidates
+    - 'helpers.txt lists the helpers we already have. Which single one should I reuse to show a price stored in cents to a customer in their own currency format?'
+  negative:
+    - 'Count how many TODO comments there are under src/.'
+    - 'Write a function in src/util/format.ts that formats a number of cents as euros.'
+    - 'What does src/billing/charge.ts do?'
+    - 'List every file that imports from "../http/legacy".'
+    - 'Rename the function chargeCard to chargePayment everywhere it is used.'
+    - 'How many days are there between 2026-01-03 and 2026-03-14?'
+    - 'Summarise README.md in one sentence.'
+    - 'Add a .gitignore entry for node_modules.'
+
+design:
+  positive:
+    - 'Save the "catch block swallows the error" check as a reusable spec in this repo so we can run it again later.'
+    - 'The saved spec .decisions/specs/timeouts.yaml flags files that are fine. Repair it so it only flags network calls without a timeout.'
+    - 'Turn the ticket routing question (billing, auth, infra, other) into a named spec for this repo, with a few examples.'
+    - 'Add examples with expected answers to .decisions/specs/timeouts.yaml and check them.'
+  negative:
+    - 'Which files under src/ log a password or other secret?'
+    - 'Write a GitHub Actions workflow that runs npm test on every push.'
+    - 'Explain what src/util/retry.ts returns when every attempt fails.'
+    - 'Update README.md to mention the email notifications.'
+
+setup:
+  # User-only: it must never load unless invoked by name (smoke covers that).
+  positive: []
+  negative:
+    - 'The last decide run exited with code 3. What does that mean?'
+    - 'Is the decisions tool configured correctly in this repo?'
+    - 'Check whether this machine can reach openrouter.ai.'
+    - 'Which files under src/ make network requests without a timeout?'

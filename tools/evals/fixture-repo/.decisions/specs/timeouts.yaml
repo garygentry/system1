@@ -1,0 +1,10 @@
+description: Network calls that could hang.
+questions:
+  hangs:
+    type: noul
+    instructions: The code does networking.
+keep: ["hangs>=0.7"]
+policy:
+  thresholds:
+    hangs: { value: 0.7, why: "Default." }
+source: { glob: ["src/**/*.ts"], split: file }

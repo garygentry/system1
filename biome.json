@@ -14,6 +14,8 @@
       "!plugins/decisions/plugin.json",
       "!.smoke",
       "!tools/smoke/fixture-repo",
+      "!tools/evals/fixture-repo",
+      "!tools/evals/fixture-changes",
       "!.remember",
       "!.claude"
     ]

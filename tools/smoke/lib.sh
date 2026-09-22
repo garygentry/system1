@@ -6,7 +6,11 @@
 #   many  `decide many --spec smoke` via the ask skill, in replay (no key, no spend)
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-SMOKE="$REPO/.smoke"          # gitignored scratch; never /tmp (Codex refuses it)
+# Outside this repo: Codex and Pi read AGENTS.md from parent directories, and
+# this repo's plans would steer the agent. Never /tmp either (Codex refuses a
+# CODEX_HOME there).
+SMOKE="${DECISIONS_SMOKE_DIR:-$HOME/.cache/decisions-smoke}"
+case "$SMOKE" in "$REPO"/*) echo "smoke: DECISIONS_SMOKE_DIR must be outside $REPO" >&2; exit 2 ;; esac
 TIMEOUT=${SMOKE_TIMEOUT:-240}
 
 # Markers match only real CLI output, never SKILL.md text (Codex echoes skills).
@@ -30,15 +34,14 @@ global_install() { export PATH="$REPO/plugins/decisions/bin:$PATH"; }
 [ -f "$REPO/packages/cli/dist/bundle/decide.mjs" ] || { echo "smoke: run \`pnpm build\` first" >&2; exit 2; }
 
 # A fresh copy of the fixture repo: its own git repo (so the parent's ignore
-# rules for .smoke/ don't withhold its files), with committed replay fixtures.
+# rules don't apply to it), with committed replay fixtures.
 fixture_repo() { # $1 = dir
   rm -rf "$1"
   cp -R "$REPO/tools/smoke/fixture-repo" "$1"
   git -C "$1" init -q
 }
 
-# An empty repo of its own, so the agent can't wander into this repo's
-# AGENTS.md, plans or skill sources (Codex did, before this).
+# An empty repo of its own, so every run starts from the same clean state.
 empty_repo() { # $1 = dir
   rm -rf "$1"; mkdir -p "$1"
   git -C "$1" init -q

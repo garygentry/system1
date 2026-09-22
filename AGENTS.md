@@ -14,7 +14,7 @@ Before starting, read `plans/ROADMAP.md`, then the current `plans/milestones/Mn-
 | `plugins/decisions/{plugin.json,.claude-plugin,.codex-plugin,bin/decide}` | **Generated** |
 | `.claude-plugin/`, `.agents/plugins/` | **Generated** marketplaces (Claude Code, Codex) |
 | `catalog.yaml` | Source of truth for names, version, descriptions and npm scope |
-| `tools/generate.ts`, `tools/validate.ts`, `tools/smoke/` | Generator, structural validator, headless harness smoke tests |
+| `tools/generate.ts`, `tools/validate.ts`, `tools/smoke/`, `tools/evals/` | Generator, structural validator, headless harness smoke tests, skill routing evals |
 
 ## Rules
 
@@ -37,6 +37,7 @@ pnpm check      # build · typecheck · lint · test · generate:check · valida
 pnpm generate   # after editing catalog.yaml or the generator
 pnpm test:live  # one real decision call (~$0.00003); loads this repo's .env, skipped without a key
 pnpm smoke      # local only: drives real Claude/Codex/Pi sessions (spends their tokens)
+pnpm eval:routing [claude|codex|pi|all]   # local only: does each skill load for the right prompts?
 pnpm bench:startup   # decide startup overhead over bare node (target < 150 ms)
 node packages/cli/dist/bundle/decide.mjs ping --format brief
 node --env-file=.env packages/cli/dist/bundle/decide.mjs many --glob 'src/**/*.ts' --question 'q:noul:…' --keep 'q>=0.7' --format brief
@@ -50,3 +51,13 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
 - **Codex** copies the plugin into its cache and does **not** put `bin/` on PATH, so users need `decide` installed globally. In the default sandbox the shell has no network. The narrow fix is a rules file with `prefix_rule(pattern = ["decide"], decision = "allow")`. `CODEX_HOME` must not be under `/tmp`.
 - **Session ids** (verified in M4): Claude sets `CLAUDE_CODE_SESSION_ID`, Codex sets `CODEX_THREAD_ID` and Pi sets `PI_SESSION_ID`. A parent harness's variables leak into child harnesses, so `core/config/session.ts` picks the innermost one. `decide doctor` reports the harness, the session and a fix for each problem.
 - **Pi** reads skills through the root `package.json` `pi` key (`pi install <path>`). There is no sandbox and no plugin `bin/`, so `decide` also has to be on PATH. Pi honours `disable-model-invocation`.
+
+## Harness notes (verified in M5, 2026-09-22)
+
+- **Explicit invocation of a user-only skill:**
+  - Claude: `/decisions:setup`.
+  - Codex: `$decisions:setup`. Codex names plugin skills `<plugin>:<skill>`, and hides a skill with `allow_implicit_invocation: false` from the model, but an explicit mention still loads it.
+  - Pi: `/skill:setup`. This works in `-p` mode too.
+- **The Codex `prefix_rule` covers only commands that start with `decide`:** `a && decide …` is covered, but `… | decide …` stays offline. So skills pass content with `--file`, not pipes.
+- **Inside the Codex Linux sandbox,** a child process spawned by node exits 0 with empty stdout (even `node -e "console.log(1)"`).
+- **Agents read `AGENTS.md` from parent directories.** Pi does so even from inside a nested git repo. Codex did from a workdir that wasn't a git repo. Smoke and eval workdirs therefore live outside this repo, under `~/.cache/decisions-{smoke,evals}`.

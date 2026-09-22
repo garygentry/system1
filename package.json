@@ -28,6 +28,7 @@
     "validate": "tsx tools/validate.ts",
     "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm test && pnpm generate:check && pnpm validate",
     "smoke": "sh tools/smoke/all.sh",
+    "eval:routing": "tsx tools/evals/run.ts",
     "bench:startup": "tsx tools/bench-startup.ts",
     "test:live": "vitest run --config vitest.live.config.ts --silent=false"
   },
