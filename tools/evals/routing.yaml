@@ -7,7 +7,8 @@
 # The fixture repo (tools/evals/fixture-repo) is a fake codebase with defects
 # planted on purpose for the prompts to find: fetches without timeouts,
 # swallowed errors, and a password in a URL and a log line (src/auth/login.ts).
-# The volume data (tickets, reviews, commits, failures, helpers) and the
+# The volume data (tickets, reviews, commits, failures, the cleanup plan,
+# packages) and the
 # uncommitted change come from make-fixture.py, seeded, so they're reproducible.
 # It is never run, and it only talks to example.com. Don't "fix" those defects:
 # the prompts depend on them, and a comment would give the answer away.
@@ -23,12 +24,12 @@ ask:
     - 'commits.txt lists the last 300 commits. Which of them change runtime behaviour, rather than being refactors, docs, tests or formatting?'
     - 'Triage every CI failure in failures.jsonl: is each one flaky, a real regression, or an infrastructure problem?'
     # a calibrated verdict that gates an action
-    - 'I''m about to run `git clean -fdx && git reset --hard origin/main` in this repo. Give me a calibrated risk verdict first, is it destructive?'
+    - 'cleanup-plan.sh is what the ops bot wants to run tonight on the shared build server. Before I approve it, give me a calibrated verdict for each command: is it destructive?'
     # criteria against evidence
     - 'Is the task in TASK.md actually done? Check each acceptance criterion against the uncommitted changes and test-output.log.'
     - 'Before I commit, check the current uncommitted diff against these rules, one verdict each: no debugging output, every changed request has a timeout, no secrets.'
     # pick among candidates
-    - 'helpers.txt lists the helpers we already have. Which single one should I reuse to show a price stored in cents to a customer in their own currency format?'
+    - 'packages.jsonl lists our 250 internal packages. Which single one should I use to run a job every night that must still run after the server restarts?'
   negative:
     - 'Count how many TODO comments there are under src/.'
     - 'Write a function in src/util/format.ts that formats a number of cents as euros.'

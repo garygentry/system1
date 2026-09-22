@@ -152,6 +152,19 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
   - Pi: a `read` tool call on it, from `--mode json`.
   - No proxy was needed.
 
+## Routing evals (2026-09-22, round 3: volume versions of the two universal misses, cost-first `ask` description)
+
+`pnpm eval:routing <harness> --only ask`. Round 2 had shown that `design` and `setup` pass everywhere, so this round covers `ask` only.
+
+| `ask` | Claude (Sonnet) | Claude (Opus) | Codex | Pi | Bar |
+|---|---|---|---|---|---|
+| positive | **1/8** (plus 1 timeout) | **3/8** | **8/8** | **8/8** | ≥ 7/8 |
+| negative | 8/8 | 8/8 | 8/8 | 8/8 | 8/8 |
+
+- **Codex and Pi route every positive**, so the prompts are fair.
+- **Claude with only this plugin loaded** (`EVAL_CLAUDE_ISOLATED=1`, 21 skills in the session) still missed all 3 probe prompts. A crowded skill list isn't the cause: Claude chooses to do the work itself.
+- **The Claude gap is open.** Neither lever the user picked, a reworked description or Opus, closed it. The remaining lever, a SessionStart hint hook, was not chosen.
+
 ## Routing evals (2026-09-22, round 2: harder positives)
 
 `pnpm eval:routing all`, with Claude on Sonnet, and Codex and Pi on their defaults. The fixture comes from `tools/evals/make-fixture.py`.

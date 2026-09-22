@@ -1,6 +1,6 @@
 ---
 name: ask
-description: Load this before reading or grepping through many items yourself to make the same judgement about each. It hands closed judgements (yes/no, pick one of N, rate on a scale) to a fast, calibrated decision model through the `decide` CLI, at about 300 ms and $0.00003 per item. Use it when classifying, routing, filtering, triaging or ranking more than about ten files, search hits, log lines, tickets, failures or rows by a rule that needs understanding rather than an exact pattern; when giving a verdict on a long log or diff; when checking acceptance criteria against evidence, such as "is this task actually done"; or when picking the best fit from a list of candidates. Not for generating text, counting, arithmetic, dates or exact matching.
+description: Cheaper and faster than reading it yourself. Hands closed judgements (yes/no, pick one of N, rate on a scale) to a calibrated decision model through the `decide` CLI, at about $0.00003 and 300 ms per item, instead of spending your own tokens reading every item. Load it before you read, grep or classify many items one by one, such as routing or triaging tickets, reviews, commits, CI failures, log lines, files or rows by a rule that needs understanding; a verdict on each of many commands or changes; checking acceptance criteria against a large diff or log; or picking the best fit from a long list of candidates. Not for generating text, counting, arithmetic, dates or exact matching.
 ---
 
 # Ask the decision model

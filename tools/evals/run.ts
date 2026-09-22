@@ -185,6 +185,9 @@ async function drive(harness: Harness, dir: string, prompt: string, codexHome?: 
         "-p",
         "--plugin-dir",
         join(ROOT, "plugins/decisions"),
+        // EVAL_CLAUDE_ISOLATED=1 skips user settings (and the plugins they
+        // enable), to tell a routing problem apart from a crowded skill list.
+        ...(process.env.EVAL_CLAUDE_ISOLATED ? ["--setting-sources", "project,local"] : []),
         "--output-format",
         "stream-json",
         "--verbose",
