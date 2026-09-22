@@ -96,6 +96,8 @@ If this repo has a `.decisions/` directory, suggest adding these lines to `.giti
 
 ## 4. Confirm
 
+Always finish with these two commands, even if you changed nothing and problems remain for the user to fix:
+
 ```sh
 decide doctor --format brief
 decide ping --format brief

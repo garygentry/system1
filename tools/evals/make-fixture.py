@@ -261,26 +261,40 @@ TRAITS = [
     "is a thin wrapper over the vendor SDK",
     "is deprecated; new code should not depend on it",
     "runs work on the calling thread only",
+    "fires callbacks at wall-clock times while the process is up",
+]
+
+
+OPENINGS = [
+    "Helpers for {a} work.", "Runs {a} jobs for the storefront.", "Wraps the {a} service.",
+    "Shared {a} utilities.", "Handles {a} tasks in the background.", "Small {a} toolkit.",
+    "Registers {a} handlers and runs them.", "Schedules {a} work across services.",
 ]
 
 
 def packages(n=250):
     rows = []
+
+    def describe(area, trait):
+        opening = R.choice(OPENINGS).format(a=area)
+        return f"{opening} It {trait}. Owned by the {R.choice(DIRS)} team. {R.choice(['Stable.', 'Beta.', 'Used by 3 services.', 'Unmaintained since 2024.'])}"
+
     for i in range(n):
         area = R.choice(AREAS)
         rows.append({
             "name": f"@shop/{area}-{R.choice(['core', 'kit', 'lite', 'pro', 'utils', 'next', 'legacy'])}-{i}",
-            "description": f"Helpers for {area} work. It {R.choice(TRAITS)}. Owned by the {R.choice(DIRS)} team. {R.choice(['Stable.', 'Beta.', 'Used by 3 services.', 'Unmaintained since 2024.'])}",
+            "description": describe(area, R.choice(TRAITS)),
         })
-    # The fit for "run a job every night and survive a server restart", with no
-    # "cron", "schedule" or "nightly" in it, beside in-memory near misses.
+    # The fit for "run a job every night and survive a server restart", in the
+    # same style as the rest (a reviewer found a grep that isolated it), with
+    # no "cron", "schedule" or "nightly", beside an in-memory near miss.
     rows.insert(R.randint(40, 200), {
-        "name": "@shop/timekeeper",
-        "description": "Runs registered tasks at recurring wall-clock times. Pending and future runs are persisted in Postgres, so they resume after a deploy or a crash. Owned by the infra team. Stable.",
+        "name": "@shop/timekeeper-core",
+        "description": describe("queue", "runs registered tasks at wall-clock times and persists pending runs in Postgres, so they resume after a deploy or a crash"),
     })
     rows.insert(R.randint(40, 200), {
-        "name": "@shop/ticker",
-        "description": "Runs registered tasks at recurring wall-clock times. Keeps its timetable in memory, so a restart forgets pending runs. Owned by the web team. Stable.",
+        "name": "@shop/ticker-kit",
+        "description": describe("queue", "runs registered tasks at wall-clock times and keeps its timetable in memory, so a restart forgets pending runs"),
     })
     return rows
 

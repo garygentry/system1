@@ -183,7 +183,7 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M2** | Core: config, sources, splitters, egress, budget guard | **done 2026-09-22**, see `milestones/M2-sources-egress-budget.md` |
 | **M3** | Tool definitions + spec format + CLI contract | **done 2026-09-22**, see `milestones/M3-tools-spec-cli.md` |
 | **M4** | CLI hardening + harness wiring | **done 2026-09-22**, see `milestones/M4-cli-harness.md` |
-| **M5** | Skills: ad-hoc asking, saved specs, setup | **done 2026-09-22, pending review and merge**, see `milestones/M5-skills-specs.md`. `ask` (with the craft references), `design` (save and repair repo specs), `setup` (user-only, consent-gated). `--questions` and `spec check`. Routing evals meet the bar in Claude, Codex and Pi. No bundled specs |
+| **M5** | Skills: ad-hoc asking, saved specs, setup | **done 2026-09-22**, see `milestones/M5-skills-specs.md`. `ask` (with the craft references), `design` (save and repair repo specs), `setup` (user-only, consent-gated). `--questions` and `spec check`. Routing evals meet the bar in Claude, Codex and Pi. No bundled specs |
 | **M6** | Release 0.1.0 | npm publish. Marketplace installs from GitHub on all three. README install matrix. A live end-to-end run per harness |
 | M7 | Phase 2: `scout` + `opportunity-scout` + `question-critic`; agent generator | outline |
 | M8 | Phase 3: `adopt`, `compare`, `shadow-evaluator`, `emulated` | outline |

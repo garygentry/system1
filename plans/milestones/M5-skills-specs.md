@@ -1,6 +1,6 @@
 # M5 — Skills: asking well, saving specs, setup
 
-**Status:** done, pending the adversarial review and merge (2026-09-22). The decisions below came from interviewing the user.
+**Status:** done (2026-09-22). It was reviewed adversarially and merged to `main`. The decisions below came from interviewing the user.
 **Goal:** Partway through any task, an agent recognises a closed judgement, writes a good question for it, hands it to `decide`, and reads the answer correctly, in Claude Code, Codex and Pi. A question that proves its worth can be saved as a spec in the repo and repaired against examples. `setup` takes a user from "installed" to "live-ready".
 
 ## First principles
@@ -152,7 +152,63 @@ Shapes are covered only as far as today's `decide` supports them: single (`ask`)
   - Pi: a `read` tool call on it, from `--mode json`.
   - No proxy was needed.
 
-## Routing evals: final (2026-09-22, round 4)
+## Routing evals: after the review (2026-09-22, final)
+
+The eval harness fixes from the review changed the setup:
+- the plugin is a copy outside the repo;
+- Pi uses its own agent directory;
+- Claude runs skip user settings;
+- only reads of `SKILL.md` count as a load, and a refused call doesn't count;
+- a session that ended in an error counts as an error.
+
+The fixture had more variety this time, and the `ask` description added "however small" to its criteria-check clause.
+
+| Skill | Claude (Sonnet) | Claude (Opus) | Codex | Pi | Bar |
+|---|---|---|---|---|---|
+| `ask` positive | 7/8 | 7/8 | 8/8 | 8/8 | ≥ 7/8 |
+| `ask` negative | 8/8 | 8/8 | 8/8 | 8/8 | 8/8 |
+| `design` positive | 4/4 | 4/4 | 4/4 | 4/4 | ≥ 3/4 |
+| `design` negative | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 |
+| `setup` negative | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 |
+
+- **Claude's one miss** in both models is "is the task in TASK.md done". The uncommitted diff behind it is 22 lines, and Claude checks it itself.
+- **Run-to-run variance:** across the last three Claude runs, each model scored 6/8, 7/8 and 8/8 at some point.
+- **A packages giveaway, found and fixed:** every generated description started with "Helpers for" and the two real candidates didn't, so Opus isolated them with `grep -v`. All descriptions now use varied openings, and the candidates' distinctive words (wall-clock, restart, Postgres) appear across many packages.
+
+**Smoke: 9 of 9.** Moving the workdirs out of the repo showed that the Claude `setup` run had only reached `ping` because the old workdir inherited this repo's consent. `setup` now always finishes with its confirmation step.
+
+## Adversarial review (before merge)
+
+Three independent reviewers covered: the engine and CLI; the skill text against the real CLI; the eval and smoke tooling. I reproduced every finding before fixing it.
+
+**Fixed**
+- **Engine and CLI:**
+  - Examples accept a structured `state` again, as `main` did. Example problems are reported only by `spec validate` and `spec check`, so a bad example no longer stops `ask` or `many --spec`.
+  - An example `file` must be inside the repo. A committed spec could otherwise read `../../etc/hostname` and send it.
+  - An example that is outside the repo, missing or too large is `withheld` on its own, instead of aborting the run.
+  - `doctor`'s version probe could make the plugin shim download the package with `npx`. It now sets `DECISIONS_NO_NPX` (the shim honours it), and kills a hung child after 2 s.
+  - A config `maxChoices` must be a whole number of at least 2.
+  - The `spec-check` schema lists only `replay` and `record`, and the spend projection skips withheld examples.
+  - A filter expectation is shown as written, and a one-line inline YAML value gets a hint.
+- **Skills:**
+  - `setup` described the credentials file as "only the key", which broke every command. It now says `openrouter_api_key: <key>`, and `doctor`'s fix text matches.
+  - The criteria recipe wrote `git diff` to a file, which bypassed the path excludes. A new **`--split join`** sends `--diff` plus a log as one state, after excludes.
+  - The recipes put prep and `decide` in separate blocks, since a chain like `prep && decide` loses network in Codex.
+  - `ask` describes the `brief` first line for each command separately, and gives inline YAML quoting rules. `design` covers exits 2 (no key) and 4, and its "0.55 pass" example (impossible, because 0.55 is undecided) became 0.6.
+  - `setup` tells the user to run `egress allow` in their own terminal, and says that committing `.decisions/config.yaml` shares consent with everyone who clones the repo.
+- **Evals and smoke:**
+  - Agents could still reach this repo through the plugin path. Pi read `plans/milestones/M3…` and `spec.ts`. Every harness now loads a staged copy, and Pi gets an isolated agent directory, since it had also loaded the user's global packages.
+  - Detection: a Claude built-in `design` skill, a refused `Skill` call, or a `grep` that named `SKILL.md` no longer counts as a load. A session that errored no longer counts as completed.
+  - `DECISIONS_EVAL_DIR=""` or `.`, and `DECISIONS_SMOKE_DIR=$REPO`, would have deleted directories inside the repo. Both are now resolved and refused before anything is created.
+  - Parent `CLAUDE_*`, `CODEX_*`, `PI_*` and `AI_AGENT` variables are stripped, and a timeout kills the whole process group.
+  - The fixture corpora had collapsed to a few templates: Opus grouped 80 failures into 9 messages. Text now varies.
+  - Re-scoring the saved logs with the new detector changed one verdict (a refused `setup` call), and flipped no pass or fail.
+
+**Deferred**
+- The smoke scripts need GNU `timeout`. This was already true on `main`.
+- Two `design` positives name `.decisions/specs/timeouts.yaml`. A user repairing a spec would name it, so they're kept, and the reason is noted in `routing.yaml`.
+
+## Routing evals: before the review (2026-09-22, round 4)
 
 Run with the shipped `ask` description, and with Claude isolated from user settings (the new default):
 
@@ -239,4 +295,4 @@ Run with the shipped `ask` description, and with Claude isolated from user setti
 - [x] The routing evals meet the pass bar in Claude, Codex and Pi, or a documented proxy is used where a harness can't expose skill loading. The results table is recorded here.
 - [x] One live end-to-end ad-hoc ask per use case (D4) is recorded here, with its measured cost.
 - [x] The ROADMAP M5 row and open question 4 are updated. `pnpm check` passes.
-- [ ] The work is on branch `m5-skills-specs`, gets an adversarial review before it merges, and the fixes are recorded here.
+- [x] The work is on branch `m5-skills-specs`, got an adversarial review before it merged, and the fixes are recorded here.
