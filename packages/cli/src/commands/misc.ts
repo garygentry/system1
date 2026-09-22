@@ -1,4 +1,3 @@
-import { parseArgs } from "node:util"
 import {
   createContext,
   DecisionsError,
@@ -7,6 +6,7 @@ import {
   runUsage,
   TOOL_SCHEMAS,
 } from "@garygentry/system1-core"
+import { typedParse } from "../args.js"
 import type { Format } from "../envelope.js"
 import { EXIT, type ExitCode } from "../exit-codes.js"
 import type { Io } from "../io.js"
@@ -31,7 +31,7 @@ export function runUsageCommand(argv: string[], io: Io, format: Format): Promise
     "usage",
     format,
     () => {
-      const { values } = parseArgs({
+      const { values } = typedParse({
         args: argv,
         options: { session: { type: "string" }, since: { type: "string" } },
       })

@@ -40,7 +40,7 @@ describe("excludes", () => {
   })
 
   it("never excludes pathless items (text, stdin)", () => {
-    expect(applyExcludes([{ id: "stdin", state: "API_KEY=1" }]).items).toHaveLength(1)
+    expect(applyExcludes([{ id: "stdin", state: "API_KEY=1" } as Item]).items).toHaveLength(1)
   })
 })
 

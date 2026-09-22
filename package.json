@@ -26,11 +26,12 @@
     "generate": "tsx tools/generate.ts",
     "generate:check": "tsx tools/generate.ts --check",
     "validate": "tsx tools/validate.ts",
-    "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm test && pnpm generate:check && pnpm validate",
+    "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm test && pnpm generate:check && pnpm validate && node tools/notices.mjs --check",
     "smoke": "sh tools/smoke/all.sh",
     "eval:routing": "tsx tools/evals/run.ts",
     "bench:startup": "tsx tools/bench-startup.ts",
-    "test:live": "vitest run --config vitest.live.config.ts --silent=false"
+    "test:live": "vitest run --config vitest.live.config.ts --silent=false",
+    "release:check": "node tools/release-check.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

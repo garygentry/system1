@@ -430,6 +430,31 @@ describe("probeVersion", () => {
   })
 })
 
+describe("strict input", () => {
+  it("refuses an unknown property instead of ignoring it", async () => {
+    const { io, json } = rig({
+      "in.json": JSON.stringify({
+        questions: { q: { type: "noul", instructions: "Is it?" } },
+        sources: [{ kind: "text", text: "x" }],
+        dryRun: true,
+      }),
+    })
+    expect(await main(["ask", "--input", "in.json"], io)).toBe(2)
+    expect(json().error.message).toMatch(/dryRun/)
+  })
+
+  it("refuses a question that isn't a valid question", async () => {
+    const { io, json } = rig({
+      "in.json": JSON.stringify({
+        questions: { q: { type: "noul" } },
+        sources: [{ kind: "text", text: "x" }],
+      }),
+    })
+    expect(await main(["ask", "--input", "in.json"], io)).toBe(2)
+    expect(json().error.message).toMatch(/instructions|questions/)
+  })
+})
+
 describe("decide spec validate", () => {
   it("fails on an example file that is missing or outside the repo", async () => {
     const spec = `description: x

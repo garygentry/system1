@@ -96,6 +96,31 @@ When a `many` run fails for every item with the same code, that code is raised f
   - Exit 6: any example with no recorded answer. The message names `--live`.
 - `decide schema spec-check` prints its input schema.
 
+## Egress and input rules (tightened in M6, after the review)
+
+- **Inputs are strict.** Every tool schema refuses unknown properties, and `questions` is a typed union rather than an opaque record. `--input` can no longer carry a field the CLI silently ignores (`{"dryRun": true}` on `ask` used to be accepted and dropped). `decide schema <tool>` therefore describes a valid question.
+- **The repo is the boundary.** Every file-backed source resolves symlinks, and content that resolves outside the repo root is withheld (`outside-repo`) unless `--allow-outside` is given. Consent is granted per repo (0009), so a path that leaves it needs saying so.
+- **Excludes match the resolved path** as well as the one given, so `innocent.txt -> .env` is withheld.
+- **Paths on the command line are relative to the working directory**; a spec's own `source` stays relative to the repo root.
+- **A diff section whose path can't be read is withheld**, rather than being sent under the name `unknown`. Git's quoted paths are decoded first.
+- **Scrubbing runs on whole documents before splitting**, so a key split across lines or windows is still redacted, and a structured field whose name means a credential (`{"password": …}`) is redacted by name. The decider scrubs the state *and the question set* again before the wire, so a caller using the library directly cannot skip it, and the size limit applies there too.
+- **`redactions.items`** counts documents or items that had at least one redaction.
+
+## Unknown usage is not zero (M6)
+
+`usage.reported: false` marks a response where the provider sent no usage, or an unreadable one. The zeroes then mean "unknown", not "free", and `brief` says the total is incomplete. A sum containing one such call is marked the same way.
+
+## Undecided covers what the projection acts on (M6)
+
+An item is undecided when any question that `keep` filters on **or that `sort` ranks by** is undecided; with neither, any question at all. Before this, an item ranked first by an undecided score was kept and reported as decided. Kept rows also carry their own `undecided` list, so a flat answer the projection didn't act on is still visible.
+
+## Spec file format (tightened in M6)
+
+- Unknown keys are refused, so `kepe:` or `exepct:` fails instead of silently becoming no policy.
+- `version:` names the spec format (currently 1). A newer one is refused with an upgrade message rather than guessed at.
+- `meta:` is the reserved place for anything the engine doesn't read.
+- `spec validate` also checks `source.split` and each example's `file`.
+
 ## `ask` rejects fan-out flags (added in M6)
 
 `--dry-run`, `--confirm`, `--sort`, `--limit`, `--fields` and `--concurrency` belong to `many`. `ask` is one state and one call, so it exits 2 instead of accepting them silently. Before this, `ask --dry-run` made a real call.

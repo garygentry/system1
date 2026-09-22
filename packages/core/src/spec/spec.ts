@@ -8,6 +8,7 @@ import type { QuestionSet } from "../model/types.js"
 import { assertQuestionSet } from "../model/validate.js"
 import { parseFilter, parseSort } from "../project/project.js"
 import { parseFileRef } from "../sources/read.js"
+import { parseSplit } from "../split/split.js"
 import { parseExpect } from "./expect.js"
 
 /**
@@ -17,37 +18,48 @@ import { parseExpect } from "./expect.js"
  */
 const Threshold = Type.Object({ value: Type.Number(), why: Type.String({ minLength: 1 }) })
 
-export const SpecSchema = Type.Object({
-  description: Type.String({ minLength: 1 }),
-  questions: Type.Record(Type.String(), Type.Unknown()),
-  keep: Type.Optional(Type.Array(Type.String())),
-  sort: Type.Optional(Type.String()),
-  policy: Type.Optional(
-    Type.Object({ thresholds: Type.Optional(Type.Record(Type.String(), Threshold)) }),
-  ),
-  source: Type.Optional(
-    Type.Object({
-      glob: Type.Optional(Type.Array(Type.String())),
-      file: Type.Optional(Type.String()),
-      jsonl: Type.Optional(Type.String()),
-      diff: Type.Optional(Type.String()),
-      split: Type.Optional(Type.String()),
-    }),
-  ),
-  examples: Type.Optional(
-    Type.Array(
+export const SPEC_FORMAT = 1
+
+export const SpecSchema = Type.Object(
+  {
+    /** Spec file format. Absent means 1; a newer one is refused, not guessed. */
+    version: Type.Optional(Type.Integer({ minimum: 1 })),
+    description: Type.String({ minLength: 1 }),
+    questions: Type.Record(Type.String(), Type.Unknown()),
+    keep: Type.Optional(Type.Array(Type.String())),
+    sort: Type.Optional(Type.String()),
+    policy: Type.Optional(
+      Type.Object({ thresholds: Type.Optional(Type.Record(Type.String(), Threshold)) }),
+    ),
+    source: Type.Optional(
       Type.Object({
-        id: Type.String({ minLength: 1 }),
-        /** The text (or a JSON value, sent as its JSON text) to judge. Give this or `file`. */
-        state: Type.Optional(Type.Unknown()),
-        /** A repo file to judge, `path` or `path:START-END`. Give this or `state`. */
+        glob: Type.Optional(Type.Array(Type.String())),
         file: Type.Optional(Type.String()),
-        expect: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+        jsonl: Type.Optional(Type.String()),
+        diff: Type.Optional(Type.String()),
+        split: Type.Optional(Type.String()),
       }),
     ),
-  ),
-  provenance: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
-})
+    examples: Type.Optional(
+      Type.Array(
+        Type.Object({
+          id: Type.String({ minLength: 1 }),
+          /** The text (or a JSON value, sent as its JSON text) to judge. Give this or `file`. */
+          state: Type.Optional(Type.Unknown()),
+          /** A repo file to judge, `path` or `path:START-END`. Give this or `state`. */
+          file: Type.Optional(Type.String()),
+          expect: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+        }),
+      ),
+    ),
+    provenance: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+    /** Anything else a team wants to carry, ignored by the engine. */
+    meta: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  },
+  // A misspelled key (`kepe:`, `exepct:`) must fail rather than silently
+  // becoming no policy at all.
+  { additionalProperties: false },
+)
 
 export type SpecFile = Static<typeof SpecSchema>
 
@@ -90,6 +102,13 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
     )
   }
   const spec = raw as SpecFile
+  if ((spec.version ?? SPEC_FORMAT) > SPEC_FORMAT) {
+    throw new DecisionsError(
+      "invalid-request",
+      `${file}: spec format version ${spec.version} is newer than this CLI understands (${SPEC_FORMAT}). Upgrade @garygentry/system1.`,
+      { file, version: spec.version },
+    )
+  }
   try {
     assertQuestionSet(spec.questions)
   } catch (error) {
@@ -98,6 +117,7 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
   const questions = spec.questions as QuestionSet
   for (const text of spec.keep ?? []) wrap(file, () => parseFilter(text, questions))
   if (spec.sort) wrap(file, () => parseSort(spec.sort as string, questions))
+  if (spec.source?.split) wrap(file, () => parseSplit(spec.source?.split as string))
   const name = basename(file, extname(file))
   if (!NAME.test(name)) {
     throw new DecisionsError(

@@ -119,12 +119,17 @@ export interface Projected<T> {
  *
  * Undecided is decided first and is never subject to a threshold. A flat
  * answer rounded into "kept" or "dropped" would be acting on noise (charter
- * principle 4). Only the questions `keep` references count; with no `keep`,
- * every question does.
+ * principle 4).
+ *
+ * Every question the projection *acts on* counts: those `keep` filters on and
+ * the one `sort` ranks by. (Sorting was missed before: an item ranked first by
+ * an undecided score was kept, and reported as decided.) With neither, every
+ * question counts.
  */
 export function project<T extends { answers: Answers }>(input: ProjectInput<T>): Projected<T> {
   const keep = input.keep ?? []
-  const relevant = keep.length > 0 ? new Set(keep.map((f) => f.question)) : undefined
+  const acted = [...keep.map((f) => f.question), ...(input.sort ? [input.sort.question] : [])]
+  const relevant = acted.length > 0 ? new Set(acted) : undefined
   const kept: T[] = []
   const undecided: Array<{ row: T; questions: string[] }> = []
   let dropped = 0

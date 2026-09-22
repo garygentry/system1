@@ -70,6 +70,50 @@ codex exec -m gpt-6-astra --skip-git-repo-check "$(cat plans/review/M6/<area>.md
 
 **Then:** I reproduce every finding, triage into fix-now, defer and won't-fix with reasons, and show the user that list before changing anything (D5). Fixes land on `m6-release`, and the M5-style record of findings and fixes goes in this doc.
 
+## Phase 2 results — the astra review (2026-09-22)
+
+Five passes ran with `codex exec -m gpt-6-astra --sandbox workspace-write`, each against its own copy of the pushed repo, with the briefs in `plans/review/M6/` and the reports beside them as `findings-*.md`. Every finding acted on below was reproduced here first, outside the Codex sandbox.
+
+Three of five verdicts were "hold publication": egress ("I would not publish this candidate with its current egress promises"), contract, and release. The other two said hold for fixes but keep the architecture.
+
+### Fixed
+
+**Egress — the promises did not hold as written.**
+- **Excludes matched the name you typed, not the file it resolved to.** A symlink `innocent.txt -> .env` was read and sent. Paths now resolve through symlinks, and excludes match both spellings.
+- **Any absolute path was sent under this repo's consent** (`--file /etc/hostname`). Content that resolves outside the repo root is now withheld as `outside-repo`, with `--allow-outside` for deliberate use (the user chose the strict default).
+- **A diff path git had quoted became `unknown`**, so excludes stopped matching it. Quoted paths are decoded; a section whose path can't be read is withheld instead of sent.
+- **The question set was never scrubbed**, though it is sent with every request and an agent can paste anything into it.
+- **Splitting happened before scrubbing**, so a private key split across line windows lost the markers that identify it, and a `{"password": …}` field was scrubbed without its name. Documents are scrubbed whole, before splitting, and a field whose name means a credential is redacted by name.
+- **`createDeciderFromEnv()` skipped `prepare()` entirely.** The decider itself now scrubs state and questions and applies the size limit, so the library cannot be used to bypass them.
+- **Fixtures hold the exact text that was sent**, and `design` told users to commit them with no warning. The README, `design` and `setup` now say so plainly.
+
+**Honesty.**
+- **An undecided answer could win a ranking.** Only questions `keep` filtered on counted; an item ranked first by an undecided score was kept and reported as decided. `sort`'s question counts too, and kept rows carry their own `undecided` list. 0015's definition was wrong and is corrected.
+- **Missing usage was reported as measured zero.** `usage.reported: false` now marks it, and `brief` says the total is incomplete.
+- **Claims narrowed:** the README and skills attribute calibration to the provider (nothing here measures it), and quote cost per ~700-token item beside the measured per-item cost of the example run.
+
+**Contract, before publishing freezes it.**
+- **`--input` could smuggle fields the CLI ignores** (`dryRun` on `ask`). Every tool schema refuses unknown properties, and `questions` is a typed union, so `decide schema` now describes a valid question.
+- **A spec accepted unknown keys**, so `kepe:` or `exepct:` silently became no policy, and `passed: true` could mean nothing was checked. Unknown keys are refused, `version:` names the format (1) and a newer one is refused, `meta:` is the reserved extension area, and `spec validate` also checks `source.split` and each example's `file`.
+- **Exit codes were inconsistent:** `usage --bogus` exited 1 (reserved for bugs) where `ask --bogus` exited 2. Every command parses through one typed helper.
+- **`--format=json` was ignored** for `version` while `--format json` worked.
+
+**Release mechanics.**
+- **The bundle stripped third-party licence notices** while inlining MIT and ISC dependencies. `tools/notices.mjs` generates `THIRD-PARTY-NOTICES.md` from the bundled packages; it ships in the tarball and `pnpm check` fails if it drifts.
+- **The "pinned" shim ran any `decide` on PATH.** It now accepts a PATH hit only when it resolves inside a real install of this package.
+- **Relative paths meant the repo root**, so the same command in a subdirectory judged a different file. Command-line paths follow the shell; a spec's own `source` stays repo-anchored.
+- **A clean checkout packed empty packages.** `prepublishOnly` refuses to publish without a current build, and `pnpm release:check` builds, packs, installs the CLI tarball into a scratch prefix, runs it, and checks the notices and the Pi skills.
+- **The Pi tarball couldn't be repacked.** `prepack.mjs` ships and is a no-op when the skills are already there.
+- **`git check-ignore` had no timeout** and hung in the reviewer's sandbox. It is bounded, and a timeout is a typed error rather than a silent loss of ignore rules.
+
+### Deferred, with reasons
+
+- **An MCP adapter.** All five passes agreed CLI-only is right for 0.1.0. The one thing it would fix, sandbox network policy, depends on the host anyway (0013).
+- **A real calibration evaluation.** It belongs with M9's `calibrate`, which needs labels. Until then the claim is attributed, not made.
+- **Publish provenance, a changelog and a security contact.** Worth doing, but they don't change the artifact; M6 ships the tested tarballs by hand.
+- **Spend accounting for failed attempts.** The ledger records what the provider reported for successful calls; whether a failed attempt is billed is unverified, so `usage` says what it covers rather than guessing.
+- **`decide usage` completeness wording** and the historical numbers in M5: those runs are labelled measured and dated, and are not being re-run.
+
 ## Phase 3 — publish and verify
 
 1. `pnpm check`, `pnpm smoke` and `pnpm eval:routing all` green on the final candidate.

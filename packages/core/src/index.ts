@@ -20,7 +20,7 @@ export type { DecideInput, DecideMode, Decider, DeciderOptions, DecisionResult }
 export { createDecider } from "./decide.js"
 export { applyExcludes, DEFAULT_EXCLUDES, isExcluded } from "./egress/exclude.js"
 export type { ScrubCounts } from "./egress/scrub.js"
-export { scrubState, scrubText } from "./egress/scrub.js"
+export { scrubQuestions, scrubState, scrubText } from "./egress/scrub.js"
 export { assertStateFits, CHARS_PER_TOKEN, estimateTokens } from "./egress/size.js"
 export type { ErrorCode } from "./errors.js"
 export { DecisionsError, isDecisionsError, ProviderError } from "./errors.js"

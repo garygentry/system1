@@ -84,7 +84,7 @@ describe("split", () => {
   })
 
   it("hunk: each hunk with its file header and new-side line span", () => {
-    const items = split(splitDiffByFile(DIFF), { kind: "hunk" })
+    const items = split(splitDiffByFile(DIFF).documents, { kind: "hunk" })
     expect(items.map((i) => [i.id, i.lines])).toEqual([
       ["a.ts#h1", { start: 1, end: 3 }],
       ["a.ts#h2", { start: 10, end: 12 }],
@@ -97,5 +97,16 @@ describe("split", () => {
 
   it("hunk: refuses non-diff documents", () => {
     expect(() => split([file("x")], { kind: "hunk" })).toThrow(/needs a diff source/)
+  })
+
+  it("decodes a git-quoted path, and withholds a diff whose path can't be read", () => {
+    const quoted =
+      'diff --git "a/secrets/\\303\\251.txt" "b/secrets/\\303\\251.txt"\n--- "a/secrets/\\303\\251.txt"\n+++ "b/secrets/\\303\\251.txt"\n@@ -1 +1 @@\n-old\n+new\n'
+    const r = splitDiffByFile(quoted)
+    expect(r.documents[0]?.path).toBe("secrets/é.txt")
+    const broken = "diff --git (malformed header)\n@@ -1 +1 @@\n-old\n+new\n"
+    const b = splitDiffByFile(broken)
+    expect(b.documents).toHaveLength(0)
+    expect(b.skipped[0]).toMatchObject({ reason: "excluded", detail: "unreadable diff path" })
   })
 })

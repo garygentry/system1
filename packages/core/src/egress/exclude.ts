@@ -1,5 +1,5 @@
 import picomatch from "picomatch"
-import type { Item, Skipped } from "../sources/types.js"
+import type { Skipped } from "../sources/types.js"
 
 /**
  * Paths never sent to the provider, whatever the source. Config adds to these
@@ -30,27 +30,37 @@ export const DEFAULT_EXCLUDES: readonly string[] = [
   "**/.system1/credentials",
 ]
 
-export interface ExcludeResult {
-  items: Item[]
+export interface ExcludeResult<T> {
+  items: T[]
   excluded: Skipped[]
 }
+
+/** Anything path-labelled: a document before splitting, or an item after it. */
+type PathLabelled = { path?: string; realPath?: string }
 
 /**
  * Drop items whose path matches an exclude pattern. Every drop is reported
  * with the pattern that caused it, so the caller can say what was withheld.
  */
-export function applyExcludes(
-  items: readonly Item[],
+export function applyExcludes<T extends PathLabelled>(
+  items: readonly T[],
   extra: readonly string[] = [],
-): ExcludeResult {
+): ExcludeResult<T> {
   const patterns = [...DEFAULT_EXCLUDES, ...extra]
   const matchers = patterns.map((p) => ({ p, test: picomatch(p, { dot: true }) }))
-  const kept: Item[] = []
+  const kept: T[] = []
   const excluded = new Map<string, Skipped>()
   for (const item of items) {
-    const hit = item.path ? matchers.find((m) => m.test(item.path as string)) : undefined
+    // Both spellings: a symlink's own name and what it resolves to.
+    const paths = [item.path, item.realPath].filter((p): p is string => p !== undefined)
+    const hit = paths.length ? matchers.find((m) => paths.some((p) => m.test(p))) : undefined
     if (hit && item.path) {
-      excluded.set(item.path, { path: item.path, reason: "excluded", detail: hit.p })
+      excluded.set(item.path, {
+        path: item.path,
+        reason: "excluded",
+        detail:
+          item.realPath && item.realPath !== item.path ? `${hit.p} (via ${item.realPath})` : hit.p,
+      })
     } else {
       kept.push(item)
     }

@@ -5,7 +5,7 @@ description: Load this skill before you read through a file, diff or directory o
 
 # Ask the decision model
 
-`decide` sends text to a decision model. The model returns a typed, calibrated answer in about 300 ms, for about $0.00003 a call. It never generates text. It answers **closed** questions over text you point it at:
+`decide` sends text to a decision model. The model returns a typed answer in about 300 ms. Cost scales with what you send: roughly $0.00003 for a 700-token item. It never generates text. It answers **closed** questions over text you point it at:
 
 - **noul:** the probability, from 0 to 1, that a statement is true.
 - **choice:** one of the options you name, with the full distribution.

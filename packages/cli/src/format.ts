@@ -62,7 +62,7 @@ export function briefMany(r: ManyResult): string {
     if (r.kept.length) {
       lines.push("kept:")
       for (const row of r.kept)
-        lines.push(`  ${where(row)}  ${briefAnswers(row.answers)}${quoted(row)}`)
+        lines.push(`  ${where(row)}  ${briefAnswers(row.answers, row.undecided)}${quoted(row)}`)
     }
     if (r.undecided.length) {
       lines.push("undecided (too flat to judge; read these yourself):")
@@ -150,7 +150,9 @@ export function projected(p: Projection): string {
 }
 
 function measured(u: Usage): string {
-  return `$${u.cost.toFixed(6)} measured`
+  return u.reported === false
+    ? `$${u.cost.toFixed(6)} measured (incomplete: the provider reported no usage for at least one call)`
+    : `$${u.cost.toFixed(6)} measured`
 }
 
 function seconds(ms: number): string {

@@ -189,4 +189,27 @@ describe("parseQuestionSet", () => {
     )
     expect(() => parseQuestionSet("a: { type: noul }", "--questions -")).toThrow(/--questions -:/)
   })
+
+  describe("spec format", () => {
+    it("refuses a newer format version, an unknown key and an invalid split", () => {
+      const base = "description: x\nquestions:\n  q: { type: noul, instructions: Is it? }\n"
+      expect(() => parseSpec(`version: 99\n${base}`, "s.yaml", "repo")).toThrow(
+        /newer than this CLI/,
+      )
+      // A typo must fail rather than silently become no policy at all.
+      expect(() => parseSpec(`${base}kepe: ["q>=0.9"]\n`, "s.yaml", "repo")).toThrow(/invalid spec/)
+      expect(() => parseSpec(`${base}source: { split: nonsense }\n`, "s.yaml", "repo")).toThrow(
+        /Unknown split/,
+      )
+    })
+
+    it("accepts the current version and a meta block", () => {
+      const spec = parseSpec(
+        "version: 1\ndescription: x\nquestions:\n  q: { type: noul, instructions: Is it? }\nmeta: { owner: platform }\n",
+        "s.yaml",
+        "repo",
+      )
+      expect(spec.version).toBe(1)
+    })
+  })
 })

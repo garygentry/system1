@@ -74,6 +74,8 @@ Question craft is covered by the `ask` skill's references. Read `question-craft.
 
    Then tell the user to commit both the spec and `.system1/fixtures/<name>/`. The recorded answers make `decide spec check <name>` an offline regression test, with no key needed.
 
+   **A fixture holds the exact text that was sent**, so committing one publishes that text to everyone with the repo. Say so, and suggest reading the files first, especially when an example points at a real file.
+
 ## Repairing a spec
 
 Start at step 4. Run `decide spec check <name> --format brief` to replay what's recorded, add the input that misbehaved as a new example, and continue the loop from step 3.

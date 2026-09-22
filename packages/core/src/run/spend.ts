@@ -20,14 +20,16 @@ export interface SpendSummary extends Usage {
 }
 
 export function sumUsage(usages: ReadonlyArray<Usage | undefined>): Usage {
-  return usages.reduce<Usage>(
-    (total, u) => ({
-      input_tokens: total.input_tokens + (u?.input_tokens ?? 0),
-      output_tokens: total.output_tokens + (u?.output_tokens ?? 0),
-      cost: total.cost + (u?.cost ?? 0),
+  const total = usages.reduce<Usage>(
+    (sum, u) => ({
+      input_tokens: sum.input_tokens + (u?.input_tokens ?? 0),
+      output_tokens: sum.output_tokens + (u?.output_tokens ?? 0),
+      cost: sum.cost + (u?.cost ?? 0),
     }),
     { input_tokens: 0, output_tokens: 0, cost: 0 },
   )
+  // One unreported call makes the total a lower bound, so say so.
+  return usages.some((u) => u?.reported === false) ? { ...total, reported: false } : total
 }
 
 /**

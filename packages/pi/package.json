@@ -33,11 +33,13 @@
   },
   "files": [
     "skills",
+    "prepack.mjs",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "prepack": "node prepack.mjs"
+    "prepack": "node prepack.mjs",
+    "prepublishOnly": "node ../../tools/prepublish-check.mjs"
   },
   "publishConfig": {
     "access": "public"

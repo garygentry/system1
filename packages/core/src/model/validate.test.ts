@@ -61,13 +61,25 @@ describe("parseDecisionResponse (real recorded output)", () => {
     )
   })
 
-  it("falls back to the requested model and zero usage when the body omits them", () => {
+  it("falls back to the requested model, and marks omitted usage as not reported", () => {
     const raw = guardrailResponse()
     delete raw.model
     delete raw.usage
     const parsed = parseDecisionResponse(raw, guardrailQuestions(), MODEL)
     expect(parsed.model).toBe(MODEL)
-    expect(parsed.usage).toEqual({ input_tokens: 0, output_tokens: 0, cost: 0 })
+    // Zeroes mean "unknown" here, never "free": `reported: false` says so.
+    expect(parsed.usage).toEqual({ input_tokens: 0, output_tokens: 0, cost: 0, reported: false })
+  })
+
+  it("marks usage as not reported when a field is missing or unreadable", () => {
+    const raw = guardrailResponse()
+    raw.usage = { input_tokens: 10, cost: "free" }
+    expect(parseDecisionResponse(raw, guardrailQuestions(), MODEL).usage).toEqual({
+      input_tokens: 10,
+      output_tokens: 0,
+      cost: 0,
+      reported: false,
+    })
   })
 })
 

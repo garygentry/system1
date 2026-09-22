@@ -44,7 +44,7 @@ export async function emit<T>(
 export function extractFormat(
   argv: string[],
   fallback: Format,
-): { format: Format; rest: string[] } {
+): { format: Format; rest: string[]; explicit: boolean } {
   const rest: string[] = []
   let format: string | undefined
   for (let i = 0; i < argv.length; i += 1) {
@@ -58,9 +58,9 @@ export function extractFormat(
       rest.push(arg)
     }
   }
-  if (format === undefined) return { format: fallback, rest }
+  if (format === undefined) return { format: fallback, rest, explicit: false }
   if (!FORMATS.includes(format as Format)) {
     throw new DecisionsError("invalid-request", `--format must be one of ${FORMATS.join(", ")}`)
   }
-  return { format: format as Format, rest }
+  return { format: format as Format, rest, explicit: true }
 }

@@ -97,7 +97,9 @@ export function parseDecisionResponse(
   return {
     model: typeof raw.model === "string" ? raw.model : requestedModel,
     answers,
-    usage: isObject(usage) ? checkUsage(usage) : { input_tokens: 0, output_tokens: 0, cost: 0 },
+    usage: isObject(usage)
+      ? checkUsage(usage)
+      : { input_tokens: 0, output_tokens: 0, cost: 0, reported: false },
     ...(typeof raw.id === "string" ? { id: raw.id } : {}),
     ...(typeof raw.provider === "string" ? { provider: raw.provider } : {}),
   }
@@ -136,10 +138,16 @@ function checkAnswer(name: string, a: Record<string, unknown>, raw: unknown): An
 }
 
 function checkUsage(u: Record<string, unknown>): Usage {
+  // A missing or unreadable cost is unknown, not zero: an upstream change
+  // would otherwise look like free service.
+  const reported = [u.input_tokens, u.output_tokens, u.cost].every(
+    (v) => typeof v === "number" && Number.isFinite(v),
+  )
   return {
     input_tokens: finiteOrZero(u.input_tokens),
     output_tokens: finiteOrZero(u.output_tokens),
     cost: finiteOrZero(u.cost),
+    ...(reported ? {} : { reported: false }),
   }
 }
 

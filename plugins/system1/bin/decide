@@ -28,6 +28,20 @@ for dir in $PATH; do
   # missing or broken grep can never make shims exec each other.
   rc=0; grep -qs "system1-shim: runs the System 1 CLI pinned to this plugin's version" "$cand" || rc=$?
   [ "$rc" -eq 1 ] || continue
+  # Only a real install of this package counts. Without this, any executable
+  # named decide on PATH would silently replace the pinned CLI.
+  target=$cand
+  while [ -L "$target" ]; do
+    link=$(readlink "$target")
+    case $link in
+      /*) target=$link ;;
+      *) target=$(dirname -- "$target")/$link ;;
+    esac
+  done
+  case $target in
+    *"@garygentry/system1/"*) ;;
+    *) continue ;;
+  esac
   IFS=$old_ifs; set +f
   exec "$cand" "$@"
 done

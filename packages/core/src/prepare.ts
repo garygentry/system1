@@ -1,9 +1,9 @@
 import { applyExcludes } from "./egress/exclude.js"
-import { type ScrubCounts, scrubState } from "./egress/scrub.js"
+import { type ScrubCounts, scrubState, scrubText } from "./egress/scrub.js"
 import { assertStateFits } from "./egress/size.js"
 import { DecisionsError } from "./errors.js"
 import type { ModelProfile } from "./model/profiles.js"
-import type { QuestionSet } from "./model/types.js"
+import type { QuestionSet, State } from "./model/types.js"
 import { assertQuestionSet } from "./model/validate.js"
 import { type Projection, project } from "./run/budget.js"
 import { readSources } from "./sources/read.js"
@@ -19,6 +19,8 @@ export interface PrepareInput {
   /** Extra exclude patterns from config. */
   exclude?: readonly string[]
   maxFileBytes?: number
+  /** Allow content from outside the repo (off by default). */
+  allowOutside?: boolean
 }
 
 export interface Prepared {
@@ -26,6 +28,7 @@ export interface Prepared {
   items: Item[]
   /** Everything withheld, with the reason. Always reported, never silent. */
   skipped: Skipped[]
+  /** `items`: how many documents or items had at least one redaction. */
   redactions: { total: number; byKind: ScrubCounts; items: number }
   projection: Projection
 }
@@ -42,33 +45,57 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
   const read = await readSources(input.sources, {
     cwd: input.cwd,
     ...(input.maxFileBytes ? { maxFileBytes: input.maxFileBytes } : {}),
+    ...(input.allowOutside ? { allowOutside: true } : {}),
   })
-  const filtered = applyExcludes(split(read.documents, input.split), input.exclude)
-  const excluded = filtered.excluded
-  const kept = input.split.kind === "join" ? joinItems(filtered.items) : filtered.items
 
   const byKind: ScrubCounts = {}
-  let redactedItems = 0
+  /** How many documents or items had at least one redaction. */
+  let redactedSources = 0
+  const count = (counts: ScrubCounts): number => {
+    const found = Object.values(counts).reduce((a, b) => a + b, 0)
+    for (const [kind, n] of Object.entries(counts)) byKind[kind] = (byKind[kind] ?? 0) + n
+    return found
+  }
+
+  // Excluded files are dropped before anything else touches them, so a
+  // withheld file is never reported as scrubbed.
+  const allowed = applyExcludes(read.documents, input.exclude)
+
+  // Then scrub whole documents: a private key cut across two line windows
+  // would otherwise lose the markers that identify it.
+  const documents = allowed.items.map((doc) => {
+    const counts: ScrubCounts = {}
+    const scrubbed = {
+      ...doc,
+      ...(doc.text !== undefined ? { text: scrubText(doc.text, counts) } : {}),
+      ...(doc.data !== undefined ? { data: scrubState(doc.data as State, counts) } : {}),
+    }
+    if (count(counts) > 0) redactedSources += 1
+    return scrubbed
+  })
+
+  // Again after splitting, in case a split produced a path we hadn't seen.
+  const filtered = applyExcludes(split(documents, input.split), input.exclude)
+  const kept = input.split.kind === "join" ? joinItems(filtered.items) : filtered.items
+
+  // Then each item again, so anything the split produced (a join, a row read
+  // as a value) is covered too.
   const tokens: number[] = []
   const items = kept.map((item) => {
     const counts: ScrubCounts = {}
     const state = scrubState(item.state, counts)
-    const found = Object.values(counts).reduce((a, b) => a + b, 0)
-    if (found > 0) {
-      redactedItems += 1
-      for (const [kind, n] of Object.entries(counts)) byKind[kind] = (byKind[kind] ?? 0) + n
-    }
+    if (count(counts) > 0) redactedSources += 1
     tokens.push(assertStateFits(item.id, state, input.questions, input.profile))
     return { ...item, state }
   })
 
   return {
     items,
-    skipped: [...read.skipped, ...excluded],
+    skipped: [...read.skipped, ...allowed.excluded, ...filtered.excluded],
     redactions: {
       total: Object.values(byKind).reduce((a, b) => a + b, 0),
       byKind,
-      items: redactedItems,
+      items: redactedSources,
     },
     projection: project(input.profile, tokens),
   }

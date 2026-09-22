@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs"
+import { symlinkSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { gitRepo, useTempDirs, writeTree } from "../testkit/tmp.js"
@@ -135,6 +135,32 @@ describe("readSources", () => {
       readSources([{ kind: "diff", range: "--output=/tmp/x" }], { cwd }),
     ).rejects.toMatchObject({
       code: "invalid-request",
+    })
+  })
+
+  describe("the repo boundary", () => {
+    it("withholds a path that resolves outside the repo, unless asked for", async () => {
+      const outside = temp({ "secret.txt": "not yours" })
+      const repo = temp({ "a.ts": "inside" })
+      const spec = { kind: "file" as const, path: join(outside, "secret.txt") }
+      const withheld = await readSources([spec], { cwd: repo })
+      expect(withheld.documents).toEqual([])
+      expect(withheld.skipped[0]).toMatchObject({ reason: "outside-repo" })
+
+      const allowed = await readSources([spec], { cwd: repo, allowOutside: true })
+      expect(allowed.documents[0]?.text).toBe("not yours")
+    })
+
+    it("reports where a symlink really points, so excludes can match it", async () => {
+      const repo = temp({ ".env": "TOKEN=x", "src/a.ts": "code" })
+      symlinkSync(join(repo, ".env"), join(repo, "innocent.txt"))
+      const r = await readSources([{ kind: "file", path: "innocent.txt" }], { cwd: repo })
+      expect(r.documents[0]).toMatchObject({ path: "innocent.txt", realPath: ".env" })
+      // A symlink pointing out of the repo is withheld like any other escape.
+      const outside = temp({ "k.txt": "secret" })
+      symlinkSync(join(outside, "k.txt"), join(repo, "link.txt"))
+      const out = await readSources([{ kind: "file", path: "link.txt" }], { cwd: repo })
+      expect(out.skipped[0]).toMatchObject({ path: "link.txt", reason: "outside-repo" })
     })
   })
 })

@@ -33,6 +33,11 @@ export interface Document {
   kind: "text" | "file" | "row" | "diff"
   /** Repo-relative path, when the content came from a file. */
   path?: string
+  /**
+   * The path with symlinks resolved, when it differs from `path`. Excludes are
+   * matched against this, so `innocent.txt -> .env` is still withheld.
+   */
+  realPath?: string
   /** Text content (every kind except structured JSONL rows). */
   text?: string
   /** Parsed value of a JSONL row. */
@@ -43,7 +48,7 @@ export interface Document {
 
 export interface Skipped {
   path: string
-  reason: "binary" | "too-large" | "gitignored" | "excluded"
+  reason: "binary" | "too-large" | "gitignored" | "excluded" | "outside-repo"
   /** For `excluded`: the pattern that matched. */
   detail?: string
 }
@@ -53,6 +58,8 @@ export interface Item {
   id: string
   state: State
   path?: string
+  /** See `Document.realPath`. */
+  realPath?: string
   /** 1-based inclusive line span in `path`, when known. */
   lines?: LineRange
 }

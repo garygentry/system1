@@ -135,7 +135,13 @@ function base(
   text: string,
   lines?: { start: number; end: number },
 ): Item {
-  return { id, state: text, ...(doc.path ? { path: doc.path } : {}), ...(lines ? { lines } : {}) }
+  return {
+    id,
+    state: text,
+    ...(doc.path ? { path: doc.path } : {}),
+    ...(doc.realPath ? { realPath: doc.realPath } : {}),
+    ...(lines ? { lines } : {}),
+  }
 }
 
 function span(start: number, text: string) {

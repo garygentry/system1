@@ -18,6 +18,14 @@ const answers = (relevant: number, kind: string, risk: number): Answers => ({
   risk: { type: "score", score: risk, probabilities: {}, confidence: 0.7 },
 })
 
+const noul = (n: number) => ({ type: "noul" as const, noul: n })
+const score = (n: number, confidence: number) => ({
+  type: "score" as const,
+  score: n,
+  probabilities: {},
+  confidence,
+})
+
 describe("parseFilter", () => {
   it.each([
     ["relevant>=0.7", { question: "relevant", field: "noul", op: ">=", value: 0.7 }],
@@ -102,5 +110,25 @@ describe("project", () => {
     })
     const out = project({ rows, sort: parseSort("risk:asc", questions), undecidedOf: () => [] })
     expect(out.kept.map((r) => r.id)).toEqual(["a", "c", "d", "e", "b"])
+  })
+
+  it("counts the question `sort` ranks by, not only the ones `keep` filters on", () => {
+    const questions = {
+      relevant: { type: "noul" as const, instructions: "r" },
+      risk: { type: "score" as const, instructions: "x", criteria: ["a", "b", "c"] },
+    }
+    const rows = [
+      { id: "certain", answers: { relevant: noul(0.9), risk: score(0.2, 0.9) }, flat: [] },
+      { id: "uncertain", answers: { relevant: noul(0.9), risk: score(1.1, 0.05) }, flat: ["risk"] },
+    ]
+    const out = project({
+      rows,
+      keep: [parseFilter("relevant>=0.7", questions)],
+      sort: parseSort("risk:desc", questions),
+      limit: 1,
+      undecidedOf: (r) => r.flat,
+    })
+    expect(out.kept.map((r) => r.id)).toEqual(["certain"])
+    expect(out.undecided.map((u) => u.row.id)).toEqual(["uncertain"])
   })
 })

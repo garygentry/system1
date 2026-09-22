@@ -1,4 +1,3 @@
-import { parseArgs } from "node:util"
 import {
   assertExamples,
   createContext,
@@ -9,6 +8,7 @@ import {
   runSpecCheck,
   type SpecCheckResult,
 } from "@garygentry/system1-core"
+import { typedParse } from "../args.js"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
 import { briefSpecCheck } from "../format.js"
@@ -97,13 +97,7 @@ export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<
  * the default; `--live` records fresh answers into the spec's fixtures.
  */
 function checkInput(argv: string[]): Record<string, unknown> {
-  let parsed: ReturnType<typeof parse>
-  try {
-    parsed = parse(argv)
-  } catch (error) {
-    throw new DecisionsError("invalid-request", (error as Error).message)
-  }
-  const { values, positionals } = parsed
+  const { values, positionals } = parse(argv)
   const [spec, extra] = positionals
   if (!spec || extra !== undefined) {
     throw new DecisionsError(
@@ -123,7 +117,7 @@ function checkInput(argv: string[]): Record<string, unknown> {
 }
 
 function parse(argv: string[]) {
-  return parseArgs({
+  return typedParse({
     args: argv,
     allowPositionals: true,
     strict: true,

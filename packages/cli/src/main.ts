@@ -32,6 +32,7 @@ Sources:    --glob <pattern>…  --file <path[:L1-L2]>…  --jsonl <path>
             --diff <range> [--staged]  --text <text>  --stdin
 Split:      --split file|hunk|row|join|lines:N[/overlap]      (default: file; join = one state)
 Project:    --keep 'relevant>=0.7'…  --sort relevant:desc  --limit N  --fields a,b
+            --allow-outside   (read files that resolve outside the repo)
 Run:        --dry-run  --confirm  --record | --replay | --live  --model <id>  --concurrency N
 
 Output is one JSON envelope by default: {v, ok, command, result | error}.
@@ -46,8 +47,9 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
   const [command, ...args] = argv
   let format: Format
   let rest: string[]
+  let explicitFormat: boolean
   try {
-    ;({ format, rest } = extractFormat(args, DEFAULT_FORMAT))
+    ;({ format, rest, explicit: explicitFormat } = extractFormat(args, DEFAULT_FORMAT))
   } catch (error) {
     return emit(io, command ?? "decide", DEFAULT_FORMAT, () => {
       throw error
@@ -89,7 +91,8 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return emit(
         io,
         "version",
-        format === "json" && !argv.includes("--format") ? "brief" : format,
+        // Bare `decide version` prints the number; an explicit --format wins.
+        explicitFormat ? format : "brief",
         () => ({ version: VERSION }),
         (r, f) => (f === "json" ? undefined : r.version),
       )

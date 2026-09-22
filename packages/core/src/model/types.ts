@@ -99,6 +99,11 @@ export interface Usage {
   output_tokens: number
   /** Upstream-reported cost in USD. Output tokens are free on Jev. */
   cost: number
+  /**
+   * False when the provider reported no usage (or an unreadable one), so the
+   * zeroes above are "unknown", not "free". Absent means reported.
+   */
+  reported?: boolean
 }
 
 /** What the decisions endpoint returns, after validation. */

@@ -1,4 +1,3 @@
-import { parseArgs } from "node:util"
 import {
   createContext,
   DEFAULT_EXCLUDES,
@@ -7,6 +6,7 @@ import {
   repoConfigPath,
   setConsent,
 } from "@garygentry/system1-core"
+import { typedParse } from "../args.js"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
 import type { Io } from "../io.js"
@@ -35,7 +35,7 @@ type ConfigResult =
   | { egress: { consent: unknown; file: string; changed?: boolean } }
 
 function body(argv: string[], io: Io): ConfigResult {
-  const { values, positionals } = parseArgs({
+  const { values, positionals } = typedParse({
     args: argv,
     allowPositionals: true,
     options: { confirm: { type: "boolean" }, by: { type: "string" } },

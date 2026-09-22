@@ -104,4 +104,34 @@ describe("budget", () => {
     expect(r.items[0]?.state).toBe("--- a.ts ---\nalpha\n\n--- b.log ---\nbeta")
     expect(r.skipped.map((s) => [s.path, s.reason])).toEqual([[".env.production", "excluded"]])
   })
+
+  it("scrubs whole documents before splitting, so a key cut across lines is still caught", async () => {
+    const pem = [
+      "-----BEGIN PRIVATE KEY-----",
+      "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=",
+      "-----END PRIVATE KEY-----",
+    ].join("\n")
+    const cwd = temp({ "key.txt": pem })
+    const r = await prepare({
+      sources: [{ kind: "file", path: "key.txt" }],
+      split: { kind: "row" },
+      questions,
+      profile,
+      cwd,
+    })
+    expect(r.items.map((i) => i.state).join(" ")).not.toContain("BEGIN PRIVATE KEY")
+    expect(r.redactions.byKind["private-key"]).toBe(1)
+  })
+
+  it("redacts a structured field whose name says it holds a secret", async () => {
+    const cwd = temp({ "rows.jsonl": `${JSON.stringify({ password: "correct-horse-battery" })}\n` })
+    const r = await prepare({
+      sources: [{ kind: "jsonl", path: "rows.jsonl" }],
+      split: { kind: "row" },
+      questions,
+      profile,
+      cwd,
+    })
+    expect(JSON.stringify(r.items[0]?.state)).toContain("[REDACTED:assigned-secret]")
+  })
 })

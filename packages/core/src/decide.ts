@@ -1,4 +1,6 @@
 import { assertConsent } from "./config/consent.js"
+import { scrubQuestions, scrubState } from "./egress/scrub.js"
+import { assertStateFits } from "./egress/size.js"
 import { DecisionsError } from "./errors.js"
 import type { FixtureStore } from "./fixtures/store.js"
 import { fixtureKey } from "./fixtures/store.js"
@@ -100,7 +102,18 @@ export function createDecider(options: DeciderOptions): Decider {
     mode,
     async decide({ state, questions, namespace = "adhoc", signal }) {
       assertQuestionSet(questions)
-      const request: DecisionRequest = { model: profile.id, state, questions }
+      // The last boundary before the wire. `prepare()` has usually scrubbed
+      // and sized the state already; doing it here too means a caller using
+      // the library directly still cannot send a secret or an oversized
+      // state. Scrubbing is idempotent, so fixture keys are unaffected.
+      const safeState = scrubState(state)
+      const safeQuestions = scrubQuestions(questions)
+      assertStateFits(namespace, safeState, safeQuestions, profile)
+      const request: DecisionRequest = {
+        model: profile.id,
+        state: safeState,
+        questions: safeQuestions,
+      }
       const key = fixtureKey(request)
 
       if (mode === "replay") {

@@ -170,4 +170,39 @@ describe("createDeciderFromEnv", () => {
       }),
     ).toThrow(expect.objectContaining({ code: "unknown-model" }))
   })
+
+  it("scrubs the question set and the state at the boundary, whoever calls it", async () => {
+    const sent: unknown[] = []
+    const decider = createDecider({
+      profile: resolveProfile("typesafe/jev-1.13"),
+      egressConsent: true,
+      mode: "live",
+      transport: {
+        async decide(request) {
+          sent.push(request)
+          return {
+            response: {
+              model: "typesafe/jev-1.13",
+              answers: { q: { type: "noul", noul: 0.9 } },
+              usage: { input_tokens: 1, output_tokens: 0, cost: 0 },
+            },
+            latencyMs: 1,
+            attempts: 1,
+          }
+        },
+      },
+    })
+    await decider.decide({
+      state: "token ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      questions: {
+        q: {
+          type: "noul",
+          instructions: "Does it mention ghp_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB?",
+        },
+      },
+    })
+    const request = sent[0] as { state: string; questions: { q: { instructions: string } } }
+    expect(request.state).toContain("[REDACTED:github-token]")
+    expect(request.questions.q.instructions).toContain("[REDACTED:github-token]")
+  })
 })

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute, relative, resolve } from "node:path"
 import { glob } from "tinyglobby"
 import { DecisionsError } from "../errors.js"
@@ -10,6 +10,41 @@ export interface ReadOptions {
   cwd: string
   /** Files larger than this are skipped as `too-large` without being read. */
   maxFileBytes?: number
+  /**
+   * Allow content from outside `cwd`. Off by default: consent is given per
+   * repo, so a path (or a symlink) that resolves elsewhere is withheld.
+   */
+  allowOutside?: boolean
+}
+
+/**
+ * A path resolved for reading: where it really is on disk, how to show it, and
+ * what excludes should match. `outside` is set when it escapes the repo.
+ */
+interface Resolved {
+  absolute: string
+  /** For ids and messages: the path as given, relative to `cwd` when inside. */
+  display: string
+  /** The symlink-resolved path, relative to `cwd` when inside. */
+  real: string
+  outside: boolean
+}
+
+function resolvePath(cwd: string, path: string): Resolved {
+  const absolute = resolve(cwd, path)
+  let realAbsolute = absolute
+  try {
+    realAbsolute = realpathSync(absolute)
+  } catch {
+    // Missing files are reported by the caller.
+  }
+  const real = toRel(cwd, realAbsolute)
+  return {
+    absolute,
+    display: toRel(cwd, absolute),
+    real,
+    outside: isAbsolute(real) || real.startsWith(".."),
+  }
 }
 
 export interface ReadResult {
@@ -18,6 +53,7 @@ export interface ReadResult {
 }
 
 const DEFAULT_MAX_FILE_BYTES = 2_000_000
+const GIT_TIMEOUT_MS = 10_000
 
 /** Never content: dependencies, git internals, and our own state (config, fixtures, ledger). */
 const ALWAYS_IGNORED = ["**/node_modules/**", "**/.git/**", "**/.system1/**"]
@@ -47,9 +83,9 @@ async function readSource(spec: SourceSpec, options: ReadOptions): Promise<ReadR
     case "glob":
       return readGlob(spec.patterns, options)
     case "jsonl":
-      return { documents: readJsonl(spec.path, options), skipped: [] }
+      return readJsonl(spec.path, options)
     case "diff":
-      return { documents: readDiff(spec, options), skipped: [] }
+      return readDiff(spec, options)
   }
 }
 
@@ -76,10 +112,13 @@ function readFiles(paths: readonly string[], options: ReadOptions, range?: LineR
   const skipped: Skipped[] = []
   const limit = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES
   for (const path of paths) {
-    const absolute = resolve(options.cwd, path)
-    const rel = toRel(options.cwd, absolute)
+    const { absolute, display: rel, real, outside } = resolvePath(options.cwd, path)
     if (!existsSync(absolute) || !statSync(absolute).isFile()) {
       throw new DecisionsError("source-error", `No such file: ${rel}`, { path: rel })
+    }
+    if (outside && !options.allowOutside) {
+      skipped.push({ path: rel, reason: "outside-repo", detail: real })
+      continue
     }
     if (statSync(absolute).size > limit) {
       skipped.push({ path: rel, reason: "too-large", detail: `> ${limit} bytes` })
@@ -106,7 +145,14 @@ function readFiles(paths: readonly string[], options: ReadOptions, range?: LineR
     const id = range
       ? `${rel}:${range.start}-${Math.min(range.end, startLine + text.split("\n").length - 1)}`
       : rel
-    documents.push({ id, kind: "file", path: rel, text, startLine })
+    documents.push({
+      id,
+      kind: "file",
+      path: rel,
+      ...(real !== rel ? { realPath: real } : {}),
+      text,
+      startLine,
+    })
   }
   return { documents, skipped }
 }
@@ -142,11 +188,21 @@ export function gitIgnored(cwd: string, paths: readonly string[]): string[] {
       input: paths.join("\0"),
       encoding: "utf8",
       stdio: ["pipe", "pipe", "ignore"],
+      // Bounded: a git that never answers must not hang the run. Some
+      // sandboxes make a piped child hang indefinitely.
+      timeout: GIT_TIMEOUT_MS,
+      killSignal: "SIGKILL",
     })
     return out.split("\0").filter(Boolean)
   } catch (error) {
     // Exit 1 means "none ignored", which is not an error.
     if ((error as { status?: number }).status === 1) return []
+    if ((error as { signal?: string }).signal === "SIGKILL") {
+      throw new DecisionsError(
+        "source-error",
+        `git check-ignore did not answer within ${GIT_TIMEOUT_MS} ms. Name the files with --file, or run where git works.`,
+      )
+    }
     throw new DecisionsError("source-error", `git check-ignore failed: ${String(error)}`)
   }
 }
@@ -164,11 +220,13 @@ function insideGitWorkTree(cwd: string): boolean {
   }
 }
 
-function readJsonl(path: string, options: ReadOptions): Document[] {
-  const absolute = resolve(options.cwd, path)
-  const rel = toRel(options.cwd, absolute)
+function readJsonl(path: string, options: ReadOptions): ReadResult {
+  const { absolute, display: rel, real, outside } = resolvePath(options.cwd, path)
   if (!existsSync(absolute))
     throw new DecisionsError("source-error", `No such file: ${rel}`, { path: rel })
+  if (outside && !options.allowOutside) {
+    return { documents: [], skipped: [{ path: rel, reason: "outside-repo", detail: real }] }
+  }
   const documents: Document[] = []
   readFileSync(absolute, "utf8")
     .split("\n")
@@ -187,15 +245,19 @@ function readJsonl(path: string, options: ReadOptions): Document[] {
         id: `${rel}:row${index + 1}`,
         kind: "row",
         path: rel,
+        ...(real !== rel ? { realPath: real } : {}),
         data,
         startLine: index + 1,
       })
     })
-  return documents
+  return { documents, skipped: [] }
 }
 
 /** One document per file in the diff, text starting at its `diff --git` header. */
-function readDiff(spec: Extract<SourceSpec, { kind: "diff" }>, options: ReadOptions): Document[] {
+function readDiff(
+  spec: Extract<SourceSpec, { kind: "diff" }>,
+  options: ReadOptions,
+): { documents: Document[]; skipped: Skipped[] } {
   if (spec.range?.startsWith("-")) {
     throw new DecisionsError("invalid-request", `Invalid diff range "${spec.range}"`)
   }
@@ -216,15 +278,59 @@ function readDiff(spec: Extract<SourceSpec, { kind: "diff" }>, options: ReadOpti
   return splitDiffByFile(out)
 }
 
-export function splitDiffByFile(diff: string): Document[] {
+export function splitDiffByFile(diff: string): { documents: Document[]; skipped: Skipped[] } {
   const sections = diff.split(/^(?=diff --git )/m).filter((s) => s.startsWith("diff --git "))
-  return sections.map((text) => {
-    const path =
-      /^\+\+\+ b\/(.+)$/m.exec(text)?.[1] ??
-      /^diff --git a\/.+ b\/(.+)$/m.exec(text)?.[1] ??
-      "unknown"
-    return { id: `${path}#diff`, kind: "diff" as const, path, text: text.replace(/\n$/, "") }
-  })
+  const documents: Document[] = []
+  const skipped: Skipped[] = []
+  for (const text of sections) {
+    const raw =
+      /^\+\+\+ (?:b\/)?(.+)$/m.exec(text)?.[1] ?? /^diff --git a\/.+ b\/(.+)$/m.exec(text)?.[1]
+    // Git quotes the whole side, including its `b/` prefix: "b/secrets/é.txt".
+    const decoded = raw === undefined ? undefined : unquoteGitPath(raw.trim())
+    const path = decoded?.replace(/^b\//, "")
+    if (path === undefined || path === "/dev/null") {
+      // Without a path, excludes cannot be applied, so it is never sent.
+      skipped.push({
+        path: raw?.trim() ?? "(unnamed)",
+        reason: "excluded",
+        detail: "unreadable diff path",
+      })
+      continue
+    }
+    documents.push({ id: `${path}#diff`, kind: "diff", path, text: text.replace(/\n$/, "") })
+  }
+  return { documents, skipped }
+}
+
+/**
+ * Git quotes paths with unusual bytes (`"secrets/\303\251.txt"`). Left quoted,
+ * the path never matches an exclude, so it is decoded here.
+ */
+export function unquoteGitPath(path: string): string | undefined {
+  if (!path.startsWith('"')) return path
+  if (!path.endsWith('"') || path.length < 2) return undefined
+  const body = path.slice(1, -1)
+  const bytes: number[] = []
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] !== "\\") {
+      bytes.push(...Buffer.from(body[i] as string, "utf8"))
+      continue
+    }
+    const next = body[++i]
+    if (next === undefined) return undefined
+    const simple: Record<string, number> = { n: 10, t: 9, r: 13, '"': 34, "\\": 92 }
+    if (next in simple) {
+      bytes.push(simple[next] as number)
+    } else if (/[0-7]/.test(next)) {
+      const octal = body.slice(i, i + 3)
+      if (!/^[0-7]{3}$/.test(octal)) return undefined
+      bytes.push(Number.parseInt(octal, 8))
+      i += 2
+    } else {
+      return undefined
+    }
+  }
+  return Buffer.from(bytes).toString("utf8")
 }
 
 function toRel(cwd: string, absolute: string): string {

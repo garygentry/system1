@@ -2,6 +2,8 @@
 
 The model returns probabilities, and you decide what they mean. Keep that decision explicit.
 
+The provider calls these probabilities calibrated, and this toolkit does not verify that. So treat a 0.9 as "the model is confident", not as "right nine times in ten", and pick thresholds from what a mistake costs.
+
 ## Choose the threshold before you look at the answers
 
 If you set a cutoff after seeing the scores, you'll pick whatever keeps the items you already expected. Decide the cutoff from what a mistake costs, then run.

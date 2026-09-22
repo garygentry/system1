@@ -148,8 +148,12 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
         keywords: [...plugin.keywords, "pi-package"],
         engines: { node: ">=22" },
         pi: { skills: ["./skills"] },
-        files: ["skills", "README.md", "LICENSE"],
-        scripts: { prepack: "node prepack.mjs" },
+        // prepack.mjs ships too, so an unpacked tarball can be repacked.
+        files: ["skills", "prepack.mjs", "README.md", "LICENSE"],
+        scripts: {
+          prepack: "node prepack.mjs",
+          prepublishOnly: "node ../../tools/prepublish-check.mjs",
+        },
         publishConfig: { access: "public" },
       }),
     },
@@ -158,16 +162,23 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
       content: `// GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
 // Copies the authored skills into this package just before it is packed, so
 // they are written in one place only (${PLUGIN_DIR}/skills).
-import { cpSync, rmSync } from "node:fs"
+import { cpSync, existsSync, rmSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const from = join(here, "../../${PLUGIN_DIR}/skills")
 const to = join(here, "skills")
-rmSync(to, { recursive: true, force: true })
-cpSync(from, to, { recursive: true })
-console.log(\`system1-pi: copied skills from \${from}\`)
+if (existsSync(from)) {
+  rmSync(to, { recursive: true, force: true })
+  cpSync(from, to, { recursive: true })
+  console.log(\`system1-pi: copied skills from \${from}\`)
+} else if (existsSync(to)) {
+  // Repacking an unpacked tarball: the skills are already beside this script.
+  console.log("system1-pi: skills already present")
+} else {
+  throw new Error(\`system1-pi: no skills at \${from}\`)
+}
 `,
     },
     {
@@ -200,6 +211,8 @@ console.log(\`system1-pi: copied skills from \${from}\`)
  */
 function shim(catalog: Catalog): string {
   const pinned = `${cliPackageName(catalog)}@${catalog.version}`
+  // The path an npm install of this package always contains.
+  const pkgPath = `${cliPackageName(catalog)}/`
   return `#!/bin/sh
 # GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
 # ${SHIM_MARKER}
@@ -230,6 +243,20 @@ for dir in $PATH; do
   # missing or broken grep can never make shims exec each other.
   rc=0; grep -qs "${SHIM_MARKER}" "$cand" || rc=$?
   [ "$rc" -eq 1 ] || continue
+  # Only a real install of this package counts. Without this, any executable
+  # named decide on PATH would silently replace the pinned CLI.
+  target=$cand
+  while [ -L "$target" ]; do
+    link=$(readlink "$target")
+    case $link in
+      /*) target=$link ;;
+      *) target=$(dirname -- "$target")/$link ;;
+    esac
+  done
+  case $target in
+    *"${pkgPath}"*) ;;
+    *) continue ;;
+  esac
   IFS=$old_ifs; set +f
   exec "$cand" "$@"
 done

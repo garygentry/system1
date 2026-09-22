@@ -1,4 +1,4 @@
-import type { State } from "../model/types.js"
+import type { QuestionSet, State } from "../model/types.js"
 
 /**
  * Redact secret-shaped strings before content leaves the machine. Always on.
@@ -74,11 +74,42 @@ export function scrubState(state: State, counts: ScrubCounts = {}): State {
   return walk(state, counts) as State
 }
 
-function walk(value: unknown, counts: ScrubCounts): unknown {
-  if (typeof value === "string") return scrubText(value, counts)
-  if (Array.isArray(value)) return value.map((v) => walk(v, counts))
+/**
+ * A value whose key smells like a credential, e.g. `{"password": "hunter2"}`.
+ * Rules that need `name = value` context can't see a structured field on its
+ * own, so the name is checked here instead.
+ */
+const SECRET_KEY = new RegExp(`^${SECRET_NAME}$`, "i")
+
+function walk(value: unknown, counts: ScrubCounts, key?: string): unknown {
+  if (typeof value === "string") {
+    if (key !== undefined && SECRET_KEY.test(key) && value.trim().length >= 4) {
+      counts["assigned-secret"] = (counts["assigned-secret"] ?? 0) + 1
+      return "[REDACTED:assigned-secret]"
+    }
+    return scrubText(value, counts)
+  }
+  if (Array.isArray(value)) return value.map((v) => walk(v, counts, key))
   if (value !== null && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v, counts)]))
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v, counts, k)]))
   }
   return value
+}
+
+/**
+ * Redact the question set itself. Instructions and criteria are sent with every
+ * request, and an agent can paste content (or a credential) into them, so they
+ * get the same treatment as the state.
+ */
+export function scrubQuestions(questions: QuestionSet, counts: ScrubCounts = {}): QuestionSet {
+  return Object.fromEntries(
+    Object.entries(questions).map(([name, q]) => [
+      name,
+      {
+        ...q,
+        instructions: scrubText(q.instructions, counts),
+        ...(q.criteria === undefined ? {} : { criteria: scrubState(q.criteria as State, counts) }),
+      },
+    ]),
+  ) as QuestionSet
 }

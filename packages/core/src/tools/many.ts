@@ -20,6 +20,12 @@ export interface ResultRow {
    * it: piped items, and single lines such as grep hits split by row.
    */
   excerpt?: string
+  /**
+   * Answers of this row that came back too flat to act on. Present on kept
+   * rows too: a question the projection didn't act on can still be undecided,
+   * and hiding that would overstate the result.
+   */
+  undecided?: string[]
   answers: Answers
 }
 
@@ -79,6 +85,7 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
     profile: req.profile,
     cwd: ctx.config.repoRoot,
     exclude: ctx.config.egress.exclude,
+    ...(input.allowOutside ? { allowOutside: true } : {}),
   })
   const base = {
     ...(req.spec ? { spec: req.spec.name } : {}),
@@ -146,7 +153,10 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
     ...(input.fields ? { fields: input.fields } : {}),
     undecidedOf: (r) => r.flat,
   })
-  const strip = ({ flat: _flat, ...rest }: (typeof rows)[number]): ResultRow => rest
+  const strip = ({ flat, ...rest }: (typeof rows)[number]): ResultRow => ({
+    ...rest,
+    ...(flat.length ? { undecided: [...flat] } : {}),
+  })
 
   return {
     ...base,

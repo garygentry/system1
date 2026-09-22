@@ -1,4 +1,4 @@
-import { join } from "node:path"
+import { isAbsolute, join, relative } from "node:path"
 import { Value } from "typebox/value"
 import {
   allProfiles,
@@ -101,7 +101,11 @@ export function resolveRequest(
       "No questions: pass --spec <name>, --question, or --input with questions",
     )
   }
-  const sources = input.sources?.length ? input.sources : specSources(spec)
+  // Paths typed on the command line mean what the shell means by them; a
+  // spec's own defaults stay anchored to the repo, wherever it is run from.
+  const sources = input.sources?.length
+    ? input.sources.map((source) => rebase(source, ctx.cwd, ctx.config.repoRoot))
+    : specSources(spec)
   if (sources.length === 0) {
     throw new DecisionsError(
       "invalid-request",
@@ -120,6 +124,29 @@ export function resolveRequest(
     keep: keepText.map((k) => parseFilter(k, questions)),
     ...(sortText ? { sort: parseSort(sortText, questions) } : {}),
     profile,
+  }
+}
+
+/**
+ * Re-anchor a source given on the command line from the invocation directory
+ * to the repo root, which is what the reader resolves against. Without this,
+ * `decide many --file a.ts` in `src/` reads `<repo>/a.ts`.
+ */
+function rebase(source: SourceSpec, cwd: string, repoRoot: string): SourceSpec {
+  const prefix = relative(repoRoot, cwd)
+  if (prefix === "" || prefix.startsWith("..") || isAbsolute(prefix)) return source
+  const move = (path: string) => (isAbsolute(path) ? path : join(prefix, path))
+  switch (source.kind) {
+    case "file":
+      return { ...source, path: move(source.path) }
+    case "jsonl":
+      return { ...source, path: move(source.path) }
+    case "glob":
+      return { ...source, patterns: source.patterns.map(move) }
+    case "diff":
+      return source.paths ? { ...source, paths: source.paths.map(move) } : source
+    default:
+      return source
   }
 }
 

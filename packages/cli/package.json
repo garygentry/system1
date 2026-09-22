@@ -30,10 +30,12 @@
     "decide": "./dist/bundle/decide.mjs"
   },
   "files": [
-    "dist/bundle"
+    "dist/bundle",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
-    "build": "tsc -b && node bundle.mjs"
+    "build": "tsc -b && node bundle.mjs && node ../../tools/notices.mjs",
+    "prepublishOnly": "node ../../tools/prepublish-check.mjs"
   },
   "devDependencies": {
     "@garygentry/system1-core": "workspace:*",

@@ -9,7 +9,9 @@ Let a coding agent hand a **closed judgement** to a decision model instead of re
 - is this command destructive;
 - is "done" actually done.
 
-A decision model answers with a typed, calibrated probability in about 300 ms for about $0.00003 a call, and its output tokens are free. The first supported model is [Jev](https://openrouter.ai/typesafe/jev-1.13) on OpenRouter.
+A decision model answers with a typed probability in about 300 ms, and its output tokens are free. Cost scales with what you send: about **$0.00003 for a 700-token item** at Jev's listed price, so the 57-file run below came to $0.0035 — about $0.00006 an item. The first supported model is [Jev](https://openrouter.ai/typesafe/jev-1.13) on OpenRouter.
+
+The provider describes these probabilities as calibrated; nothing here measures that independently, so treat the numbers as typed and comparable rather than as proven frequencies, and set your own thresholds.
 
 It works in **Claude Code, Codex and Pi**, and in any host that supports [Agent Skills](https://agentskills.dev). Hooks, CI and scripts call the same CLI.
 
@@ -83,7 +85,8 @@ Running `decide` live sends the text being judged (file contents, diff hunks, pi
 - **Secret-shaped strings are scrubbed** from everything that is sent.
 - **Oversized content is refused, never truncated**, because a decision made on half an input is a wrong decision.
 - **Every answer says where it came from**, `live` or `replay`, and a replay miss is an error rather than an invented answer.
-- **Costs are labelled.** Projections say projected; measured costs come from the provider.
+- **Costs are labelled.** Projections say projected; measured costs come from the provider, and a run says so when the provider reported none.
+- **Recorded answers hold the text that was sent.** `.system1/fixtures/` is how replay works offline. Read a fixture before committing or sharing it, the way you would a test fixture.
 
 ## Packages
 

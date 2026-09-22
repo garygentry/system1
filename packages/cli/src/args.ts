@@ -21,6 +21,7 @@ export const DECIDE_OPTIONS = {
   staged: { type: "boolean" },
   text: { type: "string" },
   stdin: { type: "boolean" },
+  "allow-outside": { type: "boolean" },
   split: { type: "string" },
   keep: { type: "string", multiple: true },
   sort: { type: "string" },
@@ -41,6 +42,20 @@ export type DecideFlags = ReturnType<typeof parseDecideFlags>["values"]
 export function parseDecideFlags(argv: string[]) {
   try {
     return parseArgs({ args: argv, options: DECIDE_OPTIONS, allowPositionals: true, strict: true })
+  } catch (error) {
+    throw new DecisionsError("invalid-request", (error as Error).message)
+  }
+}
+
+/**
+ * `parseArgs`, with its errors typed as usage errors. Every command parses
+ * through this, so an unknown flag is always exit 2 and never a bug (exit 1).
+ */
+export function typedParse<T extends NonNullable<Parameters<typeof parseArgs>[0]>>(
+  config: T,
+): ReturnType<typeof parseArgs<T>> {
+  try {
+    return parseArgs(config)
   } catch (error) {
     throw new DecisionsError("invalid-request", (error as Error).message)
   }
@@ -126,6 +141,7 @@ export function buildInput(
           .filter(Boolean)
       : undefined,
   )
+  set("allowOutside", values["allow-outside"])
   set("dryRun", values["dry-run"])
   set("confirm", values.confirm)
   set("mode", modes[0])
