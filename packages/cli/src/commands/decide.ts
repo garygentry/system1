@@ -62,5 +62,5 @@ function input(argv: string[], io: Io) {
       `Unexpected argument "${positionals[0]}". Did you mean --text "${positionals[0]}"?`,
     )
   }
-  return buildInput(values, io.readStdin ?? (() => readFileSync(0, "utf8")))
+  return buildInput(values, io.readStdin ?? (() => readFileSync(0, "utf8")), io.cwd)
 }

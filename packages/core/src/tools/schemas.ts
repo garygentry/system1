@@ -72,9 +72,25 @@ export const UsageInput = Type.Object({
   since: Type.Optional(Type.String()),
 })
 
+export const SpecCheckInput = Type.Object({
+  /** Spec name (repo → user → bundled) or path. */
+  spec: Type.String({ minLength: 1 }),
+  /** `replay` (default) checks against committed fixtures; `record` captures fresh answers. */
+  mode: Type.Optional(Mode),
+  model: Type.Optional(Type.String()),
+  /** Proceed past the spend guard. */
+  confirm: Type.Optional(Type.Boolean()),
+})
+
 export type AskInput = Static<typeof AskInput>
 export type ManyInput = Static<typeof ManyInput>
 export type UsageInput = Static<typeof UsageInput>
+export type SpecCheckInput = Static<typeof SpecCheckInput>
 
-export const TOOL_SCHEMAS = { ask: AskInput, many: ManyInput, usage: UsageInput } as const
+export const TOOL_SCHEMAS = {
+  ask: AskInput,
+  many: ManyInput,
+  usage: UsageInput,
+  "spec-check": SpecCheckInput,
+} as const
 export type ToolName = keyof typeof TOOL_SCHEMAS

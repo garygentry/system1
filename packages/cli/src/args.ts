@@ -1,11 +1,18 @@
 import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import { parseArgs } from "node:util"
-import { DecisionsError, parseFileRef, type SourceSpec } from "@garygentry/decisions-core"
+import {
+  DecisionsError,
+  parseFileRef,
+  parseQuestionSet,
+  type SourceSpec,
+} from "@garygentry/decisions-core"
 
 /** Flags shared by `ask` and `many`. One table, so help and parsing can't drift. */
 export const DECIDE_OPTIONS = {
   spec: { type: "string" },
   question: { type: "string", multiple: true },
+  questions: { type: "string" },
   input: { type: "string" },
   glob: { type: "string", multiple: true },
   file: { type: "string", multiple: true },
@@ -43,11 +50,30 @@ export function parseDecideFlags(argv: string[]) {
  * Build tool input from flags. `--input` supplies a JSON base (a file, or `-`
  * for stdin); flags given on the command line override it.
  */
-export function buildInput(values: DecideFlags, readStdin: () => string): Record<string, unknown> {
+export function buildInput(
+  values: DecideFlags,
+  readStdin: () => string,
+  cwd: string = process.cwd(),
+): Record<string, unknown> {
   if (values.stdin && values.input === "-") {
     throw new DecisionsError("invalid-request", "--stdin and --input - both want stdin; use one")
   }
-  const base = values.input ? readJson(values.input, readStdin) : {}
+  if (values.questions !== undefined) {
+    const clash = values.spec ? "--spec" : values.question?.length ? "--question" : undefined
+    if (clash) {
+      throw new DecisionsError(
+        "invalid-request",
+        `--questions and ${clash} both give questions; use one`,
+      )
+    }
+    if (values.questions === "-" && (values.stdin || values.input === "-")) {
+      throw new DecisionsError(
+        "invalid-request",
+        `--questions - and ${values.stdin ? "--stdin" : "--input -"} both want stdin; put the questions in a file instead`,
+      )
+    }
+  }
+  const base = values.input ? readJson(resolve(cwd, values.input), values.input, readStdin) : {}
 
   const sources: SourceSpec[] = [
     ...(values.glob?.length ? [{ kind: "glob" as const, patterns: values.glob }] : []),
@@ -76,6 +102,13 @@ export function buildInput(values: DecideFlags, readStdin: () => string): Record
   }
   set("spec", values.spec)
   if (values.question?.length) input.questions = parseQuestions(values.question)
+  if (values.questions !== undefined) {
+    const ref = values.questions
+    input.questions = parseQuestionSet(
+      ref === "-" ? readStdin() : readText(resolve(cwd, ref), ref, "--questions"),
+      `--questions ${ref}`,
+    )
+  }
   if (sources.length) input.sources = sources
   set("split", values.split)
   set("keep", values.keep?.length ? values.keep : undefined)
@@ -156,8 +189,8 @@ export function parseQuestions(texts: readonly string[]): Record<string, unknown
   return questions
 }
 
-function readJson(ref: string, readStdin: () => string): Record<string, unknown> {
-  const text = ref === "-" ? readStdin() : readText(ref)
+function readJson(path: string, ref: string, readStdin: () => string): Record<string, unknown> {
+  const text = ref === "-" ? readStdin() : readText(path, ref)
   try {
     const value = JSON.parse(text) as unknown
     if (typeof value !== "object" || value === null || Array.isArray(value))
@@ -171,11 +204,11 @@ function readJson(ref: string, readStdin: () => string): Record<string, unknown>
   }
 }
 
-function readText(path: string): string {
+function readText(path: string, ref: string, flag = "--input"): string {
   try {
     return readFileSync(path, "utf8")
   } catch {
-    throw new DecisionsError("invalid-request", `--input: cannot read ${path}`)
+    throw new DecisionsError("invalid-request", `${flag}: cannot read ${ref}`)
   }
 }
 

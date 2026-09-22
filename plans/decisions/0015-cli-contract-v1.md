@@ -66,4 +66,32 @@ When a `many` run fails for every item with the same code, that code is raised f
 
 ## Inline questions
 
-`--question name:noul:<text>`, `name:choice:<text>:key=desc|…` and `name:score:<text>:l0|l1|…`. The instruction text cannot contain `:`. Anything richer goes in a spec or in `--input`.
+`--question name:noul:<text>`, `name:choice:<text>:key=desc|…` and `name:score:<text>:l0|l1|…`. The instruction text cannot contain `:`. Anything richer goes in `--questions`, a spec, or `--input`.
+
+## Question sets (added in M5, additive)
+
+- **Input:** `--questions <file|->` on `ask` and `many` reads a question set as YAML or JSON. It is the same map as a spec's `questions:`, and a whole spec-shaped document is also accepted (its `questions:` is used). Relative paths resolve against the working directory.
+- **Conflicts:** it can't be combined with `--spec` or `--question`, and `--questions -` can't be combined with `--stdin` or `--input -`. Each is exit 2.
+
+## `spec check` (added in M5, additive)
+
+- **Usage:** `decide spec check <name|path> [--live|--replay] [--confirm] [--model <id>]` runs a spec's `examples` and compares each against its `expect`.
+- **Modes:** replay is the default. `--live` records fresh answers into the spec's fixture namespace, after the same consent and spend-guard checks as `many`.
+- **Examples:** each example gives exactly one of `state` (text) or `file` (`path[:START-END]`, which goes through the same excludes, scrubbing and size checks as any source). An example whose file is withheld is reported as `withheld`, never sent.
+- **`expect`**, per question:
+  - `true`/`false` for a noul, compared at 0.5;
+  - an option key for a choice, compared with the winner;
+  - a level, or `[lo, hi]`, for a score, compared with the weighted mean (a level must round to it);
+  - the `--keep` shorthand without the question name (`">=0.7"`, `"in a,b"`);
+  - `undecided`, meaning the answer should be too flat to act on.
+- **Result:** `{spec, file, model, source, passed, counts: {examples, pass, fail, undecided, captured, withheld}, examples: [{id, status, answers, failures?, undecided?, reason?}], usage, skipped}`.
+  - `captured` is an example with no `expect`, shown so it can be read.
+  - Every example carries its full answers, distributions included.
+- **Exit codes:** like `doctor`, a mismatch is a finding. The envelope is `ok`, the exit code is 0, and `passed` is false.
+  - Exit 2: a spec with no examples, or an `expect` that doesn't fit its question (`spec validate` reports the same).
+  - Exit 6: any example with no recorded answer. The message names `--live`.
+- `decide schema spec-check` prints its input schema.
+
+## `doctor` path-version check (added in M5)
+
+When `decide` is on PATH, `doctor` runs it with `version` (2 s timeout) and warns if it differs from the running version. It's a warning, because agents run the one on PATH. The CLI supplies the probe, so the engine itself still spawns only `git` (0014).

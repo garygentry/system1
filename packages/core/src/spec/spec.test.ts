@@ -1,7 +1,7 @@
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { useTempDirs, writeTree } from "../testkit/tmp.js"
-import { listSpecs, loadSpec, parseSpec } from "./spec.js"
+import { listSpecs, loadSpec, parseQuestionSet, parseSpec } from "./spec.js"
 
 const temp = useTempDirs()
 
@@ -96,5 +96,72 @@ describe("loadSpec / listSpecs", () => {
       name: "broken",
       error: expect.stringContaining("invalid spec"),
     })
+  })
+})
+
+describe("spec examples", () => {
+  const withExamples = (examples: string) => `${SPEC}examples:\n${examples}`
+
+  it("accepts text or file states and every expect form", () => {
+    const spec = parseSpec(
+      withExamples(`  - { id: a, state: "text", expect: { relevant: true } }
+  - { id: b, file: "src/x.ts:1-5", expect: { relevant: ">=0.7" } }
+  - { id: c, state: "t", expect: { relevant: undecided } }
+  - { id: d, state: "t" }
+`),
+      "s.yaml",
+      "repo",
+    )
+    expect(spec.examples).toHaveLength(4)
+  })
+
+  it("collects every example problem at once", () => {
+    expect(() =>
+      parseSpec(
+        withExamples(`  - { id: a, expect: { relevant: true } }
+  - { id: a, state: "x", file: "y" }
+  - { id: c, state: "x", expect: { nope: true } }
+  - { id: d, state: "x", expect: { relevant: fix } }
+`),
+        "s.yaml",
+        "repo",
+      ),
+    ).toThrow(
+      /exactly one of state or file[\s\S]*duplicate id[\s\S]*"nope", which is not a question[\s\S]*a noul takes true or false/,
+    )
+  })
+
+  it("checks choice keys and score levels against the question", () => {
+    const spec = `description: x
+questions:
+  kind: { type: choice, instructions: K., criteria: { fix: F., feat: N. } }
+  risk: { type: score, instructions: R., criteria: [Low., High.] }
+examples:
+  - { id: a, state: x, expect: { kind: bug, risk: 5 } }
+`
+    expect(() => parseSpec(spec, "s.yaml", "repo")).toThrow(
+      /"bug", which is not one of its options \(fix, feat\)[\s\S]*a level 0–1/,
+    )
+  })
+})
+
+describe("parseQuestionSet", () => {
+  it("reads a YAML or JSON question map", () => {
+    expect(parseQuestionSet("a: { type: noul, instructions: A. }", "q")).toHaveProperty(
+      "a.type",
+      "noul",
+    )
+    expect(parseQuestionSet('{"a":{"type":"noul","instructions":"A."}}', "q")).toHaveProperty("a")
+  })
+
+  it("accepts a spec-shaped document, taking its questions", () => {
+    expect(Object.keys(parseQuestionSet(SPEC, "q"))).toEqual(["relevant"])
+  })
+
+  it("rejects invalid YAML and invalid questions with the source named", () => {
+    expect(() => parseQuestionSet("a: [", "--questions q.yaml")).toThrow(
+      /--questions q.yaml: not valid/,
+    )
+    expect(() => parseQuestionSet("a: { type: noul }", "--questions -")).toThrow(/--questions -:/)
   })
 })

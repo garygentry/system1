@@ -7,6 +7,7 @@ import { DecisionsError } from "../errors.js"
 import type { QuestionSet } from "../model/types.js"
 import { assertQuestionSet } from "../model/validate.js"
 import { parseFilter, parseSort } from "../project/project.js"
+import { parseExpect } from "./expect.js"
 
 /**
  * The question spec: the plugin's one durable file format. It holds a question
@@ -35,8 +36,11 @@ export const SpecSchema = Type.Object({
   examples: Type.Optional(
     Type.Array(
       Type.Object({
-        id: Type.String(),
-        state: Type.Unknown(),
+        id: Type.String({ minLength: 1 }),
+        /** The text to judge. Give this or `file`. */
+        state: Type.Optional(Type.String()),
+        /** A repo file to judge, `path` or `path:START-END`. Give this or `state`. */
+        file: Type.Optional(Type.String()),
         expect: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
       }),
     ),
@@ -93,6 +97,7 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
   const questions = spec.questions as QuestionSet
   for (const text of spec.keep ?? []) wrap(file, () => parseFilter(text, questions))
   if (spec.sort) wrap(file, () => parseSort(spec.sort as string, questions))
+  checkExamples(file, spec, questions)
   const name = basename(file, extname(file))
   if (!NAME.test(name)) {
     throw new DecisionsError(
@@ -102,6 +107,67 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
     )
   }
   return { ...spec, questions, name, file, origin }
+}
+
+function checkExamples(file: string, spec: SpecFile, questions: QuestionSet): void {
+  const problems: string[] = []
+  const ids = new Set<string>()
+  for (const [i, example] of (spec.examples ?? []).entries()) {
+    const where = `examples[${i}] (${example.id})`
+    if (ids.has(example.id)) problems.push(`${where}: duplicate id`)
+    ids.add(example.id)
+    if ((example.state === undefined) === (example.file === undefined)) {
+      problems.push(`${where}: give exactly one of state or file`)
+    }
+    if (example.expect) {
+      try {
+        parseExpect(example.expect, questions, where)
+      } catch (error) {
+        problems.push((error as Error).message)
+      }
+    }
+  }
+  if (problems.length > 0) {
+    throw new DecisionsError(
+      "invalid-request",
+      `${file}: invalid examples:\n  ${problems.join("\n  ")}`,
+      {
+        file,
+        problems,
+      },
+    )
+  }
+}
+
+/**
+ * Parse a question set given on its own (`--questions`): YAML or JSON, in the
+ * same shape as a spec's `questions:`.
+ */
+export function parseQuestionSet(text: string, from: string): QuestionSet {
+  let raw: unknown
+  try {
+    raw = parse(text)
+  } catch (error) {
+    throw new DecisionsError("invalid-request", `${from}: not valid YAML or JSON: ${String(error)}`)
+  }
+  // Accept a whole spec-shaped document too, so a spec's file can be reused as-is.
+  const questions =
+    raw &&
+    typeof raw === "object" &&
+    "questions" in raw &&
+    !isQuestion((raw as { questions: unknown }).questions)
+      ? (raw as { questions: unknown }).questions
+      : raw
+  try {
+    assertQuestionSet(questions)
+  } catch (error) {
+    throw new DecisionsError("invalid-request", `${from}: ${(error as Error).message}`)
+  }
+  return questions as QuestionSet
+}
+
+function isQuestion(value: unknown): boolean {
+  return !!value && typeof value === "object" && "type" in value && "instructions" in value
 }
 
 /** The default spec directories for a repo. */

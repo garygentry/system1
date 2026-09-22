@@ -54,8 +54,17 @@ export type { AnswerSource, SpendEntry, SpendSummary } from "./run/spend.js"
 export { SpendLedger, sumUsage } from "./run/spend.js"
 export { gitIgnored, parseFileRef, readSources, splitDiffByFile } from "./sources/read.js"
 export type { Document, Item, LineRange, Skipped, SourceSpec } from "./sources/types.js"
+export type { Expectation } from "./spec/expect.js"
+export { describeExpectation, meets, parseExpect } from "./spec/expect.js"
 export type { Spec, SpecDirs, SpecFile, SpecListing } from "./spec/spec.js"
-export { listSpecs, loadSpec, parseSpec, SpecSchema, specDirs } from "./spec/spec.js"
+export {
+  listSpecs,
+  loadSpec,
+  parseQuestionSet,
+  parseSpec,
+  SpecSchema,
+  specDirs,
+} from "./spec/spec.js"
 export type { SplitSpec } from "./split/split.js"
 export { parseSplit, split } from "./split/split.js"
 export type { AskResult } from "./tools/ask.js"
@@ -67,7 +76,9 @@ export { CODEX_RULE, runDoctor, which } from "./tools/doctor.js"
 export type { ManyResult, ResultRow, SkippedSummary } from "./tools/many.js"
 export { runMany, summariseSkipped } from "./tools/many.js"
 export type { ToolName } from "./tools/schemas.js"
-export { AskInput, ManyInput, TOOL_SCHEMAS, UsageInput } from "./tools/schemas.js"
+export { AskInput, ManyInput, SpecCheckInput, TOOL_SCHEMAS, UsageInput } from "./tools/schemas.js"
+export type { ExampleResult, ExampleStatus, SpecCheckResult } from "./tools/spec-check.js"
+export { runSpecCheck } from "./tools/spec-check.js"
 export type { UsageResult } from "./tools/usage.js"
 export { runUsage } from "./tools/usage.js"
 export type { Transport, TransportOptions, TransportResult } from "./transport/openrouter.js"

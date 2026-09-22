@@ -16,7 +16,7 @@ import { type ContextOptions, createContext, type ToolContext } from "./context.
 export type CheckStatus = "ok" | "warn" | "fail"
 
 export interface DoctorCheck {
-  name: "cli" | "config" | "path" | "key" | "consent" | "network"
+  name: "cli" | "config" | "path" | "path-version" | "key" | "consent" | "network"
   status: CheckStatus
   detail: string
   /** What the user (not the agent) can do about a warn or fail. */
@@ -39,6 +39,12 @@ export interface DoctorOptions extends ContextOptions {
   env: NodeJS.ProcessEnv
   /** The script that is running, for the report. */
   cliPath?: string
+  /**
+   * Reads the version of the `decide` found on PATH (the CLI runs it with
+   * `version`). Injected so the engine itself never spawns anything but git
+   * (0014). Without it the `path-version` check is skipped.
+   */
+  probeVersion?: (path: string) => Promise<string | undefined>
 }
 
 export const CODEX_RULE = 'prefix_rule(pattern = ["decide"], decision = "allow")'
@@ -54,6 +60,8 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
     },
     pathCheck(harness, env),
   ]
+  const onPath = which("decide", env.PATH ?? "")
+  if (onPath && options.probeVersion) checks.push(await versionCheck(onPath, options.probeVersion))
   const report = (ctx: ToolContext | undefined, live: boolean): DoctorResult => ({
     healthy: !checks.some((c) => c.status === "fail"),
     live,
@@ -165,6 +173,40 @@ function pathCheck(harness: Harness | null, env: NodeJS.ProcessEnv): DoctorCheck
       VERSION === "0.0.0"
         ? `${CLI_PACKAGE} is not published yet: put <checkout>/plugins/decisions/bin on PATH`
         : install,
+  }
+}
+
+async function versionCheck(
+  path: string,
+  probe: (path: string) => Promise<string | undefined>,
+): Promise<DoctorCheck> {
+  let found: string | undefined
+  try {
+    found = (await probe(path))?.trim() || undefined
+  } catch {}
+  if (found === undefined) {
+    return {
+      name: "path-version",
+      status: "warn",
+      detail: `could not read the version of ${path}`,
+      fix: `run \`${path} version\` to see why; reinstall it if it fails`,
+    }
+  }
+  if (found === VERSION) {
+    return {
+      name: "path-version",
+      status: "ok",
+      detail: `decide on PATH is ${found}, same as this one`,
+    }
+  }
+  return {
+    name: "path-version",
+    status: "warn",
+    detail: `decide on PATH is ${found}, but this one is ${VERSION}: agents will run the one on PATH`,
+    fix:
+      VERSION === "0.0.0"
+        ? `point PATH at the checkout's plugins/decisions/bin, or remove the other decide (${path})`
+        : `npm i -g ${CLI_PACKAGE}@${VERSION}`,
   }
 }
 

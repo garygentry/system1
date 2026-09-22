@@ -17,8 +17,8 @@ Commands:
   many      One question set over many items (fan-out), filtered to what matters
   usage     Measured spend from the ledger (--session, --since)
   config    Show resolved config; \`config egress allow|deny|status\` for consent
-  spec      list | show <name> | validate [name|path]
-  schema    Print the JSON Schema of a tool's input (ask, many, usage)
+  spec      list | show <name> | validate [name|path] | check <name> [--live]
+  schema    Print the JSON Schema of a tool's input (ask, many, usage, spec-check)
   ping      Check the endpoint is reachable (no key, no spend)
   doctor    Check decide works from this shell; prints the fix for each problem
   version   Print the version
@@ -26,6 +26,7 @@ Commands:
 Questions:  --spec <name|path>  |  --question name:noul:<text>
             --question name:choice:<text>:key=desc|key=desc|none=None of these
             --question name:score:<text>:level 0|level 1|level 2
+            --questions <file|->  (a question set as YAML or JSON; richer than --question)
             --input <file|->  (full tool input as JSON; flags override it)
 Sources:    --glob <pattern>…  --file <path[:L1-L2]>…  --jsonl <path>
             --diff <range> [--staged]  --text <text>  --stdin

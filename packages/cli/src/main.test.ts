@@ -263,6 +263,99 @@ describe("decide spec", () => {
   })
 })
 
+describe("decide --questions", () => {
+  const QS = `relevant:
+  type: noul
+  instructions: The file handles authentication.
+  criteria:
+    true: It checks credentials or sessions.
+    false: It does not.
+`
+  const files = { "src/auth.ts": "auth code", "src/util.ts": "util", "q.yaml": QS }
+
+  it("reads a question set from a file", async () => {
+    const { io, json } = rig(files)
+    expect(
+      await main(
+        ["many", "--glob", "src/*", "--questions", "q.yaml", "--keep", "relevant>=0.7"],
+        io,
+      ),
+    ).toBe(0)
+    expect(json().result.kept.map((k: { id: string }) => k.id)).toEqual(["src/auth.ts"])
+  })
+
+  it("reads a question set from stdin (a heredoc)", async () => {
+    const { io, json } = rig(files, { stdin: QS })
+    expect(await main(["ask", "--file", "src/auth.ts", "--questions", "-"], io)).toBe(0)
+    expect(json().result.answers.relevant.noul).toBe(0.95)
+  })
+
+  it("rejects mixing question sources, and two readers of stdin", async () => {
+    const { io, json } = rig(files)
+    const cases: Array<[string[], RegExp]> = [
+      [["--questions", "q.yaml", "--spec", "x"], /--questions and --spec/],
+      [["--questions", "q.yaml", "--question", Q], /--questions and --question/],
+      [["--questions", "-", "--stdin"], /both want stdin/],
+    ]
+    for (const [flags, message] of cases) {
+      expect(await main(["many", "--glob", "src/*", ...flags], io)).toBe(2)
+      expect(json().error.message).toMatch(message)
+    }
+  })
+
+  it("reports an unreadable file or an invalid set as a usage error", async () => {
+    const { io, json } = rig({ ...files, "bad.yaml": "relevant: { type: noul }\n" })
+    expect(await main(["many", "--glob", "src/*", "--questions", "nope.yaml"], io)).toBe(2)
+    expect(json().error.message).toMatch(/--questions: cannot read nope.yaml/)
+    expect(await main(["many", "--glob", "src/*", "--questions", "bad.yaml"], io)).toBe(2)
+    expect(json().error.message).toMatch(/--questions bad.yaml:/)
+  })
+})
+
+describe("decide spec check", () => {
+  const spec = `description: Auth.
+questions:
+  relevant: { type: noul, instructions: Handles auth. }
+examples:
+  - { id: login, state: "auth flow", expect: { relevant: true } }
+  - { id: helper, state: "string helper", expect: { relevant: true } }
+`
+  it("records with --live, then replays offline; a mismatch is exit 0 with passed false", async () => {
+    const live = rig({ ".decisions/specs/auth.yaml": spec })
+    expect(await main(["spec", "check", "auth", "--live"], live.io)).toBe(0)
+    expect(live.json().result).toMatchObject({
+      source: "live",
+      passed: false,
+      counts: { pass: 1, fail: 1 },
+    })
+
+    const offline = { ...live.io, env: {} }
+    expect(await main(["spec", "check", "auth", "--format", "brief"], offline)).toBe(0)
+    const brief = live.out.at(-1) ?? ""
+    expect(brief).toMatch(
+      /^decide spec check: auth FAILED · 1 pass · 1 fail · 0 undecided · replay /,
+    )
+    expect(brief).toContain("FAIL  helper  relevant=0.05")
+    expect(brief).toContain("expected relevant: true")
+  })
+
+  it("a replay miss is exit 6; no examples or bad usage is exit 2", async () => {
+    const { io, json } = rig(
+      {
+        ".decisions/specs/auth.yaml": spec,
+        ".decisions/specs/bare.yaml":
+          "description: x\nquestions:\n  a: { type: noul, instructions: A. }\n",
+      },
+      { key: false },
+    )
+    expect(await main(["spec", "check", "auth"], io)).toBe(6)
+    expect(json().error.message).toContain("--live")
+    expect(await main(["spec", "check", "bare"], io)).toBe(2)
+    expect(await main(["spec", "check"], io)).toBe(2)
+    expect(await main(["spec", "check", "auth", "--live", "--replay"], io)).toBe(2)
+  })
+})
+
 describe("decide doctor", () => {
   it("reports findings in an ok envelope with exit 0, never the key", async () => {
     const { io, out, json } = rig()

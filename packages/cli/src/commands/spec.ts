@@ -1,10 +1,19 @@
-import { createContext, DecisionsError, listSpecs, loadSpec } from "@garygentry/decisions-core"
+import { parseArgs } from "node:util"
+import {
+  createContext,
+  DecisionsError,
+  listSpecs,
+  loadSpec,
+  runSpecCheck,
+  type SpecCheckResult,
+} from "@garygentry/decisions-core"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
+import { briefSpecCheck } from "../format.js"
 import type { Io } from "../io.js"
 import { emit } from "../run.js"
 
-/** `decide spec list | show <name> | validate [name|path]`. */
+/** `decide spec list | show <name> | validate [name|path] | check <name|path>`. */
 export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<ExitCode> {
   const [action = "list", ref] = argv
   const ctx = () => createContext({ ...io, cwd: io.cwd ?? process.cwd(), env: io.env })
@@ -59,12 +68,64 @@ export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<
         },
         (r, f) => (f === "brief" ? `valid: ${r.valid.join(", ") || "(none)"}` : undefined),
       )
+    case "check":
+      return emit<SpecCheckResult>(
+        io,
+        "spec",
+        format,
+        () => runSpecCheck(ctx(), checkInput(argv.slice(1))),
+        (r, f) => (f === "brief" ? briefSpecCheck(r) : undefined),
+      )
     default:
       return emit(io, "spec", format, () => {
         throw new DecisionsError(
           "invalid-request",
-          `Unknown spec action "${action}". Use: list, show, validate`,
+          `Unknown spec action "${action}". Use: list, show, validate, check`,
         )
       })
   }
+}
+
+/**
+ * `spec check <name> [--live|--replay] [--confirm] [--model <id>]`. Replay is
+ * the default; `--live` records fresh answers into the spec's fixtures.
+ */
+function checkInput(argv: string[]): Record<string, unknown> {
+  let parsed: ReturnType<typeof parse>
+  try {
+    parsed = parse(argv)
+  } catch (error) {
+    throw new DecisionsError("invalid-request", (error as Error).message)
+  }
+  const { values, positionals } = parsed
+  const [spec, extra] = positionals
+  if (!spec || extra !== undefined) {
+    throw new DecisionsError(
+      "invalid-request",
+      "Usage: decide spec check <name|path> [--live] [--confirm] [--model <id>]",
+    )
+  }
+  if (values.live && values.replay) {
+    throw new DecisionsError("invalid-request", "Pick one of --live, --replay")
+  }
+  return {
+    spec,
+    mode: values.live ? "record" : "replay",
+    ...(values.confirm ? { confirm: true } : {}),
+    ...(values.model ? { model: values.model } : {}),
+  }
+}
+
+function parse(argv: string[]) {
+  return parseArgs({
+    args: argv,
+    allowPositionals: true,
+    strict: true,
+    options: {
+      live: { type: "boolean" },
+      replay: { type: "boolean" },
+      confirm: { type: "boolean" },
+      model: { type: "string" },
+    },
+  })
 }

@@ -6,6 +6,7 @@ import type {
   Projection,
   ResultRow,
   SkippedSummary,
+  SpecCheckResult,
   Usage,
 } from "@garygentry/decisions-core"
 
@@ -81,6 +82,43 @@ export function briefAsk(r: AskResult): string {
   if (r.verdict) lines.push(`verdict: ${r.verdict}`)
   lines.push(...withheld(r.skipped, r.redactions))
   return lines.join("\n")
+}
+
+/**
+ * `spec check`: one line per example. Anything short of a pass also shows the
+ * full distributions, because reading them is how a question gets repaired.
+ */
+export function briefSpecCheck(r: SpecCheckResult): string {
+  const c = r.counts
+  const parts = [`${c.pass} pass`, `${c.fail} fail`, `${c.undecided} undecided`]
+  if (c.captured) parts.push(`${c.captured} captured`)
+  if (c.withheld) parts.push(`${c.withheld} withheld`)
+  const lines = [
+    `decide spec check: ${r.spec} ${r.passed ? "PASSED" : "FAILED"} · ${parts.join(" · ")} · ${r.source} ${r.model} · ${measured(r.usage)}`,
+  ]
+  for (const e of r.examples) {
+    const label = e.status === "pass" ? "pass" : e.status.toUpperCase()
+    if (e.status === "withheld") {
+      lines.push(`  ${label}  ${e.id}  ${e.reason ?? ""}`)
+      continue
+    }
+    lines.push(`  ${label}  ${e.id}  ${e.answers ? briefAnswers(e.answers, e.undecided) : ""}`)
+    for (const f of e.failures ?? []) lines.push(`      expected ${f.question}: ${f.expected}`)
+    if (e.status !== "pass" && e.answers) {
+      for (const [name, a] of Object.entries(e.answers)) {
+        if (a.type !== "noul") lines.push(`      ${name}: ${distribution(a.probabilities)}`)
+      }
+    }
+  }
+  lines.push(...withheld(r.skipped, { total: 0, items: 0 }))
+  return lines.join("\n")
+}
+
+function distribution(probabilities: Record<string, number>): string {
+  return Object.entries(probabilities)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, p]) => `${k} ${fix(p)}`)
+    .join(" · ")
 }
 
 function withheld(skipped: SkippedSummary, redactions: { total: number; items: number }): string[] {

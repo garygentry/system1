@@ -2,6 +2,7 @@ import { chmodSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { useTempDirs } from "../testkit/tmp.js"
+import { VERSION } from "../version.js"
 import { CODEX_RULE, type DoctorResult, runDoctor, which } from "./doctor.js"
 
 const temp = useTempDirs()
@@ -119,5 +120,33 @@ describe("which", () => {
     mkdirSync(join(shadow, "decide"))
     expect(which("decide", ["", "/nonexistent", shadow, dir].join(":"))).toBe(join(dir, "decide"))
     expect(which("decide", temp({ decide: "not executable" }))).toBeUndefined()
+  })
+
+  it("compares the version of the decide on PATH, when given a probe", async () => {
+    const PATH = binDir()
+    const run = (probe: (p: string) => Promise<string | undefined>) =>
+      runDoctor({ cwd: temp(), home: temp(), env: { PATH }, fetch: reachable, probeVersion: probe })
+    const same = await run(async () => VERSION)
+    expect(check(same, "path-version")).toMatchObject({ status: "ok" })
+    const other = await run(async () => "9.9.9\n")
+    expect(check(other, "path-version")).toMatchObject({
+      status: "warn",
+      detail: expect.stringContaining("decide on PATH is 9.9.9"),
+    })
+    const broken = await run(async () => {
+      throw new Error("ENOENT")
+    })
+    expect(check(broken, "path-version")).toMatchObject({ status: "warn" })
+    expect(broken.healthy).toBe(true)
+    // No probe, or nothing on PATH: no check.
+    expect(check(await doctor({ PATH }, reachable), "path-version")).toBeUndefined()
+    const none = await runDoctor({
+      cwd: temp(),
+      home: temp(),
+      env: { PATH: "" },
+      fetch: reachable,
+      probeVersion: async () => "x",
+    })
+    expect(check(none, "path-version")).toBeUndefined()
   })
 })

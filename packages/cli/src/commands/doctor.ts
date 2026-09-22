@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process"
 import { type DoctorResult, runDoctor } from "@garygentry/decisions-core"
 import type { Format } from "../envelope.js"
 import type { ExitCode } from "../exit-codes.js"
@@ -20,6 +21,7 @@ export function runDoctorCommand(io: Io, format: Format): Promise<ExitCode> {
         cwd: io.cwd ?? process.cwd(),
         env: io.env,
         ...(process.argv[1] ? { cliPath: process.argv[1] } : {}),
+        probeVersion: (path) => probeVersion(path, io.env),
       }),
     (r, f) => (f === "brief" ? brief(r) : undefined),
   )
@@ -34,4 +36,13 @@ function brief(r: DoctorResult): string {
     if (c.fix && c.status !== "ok") lines.push(`       fix: ${c.fix}`)
   }
   return lines.join("\n")
+}
+
+/** `<path> version`, bounded: a hung or broken install must not hang doctor. */
+export function probeVersion(path: string, env: NodeJS.ProcessEnv): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    execFile(path, ["version"], { env, timeout: 2000 }, (error, stdout) => {
+      resolve(error ? undefined : stdout.trim().split("\n")[0])
+    })
+  })
 }
