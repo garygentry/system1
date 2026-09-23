@@ -29,13 +29,25 @@ export function runDoctorCommand(io: Io, format: Format): Promise<ExitCode> {
 
 function brief(r: DoctorResult): string {
   const lines = [
-    `decide doctor: ${r.healthy ? "healthy" : "PROBLEMS FOUND"} · ${r.live ? "live ready" : "replay only"} · harness ${r.harness ?? "none"} · session ${r.session ?? "none"}`,
+    `decide doctor: ${headline(r)} · ${r.live ? "live ready" : "replay only"} · harness ${r.harness ?? "none"} · session ${r.session ?? "none"}`,
   ]
   for (const c of r.checks) {
     lines.push(`  ${c.status.padEnd(4)} ${c.name}: ${c.detail}`)
     if (c.fix && c.status !== "ok") lines.push(`       fix: ${c.fix}`)
   }
   return lines.join("\n")
+}
+
+/**
+ * `healthy` alone misleads a newcomer: with no key and no consent nothing
+ * live can work, yet nothing has failed (0010). So when a warning is what
+ * stands between this shell and a live decision, the headline names it.
+ * Forced replay with nothing missing stays `healthy`.
+ */
+function headline(r: DoctorResult): string {
+  if (!r.healthy) return "PROBLEMS FOUND"
+  const missing = r.checks.filter((c) => c.status === "warn").map((c) => c.name)
+  return !r.live && missing.length > 0 ? `SETUP NEEDED (${missing.join(", ")})` : "healthy"
 }
 
 /**

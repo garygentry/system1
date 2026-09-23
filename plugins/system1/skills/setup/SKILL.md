@@ -18,7 +18,7 @@ decide doctor --format brief
   - A plugin install puts `decide` on PATH in some hosts, but not all.
   - Where the plugin doesn't, the user installs it globally: `npm i -g @garygentry/system1`. If the package isn't published yet, the user puts `plugins/system1/bin` from a checkout of the decisions repo on PATH instead.
   - Offer to run that install. Run it only after a yes, then run `doctor` again.
-- **Otherwise:** the first line gives the overall state (`healthy` or `PROBLEMS FOUND`, then `live ready` or `replay only`). Each check follows as `ok`, `warn` or `fail`, with a `fix:` line for each problem.
+- **Otherwise:** the first line gives the overall state, then `live ready` or `replay only`. The state is `healthy`, `SETUP NEEDED (…)` naming the checks that stand between this shell and a live decision, or `PROBLEMS FOUND` when a check failed. Each check follows as `ok`, `warn` or `fail`, with a `fix:` line for each problem.
   - Show the user the output as printed.
   - Then work through each `warn` or `fail` in the order below, one at a time.
 

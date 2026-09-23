@@ -127,8 +127,17 @@ describe("createDecider", () => {
     const { decider, calls } = rig("replay")
     await expect(decider.decide({ state, questions })).rejects.toMatchObject({
       code: "replay-miss",
+      message: expect.stringMatching(/^No recorded answer .*without --replay/),
     })
     expect(calls).toHaveLength(0)
+  })
+
+  it("leads a replay miss with the missing key when there is none", async () => {
+    const { decider } = rig("auto", false)
+    await expect(decider.decide({ state, questions })).rejects.toMatchObject({
+      code: "replay-miss",
+      message: expect.stringMatching(/^No API key is set.*Set OPENROUTER_API_KEY/),
+    })
   })
 
   it("validates the question set before spending anything", async () => {

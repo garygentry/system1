@@ -36,7 +36,8 @@ export function assertConsent(consent: Consent, repoRoot: string): void {
   throw new DecisionsError(
     "egress-refused",
     `This repo has not agreed to send content to the decision model's provider. ` +
-      `Run \`decide config egress allow\` in ${repoRoot} (or use the setup skill) to consent. ` +
+      `Consent is the user's: they run \`decide config egress allow\` in ${repoRoot} themselves ` +
+      `(the setup skill explains what gets sent). ` +
       `Replay of recorded answers works without consent.`,
     { repoRoot },
   )

@@ -27,6 +27,36 @@ The first hour was walked in a fresh repo on the published 0.1.0 CLI:
 2. **`doctor` says `healthy` when nothing live can work.** The line reads `healthy · replay only`, but with no key and no consent, a new user can't make a single decision. The headline should say what is missing, not "healthy".
 3. **Works as intended:** with a key but no consent, the refusal names the command and the repo. `config egress allow` from an agent shell tells the agent to ask the user (in Claude Code, `! decide config egress allow`). This is the consent rule working, not friction; it only needs to be clearly explained in the getting-started doc.
 
+## First-run walk per harness (§3, 2026-09-23)
+
+**How it ran.** The working tree (after `8dfc68b`) was packed with `pnpm pack`: the CLI was installed from its tarball into an isolated npm prefix on PATH, and Pi's skills from the extracted `system1-pi` tarball. Claude loaded a copy of `plugins/system1` made outside the repo (so the shim used the installed CLI, not the dev bundle), and Codex loaded the plugin from the repo marketplace. Each harness had a clean profile holding only auth, and its own `XDG_CONFIG_HOME`; parent harness variables were stripped. Each ran in its own copy of a fresh five-file repo (a toy weather CLI: two `fetch` calls, one with `AbortSignal.timeout`), outside this repo. The **Codex `prefix_rule` was not pre-written**: a newcomer won't have one. The driver lives outside the repo (`~/.cache/system1-firstrun/walk.sh`). Four phases, the same prompts in every harness:
+
+1. `setup` by name, no key: *"I just installed System 1. Get me set up."*
+2. No key, a real question: *"Which files in src/ make a network call without a timeout? Use System 1 for this."*
+3. The same question, key in the environment, no consent. (Before this phase the Codex rule was added, as setup had advised.)
+4. The same question, after the user granted consent in all three repos.
+
+| Phase | Claude (Sonnet) | Codex | Pi |
+|---|---|---|---|
+| 1 setup | Followed the skill; relayed "**overall: healthy**, but replay only" | Found the missing network rule and offered it; `PROBLEMS FOUND` | Followed the skill; `healthy · replay only` |
+| 2 no key | Got `replay-miss`, said "no key", then read the files itself | `--glob` **failed after 10 s** (`git check-ignore did not answer`); retried with `--file`, got `replay-miss`, said a key is needed | `replay-miss`, said a key is needed |
+| 3 no consent | Relayed the refusal; told the user to run the command "or use the `setup` skill **to grant consent**" | Relayed the refusal and quoted the skill's never-run-it rule | Relayed the refusal |
+| 4 live | 2 kept of 5, then checked by reading | `2 kept of 5 · 0 undecided · 3 dropped · live typesafe/jev-1.13 · $0.000070 measured · 448 ms` | 2 kept of 5 |
+
+No harness tried to grant consent, and nothing was written to a repo before consent. Consent for phase 4 was given by the user in the conversation and applied by the agent with `--confirm` (the rule in AGENTS.md allows that only on an explicit ask). Phase 4 cost **$0.000225 measured** for all three (5 calls each). All three kept `src/api.js` and `src/cli.js`: `cli.js` calls `getForecast()` and makes no `fetch` of its own, so the question was loose, not the model. That note is for the cookbook: say "a call made **in this file**".
+
+**Stalls found, and what happens to each:**
+
+| # | Stall | Where | Disposition |
+|---|---|---|---|
+| S1 | No key plus a replay miss leads with "No recorded answer" | every harness | **Fixed:** with no key, the message leads with it; with a key in forced replay, it says to drop `--replay` (finding 1) |
+| S2 | `doctor` headline says `healthy` when no live decision can work | Claude, Pi | **Fixed:** the brief headline is `SETUP NEEDED (key, consent)` when warnings are what stand between the shell and a live decision; `ok`, `healthy` and `live` in the JSON are unchanged (finding 2) |
+| S3 | Inside the Codex sandbox without the rule, `--glob` stalls 10 s on `git check-ignore`, and the message doesn't mention the sandbox | Codex | **Fixed:** the message says a sandbox is the likely cause and that `decide doctor` prints the Codex fix (harness-neutral, since the source reader has no harness) |
+| S4 | `doctor`'s key fix always prints `~/.config/system1/credentials`, even when `XDG_CONFIG_HOME` moves it | all | **Fixed:** the fix line prints the resolved path |
+| S5 | The refusal's "(or use the setup skill) to consent" reads as if the skill can grant it | Claude | **Fixed:** "Consent is the user's: they run … themselves (the setup skill explains what gets sent)" |
+
+**Re-checked after the fixes** (working tree re-packed and reinstalled): from a plain shell, all four new messages print as intended with exit codes 6 and 3 unchanged; in Codex without the rule, the new `git check-ignore` message came up, Codex fell back to `--file`, and then relayed the new key-first `replay-miss`. `setup`'s description of the headline and smoke's `DOCTOR_MARKER` were updated to match. The contract is untouched: no code, exit code or envelope field changed.
+
 ## Scope
 
 ### 1. The cookbook: tested question sets
@@ -88,7 +118,7 @@ The M6 gates: `pnpm check`, `pnpm release:check`, `pnpm smoke`, `pnpm eval:routi
 - [ ] About six recipes in the cookbook, each with passing `expect` examples, replayed by `pnpm test`; each threshold cited from `docs/calibration.md` or marked unmeasured.
 - [ ] `docs/` has getting-started, concepts, CLI reference, troubleshooting and cookbook pages, and the README links to them and carries the supported-model statement.
 - [ ] The CLI reference and the error table are checked against the code by a test.
-- [ ] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline.
+- [ ] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline. *(2026-09-23: walked in all three and S1–S5 fixed; the "one cookbook recipe" step waits for §1, so the box stays open.)*
 - [ ] CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed-tarball job, and all are green.
 - [ ] 0.2.0 is published and tagged, and installs in all three harnesses from the published artifacts.
 - [ ] `pnpm check` green.

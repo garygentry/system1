@@ -490,6 +490,17 @@ describe("decide doctor", () => {
     expect(out.join("\n")).not.toContain(SECRET)
   })
 
+  it("names what is missing instead of `healthy` when nothing live can work", async () => {
+    const { io, out, json } = rig({}, { key: false, consent: false })
+    expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(
+      /^decide doctor: SETUP NEEDED \((path, )?key, consent\) · replay only/,
+    )
+    // The JSON result is unchanged: warnings alone keep it healthy (0010).
+    expect(await main(["doctor"], io)).toBe(0)
+    expect(json()).toMatchObject({ ok: true, result: { healthy: true, live: false } })
+  })
+
   it("stays exit 0 when a check fails, and says so", async () => {
     const { io, out } = rig()
     const env = { ...io.env, SYSTEM1_ENDPOINT: "notaurl" }

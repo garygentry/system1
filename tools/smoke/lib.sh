@@ -20,7 +20,7 @@ PING_MARKER="decide ping: ok — [^ ]+ reachable in [0-9]+ ms"
 # The prompt never mentions doctor: a doctor line in the output shows the
 # agent followed the skill's steps rather than just running ping.
 SETUP_PROMPT="Check only: make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
-DOCTOR_MARKER="decide doctor: (healthy|PROBLEMS FOUND) · "
+DOCTOR_MARKER="decide doctor: (healthy|SETUP NEEDED \\([a-z, -]+\\)|PROBLEMS FOUND) · "
 MANY_MARKER="decide many: 1 kept of 3 · 0 undecided · 2 dropped · replay "
 MANY_PROMPT="Use the ask skill from the system1 plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 

@@ -120,10 +120,15 @@ export function createDecider(options: DeciderOptions): Decider {
         const started = performance.now()
         const record = fixtures?.lookup(namespace, request)
         if (!record) {
+          const where = `(namespace "${namespace}", key ${key.slice(0, 12)}…)`
+          // Without a key, replay is the only mode, so the key is the real cause.
           throw new DecisionsError(
             "replay-miss",
-            `No recorded answer for this request (namespace "${namespace}", key ${key.slice(0, 12)}…). ` +
-              "Record it with a live call, or set OPENROUTER_API_KEY.",
+            transport
+              ? `No recorded answer for this request ${where}. ` +
+                  "Record it with a live call (without --replay or SYSTEM1_REPLAY)."
+              : "No API key is set, so only recorded answers can be used, and this request has none " +
+                  `${where}. Set OPENROUTER_API_KEY for a live answer (the setup skill shows where it goes).`,
             { namespace, key },
           )
         }

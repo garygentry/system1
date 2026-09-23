@@ -200,7 +200,9 @@ export function gitIgnored(cwd: string, paths: readonly string[]): string[] {
     if ((error as { signal?: string }).signal === "SIGKILL") {
       throw new DecisionsError(
         "source-error",
-        `git check-ignore did not answer within ${GIT_TIMEOUT_MS} ms. Name the files with --file, or run where git works.`,
+        `git check-ignore did not answer within ${GIT_TIMEOUT_MS} ms, which usually means a sandbox is ` +
+          "blocking child processes (`decide doctor` prints the fix for Codex). " +
+          "Name the files with --file, or run where git works.",
       )
     }
     throw new DecisionsError("source-error", `git check-ignore failed: ${String(error)}`)

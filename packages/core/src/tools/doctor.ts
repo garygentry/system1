@@ -8,6 +8,7 @@
  */
 import { accessSync, constants, statSync } from "node:fs"
 import { delimiter, join } from "node:path"
+import { userConfigDir } from "../config/load.js"
 import { detectHarness, type Harness } from "../config/session.js"
 import { ping } from "../ping.js"
 import { CLI_PACKAGE, VERSION } from "../version.js"
@@ -95,7 +96,8 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           name: "key",
           status: "warn",
           detail: "no API key: only replay works",
-          fix: "set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (chmod 600)",
+          // The file this shell would read: XDG_CONFIG_HOME moves it.
+          fix: `set OPENROUTER_API_KEY, or write \`openrouter_api_key: <key>\` to ${join(userConfigDir(env, options.home), "credentials")} (chmod 600)`,
         },
   )
   checks.push(

@@ -1,7 +1,7 @@
 /**
  * Layered configuration:
  *
- *   defaults → user (`$XDG_CONFIG_HOME/decisions/config.yaml`)
+ *   defaults → user (`$XDG_CONFIG_HOME/system1/config.yaml`)
  *            → repo (`<repo>/.system1/config.yaml`) → env
  *
  * Later layers win. There is one exception: egress consent is read **only**

@@ -52,6 +52,11 @@ describe("doctor", () => {
     expect(replay.live).toBe(false)
   })
 
+  it("points the key fix at the credentials file this shell would read", async () => {
+    const r = await doctor({ PATH: binDir(), XDG_CONFIG_HOME: "/xdg" }, reachable, CONSENT)
+    expect(r.checks.find((c) => c.name === "key")?.fix).toContain("/xdg/system1/credentials")
+  })
+
   it("gives a sandboxed Codex shell the exact rule", async () => {
     const env = {
       PATH: "",
