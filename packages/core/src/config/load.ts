@@ -14,6 +14,7 @@ import { dirname, join, resolve } from "node:path"
 import { parse } from "yaml"
 import { DecisionsError } from "../errors.js"
 import { DEFAULT_MODEL_ID, type ModelProfile, PROFILES } from "../model/profiles.js"
+import { ROUTE_DEFAULTS, type RouteConfig, type Trigger } from "../route/route.js"
 import { DEFAULT_ENDPOINT, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
 import { type DetectedSession, detectSession } from "./session.js"
 
@@ -48,6 +49,8 @@ export interface DecisionsConfig {
   }
   /** Extra model profiles, on top of the built-in ones. */
   profiles: ModelProfile[]
+  /** Prompt routing hints for harness hooks (decision 0018). */
+  route: RouteConfig
 }
 
 export interface ResolvedConfig extends DecisionsConfig {
@@ -71,6 +74,7 @@ export const DEFAULTS: DecisionsConfig = {
   budget: { maxCalls: 200, maxUsd: 0.05 },
   egress: { consent: { granted: false }, exclude: [] },
   profiles: [],
+  route: ROUTE_DEFAULTS,
 }
 
 /** Walk up from `cwd` to the nearest directory holding `.system1/` or `.git`; else `cwd`. */
@@ -131,6 +135,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
       ],
     },
     profiles: [...profileList(user, userFile), ...profileList(repo, repoFile)],
+    route: readRoute(user, userFile, repo, repoFile, env),
   }
 
   const key = resolveApiKey(env, userDir)
@@ -271,6 +276,89 @@ function profileList(layer: Layer, file: string): ModelProfile[] {
       maxChoices: 255,
       ...profile,
     } as ModelProfile
+  })
+}
+
+/**
+ * `route:` from both layers. Scalars: the repo wins over the user. Lists
+ * (`disable`, `triggers`, `ignore`) add up, user first. `SYSTEM1_ROUTE=off`
+ * switches hints off whatever the files say.
+ */
+function readRoute(
+  user: Layer,
+  userFile: string,
+  repo: Layer,
+  repoFile: string,
+  env: NodeJS.ProcessEnv,
+): RouteConfig {
+  const sections = [
+    { layer: section(user, "route", userFile), file: userFile },
+    { layer: section(repo, "route", repoFile), file: repoFile },
+  ]
+  const known = ["enabled", "builtin", "disable", "triggers", "ignore", "message"]
+  const route: RouteConfig = { ...ROUTE_DEFAULTS, disable: [], triggers: [], ignore: [] }
+  for (const { layer, file } of sections) {
+    if (!layer) continue
+    const extra = Object.keys(layer).filter((k) => !known.includes(k))
+    if (extra.length > 0) {
+      throw new DecisionsError(
+        "config-error",
+        `${file}: unknown route key(s) ${extra.join(", ")}. Known: ${known.join(", ")}`,
+        { file },
+      )
+    }
+    for (const key of ["enabled", "builtin"] as const) {
+      const v = layer[key]
+      if (v === undefined) continue
+      if (typeof v !== "boolean")
+        throw new DecisionsError("config-error", `${file}: route.${key} must be true or false`, {
+          file,
+        })
+      route[key] = v
+    }
+    if (layer.message !== undefined) {
+      if (typeof layer.message !== "string" || !layer.message.trim())
+        throw new DecisionsError("config-error", `${file}: route.message must be text`, { file })
+      route.message = layer.message
+    }
+    for (const key of ["disable", "ignore"] as const) {
+      const v = layer[key]
+      if (v === undefined) continue
+      if (!Array.isArray(v) || !v.every((x) => typeof x === "string"))
+        throw new DecisionsError(
+          "config-error",
+          `${file}: route.${key} must be a list of strings`,
+          { file },
+        )
+      route[key].push(...v)
+    }
+    if (layer.triggers !== undefined) route.triggers.push(...triggerList(layer.triggers, file))
+  }
+  if (/^(0|off|false|no)$/i.test(env.SYSTEM1_ROUTE ?? "")) route.enabled = false
+  return route
+}
+
+function section(layer: Layer, key: string, file: string): Record<string, unknown> | undefined {
+  const value = layer?.[key]
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== "object" || Array.isArray(value))
+    throw new DecisionsError("config-error", `${file}: ${key} must be a mapping`, { file })
+  return value as Record<string, unknown>
+}
+
+function triggerList(value: unknown, file: string): Trigger[] {
+  if (!Array.isArray(value))
+    throw new DecisionsError("config-error", `${file}: route.triggers must be a list`, { file })
+  return value.map((t, i) => {
+    const { name, pattern } = (t ?? {}) as Partial<Trigger>
+    if (typeof name !== "string" || !name.trim() || typeof pattern !== "string" || !pattern) {
+      throw new DecisionsError(
+        "config-error",
+        `${file}: route.triggers[${i}] needs a name and a pattern (a regular expression)`,
+        { file },
+      )
+    }
+    return { name, pattern }
   })
 }
 

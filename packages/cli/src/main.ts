@@ -18,7 +18,8 @@ Commands:
   usage     Measured spend from the ledger (--session, --since)
   config    Show resolved config; \`config egress allow|deny|status\` for consent
   spec      list | show <name> | validate [name|path] | check <name> [--live]
-  schema    Print the JSON Schema of a tool's input (ask, many, usage, spec-check)
+  schema    Print the JSON Schema of a tool's input (ask, many, usage, spec-check, route)
+  route     Does a prompt call for the ask skill? (--text|--stdin|--hook; local, sends nothing)
   ping      Check the endpoint is reachable (no key, no spend)
   doctor    Check decide works from this shell; prints the fix for each problem
   version   Print the version
@@ -81,6 +82,8 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return (await import("./commands/spec.js")).runSpecCommand(rest, io, format)
     case "schema":
       return (await import("./commands/misc.js")).runSchemaCommand(rest, io, format)
+    case "route":
+      return (await import("./commands/route.js")).runRouteCommand(rest, io, format)
     case "ping":
       return (await import("./commands/misc.js")).runPingCommand(io, format)
     case "doctor":

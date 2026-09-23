@@ -17,5 +17,6 @@
     "triage",
     "agents"
   ],
-  "displayName": "System 1"
+  "displayName": "System 1",
+  "hooks": "./hooks/claude-hooks.json"
 }

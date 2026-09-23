@@ -12,7 +12,7 @@ Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — th
 | `packages/pi` | `@garygentry/system1-pi`, the skills packaged for Pi. **Generated**; its `skills/` copy is made by `prepack` and is gitignored |
 | `packages/cli` | `@garygentry/system1`, the `decide` CLI (`entry.ts` → `bin.ts` → `main.ts`, the testable core, then `commands/*` loaded lazily). `bundle.mjs` builds `dist/bundle/decide.mjs`, the entry that `bin` and the shim run |
 | `plugins/system1/skills/` | Agent Skills, authored once and shared by every harness |
-| `plugins/system1/{plugin.json,.claude-plugin,.codex-plugin,bin/decide}` | **Generated** |
+| `plugins/system1/{plugin.json,.claude-plugin,.codex-plugin,bin/decide,hooks/}` | **Generated**. `hooks/claude-hooks.json` is the Claude-only routing hook ([0018](plans/decisions/0018-claude-routing-hook.md)); tune it with `route:` in config |
 | `.claude-plugin/`, `.agents/plugins/` | **Generated** marketplaces (Claude Code, Codex) |
 | `catalog.yaml` | Source of truth for names, version, descriptions and npm scope |
 | `tools/generate.ts`, `tools/validate.ts`, `tools/smoke/`, `tools/evals/` | Generator, structural validator, headless harness smoke tests, skill routing evals |

@@ -35,8 +35,33 @@ describe("doctor", () => {
     const env = { PATH: binDir(), OPENROUTER_API_KEY: SECRET, CLAUDE_CODE_SESSION_ID: "s1" }
     const r = await doctor(env, reachable, CONSENT)
     expect(r).toMatchObject({ healthy: true, live: true, harness: "claude", session: "claude:s1" })
-    expect(status(r)).toEqual({ cli: "ok", path: "ok", key: "ok", consent: "ok", network: "ok" })
+    expect(status(r)).toEqual({
+      cli: "ok",
+      path: "ok",
+      key: "ok",
+      consent: "ok",
+      route: "ok",
+      network: "ok",
+    })
     expect(JSON.stringify(r)).not.toContain(SECRET)
+  })
+
+  it("warns, without failing, when the route config does not compile", async () => {
+    const env = { PATH: "", OPENROUTER_API_KEY: SECRET }
+    const r = await doctor(env, reachable, {
+      ".system1/config.yaml": "route:\n  ignore: ['(unclosed']\n",
+    })
+    const check = r.checks.find((c) => c.name === "route")
+    expect(check).toMatchObject({
+      status: "warn",
+      detail: expect.stringMatching(/silent: route.ignore/),
+    })
+    expect(check?.fix).toContain("decide route --text")
+  })
+
+  it("says when routing hints are off", async () => {
+    const r = await doctor({ PATH: "", SYSTEM1_ROUTE: "off" }, reachable)
+    expect(r.checks.find((c) => c.name === "route")).toMatchObject({ status: "ok", detail: /off/ })
   })
 
   it("is healthy but not live without a key or consent, and not live in forced replay", async () => {

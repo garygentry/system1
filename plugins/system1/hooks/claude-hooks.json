@@ -1,0 +1,16 @@
+{
+  "description": "System 1: hint the ask skill for prompts that ask for closed judgements",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(SYSTEM1_NO_NPX=1 \"${CLAUDE_PLUGIN_ROOT}/bin/decide\" route --hook --format brief 2>/dev/null) && printf '%s' \"$out\"; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -47,6 +47,15 @@ export type { Prepared, PrepareInput } from "./prepare.js"
 export { prepare } from "./prepare.js"
 export type { Filter, Op, Projected, SortKey } from "./project/project.js"
 export { matches, parseFilter, parseSort, project as projectRows } from "./project/project.js"
+export type { RouteConfig, RouteMatch, RouteResult, Trigger } from "./route/route.js"
+export {
+  activeTriggers,
+  BUILTIN_IGNORE,
+  BUILTIN_TRIGGERS,
+  DEFAULT_MESSAGE,
+  ROUTE_DEFAULTS,
+  route,
+} from "./route/route.js"
 export type { Projection } from "./run/budget.js"
 export { checkBudget, project } from "./run/budget.js"
 export { mapWithConcurrency } from "./run/pool.js"
@@ -77,8 +86,17 @@ export type { CheckStatus, DoctorCheck, DoctorOptions, DoctorResult } from "./to
 export { CODEX_RULE, DOCTOR_CHECKS, runDoctor, which } from "./tools/doctor.js"
 export type { ManyResult, ResultRow, SkippedSummary } from "./tools/many.js"
 export { runMany, summariseSkipped } from "./tools/many.js"
+export type { RouteToolResult } from "./tools/route.js"
+export { runRoute } from "./tools/route.js"
 export type { ToolName } from "./tools/schemas.js"
-export { AskInput, ManyInput, SpecCheckInput, TOOL_SCHEMAS, UsageInput } from "./tools/schemas.js"
+export {
+  AskInput,
+  ManyInput,
+  RouteInput,
+  SpecCheckInput,
+  TOOL_SCHEMAS,
+  UsageInput,
+} from "./tools/schemas.js"
 export type { ExampleResult, ExampleStatus, SpecCheckResult } from "./tools/spec-check.js"
 export { runSpecCheck } from "./tools/spec-check.js"
 export type { UsageResult } from "./tools/usage.js"

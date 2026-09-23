@@ -133,15 +133,25 @@ export const SpecCheckInput = Type.Object(
   strict,
 )
 
+export const RouteInput = Type.Object(
+  {
+    /** The user's prompt, as the harness hook received it. */
+    prompt: Type.String(),
+  },
+  strict,
+)
+
 export type AskInput = Static<typeof AskInput>
 export type ManyInput = Static<typeof ManyInput>
 export type UsageInput = Static<typeof UsageInput>
 export type SpecCheckInput = Static<typeof SpecCheckInput>
+export type RouteInput = Static<typeof RouteInput>
 
 export const TOOL_SCHEMAS = {
   ask: AskInput,
   many: ManyInput,
   usage: UsageInput,
   "spec-check": SpecCheckInput,
+  route: RouteInput,
 } as const
 export type ToolName = keyof typeof TOOL_SCHEMAS

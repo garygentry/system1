@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 import { DECIDE_OPTIONS } from "../packages/cli/src/args.js"
 import { CONFIG_OPTIONS } from "../packages/cli/src/commands/config.js"
 import { USAGE_OPTIONS } from "../packages/cli/src/commands/misc.js"
+import { ROUTE_OPTIONS } from "../packages/cli/src/commands/route.js"
 import { SPEC_OPTIONS } from "../packages/cli/src/commands/spec.js"
 import { BY_CODE, EXIT } from "../packages/cli/src/exit-codes.js"
 import { HELP } from "../packages/cli/src/main.js"
@@ -57,6 +58,7 @@ describe("docs/cli.md", () => {
       ...Object.keys(SPEC_OPTIONS),
       ...Object.keys(CONFIG_OPTIONS),
       ...Object.keys(USAGE_OPTIONS),
+      ...Object.keys(ROUTE_OPTIONS),
       "format",
     ]
     for (const flag of flags) expect(cli, `--${flag}`).toMatch(new RegExp(`--${flag}\\b`))

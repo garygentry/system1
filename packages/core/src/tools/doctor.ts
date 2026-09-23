@@ -11,6 +11,7 @@ import { delimiter, join } from "node:path"
 import { userConfigDir } from "../config/load.js"
 import { detectHarness, type Harness } from "../config/session.js"
 import { ping } from "../ping.js"
+import { activeTriggers, route } from "../route/route.js"
 import { CLI_PACKAGE, VERSION } from "../version.js"
 import { type ContextOptions, createContext, type ToolContext } from "./context.js"
 
@@ -24,6 +25,7 @@ export const DOCTOR_CHECKS = [
   "path-version",
   "key",
   "consent",
+  "route",
   "network",
 ] as const
 
@@ -57,6 +59,36 @@ export interface DoctorOptions extends ContextOptions {
    * (0014). Without it the `path-version` check is skipped.
    */
   probeVersion?: (path: string) => Promise<string | undefined>
+}
+
+/**
+ * The routing hook stays silent on a config error rather than get in the
+ * user's way, so this is where a bad pattern shows up.
+ */
+function routeCheck(config: ToolContext["config"]["route"]): DoctorCheck {
+  try {
+    route("", config)
+    if (!config.enabled) {
+      return {
+        name: "route",
+        status: "ok",
+        detail: "routing hints are off (route.enabled or SYSTEM1_ROUTE)",
+      }
+    }
+    const names = activeTriggers(config).map((t) => t.name)
+    return {
+      name: "route",
+      status: "ok",
+      detail: `routing hints on: ${names.length ? names.join(", ") : "no triggers"}`,
+    }
+  } catch (error) {
+    return {
+      name: "route",
+      status: "warn",
+      detail: `routing hints are silent: ${error instanceof Error ? error.message : String(error)}`,
+      fix: 'correct route: in the config file (test it with `decide route --text "…"`)',
+    }
+  }
 }
 
 export const CODEX_RULE = 'prefix_rule(pattern = ["decide"], decision = "allow")'
@@ -121,6 +153,8 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           fix: "the user runs `decide config egress allow` in this repo, if they agree",
         },
   )
+
+  checks.push(routeCheck(config.route))
 
   let reach: Awaited<ReturnType<typeof ping>>
   try {

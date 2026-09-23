@@ -70,7 +70,13 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
     // Claude Code: skills/ and bin/ are discovered by convention.
     {
       path: `${PLUGIN_DIR}/.claude-plugin/plugin.json`,
-      content: json({ ...common, displayName: plugin.displayName }),
+      // Hooks are Claude-only (decision 0018), so they are named here rather
+      // than left at hooks/hooks.json, where another host might discover them.
+      content: json({
+        ...common,
+        displayName: plugin.displayName,
+        hooks: "./hooks/claude-hooks.json",
+      }),
     },
     // Codex: the shape its own shipped plugins use.
     {
@@ -131,6 +137,7 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
       }),
     },
     { path: `${PLUGIN_DIR}/bin/decide`, content: shim(catalog), executable: true },
+    { path: `${PLUGIN_DIR}/hooks/claude-hooks.json`, content: json(claudeHooks()) },
     // Pi reads skills through a package's `pi` key. This package is only that
     // key plus a copy of the skills, so `pi install npm:…` pulls no
     // devDependencies. The copy is made at pack time (prepack), not committed.
@@ -194,6 +201,27 @@ if (existsSync(from)) {
     outputs.push({ path: pkg, content: json({ ...current, version }) })
   }
   return outputs
+}
+
+/**
+ * Claude Code hooks (decision 0018). UserPromptSubmit asks \`decide route\`
+ * whether the prompt calls for the ask skill; plain stdout becomes context.
+ *
+ * The hook must never get in the user's way: it prints only when decide exits
+ * 0, always exits 0 itself (exit 2 would block the prompt), never lets the shim
+ * download the CLI mid-prompt, and has a short timeout. Users tune or disable
+ * it through \`route:\` in config, or \`SYSTEM1_ROUTE=off\`.
+ */
+function claudeHooks() {
+  const command =
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: a shell variable that Claude Code expands
+    'out=$(SYSTEM1_NO_NPX=1 "${CLAUDE_PLUGIN_ROOT}/bin/decide" route --hook --format brief 2>/dev/null) && printf \'%s\' "$out"; exit 0'
+  return {
+    description: "System 1: hint the ask skill for prompts that ask for closed judgements",
+    hooks: {
+      UserPromptSubmit: [{ hooks: [{ type: "command", command, timeout: 10 }] }],
+    },
+  }
 }
 
 /**

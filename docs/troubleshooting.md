@@ -59,6 +59,13 @@ run `decide config egress allow` yourself at the repo root. In Claude Code, that
 `! decide config egress allow`. An agent can't grant it for you. See
 [getting-started.md](getting-started.md#4-consent-per-repo).
 
+### doctor: `route`
+
+Whether the Claude Code routing hook will hint, and with which triggers. A warning means the
+`route:` config has a problem, usually a regular expression that doesn't compile or an unknown
+name under `disable`. The hook stays silent until it's fixed, and your prompts are never blocked.
+Test a fix with `decide route --text "…"`. See [concepts.md](concepts.md#routing-hints).
+
 ### doctor: `network`
 
 The model's endpoint couldn't be reached from this shell. The fix depends on where you are:

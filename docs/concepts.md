@@ -130,9 +130,46 @@ by session (`--session current` is this harness session) or since a date.
 
 Layers, later ones winning: built-in defaults → `$XDG_CONFIG_HOME/system1/config.yaml`
 (`~/.config/system1/config.yaml`) → `<repo>/.system1/config.yaml` → environment
-(`OPENROUTER_API_KEY`, `SYSTEM1_MODEL`, `SYSTEM1_ENDPOINT`, `SYSTEM1_REPLAY`, `SYSTEM1_SESSION`).
+(`OPENROUTER_API_KEY`, `SYSTEM1_MODEL`, `SYSTEM1_ENDPOINT`, `SYSTEM1_REPLAY`, `SYSTEM1_SESSION`,
+`SYSTEM1_ROUTE`).
 Consent is the exception: it is read **only** from the repo's file. `decide config` shows what
 resolved, and where from. It never shows the key.
+
+## Routing hints
+
+A skill loads only when the agent chooses to load it. Claude, in particular, tends to grade a
+small diff it just wrote rather than hand the check off. So the Claude Code plugin ships one
+hook: on every prompt, `decide route` matches the prompt against a few patterns. When one fires,
+the agent gets a one-line hint to use the `ask` skill. The hint is added to what the agent reads;
+nothing is sent to the model, and the prompt never leaves your machine. Codex and Pi don't get
+the hook.
+
+The built-in triggers are `criteria-check` ("check the diff against these rules"),
+`verdict-per-item` ("one verdict each"), `done-check` ("is the task actually done?"),
+`gate-check` ("before I commit… is it safe?"), `batch-judgement` ("triage every CI failure") and
+`pick-from-many` ("250 packages… which one"). A prompt that says not to use System 1 or `decide`
+gets no hint.
+
+Everything is configurable under `route:`, in either config layer:
+
+```yaml
+route:
+  enabled: true            # false: the hook stays installed but never hints
+  builtin: true            # false: only your triggers apply
+  disable: [pick-from-many]  # switch off built-in triggers by name
+  triggers:                # your own; a JavaScript regex, case-insensitive
+    - name: pr-review
+      pattern: '\breview (this|the) PR against\b'
+  ignore:                  # a prompt matching any of these never gets a hint
+    - '^/'
+  message: "Use the system1:ask skill for this ({triggers})."   # replaces the hint
+```
+
+`enabled`, `builtin` and `message` from the repo file win over the user file. `disable`,
+`triggers` and `ignore` from both files add up. `SYSTEM1_ROUTE=off` turns hints off for one
+shell or session. To see what a prompt would do, run `decide route --text "…"`: it lists the
+triggers that fired and the config files it read. A bad pattern is a `config-error`; the hook
+then stays silent rather than get in your way, and `decide doctor` reports the problem.
 
 ## The model
 

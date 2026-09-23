@@ -39,6 +39,10 @@
     "./version": {
       "types": "./dist/version.d.ts",
       "default": "./dist/version.js"
+    },
+    "./route": {
+      "types": "./dist/tools/route.d.ts",
+      "default": "./dist/tools/route.js"
     }
   },
   "files": [

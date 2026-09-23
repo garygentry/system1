@@ -1,0 +1,43 @@
+# HELD-OUT routing evals for the `ask` skill. Written blind: the author never saw
+# the routing hook or its matching code, only the skill text, routing.yaml's
+# format and the fixture repo. Never tune the hook, the skill description or
+# routing.yaml against these prompts; use them only to measure generalisation.
+# If a prompt here fails, fix the cause elsewhere and leave this file unchanged.
+# Prompts run in tools/evals/fixture-repo with fixture-changes as the
+# uncommitted change, and every file named exists there.
+#
+# `positive`: the skill must load. `negative`: it must not.
+
+ask:
+  positive:
+    # batch judgement over many items
+    - 'go through tickets.jsonl and flag any where the customer sounds like they''re about to cancel'
+    - 'Can you sort out reviews.jsonl for me? I only care about the ones complaining the app is slow or laggy, just give me their ids.'
+    - 'Label every commit in commits.txt as user-facing or internal-only. I''ll write the release notes from the user-facing ones myself.'
+    - 'failures.jsonl: which of these would most likely pass on a plain rerun?'
+    - 'sanity-check cleanup-plan.sh line by line before the bot runs it: which commands could lose data we can''t get back?'
+    # pick one among many candidates
+    - 'which of the packages in packages.jsonl is the best fit for caching session data that has to survive a restart? one name please'
+    - 'Out of all 300 tickets in tickets.jsonl, which single one should support answer first?'
+    # criteria / rules / acceptance check of a diff, log or test output
+    - 'does my uncommitted change meet the acceptance criteria in TASK.md? grade each one pass or fail'
+    - 'Before I push, sanity-check the working tree against this checklist: no console.log left behind, no hardcoded credentials, every fetch has a timeout.'
+    - 'am i done? TASK.md is the ticket, evidence is the diff plus test-output.log'
+    - 'I''m about to open a PR for the timeout work. Does test-output.log show my change broke something, or is the failure in there unrelated to what I touched?'
+    - 'ready to merge? hold the current diff to our rules: no empty catch blocks that swallow errors, and any new test must actually assert something'
+  negative:
+    # run a command / count / exact lookup / exact match
+    - 'Run npm test and tell me whether it passes.'
+    - 'How many tests failed in test-output.log?'
+    - 'Which file defines postJson?'
+    - 'Grep failures.jsonl for ETIMEDOUT and give me the matching ids.'
+    - 'Show me the first 20 tickets in tickets.jsonl as a table.'
+    # edit, fix or generate
+    - 'The catalog sync test is failing in test-output.log. Fix src/jobs/sync.ts so it passes.'
+    - 'Write acceptance criteria for a wishlist sharing feature, in the same style as TASK.md.'
+    - 'Add a fifth acceptance criterion to TASK.md: the timeout has to be configurable.'
+    - 'go through README.md and fix any typos'
+    - 'Sort the lines of commits.txt alphabetically and save the file.'
+    # git operations and summaries
+    - 'commit the uncommitted changes with a sensible message'
+    - 'Summarise what changed in the last commit.'

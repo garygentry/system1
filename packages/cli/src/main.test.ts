@@ -482,6 +482,7 @@ describe("decide doctor", () => {
       "path",
       "key",
       "consent",
+      "route",
       "network",
     ])
     expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
@@ -507,5 +508,44 @@ describe("decide doctor", () => {
     expect(await main(["doctor", "--format", "brief"], { ...io, env })).toBe(0)
     expect(out.at(-1)).toMatch(/^decide doctor: PROBLEMS FOUND · replay only/)
     expect(out.at(-1)).toMatch(/fail config: endpoint notaurl/)
+  })
+})
+
+describe("decide route", () => {
+  const PROMPT = "Triage every CI failure in failures.jsonl"
+
+  it("--text: an ok envelope naming the triggers; brief prints only the hint", async () => {
+    const { io, out, json } = rig()
+    expect(await main(["route", "--text", PROMPT], io)).toBe(0)
+    expect(json()).toMatchObject({
+      ok: true,
+      command: "route",
+      result: { matched: true, triggers: [{ name: "batch-judgement" }] },
+    })
+    expect(await main(["route", "--text", PROMPT, "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/^System 1 routing hint \(batch-judgement\)/)
+    expect(await main(["route", "--text", "Summarise README.md", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toBe("")
+  })
+
+  it("--hook: reads the prompt from the event and config from its cwd", async () => {
+    const other = rig({ ".system1/config.yaml": "route:\n  enabled: false\n" }, { consent: false })
+    const event = JSON.stringify({ prompt: PROMPT, cwd: other.cwd })
+    const { io, json } = rig({}, { stdin: event })
+    expect(await main(["route", "--hook"], io)).toBe(0)
+    expect(json().result).toMatchObject({ enabled: false, matched: false })
+  })
+
+  it("usage and bad events are exit 2, which the plugin hook swallows", async () => {
+    const { io } = rig({}, { stdin: "not json" })
+    expect(await main(["route"], io)).toBe(2)
+    expect(await main(["route", "--text", "x", "--stdin"], io)).toBe(2)
+    expect(await main(["route", "--hook"], io)).toBe(2)
+  })
+
+  it("a bad pattern in config is a config-error", async () => {
+    const { io, json } = rig({ ".system1/config.yaml": "route:\n  ignore: ['(']\n" })
+    expect(await main(["route", "--text", PROMPT], io)).toBe(2)
+    expect(json().error.code).toBe("config-error")
   })
 })

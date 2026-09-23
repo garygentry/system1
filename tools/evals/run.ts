@@ -4,6 +4,9 @@
  *
  *   pnpm eval:routing [claude|codex|pi|all] [--only <skill>] [--concurrency N] [--repeat N]
  *
+ * EVAL_ROUTING=<file> swaps the prompt set (e.g. routing-holdout.yaml);
+ * EVAL_ROUTE=off turns the Claude routing hook off for a without-hook baseline.
+ *
  * One run of 8 prompts cannot resolve a one-prompt change: the same Claude
  * description scored 5/8 to 7/8 across runs. `--repeat N` runs every prompt N
  * times and judges the mean, with a per-prompt hit rate for anything unsteady.
@@ -244,6 +247,9 @@ function baseEnv(): NodeJS.ProcessEnv {
     env[k] = v
   }
   env.SYSTEM1_REPLAY = "1"
+  // EVAL_ROUTE=off measures Claude without the routing hook (decision 0018),
+  // on the same staged plugin.
+  if (process.env.EVAL_ROUTE) env.SYSTEM1_ROUTE = process.env.EVAL_ROUTE
   // The shim runs this checkout's CLI without its path leading back here.
   env.SYSTEM1_CLI = join(ROOT, "packages/cli/dist/bundle/decide.mjs")
   env.PATH = `${join(PKG, "plugins/system1/bin")}:${env.PATH}`

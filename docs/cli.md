@@ -23,7 +23,8 @@ decide <command> [options] [--format json|jsonl|brief]
 | `decide spec` | `list`, `show <name>`, `validate [name\|path]`, `check <name\|path>` |
 | `decide usage` | Measured spend from the ledger |
 | `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent |
-| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check` |
+| `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
+| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `route` |
 | `decide ping` | Check the endpoint is reachable. No key needed, no spend |
 | `decide doctor` | Check `decide` works from this shell, with the fix for each problem |
 | `decide version` | Print the version |
@@ -117,9 +118,23 @@ decide config egress deny
 `allow` needs an interactive terminal, or `--confirm`. **Consent is the user's.** Agents must not
 pass `--confirm` for the user. `--by` records who granted it.
 
+### `route`
+
+```sh
+decide route --text "<prompt>"     # or --stdin (the prompt as text)
+decide route --hook                # stdin is a hook event: {"prompt": …, "cwd": …}
+```
+
+Matches a prompt against the routing triggers and says which fired (`triggers`), whether an
+`ignore` pattern vetoed them (`ignoredBy`), and the hint an agent would get (`message`). It runs
+regular expressions locally and never sends the prompt anywhere. With `--format brief` it prints
+only the hint, or nothing: that is what the Claude Code plugin's `UserPromptSubmit` hook adds to
+the agent's context. Use `--text` to test your own `route:` config. See
+[concepts.md § Routing hints](concepts.md#routing-hints).
+
 ### `schema`, `ping`, `doctor`, `version`
 
-- `decide schema <ask|many|usage|spec-check>` prints that tool's input schema.
+- `decide schema <ask|many|usage|spec-check|route>` prints that tool's input schema.
 - `decide ping` exits 0 when the model's endpoint answers, and 5 when it doesn't.
 - `decide doctor` always exits 0: a failed check is a finding, reported in the result
   (`healthy`, `live`) and in the headline. See [troubleshooting.md](troubleshooting.md).
@@ -160,3 +175,4 @@ When every item in a `many` run fails with the same code, the run fails with tha
 | `SYSTEM1_ENDPOINT` | provider endpoint |
 | `SYSTEM1_REPLAY` | `1` forces replay |
 | `SYSTEM1_SESSION` | session id for the ledger, if the harness doesn't provide one |
+| `SYSTEM1_ROUTE` | `off` turns routing hints off, whatever the config says |
