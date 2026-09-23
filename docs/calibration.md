@@ -18,7 +18,7 @@ All of this comes from two TypeScript repos written by one person.
 | Questions | 4 `noul` propositions (`evidence/questions/code-v1.yaml`), two per group |
 | Population | 3,988 answers, all of them recorded, with no `--keep` filter |
 | Sample | 478 pairs, stratified by 0.1 probability band and group, seeded, up to 25 per stratum |
-| Labels | read blind against each question's rubric, without the model's answer in view |
+| Labels | one labeller, an AI agent (Claude), reading each excerpt blind against its rubric, without the model's answer in view |
 | Cost | $0.043 measured for the whole sweep |
 
 The procedure, the seeds, the labelling rules and every label are in [`evidence/`](../evidence/README.md).
@@ -110,7 +110,18 @@ The floor stays where it is.
 
 ## Label reliability
 
-A second labeller (the maintainer) independently labelled 30 randomly chosen sample pairs.
-Agreement: **pending.**
+**Every label here comes from a single labeller:** the AI agent (Claude) that ran the study,
+reading each excerpt blind against its rubric. That is a model grading a model; no human
+labels are in this set yet. A second-labeller pass over a random 30 pairs was planned and
+then deferred. Careful labelling takes time, and a hurried second pass would distort the check
+rather than validate the labels. So inter-labeller agreement is **not measured**, and the curve
+above should be read as "calibrated against one careful AI reader's labels".
 
-<!-- M7: fill in the agreement rate, per group, and any systematic disagreement. -->
+Two things limit that risk for the checkable group. Its propositions are settled by reading the
+excerpt, and the labelling rules for borderline cases are written down in
+[`evidence/README.md`](../evidence/README.md). The judgement group shows what happens without
+those conditions, and it is why no curve is reported for it.
+
+The check is ready to run whenever someone has the time. `tools/calibration-agreement.ts` builds
+the blind labelling page from `evidence/labels/agreement-v1.worksheet.jsonl`; see
+[`evidence/README.md`](../evidence/README.md).

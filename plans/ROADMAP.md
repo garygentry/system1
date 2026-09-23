@@ -222,7 +222,7 @@ M6's one unticked acceptance box. Installs are verified from the published artif
 
 ### 3. "Calibrated" is measured only for checkable propositions
 
-**Mostly closed in M7 (2026-09-23).** The checkable curve is measured and published in `docs/calibration.md` (Brier 0.028, ECE 0.054, two repos, one author), and the README cites it. Two things remain open. The subjective questions produced degenerate single-labeller labels, so they are reported as unmeasured rather than as a curve. And the claim rests on two TypeScript repos by one author. A better-posed judgement set, and data from other people's code, are the ways to widen it. Design partners (M9) are the natural source of the second.
+**Mostly closed in M7 (2026-09-23).** The checkable curve is measured and published in `docs/calibration.md` (Brier 0.028, ECE 0.054, two repos, one author), and the README cites it. Three things remain open. The labels come from one AI labeller: the human agreement pass was deferred, and the tooling for it is kept (`tools/calibration-agreement.ts`). The subjective questions produced degenerate single-labeller labels, so they are reported as unmeasured rather than as a curve. And the claim rests on two TypeScript repos by one author. A better-posed judgement set, and data from other people's code, are the ways to widen it. Design partners (M9) are the natural source of the second.
 
 ### 4. One model, one vendor
 

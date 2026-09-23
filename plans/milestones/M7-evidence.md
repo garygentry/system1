@@ -88,13 +88,14 @@ Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attem
 - **Checkable group (`io`, `errors`):** 246 pairs. The curve is monotone and near-diagonal: population-weighted Brier 0.028 (base rate 0.187), ECE 0.054, 97% accurate at 0.5. The one pattern is mild under-confidence between 0.6 and 0.8.
 - **Judgement group (`defect`, `standalone`):** the single-labeller labels are degenerate (defect true in 1 of 108, standalone true in 124 of 124). They measure the labeller's reading of the rubric, not the model. **User decision:** publish checkable only, and report judgement as unmeasured with that reason.
 - **D5 verdict (user):** the checkable curve is **not bad**, so M9 is not blocked.
-- **Still open:** the maintainer's 30-item agreement pass (`evidence/labels/agreement-v1.worksheet.jsonl`, via the "Second-labeller check" artifact), §5 (a live `ask` in each harness) and §6 (the routing retry).
+- **Agreement pass: deferred (user, 2026-09-23).** A hurried second pass would distort the check rather than validate the labels. The docs disclose single-labeller ground truth. The blind labelling page is kept as `tools/calibration-agreement.ts` + `evidence/agreement/check.template.html` for tuning rounds.
+- **Still open:** §5 (a live `ask` in each harness) and §6 (the routing retry).
 
 ## Acceptance
 
 - [x] A labelled set of ~200–300 items exists under `evidence/labels/`, drawn by the documented unbiased procedure, with the procedure recorded alongside it. *(2026-09-23: 478 pairs, all 20 strata populated; procedure, seeds, pins and labelling rules in `evidence/README.md`.)*
 - [x] `tools/calibration.ts` is tested, deterministic and offline, and refuses to report a curve from a sample too small or too skewed. *(2026-09-23: built, 26 tests; verified against synthetic fixtures. Awaits the real labelled run.)*
-- [x] `docs/calibration.md` publishes the curve with n per bucket, names its corpora and shapes, and states plainly what it does not support. *(Label-agreement figure pending the maintainer's 30-item pass.)*
+- [x] `docs/calibration.md` publishes the curve with n per bucket, names its corpora and shapes, and states plainly what it does not support. *(Labels are single-labeller, disclosed; the agreement pass was deferred by the user 2026-09-23, see Results.)*
 - [x] Threshold guidance in the docs is derived from that data, not from taste. *(Weighted precision and recall by threshold.)*
 - [x] The README no longer rests the central claim on the provider's assertion.
 - [x] A finding about `UNDECIDED_FLOOR` is recorded, whether or not it moves. *(It stays: the band came true 53% of the time, weighted; see the docs.)*

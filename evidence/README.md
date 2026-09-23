@@ -28,9 +28,10 @@ Everything here is committed so the result can be audited and re-derived.
 5. **Label blind.** Each worksheet item is labelled by reading the excerpt (the file at the
    pinned commit, lines per the id) against the question's rubric, **without seeing the
    model's answer**. Only the excerpt is used, because that is all the model saw.
-6. **Agreement check.** A second labeller (the maintainer) independently labels a random 30
-   of the sampled pairs. The agreement rate is reported with the curve, since single-labeller
-   ground truth for the judgement group is itself a judgement.
+6. **Agreement check (deferred in v1).** A second labeller independently labels a random 30
+   of the sampled pairs, and the agreement rate is reported with the curve. In v1 this was
+   deferred: the published labels are single-labeller, and the docs say so. The tooling is
+   kept (see "Running the second-labeller check").
 7. **Score.** `tsx tools/calibration.ts --run <run> --labels <labels>`, per corpus and per group.
 
 ## Pins (v1, recorded 2026-09-23)
@@ -65,3 +66,22 @@ Recorded because they decide borderline cases and a second labeller should apply
   `null`/`undefined` sentinel, and a `throw` that falls past the excerpt's end, do not count.
 - A fact learned from another excerpt (for example that `serverMode()` issues a GET) was applied
   to every excerpt that uses it, including ones already labelled.
+
+## Running the second-labeller check
+
+`agreement/check.template.html` is a blind labelling page. It shows the excerpt, the proposition
+and its rubric, and never the model's answer or the first label. Build it for a worksheet with:
+
+```sh
+pnpm exec tsx tools/calibration-agreement.ts \
+  --worksheet evidence/labels/agreement-v1.worksheet.jsonl \
+  --questions evidence/questions/code-v1.yaml \
+  --pin system1=.@baf4eb5 --pin jev-poc=../jev-poc@3111ae9 \
+  --out agreement-check.html
+```
+
+Publish the output as a Claude Artifact with the `db` capability. Answers land in its
+`agreement` collection as `{k, id, question, corpus, label, note}`, which is the label JSONL
+shape. Read them back, then compare them with `labels/sample-v1.jsonl` by `(id, question)`.
+The same tool serves a later round (new questions, a new sample) given a new worksheet. Hand
+the second labeller only the rubric, not the rules above, so the check measures the rubric.

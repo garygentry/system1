@@ -1,0 +1,137 @@
+<title>Second-labeller check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F3;--surface:#FFFFFF;--code:#EBEFEA;--ink:#1C221E;--muted:#5C6660;--line:#D5DBD5;
+  --accent:#2D6A4C;--accent-ink:#FFFFFF;--yes:#2D6A4C;--no:#97392B;--yes-soft:#DDEBE2;--no-soft:#F3DEDA;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;--ground:#121513;--surface:#1A1E1B;--code:#161A17;--ink:#E3E8E4;--muted:#94A09A;--line:#2C332E;
+  --accent:#6DBE92;--accent-ink:#0E1A13;--yes:#6DBE92;--no:#E08A7B;--yes-soft:#1E3327;--no-soft:#3A2420;}}
+:root[data-theme="dark"]{
+  color-scheme:dark;--ground:#121513;--surface:#1A1E1B;--code:#161A17;--ink:#E3E8E4;--muted:#94A09A;--line:#2C332E;
+  --accent:#6DBE92;--accent-ink:#0E1A13;--yes:#6DBE92;--no:#E08A7B;--yes-soft:#1E3327;--no-soft:#3A2420;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);padding:0 16px;padding-block:20px 48px}
+.wrap{max-width:860px;margin:0 auto;display:grid;gap:18px}
+header{display:grid;gap:6px}
+h1{font-size:1.35rem;font-weight:600;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:68ch}
+.strip{display:grid;grid-template-columns:repeat(15,1fr);gap:4px}
+.cell{height:26px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--muted);font:500 11px var(--mono);cursor:pointer;padding:0;font-variant-numeric:tabular-nums}
+.cell.done{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cell.cur{outline:2px solid var(--ink);outline-offset:1px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;font:12px var(--mono);color:var(--muted)}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.prop{padding:16px 18px;display:grid;gap:10px;border-bottom:1px solid var(--line)}
+.eyebrow{font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.statement{font-size:1.05rem;font-weight:500;margin:0;max-width:70ch}
+.rubric{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px}
+.rubric div{padding:8px 10px;border-radius:6px}
+.rubric .t{background:var(--yes-soft)}.rubric .f{background:var(--no-soft)}
+.rubric b{display:block;font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.code{background:var(--code);margin:0;padding:12px 0 0;font:12.5px/1.55 var(--mono)}
+.codehead{display:flex;justify-content:space-between;gap:8px;padding:8px 14px;font:12px var(--mono);color:var(--muted);border-bottom:1px solid var(--line);background:var(--code)}
+.codeend{padding:6px 14px 10px;font:11px var(--mono);color:var(--muted)}
+.code table{border-collapse:collapse;width:100%;table-layout:fixed}
+.code td{padding:0 14px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;vertical-align:top;padding-left:2ch;text-indent:-2ch}
+.code td.n{width:5ch;color:var(--muted);text-align:right;user-select:none;padding:0 10px 0 0;text-indent:0;font-variant-numeric:tabular-nums}
+.decide{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{font:600 15px var(--sans);padding:14px;border-radius:8px;border:2px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.yes[aria-pressed="true"]{background:var(--yes);border-color:var(--yes);color:var(--accent-ink)}
+.btn.no[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:var(--accent-ink)}
+.btn:focus-visible,.cell:focus-visible,.nav button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label{font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+textarea{width:100%;min-height:52px;font:14px var(--sans);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px}
+.nav{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.nav button{font:500 14px var(--sans);padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.status{font:12px var(--mono);color:var(--muted)}
+.warn{background:var(--no-soft);padding:10px 12px;border-radius:6px;font-size:13px}
+@media (max-width:560px){.strip{grid-template-columns:repeat(10,1fr)}.rubric{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Second-labeller check</h1>
+    <p class="lede">30 excerpts drawn at random from the calibration sample. For each one, read the code, then decide whether the statement is true <em>of this excerpt alone</em>, going by the rubric. You won't see my labels or the model's answers. Each choice saves as you make it, and you can go back and change it.</p>
+    <p class="lede"><strong>Excerpts are cut on purpose.</strong> Every file was split into fixed 40-line windows, so a function often starts or ends outside the excerpt. The model saw exactly this cut, so judge only what the lines shown contain. Code beyond the window counts as not present.</p>
+  </header>
+  <p class="warn" id="offline" hidden>Saving is unavailable in this view. Open the artifact in claude.ai while signed in, so your answers are stored.</p>
+  <div class="strip" id="strip" role="navigation" aria-label="Items"></div>
+  <div class="meta"><span id="where"></span><span id="count"></span></div>
+  <article class="item">
+    <div class="prop">
+      <span class="eyebrow" id="qname"></span>
+      <p class="statement" id="statement"></p>
+      <div class="rubric"><div class="t"><b>True when</b><span id="rt"></span></div><div class="f"><b>False when</b><span id="rf"></span></div></div>
+    </div>
+    <div class="codehead"><span id="range"></span><span>exactly what the model saw · long lines wrap</span></div>
+    <pre class="code" id="code"></pre>
+    <div class="codeend" id="codeend"></div>
+  </article>
+  <div class="decide">
+    <button class="btn yes" id="yes" aria-pressed="false">True</button>
+    <button class="btn no" id="no" aria-pressed="false">False</button>
+  </div>
+  <div><label for="note">Note (optional: why, or what made it borderline)</label><textarea id="note"></textarea></div>
+  <div class="nav"><button id="prev">← Previous</button><span class="status" id="status"></span><button id="next">Next →</button></div>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const DATA=JSON.parse(document.getElementById("data").textContent)
+const items=DATA.items, rub=DATA.rubric
+const answers={} // k -> {label, note}
+let cur=0, db=null
+const $=id=>document.getElementById(id)
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function strip(){
+  $("strip").innerHTML=""
+  items.forEach((it,i)=>{const b=document.createElement("button");b.className="cell"+(answers[it.k]?" done":"")+(i===cur?" cur":"");b.textContent=it.k;b.setAttribute("aria-label","Item "+it.k+(answers[it.k]?", answered":""));b.onclick=()=>go(i);$("strip").appendChild(b)})
+  const n=Object.keys(answers).length;$("count").textContent=n+" / "+items.length+" answered"
+}
+function render(){
+  const it=items[cur], r=rub[it.question], a=answers[it.k]
+  $("where").textContent="#"+it.k+" · "+it.corpus+" · "+it.id
+  $("qname").textContent=it.question
+  $("statement").textContent=r.text; $("rt").textContent=r.t; $("rf").textContent=r.f
+  const n=it.code.split("\n").length
+  $("range").textContent="lines "+it.start+"–"+(it.start+n-1)+" · "+n+" line"+(n===1?"":"s")
+  $("codeend").textContent=n<40?"— end of excerpt (the file ends here) —":"— end of excerpt —"
+  $("code").innerHTML="<table>"+it.code.split("\n").map((l,i)=>"<tr><td class=n>"+(it.start+i)+"</td><td>"+(esc(l)||" ")+"</td></tr>").join("")+"</table>"
+  $("yes").setAttribute("aria-pressed",a&&a.label===true?"true":"false")
+  $("no").setAttribute("aria-pressed",a&&a.label===false?"true":"false")
+  $("note").value=a&&a.note||""
+  $("prev").disabled=cur===0; $("next").disabled=cur===items.length-1
+  strip()
+}
+function go(i){cur=i;$("status").textContent="";render();document.querySelector(".item").scrollIntoView({block:"start"})}
+async function save(label){
+  const it=items[cur], note=$("note").value.trim()
+  const prev=answers[it.k]
+  if(label===undefined){ if(!prev) return; label=prev.label }
+  answers[it.k]={label,note}; render()
+  if(!db){$("status").textContent="not saved (offline view)";return}
+  $("status").textContent="saving…"
+  try{await db.doc("agreement/k"+String(it.k).padStart(2,"0")).set({k:it.k,id:it.id,question:it.question,corpus:it.corpus,label,note});$("status").textContent="saved"}
+  catch(e){$("status").textContent="not saved: "+(e&&e.message||"error")}
+}
+$("yes").onclick=()=>{save(true);if(cur<items.length-1&&!answers[items[cur+1].k])setTimeout(()=>go(cur+1),250)}
+$("no").onclick=()=>{save(false);if(cur<items.length-1&&!answers[items[cur+1].k])setTimeout(()=>go(cur+1),250)}
+$("note").onchange=()=>save()
+$("prev").onclick=()=>go(Math.max(0,cur-1))
+$("next").onclick=()=>go(Math.min(items.length-1,cur+1))
+render()
+;(async()=>{
+  try{db=await window.claude?.use?.("db")}catch{db=null}
+  if(!db){$("offline").hidden=false;return}
+  db.collection("agreement").onSnapshot(snap=>{
+    for(const d of snap.docs){const v=d.data();if(v&&typeof v.label==="boolean")answers[v.k]={label:v.label,note:v.note||""}}
+    const first=items.findIndex(it=>!answers[it.k]); if(first>=0&&Object.keys(answers).length&&cur===0&&answers[items[0].k])cur=first
+    render()
+  },()=>{$("status").textContent="could not load saved answers"})
+})()
+</script>
