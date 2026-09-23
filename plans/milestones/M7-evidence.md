@@ -76,7 +76,7 @@ Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attem
 ## Open, to settle while building
 
 - **Which question shapes the labelled set can actually support.** `noul` is certain; `choice` and `score` depend on how the sample falls.
-- **Whether jev-poc's recorded fixtures already carry usable ground truth**, which would cut the labelling cost — check before labelling by hand.
+- **Whether jev-poc's recorded fixtures already carry usable ground truth** — *checked 2026-09-23: no.* `~/workspace/jev-poc/fixtures/*.json` record only *predicted* answers (Jev `noul`/`choice`/`score`, plus a Haiku baseline and a Jev-vs-baseline `agree` flag); there is no `label`/`truth`/`expected` field anywhere (grep clean). Scenario **names** encode the demo author's intended answer (`sound`/`stub`/`untested`; `clean`/`harassment`/`threat`), so truth is *derivable by reading*, but (a) it still needs hand-labelling and (b) these are curated demo cases, not a random sweep of real content, so using them as-is would violate §1's sampling rule. Net: they can't replace the unbiased labelled set; at most they're a legible, quick-to-label supplement **if** the curation caveat is documented. Labelling is therefore closer to the "day of reading" end, not "hours".
 - **How to present intervals at small n** without implying more precision than 30 rows can carry.
 - **What to do if the curve is bad.** Decide the response *before* seeing it: a poorly calibrated model is a finding worth publishing, and it would change the pitch from "calibrated" to "typed and comparable". Agreeing this now is what stops the result being rationalised later.
 
