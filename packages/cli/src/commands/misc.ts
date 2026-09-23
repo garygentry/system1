@@ -25,6 +25,9 @@ export function runSchemaCommand(argv: string[], io: Io, format: Format): Promis
   })
 }
 
+/** Flags of `usage`. Exported so `docs/cli.md` can be checked against them. */
+export const USAGE_OPTIONS = { session: { type: "string" }, since: { type: "string" } } as const
+
 export function runUsageCommand(argv: string[], io: Io, format: Format): Promise<ExitCode> {
   return emit(
     io,
@@ -33,7 +36,7 @@ export function runUsageCommand(argv: string[], io: Io, format: Format): Promise
     () => {
       const { values } = typedParse({
         args: argv,
-        options: { session: { type: "string" }, since: { type: "string" } },
+        options: USAGE_OPTIONS,
       })
       const ctx = createContext({ ...io, cwd: io.cwd ?? process.cwd(), env: io.env })
       return runUsage(ctx, {

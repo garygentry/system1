@@ -2,7 +2,7 @@
 
 The model returns probabilities, and you decide what they mean. Keep that decision explicit.
 
-The provider calls these probabilities calibrated, and this toolkit does not verify that. So treat a 0.9 as "the model is confident", not as "right nine times in ten", and pick thresholds from what a mistake costs.
+The provider calls these probabilities calibrated. This toolkit checked that on yes/no questions that reading the text settles (two TypeScript repos, one labeller; see `docs/calibration.md` in the system1 repo). There, the probabilities tracked how often answers came true, and keeping at `>=0.3` gave about 88% precision and 97% recall, at `>=0.7` about 98% and 80%. For subjective questions, and for choice and score, it is **not measured**: treat a 0.9 as "the model is confident", not as "right nine times in ten". Either way, pick thresholds from what a mistake costs.
 
 ## Choose the threshold before you look at the answers
 

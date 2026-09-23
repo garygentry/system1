@@ -34,11 +34,14 @@ type ConfigResult =
   | ReturnType<typeof show>
   | { egress: { consent: unknown; file: string; changed?: boolean } }
 
+/** Flags of `config`. Exported so `docs/cli.md` can be checked against them. */
+export const CONFIG_OPTIONS = { confirm: { type: "boolean" }, by: { type: "string" } } as const
+
 function body(argv: string[], io: Io): ConfigResult {
   const { values, positionals } = typedParse({
     args: argv,
     allowPositionals: true,
-    options: { confirm: { type: "boolean" }, by: { type: "string" } },
+    options: CONFIG_OPTIONS,
   })
   const [section = "show", action = "status"] = positionals
   const cwd = io.cwd ?? process.cwd()

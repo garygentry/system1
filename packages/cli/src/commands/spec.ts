@@ -116,16 +116,19 @@ function checkInput(argv: string[]): Record<string, unknown> {
   }
 }
 
+/** Flags of `spec check`. Exported so `docs/cli.md` can be checked against them. */
+export const SPEC_OPTIONS = {
+  live: { type: "boolean" },
+  replay: { type: "boolean" },
+  confirm: { type: "boolean" },
+  model: { type: "string" },
+} as const
+
 function parse(argv: string[]) {
   return typedParse({
     args: argv,
     allowPositionals: true,
     strict: true,
-    options: {
-      live: { type: "boolean" },
-      replay: { type: "boolean" },
-      confirm: { type: "boolean" },
-      model: { type: "string" },
-    },
+    options: SPEC_OPTIONS,
   })
 }

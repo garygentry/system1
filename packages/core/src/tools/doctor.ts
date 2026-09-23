@@ -16,8 +16,19 @@ import { type ContextOptions, createContext, type ToolContext } from "./context.
 
 export type CheckStatus = "ok" | "warn" | "fail"
 
+/** Every check doctor can report, in report order. `docs/troubleshooting.md` covers each. */
+export const DOCTOR_CHECKS = [
+  "cli",
+  "config",
+  "path",
+  "path-version",
+  "key",
+  "consent",
+  "network",
+] as const
+
 export interface DoctorCheck {
-  name: "cli" | "config" | "path" | "path-version" | "key" | "consent" | "network"
+  name: (typeof DOCTOR_CHECKS)[number]
   status: CheckStatus
   detail: string
   /** What the user (not the agent) can do about a warn or fail. */

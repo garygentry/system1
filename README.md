@@ -9,7 +9,7 @@ Let a coding agent hand a **closed judgement** to a decision model instead of re
 - is this command destructive;
 - is "done" actually done.
 
-A decision model answers with a typed probability in about 300 ms, and its output tokens are free. Cost scales with what you send: about **$0.00003 for a 700-token item** at Jev's listed price, so the 57-file run below came to $0.0035 — about $0.00006 an item. The first supported model is [Jev](https://openrouter.ai/typesafe/jev-1.13) on OpenRouter.
+A decision model answers with a typed probability in about 300 ms, and its output tokens are free. Cost scales with what you send: about **$0.00003 for a 700-token item** at Jev's listed price, so the 57-file run below came to $0.0035 — about $0.00006 an item. The only supported model is [Jev](https://openrouter.ai/typesafe/jev-1.13) on OpenRouter ([why, and what if it goes away](#one-model-one-provider)).
 
 The provider describes the probabilities as calibrated, and we checked that claim ourselves ([docs/calibration.md](docs/calibration.md)). On yes/no questions whose answer you can check by reading the content, the probabilities tracked observed frequencies closely: Brier 0.028 and calibration error 0.054 over a blind-labelled sample from two TypeScript repos (one AI labeller; the docs give the caveats). On subjective questions we could not measure it, so treat those numbers as rankings and set thresholds on your own data.
 
@@ -62,33 +62,30 @@ The CLI needs Node 22 or newer.
 | **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | `npm i -g @garygentry/system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules` |
 | **Pi** | `pi install npm:@garygentry/system1-pi` | `npm i -g @garygentry/system1` | no sandbox |
 
-Then, in the agent, run the **setup** skill (`/system1:setup` in Claude Code, `$system1:setup` in Codex, `/skill:setup` in Pi). It checks the install, the key, consent and network access, and walks you through whatever is missing. Or check it yourself:
+Then, in the agent, run the **setup** skill (`/system1:setup` in Claude Code, `$system1:setup` in Codex, `/skill:setup` in Pi). It checks the install, the key, consent and network access, and walks you through whatever is missing. Or check it yourself with `decide doctor --format brief`.
 
-```sh
-decide doctor --format brief
-```
-
-### The API key
-
-Live decisions need an OpenRouter key, as `OPENROUTER_API_KEY` or in `~/.config/system1/credentials`:
-
-```yaml
-openrouter_api_key: sk-or-…
-```
-
-`chmod 600` that file. Without a key, `decide` still replays answers recorded earlier, which is how the test suites here run.
+Two things are yours to do: set an [OpenRouter](https://openrouter.ai) key (`OPENROUTER_API_KEY`, or `~/.config/system1/credentials`), and agree, once per repo, to content being sent (`decide config egress allow`, run by you, never by the agent). [Getting started](docs/getting-started.md) walks through both. Without a key, `decide` still replays answers recorded earlier, which is how the test suites here run.
 
 ## What gets sent, and when
 
-Running `decide` live sends the text being judged (file contents, diff hunks, piped output) to the decision model through OpenRouter. So:
+Running `decide` live sends the text being judged (file contents, diff hunks, piped output) to the decision model through OpenRouter, and only in a repo that has consented. Secret-shaped files are excluded, secret-shaped strings are scrubbed, content outside the repo is withheld, and oversized content is refused rather than truncated. Every answer says whether it is `live` or `replay`, a replay miss is an error rather than an invented answer, and costs say whether they are measured or projected. [Concepts](docs/concepts.md#what-gets-sent) has the details.
 
-- **Consent is per repo, and yours to give.** Nothing is sent until you run `decide config egress allow` in that repo. Agents are told never to run it for you.
-- **Secret-shaped files are excluded** (`.env*`, keys, credentials and more), before anything leaves.
-- **Secret-shaped strings are scrubbed** from everything that is sent.
-- **Oversized content is refused, never truncated**, because a decision made on half an input is a wrong decision.
-- **Every answer says where it came from**, `live` or `replay`, and a replay miss is an error rather than an invented answer.
-- **Costs are labelled.** Projections say projected; measured costs come from the provider, and a run says so when the provider reported none.
-- **Recorded answers hold the text that was sent.** `.system1/fixtures/` is how replay works offline. Read a fixture before committing or sharing it, the way you would a test fixture.
+## Documentation
+
+| Page | For |
+|---|---|
+| [Getting started](docs/getting-started.md) | install, key, consent and a first decision |
+| [Concepts](docs/concepts.md) | question types, thresholds and undecided, live and replay, sources, specs, what gets sent |
+| [Cookbook](docs/cookbook.md) | tested specs to copy into your repo |
+| [Calibration](docs/calibration.md) | what the probabilities mean, and which threshold to use |
+| [CLI reference](docs/cli.md) | every command and flag, the output envelope and the exit codes |
+| [Troubleshooting](docs/troubleshooting.md) | every `doctor` check and error code, with the fix |
+
+## One model, one provider
+
+The only supported model is [Jev](https://openrouter.ai/typesafe/jev-1.13) (`typesafe/jev-1.13`), reached through OpenRouter. System 1 depends on a model that returns typed, calibrated answers to closed questions, and today Jev is the only such model we know of. The engine is built around model profiles, so a second model can be added once a suitable one exists, and the calibration check would be rerun for it.
+
+If Jev were withdrawn or changed its API, live decisions would fail with a provider error, and `decide` would not quietly switch to a general-purpose model: that would give answers without the calibration the thresholds rely on. Replay would keep working, so saved specs and their recorded answers would still run as offline tests.
 
 ## Packages
 

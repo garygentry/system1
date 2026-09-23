@@ -16,7 +16,8 @@ export const EXIT = {
 
 export type ExitCode = (typeof EXIT)[keyof typeof EXIT]
 
-const BY_CODE: Record<ErrorCode, ExitCode> = {
+/** Every error code and its exit code. `docs/cli.md` and `docs/troubleshooting.md` cover each. */
+export const BY_CODE: Record<ErrorCode, ExitCode> = {
   "invalid-request": EXIT.usage,
   "state-too-large": EXIT.usage,
   "unknown-model": EXIT.usage,
