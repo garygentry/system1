@@ -6,7 +6,7 @@
 // prefix and exercises it there, then checks the Pi tarball carries the skills.
 // Nothing here touches the network or the real npm registry.
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs"
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -74,6 +74,38 @@ step("installed CLI runs offline in a fresh repo", () => {
     env: { ...process.env, SYSTEM1_REPLAY: "1", OPENROUTER_API_KEY: "" },
   })
   if (!out.startsWith("decide doctor:")) throw new Error(out.slice(0, 120))
+  return out.split("\n")[0].slice(0, 60)
+})
+
+// Replay only: no key, no consent, no network. Answers come from fixtures
+// committed in this repo, so the shipped bundle is exercised end to end.
+const offline = { ...process.env, SYSTEM1_REPLAY: "1", OPENROUTER_API_KEY: "" }
+
+step("installed CLI replays a many run", () => {
+  const dir = join(work, "smoke")
+  cpSync(join(ROOT, "tools/smoke/fixture-repo"), dir, { recursive: true })
+  run("git", ["init", "-q", dir], { cwd: work })
+  const out = run(decide, ["many", "--spec", "smoke", "--format", "brief"], {
+    cwd: dir,
+    env: offline,
+  })
+  if (!out.startsWith("decide many: 1 kept of 3")) throw new Error(out.slice(0, 120))
+  return out.split("\n")[0].slice(0, 60)
+})
+
+step("installed CLI replays an adopted cookbook recipe", () => {
+  const dir = join(work, "cookbook")
+  mkdirSync(join(dir, ".system1/specs"), { recursive: true })
+  run("git", ["init", "-q", dir], { cwd: work })
+  cpSync(join(ROOT, "cookbook/ci-failure.yaml"), join(dir, ".system1/specs/ci-failure.yaml"))
+  cpSync(join(ROOT, "cookbook/fixtures/ci-failure"), join(dir, ".system1/fixtures/ci-failure"), {
+    recursive: true,
+  })
+  const out = run(decide, ["spec", "check", "ci-failure", "--format", "brief"], {
+    cwd: dir,
+    env: offline,
+  })
+  if (!out.includes("PASSED")) throw new Error(out.slice(0, 120))
   return out.split("\n")[0].slice(0, 60)
 })
 
