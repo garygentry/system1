@@ -2,7 +2,7 @@
 
 **System 1** is a set of tools that let coding agents hand *closed* judgements (choose one option, give a score, answer yes/no) to a **decision model** (Jev first), and get back typed, calibrated answers. It ships one plugin that works in Claude Code, Codex and Pi. The `decide` CLI is the only execution surface. There is no MCP server; see `plans/decisions/0013-cli-first-mcp-deferred.md`.
 
-Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — then the current `plans/milestones/Mn-*.md`. Ratified choices live in `plans/decisions/`. `plans/archive/charter.md` is a superseded envisioning brief: do not build from it.
+Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — then the current `plans/milestones/Mn-*.md`. Ratified choices live in `plans/decisions/`. `plans/archive/charter.md` is a superseded envisioning brief: do not build from it. How the code is put together as it stands is in `docs/architecture/`; what has been measured is in `docs/evaluation.md`.
 
 ## Layout
 
@@ -24,9 +24,9 @@ Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — th
 - **Skills never call HTTP.** Everything goes through `decide`, which is a thin adapter over `packages/core`.
 - **CLI contract** ([0015](plans/decisions/0015-cli-contract-v1.md)): one JSON envelope `{v, ok, command, result|error}` per command; exit codes 0 ok, 1 bug, 2 usage, 3 egress refused, 4 budget guard, 5 provider, 6 replay miss. Tools are defined once in `packages/core/src/tools/` (TypeBox input schema + handler); the CLI only maps argv and formats. A breaking change bumps `ENVELOPE_VERSION` and needs a decision record.
 - **Consent is the user's.** Never run `decide config egress allow --confirm` unless the user explicitly asked you to in this conversation.
-- **This repo's own consent is not committed.** `.system1/config.yaml` is gitignored, so a fresh clone starts with no consent and replays only. Grant it locally if you want to run `pnpm test:live` or record fixtures.
+- **This repo's own consent is not committed.** `.system1/config.yaml` is gitignored, so a fresh clone starts with no consent and replays only. Grant it locally if you want to record fixtures (`pnpm test:live` builds its own decider with consent, so it needs only a key).
 - **Egress:** every path to the provider goes through `prepare()` (excludes → scrub → size) and a decider built with `egressConsent`. Consent lives only in `<repo>/.system1/config.yaml`. Never add a way to send content that skips these checks.
-- **Config layering:** defaults → `$XDG_CONFIG_HOME/system1/config.yaml` → `<repo>/.system1/config.yaml` → env (`OPENROUTER_API_KEY`, `SYSTEM1_MODEL`, `SYSTEM1_ENDPOINT`, `SYSTEM1_REPLAY`, `SYSTEM1_SESSION`). Tests that load config must pass a temp `home` so they never read the real user config.
+- **Config layering:** defaults → `$XDG_CONFIG_HOME/system1/config.yaml` → `<repo>/.system1/config.yaml` → env (`OPENROUTER_API_KEY`, `SYSTEM1_MODEL`, `SYSTEM1_ENDPOINT`, `SYSTEM1_REPLAY`, `SYSTEM1_SESSION`, `SYSTEM1_ROUTE`). Tests that load config must pass a temp `home` so they never read the real user config.
 - **Honest numbers:** label projected costs as projected. Every answer carries its `source` (`live` or `replay`). A replay miss is an error, never a synthesized answer.
 - **Secrets:** never print or log `OPENROUTER_API_KEY`; report only whether it is present. The engine and CLI never read a `.env` file (a project's `.env` belongs to that project); only `vitest.live.config.ts` loads this repo's.
 - **Live tests** are named `*.live.test.ts`, are excluded from `pnpm test`, and must `skipIf` there is no key.
@@ -62,4 +62,4 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
   - Pi: `/skill:setup`. This works in `-p` mode too.
 - **The Codex `prefix_rule` covers only commands that start with `decide`:** `a && decide …` is covered, but `… | decide …` stays offline. So skills pass content with `--file`, not pipes.
 - **Inside the Codex Linux sandbox,** a child process spawned by node exits 0 with empty stdout (even `node -e "console.log(1)"`).
-- **Agents read `AGENTS.md` from parent directories.** Pi does so even from inside a nested git repo. Codex did from a workdir that wasn't a git repo. Smoke and eval workdirs therefore live outside this repo, under `~/.cache/decisions-{smoke,evals}`.
+- **Agents read `AGENTS.md` from parent directories.** Pi does so even from inside a nested git repo. Codex did from a workdir that wasn't a git repo. Smoke and eval workdirs therefore live outside this repo, under `~/.cache/system1-{smoke,evals}`.

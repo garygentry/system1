@@ -1,0 +1,1450 @@
+{
+  "version": "1.0",
+  "provenance": {
+    "generatedBy": "content-architect",
+    "generatedAt": "2026-09-23",
+    "repoRef": "4a538f1 (main, 0.3.1)"
+  },
+  "scope": "both",
+  "project": {
+    "name": "System 1 (system1)",
+    "kind": "cli",
+    "summary": "The `decide` CLI and Agent Skills plugin that let coding agents in Claude Code, Codex and Pi hand closed judgements (yes/no, pick one, score) to a decision model (Jev on OpenRouter) and get typed, calibrated answers."
+  },
+  "audiences": [
+    {
+      "id": "agent-user",
+      "name": "Agent user",
+      "description": "A developer who installs the plugin in Claude Code, Codex or Pi and lets their agent call `decide`. M9 design partners are the first outside readers.",
+      "expertise": "intermediate"
+    },
+    {
+      "id": "script-author",
+      "name": "Script and CI author",
+      "description": "Calls `decide` directly from CI, git hooks or scripts, branches on exit codes and parses the JSON envelope.",
+      "expertise": "expert"
+    },
+    {
+      "id": "maintainer",
+      "name": "Maintainer",
+      "description": "Works on this repo: the engine, CLI, generator, skills and release. Today that is the author and coding agents reading AGENTS.md.",
+      "expertise": "expert"
+    }
+  ],
+  "sources": [
+    {
+      "id": "s-catalog",
+      "path": "catalog.yaml",
+      "type": "manifest",
+      "note": "Names, version (0.3.1), npm scope, plugin description; source of every generated manifest."
+    },
+    {
+      "id": "s-root-pkg",
+      "path": "package.json",
+      "type": "manifest",
+      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, release:check. No publish script."
+    },
+    {
+      "id": "s-cli-main",
+      "path": "packages/cli/src/main.ts",
+      "type": "entrypoint",
+      "note": "Command dispatch and HELP text; entry.ts → bin.ts → main.ts, commands loaded lazily."
+    },
+    {
+      "id": "s-cli-args",
+      "path": "packages/cli/src/args.ts",
+      "type": "api",
+      "note": "DECIDE_OPTIONS: every ask/many flag."
+    },
+    {
+      "id": "s-cli-commands",
+      "path": "packages/cli/src/commands/",
+      "type": "api",
+      "note": "spec, config, usage, route, doctor, misc commands and their option tables."
+    },
+    {
+      "id": "s-exit",
+      "path": "packages/cli/src/exit-codes.ts",
+      "type": "api",
+      "note": "EXIT and BY_CODE: exit code per error code."
+    },
+    {
+      "id": "s-format",
+      "path": "packages/cli/src/format.ts",
+      "type": "api",
+      "note": "json, jsonl and brief renderers."
+    },
+    {
+      "id": "s-core-index",
+      "path": "packages/core/src/index.ts",
+      "type": "api",
+      "note": "Everything @garygentry/system1-core exports. Published, undocumented, stability undecided."
+    },
+    {
+      "id": "s-tools",
+      "path": "packages/core/src/tools/",
+      "type": "api",
+      "note": "Tool definitions (TypeBox schemas in schemas.ts) and handlers: ask, many, spec-check, usage, route, doctor (DOCTOR_CHECKS). Result types ManyResult, AskResult, SpecCheckResult, UsageResult, DoctorResult."
+    },
+    {
+      "id": "s-config",
+      "path": "packages/core/src/config/load.ts",
+      "type": "config",
+      "note": "DecisionsConfig keys and DEFAULTS: model, endpoint, concurrency 8, timeoutMs 5000, budget 200 calls / $0.05, egress.exclude, profiles, route. Layering user → repo → env."
+    },
+    {
+      "id": "s-consent",
+      "path": "packages/core/src/config/consent.ts",
+      "type": "config",
+      "note": "Consent read and written only in <repo>/.system1/config.yaml."
+    },
+    {
+      "id": "s-session",
+      "path": "packages/core/src/config/session.ts",
+      "type": "config",
+      "note": "Harness and session detection; innermost of CLAUDE_CODE_SESSION_ID, CODEX_THREAD_ID, PI_SESSION_ID."
+    },
+    {
+      "id": "s-spec",
+      "path": "packages/core/src/spec/",
+      "type": "schema",
+      "note": "SpecSchema (version, description, questions, keep, sort, policy.thresholds{value,why}, source{glob,file,jsonl,diff,split}, examples[{id,state|file,expect}], provenance, meta); expect.ts expectation syntax; lookup dirs."
+    },
+    {
+      "id": "s-egress",
+      "path": "packages/core/src/egress/ and packages/core/src/prepare.ts",
+      "type": "api",
+      "note": "DEFAULT_EXCLUDES, scrubbing, size refusal; prepare() is the single path to the provider."
+    },
+    {
+      "id": "s-sources",
+      "path": "packages/core/src/sources/ and packages/core/src/split/",
+      "type": "api",
+      "note": "Source readers (glob, file, jsonl, diff, text, stdin) and splitters (file, hunk, row, lines:N, join)."
+    },
+    {
+      "id": "s-model",
+      "path": "packages/core/src/model/ and packages/core/src/transport/",
+      "type": "api",
+      "note": "Profiles (only typesafe/jev-1.13), answer types, undecided floor, response validation, OpenRouter transport with retries and timeout."
+    },
+    {
+      "id": "s-decide",
+      "path": "packages/core/src/decide.ts and packages/core/src/fixtures/",
+      "type": "api",
+      "note": "Decider: live, record, replay modes; fixture keys; replay miss as a typed error."
+    },
+    {
+      "id": "s-run",
+      "path": "packages/core/src/run/ and packages/core/src/project/",
+      "type": "api",
+      "note": "Budget projection and guard, concurrency pool, spend ledger (.system1/usage.jsonl), keep/sort projection."
+    },
+    {
+      "id": "s-route",
+      "path": "packages/core/src/route/route.ts",
+      "type": "api",
+      "note": "BUILTIN_TRIGGERS, BUILTIN_IGNORE, route config merging (decision 0018)."
+    },
+    {
+      "id": "s-many-flow",
+      "path": "packages/core/src/tools/many.ts",
+      "type": "api",
+      "note": "Call order verified: prepare() (line 81) runs before checkBudget() (line 116)."
+    },
+    {
+      "id": "s-cli-tests",
+      "path": "packages/cli/src/main.test.ts",
+      "type": "test",
+      "note": "End-to-end CLI behaviour, envelopes and exit codes, offline with injected fetch."
+    },
+    {
+      "id": "s-core-tests",
+      "path": "packages/core/src/**/*.test.ts",
+      "type": "test",
+      "note": "Config layering, egress, route, spec, doctor, decider behaviour."
+    },
+    {
+      "id": "s-docs-test",
+      "path": "tools/docs.test.ts",
+      "type": "test",
+      "note": "Checks cli.md documents every command, flag and exit code, troubleshooting.md every doctor check and error code, and that links resolve. Does not check config keys or spec fields."
+    },
+    {
+      "id": "s-cookbook",
+      "path": "cookbook/ and tools/cookbook.ts",
+      "type": "test",
+      "note": "Six recipe specs with fixtures, replayed in pnpm test; meta.threshold_basis enforced."
+    },
+    {
+      "id": "s-evidence",
+      "path": "evidence/ and tools/calibration.ts",
+      "type": "test",
+      "note": "Calibration sweep, labels and scoring behind docs/calibration.md."
+    },
+    {
+      "id": "s-evals",
+      "path": "tools/evals/ and tools/smoke/",
+      "type": "test",
+      "note": "Routing evals (--repeat N) and headless harness smoke tests; local only."
+    },
+    {
+      "id": "s-generate",
+      "path": "tools/generate.ts",
+      "type": "entrypoint",
+      "note": "Emits plugin manifests, marketplaces, the bin/decide shim and hooks/claude-hooks.json; stamps versions."
+    },
+    {
+      "id": "s-shim",
+      "path": "plugins/system1/bin/decide and plugins/system1/hooks/claude-hooks.json",
+      "type": "entrypoint",
+      "note": "Generated shim: SYSTEM1_CLI override → checkout bundle → real install on PATH → pinned version via npx cache (SYSTEM1_NO_NPX stops a download). UserPromptSubmit hook runs `decide route --hook`."
+    },
+    {
+      "id": "s-skills",
+      "path": "plugins/system1/skills/",
+      "type": "api",
+      "note": "ask (with references/), design, setup. Agent-facing; out of this plan's scope except for consistency."
+    },
+    {
+      "id": "s-ci",
+      "path": ".github/workflows/ci.yml",
+      "type": "ci",
+      "note": "pnpm check on Ubuntu and macOS × Node 22/24; packed job runs release:check (packed CLI, doctor and replayed decisions offline)."
+    },
+    {
+      "id": "s-adrs",
+      "path": "plans/decisions/",
+      "type": "adr",
+      "note": "Decision records 0001–0018; 0006 superseded, 0002 and 0008 amended."
+    },
+    {
+      "id": "s-roadmap",
+      "path": "plans/ROADMAP.md",
+      "type": "history",
+      "note": "Milestones, Known gaps (routing, calibration scope, single model, macOS). § Architecture and § CLI contract are stale sketches."
+    },
+    {
+      "id": "s-milestones",
+      "path": "plans/milestones/",
+      "type": "history",
+      "note": "M0–M8 records; M6 has the release procedure, M8 the onboarding walk."
+    },
+    {
+      "id": "s-agents-md",
+      "path": "AGENTS.md",
+      "type": "history",
+      "note": "Layout, rules, commands and verified harness notes for contributors."
+    },
+    {
+      "id": "s-milestone-results",
+      "path": "plans/milestones/M6-release.md, M7-evidence.md, M8-onboarding.md and plans/decisions/0018-claude-routing-hook.md",
+      "type": "history",
+      "note": "Recorded results: routing evals, live runs per harness, the first-run walk, cookbook recordings, the 0018 acceptance evals."
+    }
+  ],
+  "documents": [
+    {
+      "id": "getting-started",
+      "title": "Getting started",
+      "path": "docs/getting-started.md",
+      "family": "diataxis",
+      "type": "tutorial",
+      "audience": ["agent-user"],
+      "purpose": "Take a new user from nothing to a first live decision in their own repo.",
+      "sourceRefs": ["s-cli-main", "s-tools", "s-config", "s-consent", "s-shim", "s-cli-tests"],
+      "status": "existing",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "1. Install",
+          "intent": "Install the plugin and put `decide` on PATH for the user's harness.",
+          "sourceRefs": ["s-shim", "s-agents-md"]
+        },
+        {
+          "heading": "2. Run setup",
+          "intent": "Run the setup skill or `decide doctor` and read the headline.",
+          "sourceRefs": ["s-tools"]
+        },
+        {
+          "heading": "3. The key",
+          "intent": "Put the OpenRouter key in the environment or the credentials file.",
+          "sourceRefs": ["s-config"]
+        },
+        {
+          "heading": "4. Consent, per repo",
+          "intent": "Grant egress consent yourself, knowing what always applies.",
+          "sourceRefs": ["s-consent", "s-egress"]
+        },
+        {
+          "heading": "5. A first decision",
+          "intent": "Ask a closed question in plain words and read the brief output.",
+          "sourceRefs": ["s-format"]
+        }
+      ],
+      "verification": "Steps match the code and the M8 first-run walk. The sample doctor version was refreshed to 0.3.1 on 2026-09-23. Routing links now point to routing-hints.md."
+    },
+    {
+      "id": "howto-spec",
+      "title": "Save a question as a spec and test it",
+      "slug": "how-to/specs",
+      "path": "docs/specs.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Turn a question that worked into a saved, example-tested spec, or adopt and adapt a cookbook recipe, without relying on the agent to do it.",
+      "sourceRefs": ["s-spec", "s-tools", "s-cookbook", "s-decide", "s-skills"],
+      "status": "drafted",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Adopt a cookbook recipe",
+          "intent": "Copy a recipe spec and its fixtures into .system1/, then run it. This moves here from cookbook.md.",
+          "sourceRefs": ["s-cookbook"]
+        },
+        {
+          "heading": "Write a spec from a question that worked",
+          "intent": "Create .system1/specs/<name>.yaml with the questions, a threshold and its why, and a default source.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "Add examples with expected answers",
+          "intent": "Give a few clear cases and borderline ones, each with an `expect`.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "Validate, record, then check offline",
+          "intent": "`decide spec validate`, then `decide spec check <name> --live` once, then plain `spec check` replays.",
+          "sourceRefs": ["s-tools", "s-decide"]
+        },
+        {
+          "heading": "Commit the fixtures, and what not to commit",
+          "intent": "Commit spec fixtures after reading them; keep adhoc/ and usage.jsonl ignored.",
+          "sourceRefs": ["s-decide", "s-run"]
+        },
+        {
+          "heading": "When a spec misbehaves",
+          "intent": "Reword, and know that rewording invalidates fixtures; point at the design skill for the repair loop.",
+          "sourceRefs": ["s-skills"]
+        }
+      ],
+      "verification": "Commands and fields come from SpecSchema and the spec-check tool. The design skill writes specs for agents. This page is the human path and must not contradict design/SKILL.md or ask/references/."
+    },
+    {
+      "id": "howto-ci",
+      "title": "Run decide in CI, git hooks and scripts",
+      "slug": "how-to/ci-and-scripts",
+      "path": "docs/ci-and-scripts.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["script-author"],
+      "purpose": "Use `decide` without an agent: gate a pipeline on a spec, branch on exit codes, and choose between replay-only and live runs in CI.",
+      "sourceRefs": ["s-exit", "s-format", "s-decide", "s-consent", "s-ci", "s-cookbook", "s-run"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "Install the CLI on its own",
+          "intent": "`npm i -g @garygentry/system1`; no plugin needed.",
+          "sourceRefs": ["s-catalog"]
+        },
+        {
+          "heading": "Test specs offline with replay",
+          "intent": "Run `decide spec check` with committed fixtures and SYSTEM1_REPLAY=1: no key, no network, no consent.",
+          "sourceRefs": ["s-decide", "s-cookbook", "s-ci"]
+        },
+        {
+          "heading": "Gate on a result",
+          "intent": "Use --format json or jsonl with exit codes; branch on error.code, not the message.",
+          "sourceRefs": ["s-exit", "s-format"]
+        },
+        {
+          "heading": "Run live in CI",
+          "intent": "Key as a CI secret, consent committed as a deliberate team decision, spend guard left on.",
+          "sourceRefs": ["s-consent", "s-run"]
+        },
+        {
+          "heading": "A pre-commit gate",
+          "intent": "Judge the staged diff with `--diff --staged` and a spec, and use the answer only to add caution.",
+          "sourceRefs": ["s-sources", "s-cookbook"]
+        }
+      ],
+      "verification": "Replay-in-CI is what this repo's own CI does (cookbook test, release:check). No outside CI run exists yet, and there is no example workflow file for users. See gaps."
+    },
+    {
+      "id": "howto-routing",
+      "title": "Tune or turn off routing hints",
+      "slug": "how-to/routing-hints",
+      "path": "docs/routing-hints.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["agent-user"],
+      "purpose": "Change when the Claude Code prompt hook hints the ask skill: disable triggers, add your own, ignore prompts, or switch it off.",
+      "sourceRefs": ["s-route", "s-config", "s-cli-commands", "s-shim"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "See what a prompt would do",
+          "intent": "`decide route --text \"…\"` shows the triggers that fired and the config files read.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "Turn hints off",
+          "intent": "`route.enabled: false`, or SYSTEM1_ROUTE=off for one session.",
+          "sourceRefs": ["s-route", "s-config"]
+        },
+        {
+          "heading": "Disable a built-in trigger",
+          "intent": "`route.disable: [name]`.",
+          "sourceRefs": ["s-route"]
+        },
+        {
+          "heading": "Add your own trigger or ignore pattern",
+          "intent": "`route.triggers` and `route.ignore`, with how the user and repo layers combine.",
+          "sourceRefs": ["s-route", "s-config"]
+        },
+        {
+          "heading": "When the hook stays silent",
+          "intent": "It needs a `decide` already on the machine, and a bad pattern silences it; `decide doctor` shows why.",
+          "sourceRefs": ["s-shim", "s-tools"]
+        }
+      ],
+      "verification": "The content exists today in concepts.md § Routing hints. This page takes the steps, and concepts keeps only why the hook exists."
+    },
+    {
+      "id": "howto-spend",
+      "title": "Keep a large run within budget",
+      "slug": "how-to/spend",
+      "path": "docs/spend.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Project, narrow and review the cost of a fan-out before and after it runs.",
+      "sourceRefs": ["s-run", "s-cli-args", "s-tools"],
+      "status": "drafted",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "Project before you run",
+          "intent": "`--dry-run` shows calls and projected cost and sends nothing.",
+          "sourceRefs": ["s-run", "s-cli-args"]
+        },
+        {
+          "heading": "Narrow the run",
+          "intent": "A tighter glob, a coarser split, --limit.",
+          "sourceRefs": ["s-cli-args", "s-sources"]
+        },
+        {
+          "heading": "Change the spend guard",
+          "intent": "budget.maxCalls and budget.maxUsd; --confirm is the user's call.",
+          "sourceRefs": ["s-config", "s-run"]
+        },
+        {
+          "heading": "Review what was spent",
+          "intent": "`decide usage --session current` and `--since`.",
+          "sourceRefs": ["s-tools"]
+        }
+      ],
+      "verification": "Low priority. At about $0.00003 per item, spend is rarely a first-hour problem. Draft it only if M9 partners ask."
+    },
+    {
+      "id": "cli",
+      "title": "CLI reference",
+      "path": "docs/cli.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Look up any command, flag, envelope field or exit code.",
+      "sourceRefs": ["s-cli-main", "s-cli-args", "s-cli-commands", "s-exit", "s-docs-test"],
+      "status": "existing",
+      "priority": 1,
+      "verification": "Checked against the code by tools/docs.test.ts: every command, flag and exit code. The Environment table omits SYSTEM1_CLI and SYSTEM1_NO_NPX, which only the shim reads. They belong in the architecture deployment view, not here."
+    },
+    {
+      "id": "output-reference",
+      "title": "Output reference",
+      "slug": "reference/output",
+      "path": "docs/output.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["script-author"],
+      "purpose": "Give script authors the `result` fields of each command in json and jsonl, so they can parse output without reading the source.",
+      "sourceRefs": ["s-tools", "s-format", "s-cli-tests"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "Envelope",
+          "intent": "{v, ok, command, result|error}, and what counts as a breaking change. Link to cli.md, not a copy.",
+          "sourceRefs": ["s-format"]
+        },
+        {
+          "heading": "ask",
+          "intent": "AskResult fields, including verdict and source.",
+          "sourceRefs": ["s-tools"]
+        },
+        {
+          "heading": "many",
+          "intent": "ManyResult: kept, undecided, dropped counts, rows, failed, skipped, usage, cost labels.",
+          "sourceRefs": ["s-tools"]
+        },
+        {
+          "heading": "many --format jsonl",
+          "intent": "One line per result, then the summary line.",
+          "sourceRefs": ["s-format"]
+        },
+        {
+          "heading": "spec check, usage, doctor, route",
+          "intent": "SpecCheckResult, UsageResult, DoctorResult, RouteToolResult.",
+          "sourceRefs": ["s-tools"]
+        }
+      ],
+      "verification": "Derive the fields from the exported TS result types, not from examples. No schema is published for results (`decide schema` covers inputs only), so this page cannot be test-checked the way cli.md is. See gaps."
+    },
+    {
+      "id": "config-reference",
+      "title": "Configuration reference",
+      "slug": "reference/configuration",
+      "path": "docs/configuration.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "List every config key, its default, which layers may set it and how layers combine, plus the credentials file and environment variables.",
+      "sourceRefs": ["s-config", "s-consent", "s-route", "s-session", "s-decide", "s-spec"],
+      "status": "drafted",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Files and layering",
+          "intent": "Defaults → user config → repo config → env; consent read only from the repo file.",
+          "sourceRefs": ["s-config", "s-consent"]
+        },
+        {
+          "heading": "Keys",
+          "intent": "model, endpoint, concurrency (8), timeoutMs (5000), budget.maxCalls (200), budget.maxUsd (0.05), egress.exclude, egress.consent, profiles, route.*.",
+          "sourceRefs": ["s-config", "s-route"]
+        },
+        {
+          "heading": "Credentials file",
+          "intent": "Path under XDG_CONFIG_HOME, the one allowed key, required mode 600.",
+          "sourceRefs": ["s-config"]
+        },
+        {
+          "heading": "Environment variables",
+          "intent": "OPENROUTER_API_KEY, SYSTEM1_MODEL, SYSTEM1_ENDPOINT, SYSTEM1_REPLAY, SYSTEM1_SESSION, SYSTEM1_ROUTE, and the harness session variables read.",
+          "sourceRefs": ["s-config", "s-session"]
+        },
+        {
+          "heading": "Per-repo state",
+          "intent": "What lives in .system1/ (config.yaml, specs/, fixtures/, usage.jsonl) and what to commit.",
+          "sourceRefs": ["s-decide", "s-run", "s-spec"]
+        }
+      ],
+      "verification": "endpoint, concurrency, timeoutMs and profiles exist in load.ts but appear in no doc today (concurrency only as a flag). Extend tools/docs.test.ts to check every DecisionsConfig key, as it already does for flags."
+    },
+    {
+      "id": "spec-format",
+      "title": "Spec file format",
+      "slug": "reference/spec-format",
+      "path": "docs/spec-format.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Describe every field of a .system1/specs/<name>.yaml file and the question and expectation syntax.",
+      "sourceRefs": ["s-spec", "s-cookbook", "s-skills"],
+      "status": "drafted",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Where specs are found",
+          "intent": "Repo .system1/specs/, then the user config dir; the file name is the spec name.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "Top-level fields",
+          "intent": "version, description, questions, keep, sort, policy.thresholds, source, examples, provenance, meta.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "Questions",
+          "intent": "noul, choice and score shapes.",
+          "sourceRefs": ["s-spec", "s-model"]
+        },
+        {
+          "heading": "Thresholds",
+          "intent": "{value, why}, and how keep refers to them.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "Examples and expect",
+          "intent": "id, state or file, and the expect syntax from expect.ts.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "A complete example",
+          "intent": "One cookbook spec, annotated.",
+          "sourceRefs": ["s-cookbook"]
+        }
+      ],
+      "verification": "Fields come from SpecSchema. The questions value is typed Unknown in the schema, so the question shapes must come from parseQuestionSet and the model types. Add a docs.test.ts check that every SpecSchema property is documented."
+    },
+    {
+      "id": "cookbook",
+      "title": "Cookbook: tested question sets",
+      "path": "docs/cookbook.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["agent-user"],
+      "purpose": "Catalogue the ready-made, CI-tested recipes with their thresholds and the basis for each.",
+      "sourceRefs": ["s-cookbook", "s-evidence"],
+      "status": "drafted",
+      "priority": 2,
+      "verification": "The adoption steps moved to specs.md#adopt-a-cookbook-recipe. A short section under the old heading points there."
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "path": "docs/troubleshooting.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Look up any doctor check or error code with its cause and fix.",
+      "sourceRefs": ["s-tools", "s-exit", "s-docs-test"],
+      "status": "existing",
+      "priority": 1,
+      "verification": "Every doctor check and error code is checked by tools/docs.test.ts. Organized for lookup, so it is typed as reference and not how-to."
+    },
+    {
+      "id": "concepts",
+      "title": "Concepts",
+      "path": "docs/concepts.md",
+      "family": "diataxis",
+      "type": "explanation",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Explain closed judgements, thresholds and undecided, live and replay, what gets sent and why, and why the routing hook exists.",
+      "sourceRefs": ["s-model", "s-decide", "s-egress", "s-run", "s-route", "s-evidence"],
+      "status": "drafted",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Closed judgements",
+          "intent": "The three answer types and what not to use a decision model for.",
+          "sourceRefs": ["s-model"]
+        },
+        {
+          "heading": "Thresholds, and undecided",
+          "intent": "Pick a threshold by what a mistake costs; why undecided is its own outcome.",
+          "sourceRefs": ["s-model", "s-evidence"]
+        },
+        {
+          "heading": "Live and replay",
+          "intent": "Why a replay miss is an error and never an invented answer.",
+          "sourceRefs": ["s-decide"]
+        },
+        {
+          "heading": "Sources and splits",
+          "intent": "Why decide reads the content itself. Keep one paragraph and link to the flag tables in cli.md.",
+          "sourceRefs": ["s-sources"]
+        },
+        {
+          "heading": "Specs",
+          "intent": "What a spec is for; link to the format reference and the how-to.",
+          "sourceRefs": ["s-spec"]
+        },
+        {
+          "heading": "What gets sent",
+          "intent": "The four checks in order and the reasoning (refuse, never truncate).",
+          "sourceRefs": ["s-egress"]
+        },
+        {
+          "heading": "Spend",
+          "intent": "Why there is a guard and why --confirm belongs to the user.",
+          "sourceRefs": ["s-run"]
+        },
+        {
+          "heading": "Routing hints",
+          "intent": "Why a prompt hook exists for Claude and not for Codex or Pi. The config moves to howto-routing.",
+          "sourceRefs": ["s-route", "s-adrs"]
+        },
+        {
+          "heading": "The model",
+          "intent": "One model, one provider; link to the README.",
+          "sourceRefs": ["s-model"]
+        }
+      ],
+      "verification": "Restructured 2026-09-23: the source and split tables now link to cli.md, configuration moved to configuration.md, and the route config moved to routing-hints.md. All inbound anchors are kept."
+    },
+    {
+      "id": "calibration",
+      "title": "Calibration: what we measured",
+      "path": "docs/calibration.md",
+      "family": "diataxis",
+      "type": "explanation",
+      "audience": ["agent-user", "script-author"],
+      "purpose": "Explain what the probabilities mean, how they were measured, where the claim holds, and the thresholds that follow.",
+      "sourceRefs": ["s-evidence", "s-roadmap"],
+      "status": "existing",
+      "priority": 2,
+      "verification": "Reproducible from evidence/ with tools/calibration.ts. Its caveats (one AI labeller, two repos by one author, subjective questions unmeasured) are stated in the page and in ROADMAP gap 3."
+    },
+    {
+      "id": "evaluation",
+      "title": "Evaluation: what we've measured, and what we haven't",
+      "path": "docs/evaluation.md",
+      "family": "diataxis",
+      "type": "explanation",
+      "audience": ["agent-user", "script-author", "maintainer"],
+      "purpose": "Put every measurement behind System 1's claims in one place, with its method, result, limits and the attempts that failed.",
+      "sourceRefs": ["s-evidence", "s-cookbook", "s-evals", "s-milestone-results", "s-roadmap"],
+      "status": "drafted",
+      "priority": 1,
+      "verification": "Every number is copied from calibration.md, the M6, M7 and M8 records, 0018 or ROADMAP gap 1, with its date. Latency figures are end-to-end runs from those records; no new benchmark was run for this page."
+    },
+    {
+      "id": "arch-context",
+      "title": "System context",
+      "slug": "architecture/context",
+      "path": "docs/architecture/context.md",
+      "family": "architecture",
+      "type": "c4-view",
+      "subtype": "context",
+      "audience": ["maintainer"],
+      "purpose": "Show System 1 as one box among the people and systems it touches.",
+      "sourceRefs": ["s-catalog", "s-shim", "s-model", "s-agents-md"],
+      "status": "drafted",
+      "priority": 2,
+      "diagrams": [
+        {
+          "description": "System 1 in the centre. Around it: the user (holds the key, grants consent); agent harnesses Claude Code, Codex, Pi and other Agent Skills hosts (run skills, call decide); CI, git hooks and scripts (call decide directly); OpenRouter serving typesafe/jev-1.13 (the only outbound network call); the npm registry (packages, and the npx cache the shim uses); GitHub (source and the plugin marketplaces).",
+          "sourceRefs": ["s-catalog", "s-shim", "s-model", "s-agents-md"]
+        }
+      ],
+      "verification": "Every external system named is in the code, the generated manifests or AGENTS.md's verified harness notes."
+    },
+    {
+      "id": "arch-containers",
+      "title": "Containers: plugin, CLI, engine, local state",
+      "slug": "architecture/containers",
+      "path": "docs/architecture/containers.md",
+      "family": "architecture",
+      "type": "c4-view",
+      "subtype": "container",
+      "audience": ["maintainer"],
+      "purpose": "Show the running and deployable units and how each harness reaches the engine. This replaces the stale diagram in ROADMAP § Architecture.",
+      "sourceRefs": [
+        "s-catalog",
+        "s-generate",
+        "s-shim",
+        "s-cli-main",
+        "s-core-index",
+        "s-skills",
+        "s-config",
+        "s-decide",
+        "s-run"
+      ],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "The units",
+          "intent": "Plugin (skills, generated manifests, bin/decide shim, Claude hook), @garygentry/system1 (decide bundle), @garygentry/system1-core, @garygentry/system1-pi (skills only).",
+          "sourceRefs": ["s-catalog", "s-generate"]
+        },
+        {
+          "heading": "Per harness",
+          "intent": "How each harness finds skills and decide: the harness matrix, updated to what shipped.",
+          "sourceRefs": ["s-shim", "s-agents-md"]
+        },
+        {
+          "heading": "Local state",
+          "intent": "~/.config/system1 (config, credentials, specs) and <repo>/.system1 (config with consent, specs, fixtures, usage.jsonl).",
+          "sourceRefs": ["s-config", "s-decide", "s-run"]
+        },
+        {
+          "heading": "Rules the shape enforces",
+          "intent": "Skills never call HTTP; the CLI is a thin adapter over core/tools; no MCP (0013).",
+          "sourceRefs": ["s-adrs", "s-agents-md"]
+        }
+      ],
+      "diagrams": [
+        {
+          "description": "Containers: the plugin (skills ask, design, setup; bin/decide shim; hooks/claude-hooks.json) → the decide CLI bundle (packages/cli, dist/bundle/decide.mjs) → system1-core (tools, config, egress, sources, model, transport, fixtures, run) → OpenRouter. Side stores: user config dir and the repo .system1/ directory. The Pi package carries only the skills. CI and scripts call the CLI directly.",
+          "sourceRefs": ["s-shim", "s-cli-main", "s-core-index", "s-config"]
+        }
+      ],
+      "verification": "Units and stores are verified in source. The ROADMAP harness matrix still lists deferred rows (agents, hooks packs); show only what shipped."
+    },
+    {
+      "id": "arch-building-blocks",
+      "title": "Building blocks of the engine",
+      "slug": "architecture/building-blocks",
+      "path": "docs/architecture/building-blocks.md",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "Building-block view",
+      "audience": ["maintainer"],
+      "purpose": "Map system1-core's modules, what each owns and which depend on which, so a contributor knows where a change goes.",
+      "sourceRefs": [
+        "s-core-index",
+        "s-tools",
+        "s-config",
+        "s-egress",
+        "s-sources",
+        "s-model",
+        "s-decide",
+        "s-run",
+        "s-spec",
+        "s-route"
+      ],
+      "status": "drafted",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "tools/: the only surface the CLI calls",
+          "intent": "TypeBox input schemas and handlers; the CLI maps argv and formats.",
+          "sourceRefs": ["s-tools"]
+        },
+        {
+          "heading": "Input side",
+          "intent": "sources, split, spec, config.",
+          "sourceRefs": ["s-sources", "s-spec", "s-config"]
+        },
+        {
+          "heading": "The egress gate",
+          "intent": "prepare(): excludes, boundary, scrub, size.",
+          "sourceRefs": ["s-egress"]
+        },
+        {
+          "heading": "Deciding",
+          "intent": "decide (modes), model (profiles, answers, validate), transport, fixtures.",
+          "sourceRefs": ["s-decide", "s-model"]
+        },
+        {
+          "heading": "Output side",
+          "intent": "run (budget, pool, spend) and project (keep, sort).",
+          "sourceRefs": ["s-run"]
+        },
+        {
+          "heading": "route/",
+          "intent": "Prompt matching, independent of deciding.",
+          "sourceRefs": ["s-route"]
+        }
+      ],
+      "diagrams": [
+        {
+          "description": "Module dependency view of packages/core/src: tools/ at the top depending on sources, split, spec, config, prepare (egress), decide, run, project; decide depending on model, transport and fixtures; route standalone, used by tools/route and config.",
+          "sourceRefs": ["s-core-index"]
+        }
+      ],
+      "verification": "Module list from index.ts exports. Check the dependency arrows against the imports when drafting; they are not yet verified edge by edge."
+    },
+    {
+      "id": "arch-runtime",
+      "title": "Runtime: one decide many call, and the prompt hook",
+      "slug": "architecture/runtime",
+      "path": "docs/architecture/runtime.md",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "Runtime view",
+      "audience": ["maintainer"],
+      "purpose": "Trace a fan-out from argv to envelope, and the hook from prompt to hint, so a contributor sees where each guarantee is enforced.",
+      "sourceRefs": [
+        "s-cli-main",
+        "s-many-flow",
+        "s-egress",
+        "s-run",
+        "s-decide",
+        "s-model",
+        "s-format",
+        "s-shim",
+        "s-route"
+      ],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "decide many, step by step",
+          "intent": "argv → tool input → read sources → split → prepare() → budget check → decider (replay | live | record) → transport with retries → validate → fixture and ledger → projection → envelope and format.",
+          "sourceRefs": ["s-many-flow", "s-egress", "s-run", "s-decide"]
+        },
+        {
+          "heading": "Where each guarantee lives",
+          "intent": "Consent, scrubbing, refuse-not-truncate, replay-miss-as-error, measured vs projected cost.",
+          "sourceRefs": ["s-egress", "s-decide", "s-run"]
+        },
+        {
+          "heading": "Failure paths",
+          "intent": "How errors become codes and exit statuses; partial failure in many.",
+          "sourceRefs": ["s-exit", "s-tools"]
+        },
+        {
+          "heading": "The Claude prompt hook",
+          "intent": "UserPromptSubmit → shim with SYSTEM1_NO_NPX=1 → decide route --hook → hint or silence; never blocks.",
+          "sourceRefs": ["s-shim", "s-route"]
+        }
+      ],
+      "diagrams": [
+        {
+          "description": "Sequence for `decide many`: CLI → tools/many → sources/split → prepare (excludes, boundary, scrub, size) → checkBudget → decider → fixtures (replay) or transport → OpenRouter (live) → validate → spend ledger → projection → formatter.",
+          "sourceRefs": ["s-many-flow", "s-decide"]
+        }
+      ],
+      "verification": "Verified: prepare() runs before checkBudget() in many.ts. Confirm the exact live, record and replay branching in decide.ts when drafting."
+    },
+    {
+      "id": "arch-deployment",
+      "title": "Build, generation and release",
+      "slug": "architecture/deployment",
+      "path": "docs/architecture/deployment.md",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "Deployment view",
+      "audience": ["maintainer"],
+      "purpose": "Explain how one catalog becomes three npm packages, two marketplaces and a shim, and how the shim picks which CLI to run.",
+      "sourceRefs": ["s-catalog", "s-generate", "s-shim", "s-root-pkg", "s-ci"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "catalog.yaml → generate.ts → generated files",
+          "intent": "What is generated, why never to edit it, and generate:check in CI.",
+          "sourceRefs": ["s-catalog", "s-generate"]
+        },
+        {
+          "heading": "The bundle",
+          "intent": "bundle.mjs → dist/bundle/decide.mjs, the startup target (< 150 ms) and bench:startup.",
+          "sourceRefs": ["s-root-pkg", "s-cli-main"]
+        },
+        {
+          "heading": "How the shim resolves decide",
+          "intent": "SYSTEM1_CLI → checkout bundle → real install on PATH (skipping other shims) → pinned version via npx cache; SYSTEM1_NO_NPX.",
+          "sourceRefs": ["s-shim"]
+        },
+        {
+          "heading": "CI",
+          "intent": "pnpm check on Ubuntu and macOS × Node 22 and 24; the packed job's release:check.",
+          "sourceRefs": ["s-ci"]
+        }
+      ],
+      "diagrams": [
+        {
+          "description": "catalog.yaml feeding tools/generate.ts, which emits plugin.json, .claude-plugin and .codex-plugin manifests, both marketplaces, bin/decide, hooks/claude-hooks.json, and version stamps into each package.json and core/src/version.ts; packages build to the three npm packages.",
+          "sourceRefs": ["s-catalog", "s-generate"]
+        }
+      ],
+      "verification": "Shim order is read from the generated shim. The npx-cache step shipped in 0.3.1 (commit 9aeecac)."
+    },
+    {
+      "id": "arch-crosscutting",
+      "title": "Crosscutting rules: egress, honesty, contract, secrets",
+      "slug": "architecture/crosscutting",
+      "path": "docs/architecture/crosscutting.md",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "Crosscutting concepts",
+      "audience": ["maintainer"],
+      "purpose": "State the invariants every change must keep and where the code enforces each.",
+      "sourceRefs": [
+        "s-agents-md",
+        "s-egress",
+        "s-consent",
+        "s-decide",
+        "s-exit",
+        "s-config",
+        "s-adrs"
+      ],
+      "status": "drafted",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "Egress",
+          "intent": "One path to the provider, through prepare() and an egressConsent decider; consent only from the repo file (0009).",
+          "sourceRefs": ["s-egress", "s-consent"]
+        },
+        {
+          "heading": "Honest numbers",
+          "intent": "source on every answer, measured vs projected, replay miss as an error (0010).",
+          "sourceRefs": ["s-decide", "s-run"]
+        },
+        {
+          "heading": "The CLI contract",
+          "intent": "Envelope v1, stable error codes, and what needs a new ENVELOPE_VERSION (0015).",
+          "sourceRefs": ["s-exit", "s-adrs"]
+        },
+        {
+          "heading": "Config layering and secrets",
+          "intent": "Layer order, no .env reading, the key never printed.",
+          "sourceRefs": ["s-config"]
+        }
+      ],
+      "verification": "The rules are stated in AGENTS.md today. This chapter adds where each is enforced. Link AGENTS.md; don't fork it."
+    },
+    {
+      "id": "arch-quality",
+      "title": "Quality gates and how they are measured",
+      "slug": "architecture/quality",
+      "path": "docs/architecture/quality.md",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "Quality requirements",
+      "audience": ["maintainer"],
+      "purpose": "List the measurable bars (tests, docs checks, calibration, routing evals, startup time) and the command that checks each.",
+      "sourceRefs": [
+        "s-root-pkg",
+        "s-docs-test",
+        "s-cookbook",
+        "s-evidence",
+        "s-evals",
+        "s-ci",
+        "s-roadmap"
+      ],
+      "status": "drafted",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "Always, offline",
+          "intent": "pnpm check: unit tests with injected fetch, docs.test.ts, cookbook replay, generate:check, validate.",
+          "sourceRefs": ["s-root-pkg", "s-docs-test", "s-cookbook"]
+        },
+        {
+          "heading": "Live and local",
+          "intent": "test:live, smoke, eval:routing with --repeat N and the per-harness bars, bench:startup.",
+          "sourceRefs": ["s-evals", "s-root-pkg"]
+        },
+        {
+          "heading": "Evidence",
+          "intent": "The calibration sweep and how to rerun it.",
+          "sourceRefs": ["s-evidence"]
+        }
+      ],
+      "verification": "Bars are from ROADMAP gap 1 and the milestone records. The routing bars have moved over time. Take the current ones from ROADMAP, not from older milestones."
+    },
+    {
+      "id": "arch-risks",
+      "title": "Known gaps",
+      "path": "plans/ROADMAP.md",
+      "family": "architecture",
+      "type": "arc42-chapter",
+      "subtype": "Risks and technical debt",
+      "audience": ["maintainer"],
+      "purpose": "Record the live limitations of the shipped product, why each is open, and what would fix it.",
+      "sourceRefs": ["s-roadmap"],
+      "status": "existing",
+      "priority": 3,
+      "verification": "Exists as ROADMAP § Known gaps and is kept up to date there. The architecture group links to it rather than copying it."
+    },
+    {
+      "id": "agents-md",
+      "title": "Working on the repo (AGENTS.md)",
+      "path": "AGENTS.md",
+      "family": "diataxis",
+      "type": "reference",
+      "audience": ["maintainer"],
+      "purpose": "Give a contributor the layout, rules, commands and verified harness notes in one lookup page.",
+      "sourceRefs": ["s-agents-md", "s-root-pkg"],
+      "status": "existing",
+      "priority": 2,
+      "verification": "Current. Once the architecture pages exist, it should link to them instead of growing."
+    },
+    {
+      "id": "howto-release",
+      "title": "Cut a release",
+      "slug": "contributing/release",
+      "path": "docs/contributing/release.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["maintainer"],
+      "purpose": "Take a version from catalog bump to published, tagged and verified in all three harnesses.",
+      "sourceRefs": ["s-catalog", "s-root-pkg", "s-ci", "s-milestones", "s-evals"],
+      "status": "drafted",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "Bump and generate",
+          "intent": "Edit version in catalog.yaml, pnpm generate, pnpm check.",
+          "sourceRefs": ["s-catalog", "s-root-pkg"]
+        },
+        {
+          "heading": "Local gates",
+          "intent": "pnpm validate (with claude installed), smoke, release:check.",
+          "sourceRefs": ["s-root-pkg", "s-evals"]
+        },
+        {
+          "heading": "Publish and tag",
+          "intent": "Publish the three packages and push the tag.",
+          "sourceRefs": ["s-milestones"]
+        },
+        {
+          "heading": "Verify from the published artifacts",
+          "intent": "A clean profile per harness, including the plugin-only Claude install that 0.3.1 fixed.",
+          "sourceRefs": ["s-milestones", "s-roadmap"]
+        }
+      ],
+      "verification": "There is no publish script. The publish step exists only in M6's milestone record and git history. Confirm the exact commands with the maintainer before drafting."
+    },
+    {
+      "id": "contributing",
+      "title": "Contributing",
+      "path": "CONTRIBUTING.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["maintainer"],
+      "purpose": "Show an outside contributor how to set up, make a change that passes pnpm check, and open a PR.",
+      "sourceRefs": ["s-agents-md", "s-root-pkg", "s-ci"],
+      "status": "planned",
+      "priority": 4,
+      "verification": "Scheduled for M10 release hygiene. What it says depends on decisions M10 has not made (contribution policy, stability policy)."
+    },
+    {
+      "id": "adr-0001",
+      "title": "0001. Engine in TypeScript on Node ≥ 22, ESM",
+      "path": "plans/decisions/0001-engine-in-typescript-on-node-22-esm.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0001 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0002",
+      "title": "0002. Distributed as npm packages run via npx, with the version pinned in the generated manifests",
+      "path": "plans/decisions/0002-distributed-as-npm-packages-run-via-npx-with-the-v.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0002 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3,
+      "verification": "Record status: accepted; amended by 0013. No MCP `npx` launch. The CLI is installed (plugin `bin/` shim or global install) and pinned to the catalog version"
+    },
+    {
+      "id": "adr-0003",
+      "title": "0003. Model layer = one transport + data-only model profiles",
+      "path": "plans/decisions/0003-model-layer-one-transport-data-only-model-profiles.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0003 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0004",
+      "title": "0004. v1 = charter phase 1 on all three first-class harnesses",
+      "path": "plans/decisions/0004-v1-charter-phase-1-on-all-three-first-class-harnes.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0004 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0005",
+      "title": "0005. Monorepo: packages/* + one authored plugin root plugins/decisions/",
+      "path": "plans/decisions/0005-monorepo-packages-one-authored-plugin-root-plugins.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0005 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0006",
+      "title": "0006. Pi gets a native extension (pi.registerTool, engine runs in-process)",
+      "path": "plans/decisions/0006-pi-gets-a-native-extension-pi-registertool-engine.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0006 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3,
+      "verification": "Record status: superseded by 0013. Pi uses the CLI plus skills; a Pi extension is deferred to the hooks work (M10)"
+    },
+    {
+      "id": "adr-0007",
+      "title": "0007. Cursor, Copilot and other Agent Plugins 1.0 clients are best-effort",
+      "path": "plans/decisions/0007-cursor-copilot-and-other-agent-plugins-1-0-clients.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0007 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0008",
+      "title": "0008. Publish as GitHub garygentry/decisions, npm scope @garygentry",
+      "path": "plans/decisions/0008-publish-as-github-garygentry-decisions-npm-scope-garygentry.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0008 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3,
+      "verification": "Record status: accepted, **amended by 0016** (the repo and packages are `system1`; the scope `@garygentry` is unchanged)"
+    },
+    {
+      "id": "adr-0009",
+      "title": "0009. Egress consent once per repo",
+      "path": "plans/decisions/0009-egress-consent-once-per-repo.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0009 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0010",
+      "title": "0010. No key → replay only; a fixture miss is a typed error",
+      "path": "plans/decisions/0010-no-key-replay-only-a-fixture-miss-is-a-typed-error.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0010 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0011",
+      "title": "0011. Default spend guard: a request above 200 calls or $0.05 returns a projection and needs explicit confirmation",
+      "path": "plans/decisions/0011-default-spend-guard-a-request-above-200-calls-or-0.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0011 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0012",
+      "title": "0012. Plan tracking: plans/ROADMAP.md + plans/milestones/Mn-*.md (written just-in-time) + plans/decisions/NNNN-*.md (lightweight decision records)",
+      "path": "plans/decisions/0012-plan-tracking-plans-roadmap-md-plans-milestones-mn.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0012 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0013",
+      "title": "0013. CLI is the sole execution surface; MCP deferred",
+      "path": "plans/decisions/0013-cli-first-mcp-deferred.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0013 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0014",
+      "title": "0014. No live command source; stdin covers it",
+      "path": "plans/decisions/0014-no-command-source.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0014 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0015",
+      "title": "0015. CLI contract v1: envelope, exit codes, projection syntax",
+      "path": "plans/decisions/0015-cli-contract-v1.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0015 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0016",
+      "title": "0016. The project is named System 1 (system1)",
+      "path": "plans/decisions/0016-name-system1.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0016 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0017",
+      "title": "0017. Fan-out goes through the CLI, not through subagents",
+      "path": "plans/decisions/0017-fan-out-through-the-cli-not-subagents.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0017 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    },
+    {
+      "id": "adr-0018",
+      "title": "0018. A Claude-only prompt hook hints the ask skill",
+      "path": "plans/decisions/0018-claude-routing-hook.md",
+      "family": "architecture",
+      "type": "adr",
+      "audience": ["maintainer"],
+      "purpose": "Record decision 0018 and why it was made.",
+      "sourceRefs": ["s-adrs"],
+      "status": "existing",
+      "priority": 3
+    }
+  ],
+  "grouping": [
+    {
+      "title": "Getting started",
+      "documents": ["getting-started"]
+    },
+    {
+      "title": "How-to guides",
+      "documents": ["howto-spec", "howto-ci", "howto-routing", "howto-spend"]
+    },
+    {
+      "title": "Reference",
+      "documents": [
+        "cli",
+        "output-reference",
+        "config-reference",
+        "spec-format",
+        "cookbook",
+        "troubleshooting"
+      ]
+    },
+    {
+      "title": "Explanation",
+      "documents": ["concepts", "calibration", "evaluation"]
+    },
+    {
+      "title": "Architecture",
+      "documents": [
+        "arch-context",
+        "arch-containers",
+        "arch-building-blocks",
+        "arch-runtime",
+        "arch-deployment",
+        "arch-crosscutting",
+        "arch-quality",
+        "arch-risks"
+      ]
+    },
+    {
+      "title": "Contributing",
+      "documents": ["agents-md", "howto-release", "contributing"]
+    },
+    {
+      "title": "Decisions",
+      "documents": [
+        "adr-0001",
+        "adr-0002",
+        "adr-0003",
+        "adr-0004",
+        "adr-0005",
+        "adr-0006",
+        "adr-0007",
+        "adr-0008",
+        "adr-0009",
+        "adr-0010",
+        "adr-0011",
+        "adr-0012",
+        "adr-0013",
+        "adr-0014",
+        "adr-0015",
+        "adr-0016",
+        "adr-0017",
+        "adr-0018"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "note": "@garygentry/system1-core is published and the README calls it 'the engine as a library', but it has no documentation and no stability promise. Decided 2026-09-23: no library docs until M10's stability policy settles whether it is a supported API. Until then the README line may overstate it.",
+      "affects": ["arch-containers"]
+    },
+    {
+      "note": "Command results have no published schema (`decide schema` covers inputs only), so output-reference must be derived from TS types and cannot be test-checked like cli.md. A `decide schema` for results, or a docs.test.ts check against the result types, would close this.",
+      "affects": ["output-reference"]
+    },
+    {
+      "note": "docs.test.ts now checks every DEFAULTS key in configuration.md and every SpecSchema property in spec-format.md, and link-checks docs/ subfolders. output.md has no such check, because results have no schema.",
+      "affects": ["output-reference"]
+    },
+    {
+      "note": "No outside user has run decide in their own CI or git hooks. The how-to rests on what this repo's CI does. M9 partners should confirm it.",
+      "affects": ["howto-ci"]
+    },
+    {
+      "note": "The harnesses are unverified on macOS (ROADMAP gap 5). getting-started's install steps are verified on Linux only; CI covers the CLI alone on macOS.",
+      "affects": ["getting-started"]
+    },
+    {
+      "note": "ROADMAP § Architecture and § CLI contract are stale sketches. On 2026-09-23 they were marked historical and point to docs/architecture/, but they have not been rewritten.",
+      "affects": ["arch-containers", "arch-runtime"]
+    },
+    {
+      "note": "Decision 0005's title still names `plugins/decisions/` (pre-rename). Its status does not mention the 0016 amendment that 0008 carries. Records are immutable, so add a status note rather than edit the decision.",
+      "affects": ["adr-0005"]
+    },
+    {
+      "note": "The release procedure has no script. release.md has three TODO(maintainer) markers: the exact publish commands, order and OTP; the tag-signing setup; and whether the out-of-repo first-run walk script is still the verification driver.",
+      "affects": ["howto-release"]
+    },
+    {
+      "note": "Skills (plugins/system1/skills/*/SKILL.md and ask/references/) are agent-facing docs and outside this plan. spec-format, howto-spec and concepts restate some of their rules (question craft, thresholds). Nothing checks the two stay in step.",
+      "affects": ["spec-format", "howto-spec", "concepts"]
+    },
+    {
+      "note": "The calibration and threshold guidance rests on two TypeScript repos by one author, labelled by one AI labeller. choice and score questions are unmeasured (ROADMAP gap 3). Every page that recommends 0.3/0.5/0.7 inherits that scope.",
+      "affects": ["calibration", "concepts", "cookbook", "howto-spec"]
+    },
+    {
+      "note": "Keep current file paths. README, the pages themselves and docs.test.ts's anchor checks link to docs/*.md and their headings. No doc-site exists, so any future site must keep these paths or redirect them.",
+      "affects": ["concepts", "cookbook", "cli", "troubleshooting", "getting-started"]
+    },
+    {
+      "note": "Drafting found config behaviour that may be a bug, not a design choice. Unknown top-level config keys and wrong-typed values (concurrency: \"4\", a negative budget) are silently ignored. `decide ping` ignores model and endpoint set in config files. `decide config` doesn't show timeoutMs, profiles or route. A profile with a built-in's id has no effect. `route.builtin: false` also drops the built-in ignore. The pages describe the behaviour as it is; whether to change it is a code decision.",
+      "affects": ["config-reference", "troubleshooting"]
+    },
+    {
+      "note": "Drafting found spec behaviour that may be a bug, not a design choice. `policy.thresholds` is never read by the engine (keep filters), so the two can drift. Unknown keys inside source, policy, questions or examples pass validation. A spec's `source.file` takes no :START-END range, though an example's `file` does. What `provenance` should hold is unspecified.",
+      "affects": ["spec-format", "howto-spec"]
+    },
+    {
+      "note": "Drafting found CLI behaviour that may be a bug, not a design choice. `decide spec check` exits 0 when examples fail (it reports passed: false), so a CI gate must read the result, not the exit code. Copying fixtures before .system1/fixtures/ exists puts them where lookups miss. bundled.ts looks for a bundled specs/ directory that no package ships. There is an import cycle: tools/doctor → ping → wiring → tools/context.",
+      "affects": ["howto-ci", "howto-spec", "arch-building-blocks"]
+    },
+    {
+      "note": "The live-only steps were not run while drafting: recording a spec with --live, a live CI run, and a pre-commit hook that blocks a commit. The replay versions of each were run.",
+      "affects": ["howto-spec", "howto-ci"]
+    },
+    {
+      "note": "Decision 0009 still names .decisions/config.yaml (pre-rename). Like 0005, it needs a status note, not an edit.",
+      "affects": ["adr-0009"]
+    }
+  ]
+}

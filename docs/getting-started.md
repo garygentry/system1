@@ -18,7 +18,7 @@ Scripts, hooks and CI only need the CLI: `npm i -g @garygentry/system1`.
 In Claude Code the plugin also installs one prompt hook. When a prompt asks for a closed
 judgement (a batch to triage, a checklist to tick off, "is this done?"), it adds a hint to use the
 `ask` skill. It is local pattern matching and sends nothing. See
-[routing hints](concepts.md#routing-hints) to tune it or switch it off.
+[routing hints](routing-hints.md) to tune it or switch it off.
 
 ## 2. Run setup
 
@@ -37,7 +37,7 @@ decide doctor --format brief
 
 ```
 decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · session claude:…
-  ok   cli: decide 0.1.0 on node v22.23.2 (…)
+  ok   cli: decide 0.3.1 on node v22.23.2 (…)
   warn key: no API key: only replay works
        fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (chmod 600)
   warn consent: no egress consent for /path/to/repo: live calls are refused

@@ -51,8 +51,8 @@ Inline instruction text can't contain `:`. For anything richer, use `--questions
 | `--glob <pattern>` | files; `.gitignore` honoured in a git repo |
 | `--file <path[:START-END]>` | a file, or a 1-based inclusive line range |
 | `--jsonl <path>` | one item per line |
-| `--diff <range>` | a git diff; `--staged` for the index |
-| `--staged` | with `--diff`: diff the staged changes |
+| `--diff <range>` | a git diff of a range, e.g. `main...HEAD` |
+| `--staged` | the staged changes; on its own, or with `--diff <range>` |
 | `--text <text>` | the text itself |
 | `--stdin` | piped input |
 | `--allow-outside` | read files that resolve outside the repo (withheld otherwise) |
@@ -130,7 +130,7 @@ Matches a prompt against the routing triggers and says which fired (`triggers`),
 regular expressions locally and never sends the prompt anywhere. With `--format brief` it prints
 only the hint, or nothing: that is what the Claude Code plugin's `UserPromptSubmit` hook adds to
 the agent's context. Use `--text` to test your own `route:` config. See
-[concepts.md § Routing hints](concepts.md#routing-hints).
+[routing-hints.md](routing-hints.md).
 
 ### `schema`, `ping`, `doctor`, `version`
 

@@ -4,10 +4,11 @@ Each recipe is a saved spec: the questions, the threshold and the reason for it,
 with recorded answers. Copy one into your repo and it works the same as a spec you wrote
 yourself.
 
-Every recipe here is checked in CI. `pnpm test` replays each one's examples offline, adopted
-the way this page says, and fails if any example stops passing or a clear case lands on the
-wrong side of the recipe's own threshold. The specs are in [`cookbook/`](../cookbook/), and
-their recorded answers are in [`cookbook/fixtures/`](../cookbook/fixtures/).
+Every recipe here is checked in CI. `pnpm test` replays each one's examples offline, adopted the way
+[specs.md](specs.md#adopt-a-cookbook-recipe) says, and fails if any example stops passing or a clear
+case lands on the wrong side of the recipe's own threshold. The specs are in
+[`cookbook/`](../cookbook/), and their recorded answers are in
+[`cookbook/fixtures/`](../cookbook/fixtures/).
 
 | Recipe | Use it to | Type | Keeps when | Threshold basis |
 |---|---|---|---|---|
@@ -20,27 +21,8 @@ their recorded answers are in [`cookbook/fixtures/`](../cookbook/fixtures/).
 
 ## Adopt a recipe
 
-Copy the spec into your repo's `.system1/specs/`:
-
-```sh
-mkdir -p .system1/specs
-curl -fsSL -o .system1/specs/no-timeout.yaml \
-  https://raw.githubusercontent.com/garygentry/system1/main/cookbook/no-timeout.yaml
-```
-
-Then run it. The file name is the spec's name.
-
-```sh
-decide many --spec no-timeout --format brief
-```
-
-To run the spec's examples offline too, copy `cookbook/fixtures/<name>/` to
-`.system1/fixtures/<name>/`. Without the fixtures, `decide spec check <name> --live` records
-fresh answers, at about $0.00003 per example.
-
-Once it's in your repo, the recipe is yours. Change the default `source` glob to fit your layout,
-add examples from your own code, and follow the `design` skill's loop to re-record them. If you
-change a threshold, change its `why` with it.
+Copy the spec and its fixtures into your repo's `.system1/`, then check it offline. The steps are
+in [specs.md](specs.md#adopt-a-cookbook-recipe).
 
 ## Where the thresholds come from
 
