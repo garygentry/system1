@@ -46,7 +46,17 @@ for dir in $PATH; do
   exec "$cand" "$@"
 done
 IFS=$old_ifs; set +f
-# SYSTEM1_NO_NPX: never download (doctor's version probe sets it).
+# A copy of the pinned version that npx fetched earlier: run it with node. This
+# never downloads, so it holds under SYSTEM1_NO_NPX (the Claude hook), and it
+# skips npx's own startup and registry check on every later call.
+cache=${npm_config_cache:-${NPM_CONFIG_CACHE:-$HOME/.npm}}
+for manifest in "$cache"/_npx/*/node_modules/@garygentry/system1/package.json; do
+  bundle="${manifest%/package.json}/dist/bundle/decide.mjs"
+  [ -f "$bundle" ] || continue
+  grep -Eqs '"version": *"0\.3\.0"' "$manifest" || continue
+  exec node "$bundle" "$@"
+done
+# SYSTEM1_NO_NPX: never download (doctor's version probe and the hook set it).
 if [ -z "${SYSTEM1_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
   exec npx --yes "@garygentry/system1@0.3.0" "$@"
 fi

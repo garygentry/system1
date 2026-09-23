@@ -229,7 +229,8 @@ function claudeHooks() {
  * tool's PATH), and the entry the smoke tests put on PATH for Codex and Pi.
  *
  * Resolution order: an explicit override, then a repo checkout's bundle (dev
- * and smoke), then a global install, then the pinned npm release.
+ * and smoke), then a global install, then the pinned version already in npx's
+ * cache, then the pinned npm release through npx.
  * - `$0` is resolved through symlinks first, so `ln -s <checkout>/…/bin/decide
  *   ~/bin/decide` still finds the checkout.
  * - The global lookup skips its own directory and every copy of this shim
@@ -241,6 +242,7 @@ function shim(catalog: Catalog): string {
   const pinned = `${cliPackageName(catalog)}@${catalog.version}`
   // The path an npm install of this package always contains.
   const pkgPath = `${cliPackageName(catalog)}/`
+  const versionRe = catalog.version.replaceAll(".", "\\.")
   return `#!/bin/sh
 # GENERATED — DO NOT EDIT (source: catalog.yaml, via tools/generate.ts)
 # ${SHIM_MARKER}
@@ -289,7 +291,17 @@ for dir in $PATH; do
   exec "$cand" "$@"
 done
 IFS=$old_ifs; set +f
-# SYSTEM1_NO_NPX: never download (doctor's version probe sets it).
+# A copy of the pinned version that npx fetched earlier: run it with node. This
+# never downloads, so it holds under SYSTEM1_NO_NPX (the Claude hook), and it
+# skips npx's own startup and registry check on every later call.
+cache=\${npm_config_cache:-\${NPM_CONFIG_CACHE:-$HOME/.npm}}
+for manifest in "$cache"/_npx/*/node_modules/${pkgPath}package.json; do
+  bundle="\${manifest%/package.json}/dist/bundle/decide.mjs"
+  [ -f "$bundle" ] || continue
+  grep -Eqs '"version": *"${versionRe}"' "$manifest" || continue
+  exec node "$bundle" "$@"
+done
+# SYSTEM1_NO_NPX: never download (doctor's version probe and the hook set it).
 if [ -z "\${SYSTEM1_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
   exec npx --yes "${pinned}" "$@"
 fi

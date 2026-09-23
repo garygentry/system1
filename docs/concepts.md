@@ -173,6 +173,11 @@ shell or session. To see what a prompt would do, run `decide route --text "…"`
 triggers that fired and the config files it read. A bad pattern is a `config-error`; the hook
 then stays silent rather than get in your way, and `decide doctor` reports the problem.
 
+The hook never downloads anything mid-prompt. It runs a `decide` that is already on the machine:
+a global install, or the copy of the plugin's pinned version that `npx` fetched the first time you
+ran `decide` through the plugin. **Setup** makes that first call, so hints start once setup has
+run. Before that, the hook stays silent.
+
 ## The model
 
 The only supported model today is [Jev](https://openrouter.ai/typesafe/jev-1.13)
