@@ -208,7 +208,7 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 ### 1. Claude does not hand off a review of its own work (routing, `ask`)
 
-**Narrowed by the routing hook (0018), 2026-09-23; shipped just below the bar.** See the last entry below for the numbers. The history follows.
+**Narrowed by the routing hook (0018), 2026-09-23; shipped just below the bar in 0.3.0, fixed for plugin-only installs in 0.3.1.** See the last entry below for the numbers. The history follows.
 
 **The gap.** On the M6 routing evals Claude scores **6/8** on `ask` positives against a ≥ 7/8 bar. Codex and Pi score 8/8. Negatives are 8/8 everywhere.
 
@@ -239,6 +239,8 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 - The other misses are prompts the hook did hint that Claude sometimes ignores. On holdout-1: the cleanup-plan line-by-line check 2/5, "about to open a PR… does test-output.log show" 2/5, and labelling commits 4/5. On holdout-2: "Tick off each item in TASK.md" 4/5 and the changelog triage 4/5.
 
 **Disclosed peek.** The hint's wording was made direct after reading one holdout-2 miss ("Tick off each item…", hinted but ignored). Holdout-2 is therefore spent as a blind set.
+
+**Released and verified (2026-09-23).** 0.3.0 was published and tagged. Codex and Pi then ran a live `ask` from the published artifacts (3 kept of 5, about $0.00008 each). Verifying Claude found a bug the evals could not see, because they run the checkout bundle: with only the plugin installed, which is the documented Claude install, the hook had no CLI to run. It never lets the shim download, so it stayed silent. **0.3.1** fixes this: the shim now runs its pinned version from npx's cache. The fix was verified on a fresh profile with the marketplace plugin and no global `decide`. The hook stayed silent until the first `decide` call and hinted after it. Given a prompt that doesn't name the skill ("Go through every file under src/ and flag the ones that make outbound network requests"), Claude then loaded `ask` and made a live `decide many` call ($0.000073 measured).
 
 **Next lever, if this is reopened.** Judge any change on a new blind `routing-holdout-3.yaml`. Don't fit more regexes to the old sets. The step 0018 names is an opt-in hook that asks `decide` to classify the prompt itself. The Stop-hook `guard` pack remains the fix for Claude grading its own work unprompted, which a prompt hook cannot see.
 
