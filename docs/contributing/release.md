@@ -1,8 +1,9 @@
 # Cut a release
 
 Take a version from a catalog bump to published, tagged and verified in all three harnesses. There
-is no publish script or release workflow: M6 chose to publish by hand, and every release since has
-followed the same steps. They are written down here from `package.json`,
+is no release workflow in CI: releases run from a maintainer's machine, with
+`pnpm release:publish` for the npm step and `pnpm smoke:published` to verify. The steps are
+written down here from `package.json`,
 `plans/milestones/M6-release.md`, `plans/milestones/M8-onboarding.md`, the release commits and
 [ROADMAP known gap 1](../../plans/ROADMAP.md#1-claude-does-not-hand-off-a-review-of-its-own-work-routing-ask).
 How the pieces fit is in [../architecture/deployment.md](../architecture/deployment.md).
@@ -11,6 +12,8 @@ How the pieces fit is in [../architecture/deployment.md](../architecture/deploym
 
 - You are on an up-to-date `main` with a clean working tree, and CI is green on it.
 - `npm whoami` shows an account that can publish to the `@garygentry` scope.
+- Git signs tags with your SSH key (`gpg.format ssh`, `tag.gpgsign true`, and a
+  `user.signingkey`). Tags from `v0.2.0` on are SSH-signed; `v0.1.0` is annotated but unsigned.
 - `claude`, `codex` and `pi` are installed and signed in, for `pnpm validate`, smoke and the
   routing evals. Each of those spends that harness's tokens.
 - An OpenRouter key is available for the live checks at the end.
@@ -49,8 +52,9 @@ pnpm eval:routing all   # see the bar below
   regressed.
 - **Startup.** If the release touches `main.ts`, the bundle or the route path, run
   `pnpm bench:startup` too (under 150 ms of overhead).
-- **Dry run.** M6 and M8 also ran `npm publish --dry-run` in each package directory and read the
-  file lists. npm's corrections to the `bin` path and the `repository.url` form are expected.
+- **Dry run.** Once the bump is committed (step 3), `pnpm release:publish --dry-run` runs every
+  guard and `npm publish --dry-run` for each package. Read the file lists. npm's corrections to
+  the `bin` path and the `repository.url` form are expected.
 
 ## 3. Commit the bump, but don't push it yet
 
@@ -64,31 +68,23 @@ plugin-only Claude user a shim that can't find its CLI.
 
 ## 4. Publish the three packages
 
-Publish `@garygentry/system1-core`, `@garygentry/system1` and `@garygentry/system1-pi` at the new
-version. The registry shows they were published with `npm publish` rather than `pnpm publish`: the
-CLI's published `devDependencies` still read `workspace:*`, which pnpm would have rewritten. That is
-harmless, because consumers never install devDependencies.
-
 ```sh
-(cd packages/core && npm publish)
-(cd packages/cli && npm publish)
-(cd packages/pi && npm publish)
+pnpm release:publish                  # add --otp <code> if npm asks for one
 ```
+
+It refuses to start unless the working tree is clean, every package is at the same version, and
+`release:check` passes. Then it publishes `@garygentry/system1-core`, `@garygentry/system1` and
+`@garygentry/system1-pi`, in that order, with `npm publish`. Last, it checks that npm serves all
+three. It uses `npm publish` rather than `pnpm publish`, as every release has: the CLI's published
+`devDependencies` still read `workspace:*`, which pnpm would rewrite. That is harmless, because
+consumers never install devDependencies.
+
+A package npm already serves at this version is skipped, so if a publish fails partway (an
+expired `--otp` code, a network error), fix the cause and run it again. It never tags or pushes.
 
 Each package's `prepublishOnly` (`tools/prepublish-check.mjs`) rebuilds it and refuses to publish
 if any `bin`, `exports` or `files` entry is missing. The Pi package's `prepack` copies the skills
 in. `publishConfig.access` is already `public`.
-
-> TODO(maintainer): confirm the exact publish commands, the order, and whether npm asks for an OTP
-> (`--otp`). The repo records only "`npm publish` all three packages" (M6 § Phase 3).
-
-Then check that npm serves all three:
-
-```sh
-npm view @garygentry/system1@X.Y.Z version
-npm view @garygentry/system1-core@X.Y.Z version
-npm view @garygentry/system1-pi@X.Y.Z version
-```
 
 ## 5. Tag and push
 
@@ -98,11 +94,12 @@ installs`.
 
 ```sh
 git tag -s vX.Y.Z -m "X.Y.Z: <what this release is>"
+git tag -v vX.Y.Z                     # optional: needs gpg.ssh.allowedSignersFile set up
 git push origin main vX.Y.Z
 ```
 
-> TODO(maintainer): confirm the signing setup (`v0.2.0` onwards carry SSH signatures; `v0.1.0` is
-> annotated but unsigned) and whether tags are pushed with the branch or separately.
+Push the branch and the tag together, in one `git push`, and only after `release:publish` has
+confirmed npm serves all three packages.
 
 ## 6. Verify from the published artifacts
 
@@ -123,11 +120,27 @@ consented toy repo outside this one, with no global `decide` unless the harness 
   add the `prefix_rule` exactly as `setup` describes it. Run one live `ask`.
 - **Pi.** `pi install npm:@garygentry/system1-pi` plus the global CLI. Run one live `ask`.
 
-In each, `decide doctor` should report healthy and live-ready, and the `decide` line should show
-`live` with a measured cost. Record each line and its cost.
+`tools/smoke/published.sh` drives all of this. Each harness gets a fresh profile under
+`~/.cache/system1-smoke/published-X.Y.Z/` holding only a link to your auth. It installs from the
+marketplace and npm, never from the checkout, and runs in a copy of
+`tools/smoke/published-repo/`.
 
-> TODO(maintainer): M8 drove its first-run walk with a script kept outside the repo
-> (`~/.cache/system1-firstrun/walk.sh`). If that is still the verification driver, say so here.
+```sh
+pnpm smoke:published X.Y.Z                 # install and run doctor per harness; spends nothing
+pnpm smoke:published X.Y.Z --live          # plus one live ask per harness (~$0.0001 each)
+pnpm smoke:published X.Y.Z codex --live    # one harness only
+```
+
+Without `--live` it checks that each harness installs the X.Y.Z plugin (from `main`, so the bump
+must be pushed) and CLI, and that `decide doctor` runs through them. With `--live` it also grants
+egress consent **in the throwaway fixture repo only**, and gives each agent the prompt above.
+The pass marker is a `decide many` or `decide ask` line showing `live` with a measured cost.
+`--live` needs `OPENROUTER_API_KEY` in the environment (for example
+`set -a; . ./.env; set +a`). It spends each harness's tokens as well.
+
+The Claude hook's silent-then-hinting behaviour isn't asserted by the script. Check it by hand in
+the Claude profile the script leaves behind (`CLAUDE_CONFIG_DIR=~/.cache/system1-smoke/published-X.Y.Z/claude`).
+Record each harness's `decide` line and its cost.
 
 ## 7. Record it
 

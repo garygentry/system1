@@ -1407,14 +1407,6 @@
       "affects": ["arch-containers", "arch-runtime"]
     },
     {
-      "note": "Decision 0005's title still names `plugins/decisions/` (pre-rename). Its status does not mention the 0016 amendment that 0008 carries. Records are immutable, so add a status note rather than edit the decision.",
-      "affects": ["adr-0005"]
-    },
-    {
-      "note": "The release procedure has no script. release.md has three TODO(maintainer) markers: the exact publish commands, order and OTP; the tag-signing setup; and whether the out-of-repo first-run walk script is still the verification driver.",
-      "affects": ["howto-release"]
-    },
-    {
       "note": "Skills (plugins/system1/skills/*/SKILL.md and ask/references/) are agent-facing docs and outside this plan. spec-format, howto-spec and concepts restate some of their rules (question craft, thresholds). Nothing checks the two stay in step.",
       "affects": ["spec-format", "howto-spec", "concepts"]
     },
@@ -1437,10 +1429,6 @@
     {
       "note": "The live-only steps were not run while drafting: recording a spec with --live, a live CI run, and a pre-commit hook that blocks a commit. The replay versions of each were run.",
       "affects": ["howto-spec", "howto-ci"]
-    },
-    {
-      "note": "Decision 0009 still names .decisions/config.yaml (pre-rename). Like 0005, it needs a status note, not an edit.",
-      "affects": ["adr-0009"]
     }
   ]
 }
