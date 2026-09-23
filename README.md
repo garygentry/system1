@@ -11,7 +11,7 @@ Let a coding agent hand a **closed judgement** to a decision model instead of re
 
 A decision model answers with a typed probability in about 300 ms, and its output tokens are free. Cost scales with what you send: about **$0.00003 for a 700-token item** at Jev's listed price, so the 57-file run below came to $0.0035 — about $0.00006 an item. The first supported model is [Jev](https://openrouter.ai/typesafe/jev-1.13) on OpenRouter.
 
-The provider describes these probabilities as calibrated; nothing here measures that independently, so treat the numbers as typed and comparable rather than as proven frequencies, and set your own thresholds.
+The provider describes the probabilities as calibrated, and we checked that claim ourselves ([docs/calibration.md](docs/calibration.md)). On yes/no questions whose answer you can check by reading the content, the probabilities tracked observed frequencies closely: Brier 0.028 and calibration error 0.054 over a blind-labelled sample from two TypeScript repos. On subjective questions we could not measure it, so treat those numbers as rankings and set thresholds on your own data.
 
 It works in **Claude Code, Codex and Pi**, and in any host that supports [Agent Skills](https://agentskills.dev). Hooks, CI and scripts call the same CLI.
 

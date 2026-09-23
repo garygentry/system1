@@ -195,7 +195,7 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. **One box left open:** the live decision *through the `ask` skill* per harness, blocked on a provider usage limit |
 | **M7** | **Evidence: measure what we claim** | **next**, see `milestones/M7-evidence.md`. A labelled set, a measured reliability curve published with its scope, threshold guidance grounded in it, and the two boxes M6 left open |
 | M8 | **Onboarding: the first hour works** | outline. A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
-| M9 | **Design partners: 3–5 real users** | outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **Gated by M7 (D5):** if the measured curve is bad, this milestone is blocked until the calibration is understood or improved |
+| M9 | **Design partners: 3–5 real users** | outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
 | M10 | **Release** | outline. Hygiene informed by M9 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
 | — | *Post-release features:* `scout`, `adopt`, `compare`, `calibrate`, `sweep`, `pairs`, `guard` packs | Cut from the road to release (2026-09-23). None makes the core more trustworthy, and building them for a workflow no outsider has adopted is the wrong problem first. `scout` is planned in detail already: `plans/later-scout-opportunities.md` |
 | — | *Deferred:* MCP adapter over `core/tools` | Revisit if the sandbox/network friction or a shell-less host justifies it |
@@ -220,9 +220,9 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 M6's one unticked acceptance box. Installs are verified from the published artifacts in all three harnesses, `pnpm smoke` proves the skill → CLI path in replay, and a live `decide many` proves the CLI's live path. What is unproven is the two together, in a real Codex and Pi session; the provider was over its usage limit on release night. Closes in M7.
 
-### 3. "Calibrated" is the provider's word, not our measurement
+### 3. "Calibrated" is measured only for checkable propositions
 
-The README says so plainly today. M7 is what replaces it with a number and a scope.
+**Mostly closed in M7 (2026-09-23).** The checkable curve is measured and published in `docs/calibration.md` (Brier 0.028, ECE 0.054, two repos, one author), and the README cites it. Two things remain open. The subjective questions produced degenerate single-labeller labels, so they are reported as unmeasured rather than as a curve. And the claim rests on two TypeScript repos by one author. A better-posed judgement set, and data from other people's code, are the ways to widen it. Design partners (M9) are the natural source of the second.
 
 ### 4. One model, one vendor
 
