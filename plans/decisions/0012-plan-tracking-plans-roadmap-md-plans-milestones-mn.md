@@ -14,4 +14,4 @@ The charter stays as background
 
 ## Charter delta
 
-Amends `plans/charter.md`; see notes.
+Amends `plans/archive/charter.md`; see notes.

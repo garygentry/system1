@@ -14,4 +14,4 @@ Replaces the charter's "provider per model". `openrouter-decisions` transport (e
 
 ## Charter delta
 
-Amends `plans/charter.md`; see notes.
+Amends `plans/archive/charter.md`; see notes.

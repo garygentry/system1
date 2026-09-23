@@ -14,4 +14,4 @@ The scope and owner live once in `catalog.yaml`, so a later move to an org names
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.

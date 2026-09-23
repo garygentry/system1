@@ -14,4 +14,4 @@ Configurable. `usage` tracks spend for the session
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.

@@ -1,17 +1,21 @@
 # `system1` — Roadmap
 
-**Status:** living document. Revision 2 (2026-09-22): the CLI is the only execution surface, and MCP is deferred ([0013](decisions/0013-cli-first-mcp-deferred.md)).
+**Status:** living document. Revision 3 (2026-09-23): 0.1.0 is published, and the line past it is a **readiness plan, not a feature plan**. The envisioning brief is archived and is not built from.
 
 ## Context
 
-`decisions` is a set of tools for coding agents. With them, an agent can send a *closed* question (pick one, rate this, yes/no) to a **decision model** instead of reading everything itself or asking a chat LLM. A decision model returns typed, calibrated probabilities in about 300 ms for about $0.00003 per call.
+**System 1** is a set of tools for coding agents. With them, an agent can send a *closed* question (pick one, rate this, yes/no) to a **decision model** instead of reading everything itself or asking a chat LLM. A decision model returns typed probabilities in about 300 ms for about $0.00003 per call.
 
-The first model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alpha/decisions`). More models with the same calling convention are expected.
+The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alpha/decisions`). Others with the same calling convention are possible — the profile layer is data — but none is supported today, and that single-vendor risk is stated plainly rather than hedged (M8).
+
+### Where we are
+
+0.1.0 is on npm and installs in all three harnesses. The engine and the CLI surface are in good shape. What is missing is not features — it is **evidence, onboarding and outside users**. Nobody outside this machine has used it, and the load-bearing word in the pitch ("calibrated") is one we repeat from the provider rather than one we have measured. The milestones below are ordered to fix that, in that order.
 
 - **Background:**
-  - `plans/charter.md`, the envisioning brief, which has not been ratified.
+  - `plans/archive/charter.md` — the 2026-09-21 envisioning brief. **Superseded and archived**; kept only because decision records cite its sections. Do not build from it.
   - `plans/repo-structure-guidance/`, research on repos that serve several agents.
-  - `/home/gary/workspace/jev-poc`, the working proof of concept that holds the code we reuse.
+  - `/home/gary/workspace/jev-poc`, the working proof of concept; now mainly a corpus for labelling and cookbook examples.
 - **Targets:**
   - First-class: Claude Code, Codex and Pi.
   - Best effort: other hosts that support Agent Skills.
@@ -39,11 +43,14 @@ Full records are in `plans/decisions/NNNN-*.md`. A superseded record is kept and
 | **0016** | **The project is named System 1 (`system1`)**: GitHub, npm, plugin, `.system1/` and `SYSTEM1_*`. The command stays `decide`. Amends 0008 | **accepted** |
 | 0014 | There is no live `command` source. Command output is piped into `--stdin`. The engine only ever spawns `git`, through `execFile` | accepted |
 
-These are carried over from the charter unchanged:
+Carried over from the archived brief and still in force:
 - the vocabulary (state, question set, primitives, policy, shape, undecided);
-- the principles in §3;
-- YAML specs in `.system1/specs/`, looked up in the repo, then the user level, then the specs bundled with the plugin;
-- the phase order.
+- its §3 principles;
+- YAML specs in `.system1/specs/`, looked up in the repo and then at the user level.
+
+No longer in force:
+- **its phase order**, replaced 2026-09-23 by the readiness milestones below;
+- **specs bundled with the plugin** — none are, and none will be until real use shows questions that recur across repos (M5, D1).
 
 ## Why CLI rather than MCP (summary of 0013)
 
@@ -148,7 +155,7 @@ system1/
     src/agents/  hooks/          # later phases
   .claude-plugin/marketplace.json  .agents/plugins/marketplace.json   # generated
   tools/{generate.ts, validate.ts, smoke/*.sh}
-  plans/{charter.md, ROADMAP.md, decisions/, milestones/, repo-structure-guidance/}
+  plans/{ROADMAP.md, decisions/, milestones/, repo-structure-guidance/}
   .github/workflows/ci.yml
 ```
 
@@ -185,12 +192,49 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M3** | Tool definitions + spec format + CLI contract | **done 2026-09-22**, see `milestones/M3-tools-spec-cli.md` |
 | **M4** | CLI hardening + harness wiring | **done 2026-09-22**, see `milestones/M4-cli-harness.md` |
 | **M5** | Skills: ad-hoc asking, saved specs, setup | **done 2026-09-22**, see `milestones/M5-skills-specs.md`. `ask` (with the craft references), `design` (save and repair repo specs), `setup` (user-only, consent-gated). `--questions` and `spec check`. Routing evals meet the bar in Claude, Codex and Pi. No bundled specs |
-| **M6** | Release 0.1.0 | **in progress**, see `milestones/M6-release.md`. Publish the CLI, core and a Pi package; push to GitHub; a comprehensive review by Codex `gpt-6-astra` on the release candidate before publishing; then install and one live decision per harness |
-| M7 | Phase 2: `scout` + `opportunity-scout` + `question-critic`; agent generator | outline |
-| M8 | Phase 3: `adopt`, `compare`, `shadow-evaluator`, `emulated` | outline |
-| M9 | Phase 4: `calibrate`, `sweep`, `pairs` | outline |
-| M10 | Phase 5: `guard` packs (Claude/Codex hooks → `decide hook`; Pi extension) | outline |
+| **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. **One box left open:** the live decision *through the `ask` skill* per harness, blocked on a provider usage limit |
+| **M7** | **Evidence: measure what we claim** | **next**, see `milestones/M7-evidence.md`. A labelled set, a measured reliability curve published with its scope, threshold guidance grounded in it, and the two boxes M6 left open |
+| M8 | **Onboarding: the first hour works** | outline. A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
+| M9 | **Design partners: 3–5 real users** | outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release |
+| M10 | **Release** | outline. Hygiene informed by M9 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
+| — | *Post-release features:* `scout`, `adopt`, `compare`, `calibrate`, `sweep`, `pairs`, `guard` packs | Cut from the road to release (2026-09-23). None makes the core more trustworthy, and building them for a workflow no outsider has adopted is the wrong problem first. `scout` is planned in detail already: `plans/later-scout-opportunities.md` |
 | — | *Deferred:* MCP adapter over `core/tools` | Revisit if the sandbox/network friction or a shell-less host justifies it |
+
+## Known gaps
+
+Live limitations of the shipped product. Each says what is wrong, why it is not yet fixed, and what would fix it.
+
+### 1. Claude does not hand off a review of its own work (routing, `ask`)
+
+**The gap.** On the M6 routing evals Claude scores **6/8** on `ask` positives against a ≥ 7/8 bar. Codex and Pi score 8/8. Negatives are 8/8 everywhere.
+
+**The shape of it.** Both misses are the same case: a **criteria check over a ~22-line diff Claude had just written** ("is the task in TASK.md done", and a pre-commit rules check). It hands off every batch task and both pick-from-many cases. It declines only when asked to re-check its own small diff. So this is not a model failing to understand the skill; it is a model declining to delegate grading its own work.
+
+**Why it is still open.** Five rounds of description tuning. Round 5 led with "before you report a task done, check it with this skill rather than grading your own work": Claude went to 7/8, but Codex and Pi `ask` **negatives fell 8/8 → 5/8** — they began triggering on "write a function", "rename this function", "add a .gitignore entry". Over-triggering is the worse failure, because it spends money and sends code for tasks that need no judgement. The wording was reverted and 6/8 accepted for the release. Full data: `milestones/M6-release.md` § Routing evals.
+
+**What would actually fix it.** Probably not a description. A description can only influence a model that is choosing, and this is a model choosing not to. The surface that does not depend on that choice is a **hook** — a Stop hook that fires regardless ("is done actually done"), which is what the deferred `guard` packs are for. This gap is now the first concrete justification for them.
+
+**Do not re-litigate the wording without new evidence.** If it is retried, the guard rail that broke last time is the acceptance condition: **Codex and Pi negatives stay 8/8, or the change reverts.**
+
+### 2. No live decision through the `ask` skill has been run per harness
+
+M6's one unticked acceptance box. Installs are verified from the published artifacts in all three harnesses, `pnpm smoke` proves the skill → CLI path in replay, and a live `decide many` proves the CLI's live path. What is unproven is the two together, in a real Codex and Pi session; the provider was over its usage limit on release night. Closes in M7.
+
+### 3. "Calibrated" is the provider's word, not our measurement
+
+The README says so plainly today. M7 is what replaces it with a number and a scope.
+
+### 4. One model, one vendor
+
+`typesafe/jev-1.13` on OpenRouter is the only profile. If it is withdrawn, live calls stop and `decide` replays recorded answers only. Accepted rather than hedged (2026-09-23); M8 states it in the README. A second profile waits until a second suitable model exists.
+
+### 5. macOS is unverified
+
+CI runs Ubuntu only, on one Node version. The smoke scripts need GNU `timeout`, carried over from M4. Most design partners will be on macOS, so this closes in M8, before M9.
+
+### Why this order
+
+Each milestone removes the risk that would make the next one wasted work. Measuring calibration (M7) before writing docs (M8) means the docs can state a number instead of a disclaimer. Getting the first hour right (M8) before inviting partners (M9) means their feedback is about the product, not about a broken install. Partners (M9) before release hygiene (M10) means the CHANGELOG and the policy describe what people actually hit.
 
 **M0 acceptance:**
 - **Setup:** git init, pnpm workspace, TS NodeNext, vitest, biome, `AGENTS.md`/`CLAUDE.md`, `catalog.yaml`.
@@ -205,10 +249,10 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 
 1. ~~The `--keep` filter language~~ **Answered in M3:** the shorthand only, with the full tool input available as JSON through `--input` (0015).
 2. ~~How to handle Codex sandbox network~~ **Answered in M0:** a narrow `prefix_rule(pattern=["decide"], decision="allow")` works under the default sandbox. **Answered in M4:** a plugin cannot ship it (none of 190 cached Codex plugins use anything but `skills`, `apps` and `mcpServers`). `decide doctor` prints the exact line and path. `setup` writes it to `$CODEX_HOME/rules/system1.rules` with consent (M5).
-3. Can Codex plugins ship subagents (M7)? ~~How does Pi mark a skill user-only~~ **Answered in M0:** Pi honours `disable-model-invocation`.
+3. ~~Can Codex plugins ship subagents (M7)?~~ **Moot for now:** [0017](decisions/0017-fan-out-through-the-cli-not-subagents.md) ships no subagents at all — fan-out goes through `decide many`, which every harness can run. The question returns only if a sweep needs judgement the signal tables cannot express. ~~How does Pi mark a skill user-only~~ **Answered in M0:** Pi honours `disable-model-invocation`.
 4. ~~Which generic specs go into v1 (M5)?~~ **Answered in M5:** none. Ad-hoc questions are the main path, and specs are saved in the user's repo through `design`. Revisit once real use shows questions that recur across repos.
 5. ~~Should `system1-core` be published separately or bundled into the CLI (M6)?~~ **Answered in M6:** published separately, alongside the CLI (whose bundle still inlines it) and a Pi package.
-6. ~~Is a separate Pi npm package needed?~~ **Answered in M6:** yes, a slim `@garygentry/system1-pi` is published, so `pi install npm:…` pulls no devDependencies. Whether `pi install git:` of the pushed repo also works is checked during M6.
+6. ~~Is a separate Pi npm package needed?~~ **Answered in M6:** yes, a slim `@garygentry/system1-pi` is published, so `pi install npm:…` pulls no devDependencies. **Closed in M6:** installing from the pushed GitHub repo works in all three harnesses too, so the Pi package is the documented path rather than the only one.
 7. ~~**New in M0:** neither Codex nor Pi puts plugin `bin/` on PATH. How does a user get `decide` there?~~ **Answered in M4:** `npm i -g @garygentry/system1@<version>`. `decide doctor` detects the gap and prints that command, and the shim falls back to a global install before `npx`. `setup` may run the install with consent (M5). Publishing is M6.
 
 ## Verification

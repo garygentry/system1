@@ -14,4 +14,4 @@ Nothing is built at install time; no build output is committed to git
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.

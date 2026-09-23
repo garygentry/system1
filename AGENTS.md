@@ -2,7 +2,7 @@
 
 **System 1** is a set of tools that let coding agents hand *closed* judgements (choose one option, give a score, answer yes/no) to a **decision model** (Jev first), and get back typed, calibrated answers. It ships one plugin that works in Claude Code, Codex and Pi. The `decide` CLI is the only execution surface. There is no MCP server; see `plans/decisions/0013-cli-first-mcp-deferred.md`.
 
-Before starting, read `plans/ROADMAP.md`, then the current `plans/milestones/Mn-*.md`. `plans/charter.md` is background, not a spec; ratified choices live in `plans/decisions/`.
+Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — then the current `plans/milestones/Mn-*.md`. Ratified choices live in `plans/decisions/`. `plans/archive/charter.md` is a superseded envisioning brief: do not build from it.
 
 ## Layout
 

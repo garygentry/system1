@@ -14,4 +14,4 @@ engine, `decide`/`decide_many`, sources/splitters/projection, CLI, skills `setup
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.

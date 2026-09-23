@@ -1,3 +1,18 @@
+> [!WARNING]
+> **Superseded. Archived 2026-09-23. Do not build from this document.**
+>
+> This was an envisioning brief, written 2026-09-21 to bootstrap an empty
+> directory into a design. It was never ratified. The product was then designed
+> for real, and diverged from it in ways that matter: the project is **System 1**,
+> not `decisions` ([0016](../decisions/0016-name-system1.md)); the **CLI is the only
+> execution surface** and there is no MCP server ([0013](../decisions/0013-cli-first-mcp-deferred.md));
+> **nothing dispatches subagents** ([0017](../decisions/0017-fan-out-through-the-cli-not-subagents.md));
+> and the milestone line past 0.1.0 is a readiness plan, not this document's phases.
+>
+> Current truth lives in [`plans/ROADMAP.md`](../ROADMAP.md) and
+> [`plans/decisions/`](../decisions/). This file is kept only because fourteen
+> decision records cite its section numbers.
+
 # `decisions` — a Claude Code plugin for decision models
 
 **Status:** design brief. Covers the plugin's shape and surface, not its implementation.

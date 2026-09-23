@@ -14,4 +14,4 @@ Pi has no MCP (confirmed). Tool schemas are defined once in TypeBox
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.

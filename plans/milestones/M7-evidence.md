@@ -1,0 +1,93 @@
+# M7 — Evidence: measure what we claim
+
+**Status:** next (planned 2026-09-23). The decisions below came from interviewing the user.
+**Goal:** The load-bearing word in the pitch is "calibrated", and today the README admits nobody has checked it. Replace that with **our own measurement**, published with its scope and its sample sizes, and derive the threshold guidance a newcomer actually needs from it. Close the two things M6 left open while we are in the harnesses anyway.
+
+## First principles
+
+- **The claim is the product.** "Typed, calibrated probabilities" is why someone would use this instead of a chat model. Shipping it to the public on a vendor's assertion is the weakest part of the whole thing.
+- **Measure honestly or not at all.** A curve built from a biased sample is worse than no curve, because it launders a guess into a number. The sampling rule below is the most important paragraph in this document.
+- **Scope the claim narrowly and say so loudly.** Two repos and a handful of question shapes is what we will have. That supports "here is what we measured", never "Jev is calibrated".
+- **This is not `calibrate`.** The user-facing command is a post-release feature. M7 produces a script, a labelled set and a document.
+
+## Decisions (interview, 2026-09-23)
+
+| # | Question | Decision |
+|---|---|---|
+| D1 | What bar is the release clearing? | **Design partners first** — 3–5 real users on real repos (M9), then decide about anything wider. The dominant risk is that nobody outside this machine has used it. |
+| D2 | What happens to `scout`, `adopt`, `compare`, `calibrate`, `guard`? | **Cut until after release.** None makes the core more trustworthy. The *measurement* idea is borrowed from `calibrate` here as evidence, without shipping the command. `scout`'s detailed plan is parked at `plans/later-scout-opportunities.md`. |
+| D3 | How far do we go on the calibration claim? | **Measure it and publish the curve**, with scope caveats and n per bucket, and turn it into threshold guidance. |
+| D4 | What about being single-model, single-vendor? | **Accept and document** (README statement lands in M8). A second profile waits for a second suitable model to exist. |
+
+## Scope
+
+### 1. A labelled set, sampled without bias
+
+**The trap, stated first.** If we label the items the model was confident about, or the survivors of a `--keep` filter, the curve is meaningless. Labels must come from a **random sample of everything screened**, including the items the model scored 0.2 and the ones it called undecided.
+
+**Procedure:**
+
+1. Run a sweep over a corpus with a question set, recording every answer (not just survivors) — `--record`, full output, no `--keep`.
+2. Draw a random sample of the run, stratified so every predicted-probability bucket has enough rows to say anything about.
+3. Label each sampled item **by reading it, before looking at the model's answer**. The label is the ground truth, so the order matters.
+4. Store labels as JSONL next to the run.
+
+**Corpora:** this repo, and `~/workspace/jev-poc`. Both are ours, which keeps the egress and licensing questions simple. It also bounds the claim: two TypeScript repos, written by one person.
+
+**Size:** target ~200–300 labelled items. **This is the expensive part of M7** — realistically several hours of reading — and it is the item most likely to blow the estimate. If it has to shrink, shrink the number of question shapes, not the number of items per bucket; a curve with four solid buckets beats one with twelve empty ones.
+
+**Where labels live:** committed to the repo under `evidence/labels/*.jsonl`, because they are the published basis for a public claim and have to be auditable. They hold excerpts of our own code only.
+
+### 2. The scoring script
+
+`tools/calibration.ts` (a script, not a shipped command — D2). It reads a recorded run plus its labels and reports:
+
+- **Reliability by bucket:** predicted range, observed frequency, n, and an interval wide enough to be honest at small n.
+- **Where the undecided floor sits.** `UNDECIDED_FLOOR = 0.15` was inherited. The data can say whether items below it are genuinely unjudgeable, and whether the floor is in the right place.
+- **Per question shape.** `noul` first — a yes/no with binary ground truth is the cleanest thing to measure. `choice` and `score` follow if the labelled set supports them; if it does not, say so rather than reporting a thin number.
+
+Offline, deterministic, tested. It must refuse to produce a curve from a sample it considers too small or too skewed, rather than printing one with a caveat nobody reads.
+
+### 3. `docs/calibration.md`
+
+The published result. It carries, in this order: what was measured, **on what corpora and what shapes**, the curve with n per bucket, what it does *not* support, and the threshold guidance that follows from it.
+
+The guidance is the part a newcomer uses: which threshold for screening where a miss is cheap, which before acting unattended, and what to do with undecided. Today the honest answer to "what threshold should I use?" is "pick one" — this is what replaces that.
+
+### 4. README: stop repeating the vendor
+
+The current sentence ("the provider describes these probabilities as calibrated; nothing here measures that independently") gets replaced by what we measured, its scope, and a link — **keeping the same honesty**. If the measurement disagrees with the vendor, the measurement is what ships.
+
+### 5. Close M6's open box: a live decision per harness
+
+One live decision through the **`ask` skill** — not the CLI directly — in Claude, Codex and Pi, from the published artifacts, with cost recorded. Blocked on release night by the Codex/Pi usage limit. Grouped here because it needs real harness sessions, as does §6.
+
+### 6. One bounded retry at the Claude routing gap
+
+Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attempt, with the guard rail that broke it last time as a hard acceptance condition: Codex and Pi `ask` negatives stay 8/8, or the change reverts.** If it fails again, stop pulling this lever and let the hook close it post-release.
+
+## Out of scope
+
+- `decide calibrate` as a user-facing command, and every other cut feature (D2).
+- Any claim about Jev beyond the corpora measured.
+- A second model profile (D4).
+- Docs, cookbook, macOS and CI matrix — those are M8.
+
+## Open, to settle while building
+
+- **Which question shapes the labelled set can actually support.** `noul` is certain; `choice` and `score` depend on how the sample falls.
+- **Whether jev-poc's recorded fixtures already carry usable ground truth**, which would cut the labelling cost — check before labelling by hand.
+- **How to present intervals at small n** without implying more precision than 30 rows can carry.
+- **What to do if the curve is bad.** Decide the response *before* seeing it: a poorly calibrated model is a finding worth publishing, and it would change the pitch from "calibrated" to "typed and comparable". Agreeing this now is what stops the result being rationalised later.
+
+## Acceptance
+
+- [ ] A labelled set of ~200–300 items exists under `evidence/labels/`, drawn by the documented unbiased procedure, with the procedure recorded alongside it.
+- [ ] `tools/calibration.ts` is tested, deterministic and offline, and refuses to report a curve from a sample too small or too skewed.
+- [ ] `docs/calibration.md` publishes the curve with n per bucket, names its corpora and shapes, and states plainly what it does not support.
+- [ ] Threshold guidance in the docs is derived from that data, not from taste.
+- [ ] The README no longer rests the central claim on the provider's assertion.
+- [ ] A finding about `UNDECIDED_FLOOR` is recorded, whether or not it moves.
+- [ ] One live decision through the `ask` skill in each of Claude, Codex and Pi, with costs recorded — M6's last open box.
+- [ ] The routing retry has been attempted once and its outcome recorded, with Codex/Pi negatives still 8/8.
+- [ ] `pnpm check` green.

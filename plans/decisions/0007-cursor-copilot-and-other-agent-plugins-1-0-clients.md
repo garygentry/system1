@@ -14,4 +14,4 @@ They come for free through the root `plugin.json` and `mcp.json`. CI validates t
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.

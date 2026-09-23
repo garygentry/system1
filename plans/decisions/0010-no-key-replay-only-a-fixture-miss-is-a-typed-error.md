@@ -14,4 +14,4 @@ jev-poc's synthetic fallback is dropped. Every result carries `source: live \| r
 
 ## Charter delta
 
-Amends `plans/charter.md`; see notes.
+Amends `plans/archive/charter.md`; see notes.

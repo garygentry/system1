@@ -14,4 +14,4 @@ A live call fails with instructions until `.decisions/config.yaml` records conse
 
 ## Charter delta
 
-Consistent with / refines `plans/charter.md`.
+Consistent with / refines `plans/archive/charter.md`.
