@@ -1,6 +1,6 @@
 {
   "name": "@garygentry/system1-pi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Route closed judgements (pick one, rate this, yes/no) to a decision model instead of reading everything yourself. Typed, calibrated answers in ~300 ms for a fraction of a cent, via the `decide` CLI. Skills only, for Pi.",
   "type": "module",
   "author": {
