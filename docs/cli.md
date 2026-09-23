@@ -140,7 +140,8 @@ the agent's context. Use `--text` to test your own `route:` config. See
 - `decide schema <ask|many|usage|spec-check|route>` prints that tool's input schema.
 - `decide ping` exits 0 when the model's endpoint answers, and 5 when it doesn't. It probes the
   `model` and `endpoint` from config and environment, like every other command. If a config file
-  fails to load, it probes from the environment alone.
+  fails to load, it probes from the environment alone and says so in `configError`. An endpoint
+  that isn't a URL is `config-error`, exit 2.
 - `decide doctor` always exits 0: a failed check is a finding, reported in the result
   (`healthy`, `live`) and in the headline. See [troubleshooting.md](troubleshooting.md).
 

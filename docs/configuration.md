@@ -19,8 +19,10 @@ Later layers win. How two layers combine depends on the key:
 - **Single values** (`model`, `endpoint`, `concurrency`, `timeoutMs`, `budget.*`,
   `route.enabled`, `route.builtin`, `route.message`): the repo file wins over the user file, and
   the environment wins over both.
-- **Lists** (`egress.exclude`, `profiles`, `route.disable`, `route.triggers`, `route.ignore`):
-  both files add up, user entries first.
+- **Lists** (`egress.exclude`, `route.disable`, `route.triggers`, `route.ignore`): both files
+  add up, user entries first.
+- **`profiles`** add up by `id`: a repo profile replaces a user one with the same `id`, and
+  either replaces a built-in one. See [`profiles`](#profiles).
 - **`egress.consent`** is read **only** from the repo file. A grant in the user file is ignored,
   so consent never silently covers every repo.
 
@@ -34,12 +36,19 @@ mapping, is a `config-error` (exit 2) that names the file. Unknown keys under `r
 Other mistakes are ignored, with a warning rather than an error, so an old or hand-edited file
 never stops `decide`:
 
-- an unknown top-level key, or an unknown key under `budget:` or `egress:`
-- a value of the wrong type or out of range: `model` or `endpoint` that isn't text,
-  `concurrency` that isn't a whole number of at least 1, `timeoutMs` that isn't above 0, or a
-  negative `budget.*`. The next layer or the default applies instead.
+- an unknown top-level key, an unknown key under `budget:` or `egress:`, or an unknown field in
+  a profile (dropped, so it's never used or shown)
+- `budget:` or `egress:` that isn't a mapping
+- a value of the wrong type or out of range: `model` that isn't text, `endpoint` that isn't an
+  `http(s)` URL, `concurrency` that isn't a whole number of at least 1, `timeoutMs` that isn't
+  above 0, or a negative `budget.*`. The next layer or the default applies instead.
+- `egress.consent` in the user file, which is read only from the repo file
 
-`decide doctor` reports each one as a `config` warning, and `decide config` lists them in
+Every layer is checked, so a bad value warns even when the other file's value wins. A key with
+no value (`model:`) counts as unset, with no warning. `budget.maxUsd: .inf` (or `maxCalls`) is
+allowed and switches that guard off.
+
+`decide doctor` reports these as a `config-keys` warning, and `decide config` lists them in
 `warnings`.
 
 ## Keys
@@ -54,7 +63,7 @@ never stops `decide`:
 | `budget.maxUsd` | `0.05` | number ≥ 0 | The spend guard: a request projected over this many US dollars needs `--confirm` |
 | `egress.consent` | `{granted: false}` | mapping | Whether this repo agreed to send content to the provider. Repo file only |
 | `egress.exclude` | `[]` | list of globs | Paths never to send, on top of the built-in excludes |
-| `profiles` | `[]` | list | Extra model profiles, after the built-in ones |
+| `profiles` | `[]` | list | Extra model profiles, or overrides of built-in ones by `id` |
 | `route.*` | see [Routing hints](#routing-hints) | mapping | The Claude Code routing hook |
 
 A repo config that sets several of these:
@@ -112,10 +121,12 @@ Optional fields, with the default a config profile gets:
 | `calibrated` | `true` | Whether the model's probabilities are calibrated |
 
 A missing required field, or a bad `maxChoices`, is a `config-error`. The other optional fields
-aren't checked.
+aren't checked. Any other field is dropped with a warning.
 
-A config profile with the same `id` as a built-in one replaces it, and a repo profile replaces a
-user one with the same `id`. A model id resolves to the profile with that `id`. A dated build such as
+A config profile with the same `id` as a built-in one replaces it whole: fields it leaves out
+take the defaults above, not the built-in's values (so `priceAsOf` becomes `unknown`). A repo
+profile replaces a user one with the same `id`, and within one file the last entry with an `id`
+wins. A model id resolves to the profile with that `id`. A dated build such as
 `typesafe/jev-1.13-20260917` resolves to its family's profile, and the dated id is what gets
 sent. An id with no profile is `unknown-model` (exit 2).
 

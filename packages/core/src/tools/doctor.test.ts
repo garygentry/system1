@@ -52,13 +52,13 @@ describe("doctor", () => {
       ".system1/config.yaml": 'concurency: 4\nbudget: { maxUsd: "1" }\n',
     })
     expect(r.healthy).toBe(true)
-    expect(check(r, "config")).toMatchObject({
+    expect(check(r, "config-keys")).toMatchObject({
       status: "warn",
       detail: expect.stringMatching(/unknown key concurency.*budget\.maxUsd must be a number/s),
       fix: expect.stringContaining("docs/configuration.md"),
     })
     const clean = await doctor(env, reachable, CONSENT)
-    expect(check(clean, "config")).toBeUndefined()
+    expect(check(clean, "config-keys")).toBeUndefined()
   })
 
   it("warns, without failing, when the route config does not compile", async () => {

@@ -123,7 +123,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
 
   const user = readLayer(userFile)
   const repo = readLayer(repoFile)
-  const warnings = [...unknownKeys(user, userFile), ...unknownKeys(repo, repoFile)]
+  const warnings = [...unknownKeys(user, userFile, "user"), ...unknownKeys(repo, repoFile, "repo")]
   // Repo first: it wins over the user layer.
   const layers = [
     { layer: repo, file: repoFile },
@@ -133,7 +133,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
 
   const merged: DecisionsConfig = {
     model: pickFrom("model", TEXT) ?? DEFAULTS.model,
-    endpoint: pickFrom("endpoint", TEXT) ?? DEFAULTS.endpoint,
+    endpoint: pickFrom("endpoint", URL_TEXT) ?? DEFAULTS.endpoint,
     concurrency: pickFrom("concurrency", WHOLE) ?? DEFAULTS.concurrency,
     timeoutMs: pickFrom("timeoutMs", POSITIVE) ?? DEFAULTS.timeoutMs,
     budget: {
@@ -147,7 +147,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
         ...stringList(repo, "egress.exclude", repoFile),
       ],
     },
-    profiles: [...profileList(user, userFile), ...profileList(repo, repoFile)],
+    profiles: [...profileList(user, userFile, warnings), ...profileList(repo, repoFile, warnings)],
     route: readRoute(user, userFile, repo, repoFile, env),
   }
 
@@ -211,17 +211,32 @@ const KNOWN: Record<string, readonly string[]> = {
   egress: ["consent", "exclude"],
 }
 
-function unknownKeys(layer: Layer, file: string): string[] {
+/**
+ * Warnings for what a layer holds but loading never reads: unknown keys, a
+ * section that isn't a mapping, and consent in the user file (read only from
+ * the repo, decision 0009). A key set to nothing (`budget:`) counts as unset.
+ */
+function unknownKeys(layer: Layer, file: string, which: "user" | "repo"): string[] {
   if (!layer) return []
-  const found = Object.keys(layer).filter((k) => !KNOWN[""]?.includes(k))
+  const warnings = Object.keys(layer)
+    .filter((k) => !KNOWN[""]?.includes(k))
+    .map((key) => `${file}: unknown key ${key}`)
   for (const section of ["budget", "egress"]) {
     const value = layer[section]
-    if (!isMapping(value)) continue
+    if (value === undefined || value === null) continue
+    if (!isMapping(value)) {
+      warnings.push(`${file}: ${section} must be a mapping (ignored)`)
+      continue
+    }
     for (const key of Object.keys(value)) {
-      if (!KNOWN[section]?.includes(key)) found.push(`${section}.${key}`)
+      if (!KNOWN[section]?.includes(key)) warnings.push(`${file}: unknown key ${section}.${key}`)
     }
   }
-  return found.map((key) => `${file}: unknown key ${key}`)
+  const egress = layer.egress
+  if (which === "user" && isMapping(egress) && egress.consent !== undefined) {
+    warnings.push(`${file}: egress.consent is read only from the repo file (ignored)`)
+  }
+  return warnings
 }
 
 interface Rule<T> {
@@ -231,6 +246,10 @@ interface Rule<T> {
 }
 
 const TEXT: Rule<string> = { ok: (v): v is string => typeof v === "string", expected: "text" }
+const URL_TEXT: Rule<string> = {
+  ok: (v): v is string => typeof v === "string" && /^https?:\/\/[^/\s]/.test(v),
+  expected: "an http(s) URL",
+}
 const WHOLE: Rule<number> = {
   ok: (v): v is number => Number.isInteger(v) && (v as number) >= 1,
   expected: "a whole number of at least 1",
@@ -239,15 +258,17 @@ const POSITIVE: Rule<number> = {
   ok: (v): v is number => typeof v === "number" && Number.isFinite(v) && v > 0,
   expected: "a number above 0",
 }
+/** `.inf` is allowed: it switches that spend guard off. */
 const NON_NEGATIVE: Rule<number> = {
-  ok: (v): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0,
+  ok: (v): v is number => typeof v === "number" && v >= 0,
   expected: "a number of at least 0",
 }
 
 /**
  * The first layer's valid value at `path` (`key` or `section.key`). A value
- * that breaks the rule is skipped with a warning, so the next layer (or the
- * default) applies.
+ * that breaks the rule is skipped, so the next layer (or the default) applies.
+ * Every layer is checked, so a bad value warns whichever layer wins. A key set
+ * to nothing (`model:`) counts as unset.
  */
 function pick<T>(
   path: string,
@@ -255,23 +276,17 @@ function pick<T>(
   layers: Array<{ layer: Layer; file: string }>,
   warnings: string[],
 ): T | undefined {
+  let found: T | undefined
   for (const { layer, file } of layers) {
     const [head, key] = path.split(".") as [string, string?]
     let value = layer?.[head]
-    if (key !== undefined) {
-      if (value === undefined) continue
-      if (!isMapping(value)) {
-        const warning = `${file}: ${head} must be a mapping (ignored)`
-        if (!warnings.includes(warning)) warnings.push(warning)
-        continue
-      }
-      value = value[key]
-    }
-    if (value === undefined) continue
-    if (rule.ok(value)) return value
-    warnings.push(`${file}: ${path} must be ${rule.expected} (ignored)`)
+    // A section that isn't a mapping is reported once, by unknownKeys.
+    if (key !== undefined) value = isMapping(value) ? value[key] : undefined
+    if (value === undefined || value === null) continue
+    if (!rule.ok(value)) warnings.push(`${file}: ${path} must be ${rule.expected} (ignored)`)
+    else if (found === undefined) found = value
   }
-  return undefined
+  return found
 }
 
 function isMapping(value: unknown): value is Record<string, unknown> {
@@ -311,13 +326,27 @@ function stringList(layer: Layer, path: string, file: string): string[] {
   return value
 }
 
-function profileList(layer: Layer, file: string): ModelProfile[] {
+/** The fields a config profile may set. Anything else is dropped with a warning. */
+const PROFILE_FIELDS: readonly (keyof ModelProfile)[] = [
+  "id",
+  "displayName",
+  "transport",
+  "maxStateTokens",
+  "maxChoices",
+  "usdPerInputToken",
+  "usdPerOutputToken",
+  "priceAsOf",
+  "undecidedFloor",
+  "calibrated",
+]
+
+function profileList(layer: Layer, file: string, warnings: string[]): ModelProfile[] {
   const value = layer?.profiles
   if (value === undefined) return []
   if (!Array.isArray(value))
     throw new DecisionsError("config-error", `${file}: profiles must be a list`, { file })
   return value.map((p, i) => {
-    const profile = p as Partial<ModelProfile>
+    const profile = { ...(p as object) } as Partial<ModelProfile>
     const ok =
       typeof profile.id === "string" &&
       typeof profile.maxStateTokens === "number" &&
@@ -339,6 +368,13 @@ function profileList(layer: Layer, file: string): ModelProfile[] {
         `${file}: profiles[${i}].maxChoices must be a whole number of at least 2`,
         { file },
       )
+    }
+    const extra = Object.keys(profile).filter(
+      (k) => !PROFILE_FIELDS.includes(k as keyof ModelProfile),
+    )
+    for (const key of extra) {
+      warnings.push(`${file}: unknown key profiles[${i}].${key} (ignored)`)
+      delete (profile as Record<string, unknown>)[key]
     }
     return {
       displayName: profile.id as string,

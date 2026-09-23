@@ -31,10 +31,15 @@ as invalid YAML, a bad `route:` setting, or a credentials file that others can r
 it names. For credentials: `chmod 600 ~/.config/system1/credentials`, containing exactly one line,
 `openrouter_api_key: <key>`.
 
-A `warn` means the files loaded, but some keys or values were ignored: an unknown key (such as
-`concurency:`), or a value of the wrong type or range (such as `concurrency: "4"`). The default
-or the next layer applied instead. The detail lists each one with its file. Correct or remove
-them; [configuration.md](configuration.md) lists every key.
+It also fails when the endpoint (from `SYSTEM1_ENDPOINT`) isn't a URL.
+
+### doctor: `config-keys`
+
+A warning: the config files loaded, but some keys or values were ignored. Examples are an unknown
+key (such as `concurency:`), a value of the wrong type or range (such as `concurrency: "4"`), or
+consent granted in the user file. The default or the other file's value applied instead. The
+detail lists each one with its file. Correct or remove them;
+[configuration.md](configuration.md#files-and-layering) lists what is checked.
 
 ### doctor: `path`
 

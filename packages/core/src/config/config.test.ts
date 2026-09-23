@@ -117,6 +117,53 @@ describe("loadConfig", () => {
     expect(config.warnings).toHaveLength(9)
   })
 
+  it("warns about a bad value in a layer that loses, and treats an empty key as unset", () => {
+    const { repo, home } = setup(
+      "concurrency: 4\nmodel:\nbudget:\n",
+      "concurrency: 2.5\negress: nope\negress2: 1\n",
+    )
+    const config = loadConfig({ cwd: repo, env: {}, home })
+    expect(config.concurrency).toBe(4)
+    const userFile = join(home, ".config/system1/config.yaml")
+    expect(config.warnings).toEqual([
+      `${userFile}: unknown key egress2`,
+      `${userFile}: egress must be a mapping (ignored)`,
+      `${userFile}: concurrency must be a whole number of at least 1 (ignored)`,
+    ])
+  })
+
+  it("warns about consent in the user file, and an endpoint that isn't a URL", () => {
+    const { repo, home } = setup(
+      "endpoint: openrouter.ai/api/alpha/decisions\n",
+      "egress: { consent: { granted: true } }\n",
+    )
+    const config = loadConfig({ cwd: repo, env: {}, home })
+    expect(config.endpoint).toMatch(/^https:\/\//)
+    expect(config.warnings).toEqual([
+      expect.stringMatching(/egress.consent is read only from the repo file/),
+      expect.stringMatching(/endpoint must be an http\(s\) URL \(ignored\)$/),
+    ])
+  })
+
+  it("accepts .inf for a budget, which switches that guard off", () => {
+    const { repo, home } = setup("budget: { maxUsd: .inf }\n")
+    const config = loadConfig({ cwd: repo, env: {}, home })
+    expect(config.budget.maxUsd).toBe(Number.POSITIVE_INFINITY)
+    expect(config.warnings).toEqual([])
+  })
+
+  it("drops unknown profile fields with a warning, so they are never shown or used", () => {
+    const { repo, home } = setup(
+      "profiles:\n  - { id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2, apiKey: sk-secret }\n",
+    )
+    const config = loadConfig({ cwd: repo, env: {}, home })
+    expect(config.profiles[0]).not.toHaveProperty("apiKey")
+    expect(config.warnings).toEqual([
+      expect.stringMatching(/unknown key profiles\[0\]\.apiKey \(ignored\)$/),
+    ])
+    expect(JSON.stringify(config.warnings)).not.toContain("sk-secret")
+  })
+
   it("lets a config profile replace a built-in of the same id, repo over user", () => {
     const profile = (floor: number) =>
       `profiles:\n  - { id: typesafe/jev-1.13, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: ${floor} }\n`
@@ -126,6 +173,11 @@ describe("loadConfig", () => {
     expect(jev).toHaveLength(1)
     expect(jev[0]?.undecidedFloor).toBe(0.4)
     expect(resolveProfile("typesafe/jev-1.13", all).undecidedFloor).toBe(0.4)
+    // A dated build resolves to the overriding profile too.
+    expect(resolveProfile("typesafe/jev-1.13-20260917", all)).toMatchObject({
+      id: "typesafe/jev-1.13-20260917",
+      undecidedFloor: 0.4,
+    })
     // Still first: an override keeps the built-in's place in the list.
     expect(all[0]?.id).toBe("typesafe/jev-1.13")
   })

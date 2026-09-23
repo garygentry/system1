@@ -41,8 +41,9 @@ lowercase letters, digits, `.`, `_` and `-`. The name is also the spec's fixture
 | `meta` | no | mapping | Free-form, for anything a team wants to carry. The engine doesn't read it |
 
 Any other key is an error, so a misspelling such as `kepe:` or `source: {globs: …}` fails instead
-of silently dropping the policy. The same holds inside `policy`, a threshold, `source` and an
-example. A question is checked the way `--questions` is. `provenance` and `meta` are free-form.
+of silently dropping the policy. The same holds inside `policy`, a threshold, `source`, an
+example and a question (which has only `type`, `instructions` and `criteria`, as with
+`--questions`). `provenance` and `meta` are free-form.
 
 A spec can also be written as JSON, with the same fields.
 

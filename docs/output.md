@@ -291,8 +291,9 @@ was given).
 
 **`config`**: `{repoRoot, model, endpoint, concurrency, timeoutMs, budget, egress, apiKey, replay,
 session, sessionOrigin, profiles, route, files, specDirs, warnings}`. `egress` is
-`{consent, exclude, defaultExcludes}`, where `defaultExcludes` is a count. `profiles` lists only
-the profiles the config files add or override. `warnings` lists the keys and values loading
+`{consent, exclude, defaultExcludes}`, where `defaultExcludes` is a count. `profiles` lists the
+profile in effect for each `id` the config files set, once per `id`; built-ins nobody overrides
+aren't repeated. `warnings` lists the keys and values loading
 ignored, each prefixed with its file. `apiKey` is a description such as `"absent (replay only)"`, never
 the key. `config egress status|allow|deny` gives `{egress: {consent, file, changed?}}`. See
 [configuration.md](configuration.md#what-resolved).
@@ -312,10 +313,12 @@ the key. `config egress status|allow|deny` gives `{egress: {consent, file, chang
 when any check failed; warnings alone keep it `true`. `live` says whether a live decision would
 be sent. `harness` and `session` are `null` outside a harness. Each check is
 `{name, status, detail, fix?}`, with `status` `ok`, `warn` or `fail`. Not every check appears
-every time: `config` appears only when it fails or warns, and `path-version` only when `decide` is on
+every time: `config` appears only when it fails, `config-keys` only when keys were ignored, and
+`path-version` only when `decide` is on
 PATH. The checks are described in [troubleshooting.md](troubleshooting.md#doctor-checks).
 
-**`ping`**: `{ok, model, endpoint, probe, keyPresent, latencyMs?, httpStatus?, contextLength?}`.
+**`ping`**: `{ok, model, endpoint, probe, keyPresent, latencyMs?, httpStatus?, contextLength?, configError?}`.
+`configError` is set when a config file failed to load, so the probe used the environment only.
 Except in `brief`, an unreachable endpoint is an error envelope (`provider-unreachable`, exit 5) with
 these fields in `error.details`.
 

@@ -308,12 +308,29 @@ describe("decide config egress", () => {
     expect(r.route.triggers).toEqual([{ name: "deploy", pattern: "is it safe to deploy" }])
     expect(r.warnings).toEqual([expect.stringMatching(/unknown key concurency$/)])
 
-    await main(["config", "--format", "brief"], io)
+    expect(await main(["config", "--format", "brief"], io)).toBe(0)
     const brief = out.at(-1) ?? ""
     expect(brief).toContain("timeout 9000 ms")
     expect(brief).toContain("profiles: acme/judge-1")
     expect(brief).toMatch(/route: on · .*deploy/)
     expect(brief).toMatch(/ignored: .*unknown key concurency/)
+  })
+
+  it("config show never prints an unknown profile field, and --format brief survives a bad route", async () => {
+    const { io, out } = rig({
+      ".system1/config.yaml": [
+        "egress: { consent: { granted: true } }",
+        "profiles:",
+        "  - { id: typesafe/jev-1.13, maxStateTokens: 8000, usdPerInputToken: 0, undecidedFloor: 0.2, apiKey: sk-profile-secret }",
+        "route: { disable: [nope] }",
+      ].join("\n"),
+    })
+    expect(await main(["config"], io)).toBe(0)
+    expect(out.join("")).not.toContain("sk-profile-secret")
+    expect(JSON.parse(out.at(-1) ?? "").result.profiles).toHaveLength(1)
+    expect(await main(["config", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/^route: invalid \(.*nope/m)
+    expect(out.at(-1)).toMatch(/^profiles: typesafe\/jev-1\.13$/m)
   })
 })
 
@@ -411,10 +428,23 @@ describe("decide ping", () => {
     expect(json().result.model).toBe("acme/judge-2")
   })
 
-  it("still pings from the environment when the config file is broken", async () => {
-    const { io, json } = rig({ ".system1/config.yaml": "egress: [unclosed\n" })
+  it("still pings from the environment when the config file is broken, and says so", async () => {
+    const { io, json, out } = rig({ ".system1/config.yaml": "egress: [unclosed\n" })
     expect(await main(["ping"], io)).toBe(0)
-    expect(json().result).toMatchObject({ ok: true, model: "typesafe/jev-1.13" })
+    expect(json().result).toMatchObject({
+      ok: true,
+      model: "typesafe/jev-1.13",
+      configError: expect.stringMatching(/not valid YAML/),
+    })
+    expect(await main(["ping", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/\nconfig not loaded, so this used the environment only: /)
+  })
+
+  it("an endpoint that isn't a URL is a usage error, not a bug", async () => {
+    const { io, json } = rig()
+    const env = { ...io.env, SYSTEM1_ENDPOINT: "openrouter.ai/api" }
+    expect(await main(["ping"], { ...io, env })).toBe(2)
+    expect(json().error).toMatchObject({ code: "config-error" })
   })
 })
 
@@ -471,6 +501,8 @@ examples:
     )
     expect(await main(["spec", "check", "auth"], io)).toBe(6)
     expect(json().error.message).toContain("--live")
+    // --strict never hides an error behind exit 7.
+    expect(await main(["spec", "check", "auth", "--strict", "--format", "brief"], io)).toBe(6)
     expect(await main(["spec", "check", "bare"], io)).toBe(2)
     expect(await main(["spec", "check"], io)).toBe(2)
     expect(await main(["spec", "check", "auth", "--live", "--replay"], io)).toBe(2)
