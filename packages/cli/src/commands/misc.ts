@@ -1,7 +1,11 @@
 import {
+  type ConnectionConfig,
   createContext,
   DecisionsError,
+  isDecisionsError,
+  loadConfig,
   ping,
+  probeUrl,
   resolveConnection,
   runUsage,
   TOOL_SCHEMAS,
@@ -59,7 +63,20 @@ export async function runPingCommand(io: Io, format: Format): Promise<ExitCode> 
     "ping",
     format,
     async () => {
-      const result = await ping(resolveConnection(io.env), io.fetch ? { fetch: io.fetch } : {})
+      const { config, configError } = connection(io)
+      try {
+        probeUrl(config)
+      } catch {
+        throw new DecisionsError(
+          "config-error",
+          `endpoint ${config.endpoint} is not a URL: correct SYSTEM1_ENDPOINT or \`endpoint\` in the config file`,
+          { endpoint: config.endpoint },
+        )
+      }
+      const result = {
+        ...(await ping(config, io.fetch ? { fetch: io.fetch } : {})),
+        ...(configError ? { configError } : {}),
+      }
       failed = !result.ok
       if (!result.ok && format !== "brief") {
         throw new DecisionsError("provider-unreachable", result.error ?? "unreachable", {
@@ -71,10 +88,34 @@ export async function runPingCommand(io: Io, format: Format): Promise<ExitCode> 
     (r, f) => {
       if (f !== "brief") return undefined
       const key = r.keyPresent ? "key: present" : "key: absent (replay only)"
-      return r.ok
+      const line = r.ok
         ? `decide ping: ok — ${r.model} reachable in ${r.latencyMs} ms (${key})`
         : `decide ping: FAILED — ${r.probe}: ${r.error} (${key})`
+      return r.configError
+        ? `${line}\nconfig not loaded, so this used the environment only: ${r.configError}`
+        : line
     },
   )
   return failed ? EXIT.providerError : code
+}
+
+/**
+ * What `ping` probes: the layered config, as every other command sees it. A
+ * config file that fails to load must not stop the network check, so that
+ * falls back to the environment alone (`doctor` reports the config problem).
+ */
+function connection(io: Io): { config: ConnectionConfig; configError?: string } {
+  try {
+    const config = loadConfig({
+      cwd: io.cwd ?? process.cwd(),
+      env: io.env,
+      ...(io.home ? { home: io.home } : {}),
+    })
+    const { endpoint, model, apiKey, replay } = config
+    return { config: { endpoint, model, apiKey, replay } }
+  } catch (error) {
+    if (isDecisionsError(error) && error.code === "config-error")
+      return { config: resolveConnection(io.env), configError: error.message }
+    throw error
+  }
 }

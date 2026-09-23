@@ -203,6 +203,20 @@ describe("parseQuestionSet", () => {
       )
     })
 
+    it("refuses an unknown key inside source, policy, a threshold or an example", () => {
+      const base = "description: x\nquestions:\n  q: { type: noul, instructions: Is it? }\n"
+      for (const nested of [
+        "source: { globs: ['*.ts'] }",
+        "policy: { threshold: { q: { value: 0.5, why: y } } }",
+        "policy: { thresholds: { q: { value: 0.5, why: y, note: n } } }",
+        "examples: [{ id: a, state: s, expected: { q: yes } }]",
+      ]) {
+        expect(() => parseSpec(`${base}${nested}\n`, "s.yaml", "repo"), nested).toThrow(
+          /invalid spec/,
+        )
+      }
+    })
+
     it("accepts the current version and a meta block", () => {
       const spec = parseSpec(
         "version: 1\ndescription: x\nquestions:\n  q: { type: noul, instructions: Is it? }\nmeta: { owner: platform }\n",

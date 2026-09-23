@@ -1,6 +1,8 @@
 import { DecisionsError, ProviderError } from "../errors.js"
 import type { Answer, Answers, DecisionResponse, QuestionSet, Usage } from "./types.js"
 
+const QUESTION_KEYS = ["type", "instructions", "criteria"]
+
 /**
  * Reject a malformed question set before it costs a call.
  *
@@ -18,6 +20,13 @@ export function assertQuestionSet(questions: unknown): asserts questions is Ques
     if (!isObject(q)) {
       problems.push(`${name}: must be an object`)
       continue
+    }
+    // A misspelled key (`critera:`) would otherwise drop the criteria silently.
+    const extra = Object.keys(q).filter((k) => !QUESTION_KEYS.includes(k))
+    if (extra.length > 0) {
+      problems.push(
+        `${name}: unknown key(s) ${extra.join(", ")} (a question has type, instructions, criteria)`,
+      )
     }
     if (typeof q.instructions !== "string" || q.instructions.trim() === "") {
       problems.push(`${name}: instructions must be a non-empty string`)

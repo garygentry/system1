@@ -64,6 +64,12 @@ export interface ResolvedConfig extends DecisionsConfig {
   sessionOrigin: DetectedSession["origin"] | undefined
   /** Which files contributed, for `decide config`. */
   layers: { user?: string; repo?: string; credentials?: string }
+  /**
+   * Keys and values the files hold but loading ignored: an unknown key or a
+   * value of the wrong type. Ignored rather than refused so an old or
+   * hand-edited file never stops `decide`; `doctor` reports each one.
+   */
+  warnings: string[]
 }
 
 export const DEFAULTS: DecisionsConfig = {
@@ -117,15 +123,22 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
 
   const user = readLayer(userFile)
   const repo = readLayer(repoFile)
+  const warnings = [...unknownKeys(user, userFile, "user"), ...unknownKeys(repo, repoFile, "repo")]
+  // Repo first: it wins over the user layer.
+  const layers = [
+    { layer: repo, file: repoFile },
+    { layer: user, file: userFile },
+  ]
+  const pickFrom = <T>(path: string, rule: Rule<T>) => pick(path, rule, layers, warnings)
 
   const merged: DecisionsConfig = {
-    model: pick("model", "string", repo, user) ?? DEFAULTS.model,
-    endpoint: pick("endpoint", "string", repo, user) ?? DEFAULTS.endpoint,
-    concurrency: pick("concurrency", "number", repo, user) ?? DEFAULTS.concurrency,
-    timeoutMs: pick("timeoutMs", "number", repo, user) ?? DEFAULTS.timeoutMs,
+    model: pickFrom("model", TEXT) ?? DEFAULTS.model,
+    endpoint: pickFrom("endpoint", URL_TEXT) ?? DEFAULTS.endpoint,
+    concurrency: pickFrom("concurrency", WHOLE) ?? DEFAULTS.concurrency,
+    timeoutMs: pickFrom("timeoutMs", POSITIVE) ?? DEFAULTS.timeoutMs,
     budget: {
-      maxCalls: pickIn("budget", "maxCalls", repo, user) ?? DEFAULTS.budget.maxCalls,
-      maxUsd: pickIn("budget", "maxUsd", repo, user) ?? DEFAULTS.budget.maxUsd,
+      maxCalls: pickFrom("budget.maxCalls", NON_NEGATIVE) ?? DEFAULTS.budget.maxCalls,
+      maxUsd: pickFrom("budget.maxUsd", NON_NEGATIVE) ?? DEFAULTS.budget.maxUsd,
     },
     egress: {
       consent: readConsent(repo, repoFile),
@@ -134,7 +147,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
         ...stringList(repo, "egress.exclude", repoFile),
       ],
     },
-    profiles: [...profileList(user, userFile), ...profileList(repo, repoFile)],
+    profiles: [...profileList(user, userFile, warnings), ...profileList(repo, repoFile, warnings)],
     route: readRoute(user, userFile, repo, repoFile, env),
   }
 
@@ -155,12 +168,19 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
       ...(repo ? { repo: repoFile } : {}),
       ...(key?.file ? { credentials: key.file } : {}),
     },
+    warnings,
   }
 }
 
-/** All profiles the config knows: built-ins first, config additions after. */
+/**
+ * All profiles the config knows: built-ins first, config additions after. A
+ * config profile with a built-in's id replaces it in place, and a repo profile
+ * replaces a user one, so later layers win here as everywhere else.
+ */
 export function allProfiles(config: Pick<DecisionsConfig, "profiles">): ModelProfile[] {
-  return [...PROFILES, ...config.profiles]
+  const byId = new Map<string, ModelProfile>()
+  for (const profile of [...PROFILES, ...config.profiles]) byId.set(profile.id, profile)
+  return [...byId.values()]
 }
 
 // ---------------------------------------------------------------------------
@@ -184,29 +204,98 @@ function readLayer(file: string): Layer {
   return parsed as Record<string, unknown>
 }
 
-function pick<T extends "string" | "number">(
-  key: string,
-  type: T,
-  ...layers: Layer[]
-): (T extends "string" ? string : number) | undefined {
-  for (const layer of layers) {
-    const value = layer?.[key]
-    if (typeof value === type) return value as T extends "string" ? string : number
-  }
-  return undefined
+/** Top-level keys, and keys of the plain sections, that loading reads. */
+const KNOWN: Record<string, readonly string[]> = {
+  "": ["model", "endpoint", "concurrency", "timeoutMs", "budget", "egress", "profiles", "route"],
+  budget: ["maxCalls", "maxUsd"],
+  egress: ["consent", "exclude"],
 }
 
-function pickIn(section: string, key: string, ...layers: Layer[]): number | undefined {
-  for (const layer of layers) {
-    const value = (layer?.[section] as Record<string, unknown> | undefined)?.[key]
-    if (typeof value === "number" && value >= 0) return value
+/**
+ * Warnings for what a layer holds but loading never reads: unknown keys, a
+ * section that isn't a mapping, and consent in the user file (read only from
+ * the repo, decision 0009). A key set to nothing (`budget:`) counts as unset.
+ */
+function unknownKeys(layer: Layer, file: string, which: "user" | "repo"): string[] {
+  if (!layer) return []
+  const warnings = Object.keys(layer)
+    .filter((k) => !KNOWN[""]?.includes(k))
+    .map((key) => `${file}: unknown key ${key}`)
+  for (const section of ["budget", "egress"]) {
+    const value = layer[section]
+    if (value === undefined || value === null) continue
+    if (!isMapping(value)) {
+      warnings.push(`${file}: ${section} must be a mapping (ignored)`)
+      continue
+    }
+    for (const key of Object.keys(value)) {
+      if (!KNOWN[section]?.includes(key)) warnings.push(`${file}: unknown key ${section}.${key}`)
+    }
   }
-  return undefined
+  const egress = layer.egress
+  if (which === "user" && isMapping(egress) && egress.consent !== undefined) {
+    warnings.push(`${file}: egress.consent is read only from the repo file (ignored)`)
+  }
+  return warnings
+}
+
+interface Rule<T> {
+  ok: (value: unknown) => value is T
+  /** Completes "<key> must be …". */
+  expected: string
+}
+
+const TEXT: Rule<string> = { ok: (v): v is string => typeof v === "string", expected: "text" }
+const URL_TEXT: Rule<string> = {
+  ok: (v): v is string =>
+    typeof v === "string" && URL.canParse(v) && /^https?:$/.test(new URL(v).protocol),
+  expected: "an http(s) URL",
+}
+const WHOLE: Rule<number> = {
+  ok: (v): v is number => Number.isInteger(v) && (v as number) >= 1,
+  expected: "a whole number of at least 1",
+}
+const POSITIVE: Rule<number> = {
+  ok: (v): v is number => typeof v === "number" && Number.isFinite(v) && v > 0,
+  expected: "a number above 0",
+}
+const NON_NEGATIVE: Rule<number> = {
+  ok: (v): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0,
+  expected: "a number of at least 0",
+}
+
+/**
+ * The first layer's valid value at `path` (`key` or `section.key`). A value
+ * that breaks the rule is skipped, so the next layer (or the default) applies.
+ * Every layer is checked, so a bad value warns whichever layer wins. A key set
+ * to nothing (`model:`) counts as unset.
+ */
+function pick<T>(
+  path: string,
+  rule: Rule<T>,
+  layers: Array<{ layer: Layer; file: string }>,
+  warnings: string[],
+): T | undefined {
+  let found: T | undefined
+  for (const { layer, file } of layers) {
+    const [head, key] = path.split(".") as [string, string?]
+    let value = layer?.[head]
+    // A section that isn't a mapping is reported once, by unknownKeys.
+    if (key !== undefined) value = isMapping(value) ? value[key] : undefined
+    if (value === undefined || value === null) continue
+    if (!rule.ok(value)) warnings.push(`${file}: ${path} must be ${rule.expected} (ignored)`)
+    else if (found === undefined) found = value
+  }
+  return found
+}
+
+function isMapping(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function readConsent(repo: Layer, file: string): Consent {
   const consent = (repo?.egress as Record<string, unknown> | undefined)?.consent
-  if (consent === undefined) return { granted: false }
+  if (consent === undefined || consent === null) return { granted: false }
   if (
     typeof consent !== "object" ||
     consent === null ||
@@ -228,7 +317,7 @@ function readConsent(repo: Layer, file: string): Consent {
 
 function stringList(layer: Layer, path: string, file: string): string[] {
   const value = (layer?.egress as Record<string, unknown> | undefined)?.exclude
-  if (value === undefined) return []
+  if (value === undefined || value === null) return []
   if (!Array.isArray(value) || !value.every((v) => typeof v === "string")) {
     throw new DecisionsError("config-error", `${file}: ${path} must be a list of glob patterns`, {
       file,
@@ -237,13 +326,27 @@ function stringList(layer: Layer, path: string, file: string): string[] {
   return value
 }
 
-function profileList(layer: Layer, file: string): ModelProfile[] {
+/** The fields a config profile may set. Anything else is dropped with a warning. */
+const PROFILE_FIELDS: readonly (keyof ModelProfile)[] = [
+  "id",
+  "displayName",
+  "transport",
+  "maxStateTokens",
+  "maxChoices",
+  "usdPerInputToken",
+  "usdPerOutputToken",
+  "priceAsOf",
+  "undecidedFloor",
+  "calibrated",
+]
+
+function profileList(layer: Layer, file: string, warnings: string[]): ModelProfile[] {
   const value = layer?.profiles
-  if (value === undefined) return []
+  if (value === undefined || value === null) return []
   if (!Array.isArray(value))
     throw new DecisionsError("config-error", `${file}: profiles must be a list`, { file })
   return value.map((p, i) => {
-    const profile = p as Partial<ModelProfile>
+    const profile = { ...(p as object) } as Partial<ModelProfile>
     const ok =
       typeof profile.id === "string" &&
       typeof profile.maxStateTokens === "number" &&
@@ -265,6 +368,17 @@ function profileList(layer: Layer, file: string): ModelProfile[] {
         `${file}: profiles[${i}].maxChoices must be a whole number of at least 2`,
         { file },
       )
+    }
+    const extra = Object.keys(profile).filter(
+      (k) => !PROFILE_FIELDS.includes(k as keyof ModelProfile),
+    )
+    for (const key of extra) {
+      warnings.push(`${file}: unknown key profiles[${i}].${key} (ignored)`)
+      delete (profile as Record<string, unknown>)[key]
+    }
+    // A field with no value (`priceAsOf:`) is unset, so the default applies.
+    for (const [key, v] of Object.entries(profile)) {
+      if (v === null) delete (profile as Record<string, unknown>)[key]
     }
     return {
       displayName: profile.id as string,

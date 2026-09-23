@@ -32,7 +32,10 @@ export interface ContextOptions {
   cwd?: string
   env?: NodeJS.ProcessEnv
   home?: string
-  /** Specs shipped with the plugin/CLI. */
+  /**
+   * The lowest-priority spec directory (origin `bundled`). No package ships
+   * one today; `SYSTEM1_SPECS_PATH` sets it and wins over this option.
+   */
   bundledSpecs?: string
   fetch?: typeof fetch
 }

@@ -1,4 +1,6 @@
 import {
+  activeTriggers,
+  allProfiles,
   createContext,
   DEFAULT_EXCLUDES,
   DecisionsError,
@@ -96,6 +98,7 @@ function show(io: Io, cwd: string) {
     model: config.model,
     endpoint: config.endpoint,
     concurrency: config.concurrency,
+    timeoutMs: config.timeoutMs,
     budget: config.budget,
     egress: {
       consent: config.egress.consent,
@@ -106,8 +109,15 @@ function show(io: Io, cwd: string) {
     replay: config.replay,
     session: config.session ?? null,
     sessionOrigin: config.sessionOrigin ?? null,
+    /**
+     * The profiles in effect for the ids the config files set, one per id: an
+     * override of a built-in shows once. Built-ins nobody overrides are not repeated.
+     */
+    profiles: allProfiles(config).filter((p) => config.profiles.some((c) => c.id === p.id)),
+    route: config.route,
     files: config.layers,
     specDirs: ctx.specDirs,
+    warnings: config.warnings,
   }
 }
 
@@ -123,7 +133,21 @@ function brief(r: ConfigResult): string {
     `key: ${r.apiKey}${r.replay ? " · SYSTEM1_REPLAY forces replay" : ""}`,
     `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted — run `decide config egress allow`"}`,
     `excludes: ${r.egress.defaultExcludes} default${r.egress.exclude.length ? ` + ${r.egress.exclude.join(", ")}` : ""}`,
-    `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency}`,
+    `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency} · timeout ${r.timeoutMs} ms`,
+    ...(r.profiles.length ? [`profiles: ${r.profiles.map((p) => p.id).join(", ")}`] : []),
+    `route: ${routeLine(r.route)}`,
     `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "SYSTEM1_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
+    ...(r.warnings.length ? [`ignored: ${r.warnings.join("; ")}`] : []),
   ].join("\n")
+}
+
+/** Never fails: `config` is where a user looks to see what resolved, even when `route:` is wrong. */
+function routeLine(route: Parameters<typeof activeTriggers>[0]): string {
+  if (!route.enabled) return "off"
+  try {
+    const names = activeTriggers(route).map((t) => t.name)
+    return `on · ${names.join(", ") || "no triggers"}`
+  } catch (error) {
+    return `invalid (${error instanceof Error ? error.message : String(error)})`
+  }
 }

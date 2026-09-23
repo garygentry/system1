@@ -24,8 +24,9 @@ change a gate without a reviewed diff.
 no key, no consent and no network, and costs nothing. Set `SYSTEM1_REPLAY=1` for the job too, so
 that no other `decide` call in it goes live even if a key is in the environment.
 
-A mismatch does **not** change the exit code: `spec check` exits 0 and reports `passed: false`.
-Gate on `passed`. A missing answer is `replay-miss`, exit 6.
+By default a mismatch does **not** change the exit code: `spec check` exits 0 and reports
+`passed: false`. Add `--strict` to make a mismatch exit 7 instead, and gate on the exit code. A
+missing answer is `replay-miss`, exit 6, with or without `--strict`.
 
 A GitHub Actions job that checks every spec in the repo:
 
@@ -49,19 +50,13 @@ jobs:
           fail=0
           for f in .system1/specs/*.yaml; do
             name=$(basename "$f" .yaml)
-            if ! out=$(decide spec check "$name"); then
-              echo "$name: $(echo "$out" | jq -r '"\(.error.code): \(.error.message)"')"
-              fail=1
-              continue
-            fi
-            echo "$out" | jq -r '.result | "\(.spec): passed=\(.passed) \(.counts | tostring)"'
-            echo "$out" | jq -e '.result.passed' > /dev/null || fail=1
+            decide spec check "$name" --strict --format brief || fail=1
           done
           exit "$fail"
 ```
 
-For a readable log instead, run `decide spec check "$name" --format brief`: its headline says
-`PASSED` or `FAILED`, and each example that didn't pass prints its full answers.
+The brief headline says `PASSED` or `FAILED`, and each example that didn't pass prints its full
+answers. Drop `--format brief` to get the JSON envelope, with `passed` and `counts` in `result`.
 
 ## Gate on a result
 

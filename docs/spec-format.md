@@ -40,10 +40,10 @@ lowercase letters, digits, `.`, `_` and `-`. The name is also the spec's fixture
 | `provenance` | no | mapping | Free-form. The engine doesn't read it |
 | `meta` | no | mapping | Free-form, for anything a team wants to carry. The engine doesn't read it |
 
-Any other top-level key is an error, so a misspelling such as `kepe:` fails instead of silently
-dropping the policy. Keys **inside** `policy`, `source`, an example or a question are not checked
-the same way: an unknown one there is ignored. `decide spec validate` catches a wrong field only
-when it leaves a required one missing.
+Any other key is an error, so a misspelling such as `kepe:` or `source: {globs: …}` fails instead
+of silently dropping the policy. The same holds inside `policy`, a threshold, `source`, an
+example and a question (which has only `type`, `instructions` and `criteria`, as with
+`--questions`). `provenance` and `meta` are free-form.
 
 A spec can also be written as JSON, with the same fields.
 

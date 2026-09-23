@@ -12,6 +12,8 @@ export const EXIT = {
   budgetGuard: 4,
   providerError: 5,
   replayMiss: 6,
+  /** `spec check --strict` only: the check ran, and an example did not pass. */
+  checkFailed: 7,
 } as const
 
 export type ExitCode = (typeof EXIT)[keyof typeof EXIT]

@@ -21,6 +21,7 @@ export type CheckStatus = "ok" | "warn" | "fail"
 export const DOCTOR_CHECKS = [
   "cli",
   "config",
+  "config-keys",
   "path",
   "path-version",
   "key",
@@ -132,6 +133,14 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
   }
   const { config } = ctx
 
+  if (config.warnings.length > 0) {
+    checks.push({
+      name: "config-keys",
+      status: "warn",
+      detail: `ignored: ${config.warnings.join("; ")}`,
+      fix: "correct or remove these keys (docs/configuration.md lists every key)",
+    })
+  }
   checks.push(
     config.apiKey
       ? { name: "key", status: "ok", detail: `OPENROUTER_API_KEY present (${config.apiKeySource})` }

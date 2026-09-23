@@ -164,8 +164,8 @@ else.
    decide spec check unowned-todo --format brief
    ```
 
-A mismatch is a finding, not an error. The exit code is 0, the headline says `FAILED`, and
-`passed` is `false` in the JSON. The check passes only when no example fails, comes back
+A mismatch is a finding, not an error. The exit code is 0 (7 with `--strict`), the headline says
+`FAILED`, and `passed` is `false` in the JSON. The check passes only when no example fails, comes back
 undecided against an `expect`, or is withheld. Any example with no recorded answer is
 `replay-miss`, exit 6. To use the check as a gate, see [ci-and-scripts.md](ci-and-scripts.md).
 

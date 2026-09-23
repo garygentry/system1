@@ -243,7 +243,7 @@ Each example result:
 | `undecided` | *optional*. Names of the expected questions that came back too flat |
 | `reason` | *optional*. Why a `withheld` example wasn't sent |
 
-A mismatch is a result (`passed: false`, exit 0), not an error. A spec with no examples is
+A mismatch is a result (`passed: false`, exit 0, or 7 with `--strict`), not an error. A spec with no examples is
 `invalid-request`. In replay, any example with no recorded answer makes the command fail with
 `replay-miss`.
 
@@ -289,9 +289,12 @@ was given).
 | `session` | *optional*. The session filtered on |
 | `since` | *optional*. The date filtered on, as given |
 
-**`config`**: `{repoRoot, model, endpoint, concurrency, budget, egress, apiKey, replay, session,
-sessionOrigin, files, specDirs}`. `egress` is `{consent, exclude, defaultExcludes}`, where
-`defaultExcludes` is a count. `apiKey` is a description such as `"absent (replay only)"`, never
+**`config`**: `{repoRoot, model, endpoint, concurrency, timeoutMs, budget, egress, apiKey, replay,
+session, sessionOrigin, profiles, route, files, specDirs, warnings}`. `egress` is
+`{consent, exclude, defaultExcludes}`, where `defaultExcludes` is a count. `profiles` lists the
+profile in effect for each `id` the config files set, once per `id`; built-ins nobody overrides
+aren't repeated. `warnings` lists the keys and values loading
+ignored, each prefixed with its file. `apiKey` is a description such as `"absent (replay only)"`, never
 the key. `config egress status|allow|deny` gives `{egress: {consent, file, changed?}}`. See
 [configuration.md](configuration.md#what-resolved).
 
@@ -310,10 +313,12 @@ the key. `config egress status|allow|deny` gives `{egress: {consent, file, chang
 when any check failed; warnings alone keep it `true`. `live` says whether a live decision would
 be sent. `harness` and `session` are `null` outside a harness. Each check is
 `{name, status, detail, fix?}`, with `status` `ok`, `warn` or `fail`. Not every check appears
-every time: `config` appears only when it fails, and `path-version` only when `decide` is on
+every time: `config` appears only when it fails, `config-keys` only when keys were ignored, and
+`path-version` only when `decide` is on
 PATH. The checks are described in [troubleshooting.md](troubleshooting.md#doctor-checks).
 
-**`ping`**: `{ok, model, endpoint, probe, keyPresent, latencyMs?, httpStatus?, contextLength?}`.
+**`ping`**: `{ok, model, endpoint, probe, keyPresent, latencyMs?, httpStatus?, contextLength?, configError?}`.
+`configError` is set when a config file failed to load, so the probe used the environment only.
 Except in `brief`, an unreachable endpoint is an error envelope (`provider-unreachable`, exit 5) with
 these fields in `error.details`.
 

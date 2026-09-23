@@ -88,6 +88,14 @@ describe("assertQuestionSet", () => {
     expect(() => assertQuestionSet(guardrailQuestions())).not.toThrow()
   })
 
+  it("refuses an unknown key in a question, such as a misspelled criteria", () => {
+    expect(() =>
+      assertQuestionSet({
+        q: { type: "noul", instructions: "Is it?", critera: { true: "a", false: "b" } },
+      }),
+    ).toThrow(/q: unknown key\(s\) critera/)
+  })
+
   it("reports every problem at once, as invalid-request", () => {
     try {
       assertQuestionSet({
