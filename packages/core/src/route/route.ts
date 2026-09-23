@@ -127,10 +127,12 @@ export const BUILTIN_IGNORE: readonly string[] = [
   "\\b(?:don'?t|do\\s+not|without)\\s+(?:use\\s+|using\\s+)?(?:system\\s?1|decide)\\b",
 ]
 
+// Claude reads a soft hint and still grades a small diff itself, so this one
+// is direct: load the skill first, before reading the evidence.
 export const DEFAULT_MESSAGE =
-  "System 1 routing hint ({triggers}): this request is a closed judgement over text. " +
-  "Load the system1:ask skill and hand the verdicts to `decide` instead of grading them yourself, " +
-  "unless the user has said not to."
+  "System 1 routing hint ({triggers}): the user wants closed verdicts over text. " +
+  "Load the system1:ask skill now, before you read the files or the diff, and let `decide` " +
+  "give the verdicts; do not grade them yourself. Skip this only if the user said not to use System 1."
 
 export interface RouteMatch {
   name: string

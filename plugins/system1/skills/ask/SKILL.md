@@ -1,6 +1,6 @@
 ---
 name: ask
-description: Load this skill before you read through a file, diff or directory of many items to judge each one yourself. Use it whenever the user asks you to classify, route, triage, label, filter, vet or give a verdict on a batch of items (tickets, reviews, commits, CI failures, log lines, the commands in a script, source files, rows), to pick the best match out of a long list of candidates (one package, file, helper or option out of hundreds), or to check a diff, log or test output against rules or acceptance criteria (is the task done, is this safe to commit), however small, since an independent verdict beats grading your own work, even if they never mention decisions or decide. It hands each item to a fast, calibrated decision model through the `decide` CLI (about 300 ms and $0.00003 per item), which is cheaper and more consistent than reading every item yourself. Not for generating text, counting, arithmetic, dates or exact matching.
+description: Load this skill before you read through a file, diff or directory of many items to judge each one yourself. Use it whenever the user asks you to classify, route, triage, label, filter, vet or give a verdict on a batch of items (tickets, reviews, commits, CI failures, log lines, the commands in a script, source files, rows), to pick the best match out of a long list of candidates (one package, file, helper or option out of hundreds), or to give one verdict per rule or acceptance criterion over a diff, log or test output (is the task done, does this diff break our rules), even if they never mention decisions or decide. It hands each item to a fast, calibrated decision model through the `decide` CLI (about 300 ms and $0.00003 per item), which is cheaper and more consistent than reading every item yourself. Not when the user asks you to do something (run tests, commit, fix, edit, write, summarise, explain), and not for exact facts (did the tests pass, counting, arithmetic, dates, exact matching).
 ---
 
 # Ask the decision model
@@ -23,6 +23,8 @@ Use it when the answer is a label, a yes/no or a level, and the model only has t
 Don't use it:
 
 - for generating text, counting, arithmetic, dates, exact string matching, or anything that has to be exact (write code for those);
+- for a fact you can read directly: whether the tests passed, what a log says failed, whether a file has typos. Read it, or run the tool;
+- when the user asked you to act (run the tests, commit, fix, edit, summarise) rather than for a verdict. Do the task; don't add a judgement nobody asked for;
 - for questions that need several documents reasoned together;
 - when there are only a handful of items that fit easily in context. Read them.
 
