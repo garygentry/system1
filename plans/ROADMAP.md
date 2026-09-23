@@ -10,7 +10,9 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-0.1.0 is on npm and installs in all three harnesses. The engine and the CLI surface are in good shape. What is missing is not features — it is **evidence, onboarding and outside users**. Nobody outside this machine has used it, and the load-bearing word in the pitch ("calibrated") is one we repeat from the provider rather than one we have measured. The milestones below are ordered to fix that, in that order.
+**Updated 2026-09-23 (0.3.1).** Evidence (M7) and onboarding (M8) are done: calibration is measured for checkable questions, the docs are checked against the code, and 0.3.x added the Claude routing hook. What is still missing is **outside users**: nobody but the author has used it. M9 is next. `docs/evaluation.md` summarises every measurement.
+
+*As written at 0.1.0:* 0.1.0 is on npm and installs in all three harnesses. The engine and the CLI surface are in good shape. What is missing is not features — it is **evidence, onboarding and outside users**. Nobody outside this machine has used it, and the load-bearing word in the pitch ("calibrated") is one we repeat from the provider rather than one we have measured. The milestones below are ordered to fix that, in that order.
 
 - **Background:**
   - `plans/archive/charter.md` — the 2026-09-21 envisioning brief. **Superseded and archived**; kept only because decision records cite its sections. Do not build from it.
@@ -76,6 +78,8 @@ For this product, CLI plus skills is at least as capable as MCP, and usually che
 | Per-tool permission grants | Command-pattern grants such as `Bash(decide *)` in Claude, and prefix rules in Codex. Setup can write these |
 
 ## Architecture
+
+> **Historical sketch (M0–M3).** Parts of this section never shipped or changed: there is no `decide fixtures` or `decide hook <pack>` command, no plugin `specs/` directory, no agents, and the Codex manifest is `.codex-plugin/plugin.json`. The architecture as built is in [`docs/architecture/`](../docs/architecture/README.md); the CLI contract is [0015](decisions/0015-cli-contract-v1.md).
 
 ```
        plugin content (authored once): skills/{ask,design,setup} · specs/ · hooks (later)

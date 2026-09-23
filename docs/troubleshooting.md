@@ -27,9 +27,12 @@ installed, see `path-version`.
 ### doctor: `config`
 
 A config or credentials file couldn't be read. The detail names the file and the problem, such
-as invalid YAML, an unknown key, or a credentials file that others can read. Fix the file it
-names. For credentials: `chmod 600 ~/.config/system1/credentials`, containing exactly one line,
+as invalid YAML, a bad `route:` setting, or a credentials file that others can read. Fix the file
+it names. For credentials: `chmod 600 ~/.config/system1/credentials`, containing exactly one line,
 `openrouter_api_key: <key>`.
+
+Other mistakes don't show up here. An unknown top-level key, or a value of the wrong type (such as
+`concurrency: "4"`), is ignored and the default applies. `decide config` shows what resolved.
 
 ### doctor: `path`
 
@@ -64,7 +67,7 @@ run `decide config egress allow` yourself at the repo root. In Claude Code, that
 Whether the Claude Code routing hook will hint, and with which triggers. A warning means the
 `route:` config has a problem, usually a regular expression that doesn't compile or an unknown
 name under `disable`. The hook stays silent until it's fixed, and your prompts are never blocked.
-Test a fix with `decide route --text "…"`. See [concepts.md](concepts.md#routing-hints).
+Test a fix with `decide route --text "…"`. See [routing-hints.md](routing-hints.md).
 
 ### doctor: `network`
 
@@ -114,9 +117,10 @@ above), or drop the flag to replay.
 ### `budget-exceeded` · exit 4
 
 The run is projected to go over the spend guard: 200 calls or $0.05 by default. `details` has the
-projection. Narrow the run with a tighter glob, a `--limit`, or a smaller split. Or, if **you**
-accept the cost, add `--confirm`. An agent should show you the projection and let you decide.
-To change the guard, set `budget.maxCalls` and `budget.maxUsd` in config.
+projection. Narrow the run with a tighter glob or a coarser split, so there are fewer items to
+judge. `--limit` doesn't help: it trims what comes back, after every item is judged. Or, if **you**
+accept the cost, add `--confirm`. An agent should show you the projection and let you decide. To
+change the guard, set `budget.maxCalls` and `budget.maxUsd` in config. See [spend.md](spend.md).
 
 ### `invalid-request` · exit 2
 

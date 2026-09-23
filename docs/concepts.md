@@ -65,40 +65,24 @@ and `.system1/usage.jsonl` belong in `.gitignore`.
 
 ## Sources and splits
 
-`decide` reads the content itself, so nothing large is pasted into the conversation.
-
-| Source | Reads |
-|---|---|
-| `--glob '<pattern>'` | matching files; `.gitignore` is honoured inside a git repo |
-| `--file <path[:START-END]>` | one file, or a 1-based inclusive line range of it |
-| `--diff <range>` (`--staged`) | a git diff |
-| `--jsonl <path>` | one structured item per line |
-| `--text '<text>'` | the text itself |
-| `--stdin` | piped input |
-
-A **split** turns sources into items, one call each:
-
-| `--split` | One item per |
-|---|---|
-| `file` (the default) | file |
-| `hunk` | diff hunk |
-| `row` | line (or JSONL row) |
-| `lines:N[/overlap]` | window of N lines |
-| `join` | everything together: one state, e.g. a diff plus a test log |
-
-`ask` judges exactly one item; `many` fans out over many and filters in the engine
-(`--keep`, `--sort`, `--limit`), so only what matters comes back.
+`decide` reads the content itself: files by glob or path, a git diff, JSONL rows, text or piped
+input. So nothing large is pasted into the conversation, and every item passes the same egress
+checks on its way out (see [what gets sent](#what-gets-sent)). A **split** turns those sources into
+items, one call each: a file, a diff hunk, a row, a window of lines, or everything joined into one
+state. `ask` judges exactly one item. `many` fans out over many and filters in the engine, so only
+what matters comes back. [cli.md](cli.md#ask-and-many) has the flags.
 
 ## Specs
 
-A **spec** is a question set saved in `.system1/specs/<name>.yaml`, with its thresholds (each
-with a `why`), an optional default source, and examples with expected answers. Run it with
-`decide many --spec <name>`, and test it offline with `decide spec check <name>` against its
-committed fixtures. The `design` skill writes and repairs them. The [cookbook](cookbook.md) has
-tested ones to copy.
+A **spec** is a question set saved in `.system1/specs/<name>.yaml`, with its thresholds (each with
+a `why`), an optional default source, and examples with expected answers. It turns a question that
+worked into a file the team reviews like code: the thresholds live in the file rather than in
+anyone's head, and the committed fixtures make `decide spec check <name>` an offline regression
+test. The `design` skill writes and repairs specs for an agent, and the [cookbook](cookbook.md)
+has tested ones to copy.
 
-Specs are looked up in the repo (`.system1/specs/`), then your user config
-(`~/.config/system1/specs/`).
+[specs.md](specs.md) shows how to write, record and test one, and [spec-format.md](spec-format.md)
+lists every field.
 
 ## What gets sent
 
@@ -118,31 +102,33 @@ Withheld items are listed in the output with the reason, never silently dropped.
 
 ## Spend
 
-Before a large fan-out, `--dry-run` projects the cost without making any calls. A run projected
-over the **spend guard** (200 calls or $0.05 by default, set with `budget.maxCalls` and
-`budget.maxUsd`) stops with exit 4 and shows the projection. Only `--confirm` lets it go ahead,
-and that's the user's call to make, not the agent's.
-
-Every live and replayed call is logged to `.system1/usage.jsonl`. `decide usage` summarises it,
-by session (`--session current` is this harness session) or since a date.
+One call costs little, but an agent can start a fan-out over thousands of items in one command.
+So a live run projected over the **spend guard** (200 calls or $0.05 by default) stops with exit 4
+before any call is made, and shows the projection. Only `--confirm` lets it go ahead, and that's
+the user's call to make, not the agent's: the person paying sees the figure first. Projected costs
+are always labelled as projected, and measured ones come from the provider's usage report.
+[spend.md](spend.md) covers projecting, narrowing and reviewing a run.
 
 ## Configuration
 
-Layers, later ones winning: built-in defaults → `$XDG_CONFIG_HOME/system1/config.yaml`
-(`~/.config/system1/config.yaml`) → `<repo>/.system1/config.yaml` → environment
-(`OPENROUTER_API_KEY`, `SYSTEM1_MODEL`, `SYSTEM1_ENDPOINT`, `SYSTEM1_REPLAY`, `SYSTEM1_SESSION`,
-`SYSTEM1_ROUTE`).
-Consent is the exception: it is read **only** from the repo's file. `decide config` shows what
-resolved, and where from. It never shows the key.
+Settings come in layers: built-in defaults, then your user config, then the repo's
+`.system1/config.yaml`, then environment variables, with later ones winning. Consent is the
+exception: it is read **only** from the repo's file, so a grant in one repo never covers another.
+`decide config` shows what resolved, and where from. It never shows the key.
+[configuration.md](configuration.md) lists every key.
 
 ## Routing hints
 
 A skill loads only when the agent chooses to load it. Claude, in particular, tends to grade a
-small diff it just wrote rather than hand the check off. So the Claude Code plugin ships one
-hook: on every prompt, `decide route` matches the prompt against a few patterns. When one fires,
-the agent gets a one-line hint to use the `ask` skill. The hint is added to what the agent reads;
-nothing is sent to the model, and the prompt never leaves your machine. Codex and Pi don't get
-the hook.
+small diff it just wrote rather than hand the check off, and no rewording of the skill's
+description changed that without making Codex and Pi load it when they shouldn't. So the Claude
+Code plugin ships one hook instead: on every prompt, `decide route` matches the prompt against a
+few patterns. When one fires, the agent gets a one-line hint to use the `ask` skill. Codex and Pi
+don't get the hook; it changes nothing they see.
+
+The hint is added to what the agent reads. Nothing is sent to the model, and the prompt never
+leaves your machine, so consent doesn't come into it. A wrong hint costs a skill load, not a
+decision: the agent still chooses whether to call `decide`, and any call still needs consent.
 
 Each built-in trigger needs two things together: an intent to judge, and something to judge.
 `batch-judgement` pairs a judging verb or "which of these" with a data file or a batch ("triage
@@ -150,36 +136,17 @@ every CI failure", "go through tickets.jsonl and flag any where…"). `pick-from
 fit" or "which one" with a long list. `criteria-check` pairs "against", "meets" or "pass or fail"
 with rules, criteria or a checklist. `done-check` pairs "is it done?", "ready to merge?" or "can I
 ship this" with a diff, a PR or a test log. `gate-check` pairs "before I commit" with rules or
-"is it safe". A prompt that says not to use System 1 or `decide` gets no hint.
+"is it safe". Either half alone is common in ordinary requests; together they are rare. A prompt
+that says not to use System 1 or `decide` gets no hint.
 
-Everything is configurable under `route:`, in either config layer:
-
-```yaml
-route:
-  enabled: true            # false: the hook stays installed but never hints
-  builtin: true            # false: only your triggers apply
-  disable: [pick-from-many]  # switch off built-in triggers by name
-  triggers:                # your own; a JavaScript regex, case-insensitive
-    - name: pr-review
-      pattern: '\breview (this|the) PR against\b'
-  ignore:                  # a prompt matching any of these never gets a hint
-    - '^/'
-  message: "Use the system1:ask skill for this ({triggers})."   # replaces the hint
-```
-
-`enabled`, `builtin` and `message` from the repo file win over the user file. `disable`,
-`triggers` and `ignore` from both files add up. `SYSTEM1_ROUTE=off` turns hints off for one
-shell or session. To see what a prompt would do, run `decide route --text "…"`: it lists the
-triggers that fired and the config files it read. A bad pattern is a `config-error`; the hook
-then stays silent rather than get in your way, and `decide doctor` reports the problem.
-
-The hook never downloads anything mid-prompt. It runs a `decide` that is already on the machine:
-a global install, or the copy of the plugin's pinned version that `npx` fetched the first time you
-ran `decide` through the plugin. **Setup** makes that first call, so hints start once setup has
-run. Before that, the hook stays silent.
+The hook never gets in your way. It always exits 0, so it can't block a prompt, and it never
+downloads anything mid-prompt: it runs a `decide` already on the machine, and stays silent
+otherwise. Decision record [0018](../plans/decisions/0018-claude-routing-hook.md) has the full
+reasoning. To see what a prompt would do, add your own triggers, or switch hints off, see
+[routing-hints.md](routing-hints.md).
 
 ## The model
 
 The only supported model today is [Jev](https://openrouter.ai/typesafe/jev-1.13)
 (`typesafe/jev-1.13`) on OpenRouter. The README says
-[what happens if it goes away](../README.md#one-model-one-provider).
+[what happens if it goes away](../README.md#known-limits).

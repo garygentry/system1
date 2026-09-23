@@ -8,6 +8,8 @@ import { ROUTE_OPTIONS } from "../packages/cli/src/commands/route.js"
 import { SPEC_OPTIONS } from "../packages/cli/src/commands/spec.js"
 import { BY_CODE, EXIT } from "../packages/cli/src/exit-codes.js"
 import { HELP } from "../packages/cli/src/main.js"
+import { DEFAULTS } from "../packages/core/src/config/load.js"
+import { SpecSchema } from "../packages/core/src/spec/spec.js"
 import { DOCTOR_CHECKS } from "../packages/core/src/tools/doctor.js"
 import { ROOT } from "./cookbook.js"
 
@@ -19,6 +21,8 @@ import { ROOT } from "./cookbook.js"
 const read = (path: string) => readFileSync(join(ROOT, path), "utf8")
 const cli = read("docs/cli.md")
 const troubleshooting = read("docs/troubleshooting.md")
+const configuration = read("docs/configuration.md")
+const specFormat = read("docs/spec-format.md")
 
 /** GitHub's heading anchors: lowercase, punctuation dropped, spaces to hyphens. */
 function slug(heading: string): string {
@@ -92,13 +96,39 @@ describe("docs/troubleshooting.md", () => {
   })
 })
 
+describe("docs/configuration.md", () => {
+  it("documents every config key, nested ones as `section.key`", () => {
+    const keys = Object.entries(DEFAULTS).flatMap(([key, value]) =>
+      value !== null && typeof value === "object" && !Array.isArray(value)
+        ? Object.keys(value).map((sub) => `${key}.${sub}`)
+        : [key],
+    )
+    // `route.message` is optional, so it has no default to list it.
+    keys.push("route.message")
+    expect(keys).toContain("budget.maxCalls")
+    for (const key of keys) expect(configuration, key).toContain(`\`${key}\``)
+  })
+})
+
+describe("docs/spec-format.md", () => {
+  it("documents every top-level spec field", () => {
+    const fields = Object.keys(SpecSchema.properties)
+    expect(fields).toContain("examples")
+    for (const field of fields) expect(specFormat, field).toContain(`| \`${field}\` |`)
+  })
+})
+
+/** Every markdown file under `dir`, relative to the repo root. */
+function markdownUnder(dir: string): string[] {
+  return readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${dir}/${entry.name}`
+    if (entry.isDirectory()) return markdownUnder(path)
+    return entry.name.endsWith(".md") ? [path] : []
+  })
+}
+
 describe("links", () => {
-  const pages = [
-    "README.md",
-    ...readdirSync(join(ROOT, "docs"))
-      .filter((f) => f.endsWith(".md"))
-      .map((f) => `docs/${f}`),
-  ]
+  const pages = ["README.md", ...markdownUnder("docs")]
 
   it.each(pages)("%s: every local link and anchor resolves", (page) => {
     const text = read(page)
