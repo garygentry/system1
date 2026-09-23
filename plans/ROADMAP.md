@@ -192,7 +192,7 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M3** | Tool definitions + spec format + CLI contract | **done 2026-09-22**, see `milestones/M3-tools-spec-cli.md` |
 | **M4** | CLI hardening + harness wiring | **done 2026-09-22**, see `milestones/M4-cli-harness.md` |
 | **M5** | Skills: ad-hoc asking, saved specs, setup | **done 2026-09-22**, see `milestones/M5-skills-specs.md`. `ask` (with the craft references), `design` (save and repair repo specs), `setup` (user-only, consent-gated). `--questions` and `spec check`. Routing evals meet the bar in Claude, Codex and Pi. No bundled specs |
-| **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. **One box left open:** the live decision *through the `ask` skill* per harness, blocked on a provider usage limit |
+| **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. The last box, a live decision *through the `ask` skill* in each harness, was blocked by a provider usage limit and closed in M7 (2026-09-23) |
 | **M7** | **Evidence: measure what we claim** | **next**, see `milestones/M7-evidence.md`. A labelled set, a measured reliability curve published with its scope, threshold guidance grounded in it, and the two boxes M6 left open |
 | M8 | **Onboarding: the first hour works** | outline. A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
 | M9 | **Design partners: 3–5 real users** | outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
@@ -216,9 +216,9 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 **Do not re-litigate the wording without new evidence.** If it is retried, the guard rail that broke last time is the acceptance condition: **Codex and Pi negatives stay 8/8, or the change reverts.**
 
-### 2. No live decision through the `ask` skill has been run per harness
+### 2. ~~No live decision through the `ask` skill has been run per harness~~
 
-M6's one unticked acceptance box. Installs are verified from the published artifacts in all three harnesses, `pnpm smoke` proves the skill → CLI path in replay, and a live `decide many` proves the CLI's live path. What is unproven is the two together, in a real Codex and Pi session; the provider was over its usage limit on release night. Closes in M7.
+**Closed in M7 (2026-09-23).** Claude, Codex and Pi each ran one live `ask` from the published 0.1.0 artifacts on a clean profile. Each chose `decide many`, kept the same 2 of 7 files, and cost about $0.0004 measured. See `milestones/M7-evidence.md` § Results.
 
 ### 3. "Calibrated" is measured only for checkable propositions
 

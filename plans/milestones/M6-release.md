@@ -159,7 +159,7 @@ Tagged `v0.1.0` at `8cfda6a`, pushed to `origin/main`. All three packages publis
 
 **Gates on the released commit:** `pnpm check` 294 tests green (re-run 2026-09-23), `pnpm release:check` 9/9, `pnpm smoke` 9/9.
 
-**Still open:** the per-harness live decision *through the `ask` skill* (acceptance, last box but one). The Codex/Pi provider returned "The usage limit has been reached" on release night, so it could not be run in those two harnesses. `pnpm smoke` proves the same skill → CLI path in replay, and the live call above proves the CLI's live path; what is unproven is only the two together, in a real Codex and Pi session. Retry once the limit resets.
+**Closed 2026-09-23 (in M7):** the per-harness live decision *through the `ask` skill*. The Codex/Pi provider limit blocked it on release night. It has since passed in Claude, Codex and Pi from the published artifacts, at about $0.0004 measured each; see `M7-evidence.md` § Results.
 
 ## Out of scope
 
@@ -183,5 +183,5 @@ Tagged `v0.1.0` at `8cfda6a`, pushed to `origin/main`. All three packages publis
 - [x] `main` is pushed to GitHub, and both marketplace manifests resolve from it.
 - [x] The astra passes have run, their findings and my triage are recorded here, and the user approved the plan before any fix landed.
 - [x] All three packages are published at 0.1.0 and tagged.
-- [ ] **Each harness installs from the published artifacts and runs one live decision through the `ask` skill, with costs recorded.** Installs verified in all three; the live decision through the skill is **not** done — the Codex/Pi provider was over its usage limit on release night. See Phase 3 results.
+- [x] **Each harness installs from the published artifacts and runs one live decision through the `ask` skill, with costs recorded.** Installs verified in all three on release night. The live decision through the skill was blocked by the Codex/Pi usage limit, and passed on 2026-09-23 (in M7). See Phase 3 results.
 - [x] `pnpm check` and `pnpm smoke` pass on the released commit. `pnpm eval:routing all` ran but did not fully clear its own bar: Claude scores 6/8 on `ask` positives against a ≥7/8 target, and Pi's `design`/`setup` runs were void on the provider limit. The user accepted 6/8 for this release; the reasoning is under "Routing evals" above.

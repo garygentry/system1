@@ -89,7 +89,16 @@ Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attem
 - **Judgement group (`defect`, `standalone`):** the single-labeller labels are degenerate (defect true in 1 of 108, standalone true in 124 of 124). They measure the labeller's reading of the rubric, not the model. **User decision:** publish checkable only, and report judgement as unmeasured with that reason.
 - **D5 verdict (user):** the checkable curve is **not bad**, so M9 is not blocked.
 - **Agreement pass: deferred (user, 2026-09-23).** A hurried second pass would distort the check rather than validate the labels. The docs disclose single-labeller ground truth. The blind labelling page is kept as `tools/calibration-agreement.ts` + `evidence/agreement/check.template.html` for tuning rounds.
-- **Still open:** §5 (a live `ask` in each harness) and §6 (the routing retry).
+- **§5, a live `ask` per harness (2026-09-23): passed in all three.** Each harness ran from the published 0.1.0 artifacts on an isolated profile (auth only): Claude with the plugin from the GitHub marketplace and `decide` from the plugin's `bin/` (the shim fell back to `npx @garygentry/system1@0.1.0`, since nothing else was on PATH); Codex with the plugin from GitHub, the CLI from npm and the `prefix_rule`; Pi with `npm:@garygentry/system1-pi` and the CLI from npm. The prompt, the same in each, never named `decide`: *"Use the ask skill from the system1 plugin to find which files under server/ make outbound network requests…"*, run in jev-poc, whose consent was already granted. All three chose `decide many` over the 7 files and kept the same 2 (`server/routes.ts`, `server/transport.ts`); jev-poc was left unchanged.
+
+  | Harness | `decide` line (verbatim) |
+  |---|---|
+  | Claude (Sonnet) | `2 kept of 7 · 0 undecided · 5 dropped · live typesafe/jev-1.13 · $0.000423 measured · 863 ms` |
+  | Codex | `2 kept of 7 · 0 undecided · 5 dropped · live typesafe/jev-1.13 · $0.000418 measured · 591 ms` |
+  | Pi | `2 kept of 7 · 0 undecided · 5 dropped · live typesafe/jev-1.13 · $0.000425 measured · 1.2 s` |
+
+  Decision spend: $0.001266 measured, for all three together. Harness tokens are not included.
+- **Still open:** §6 (the routing retry).
 
 ## Acceptance
 
@@ -99,6 +108,6 @@ Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attem
 - [x] Threshold guidance in the docs is derived from that data, not from taste. *(Weighted precision and recall by threshold.)*
 - [x] The README no longer rests the central claim on the provider's assertion.
 - [x] A finding about `UNDECIDED_FLOOR` is recorded, whether or not it moves. *(It stays: the band came true 53% of the time, weighted; see the docs.)*
-- [ ] One live decision through the `ask` skill in each of Claude, Codex and Pi, with costs recorded — M6's last open box.
+- [x] One live decision through the `ask` skill in each of Claude, Codex and Pi, with costs recorded — M6's last open box. *(2026-09-23: all three, from the published artifacts; see Results.)*
 - [ ] The routing retry has been attempted once and its outcome recorded, with Codex/Pi negatives still 8/8.
 - [ ] `pnpm check` green.
