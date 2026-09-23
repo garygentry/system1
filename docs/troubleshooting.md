@@ -31,8 +31,10 @@ as invalid YAML, a bad `route:` setting, or a credentials file that others can r
 it names. For credentials: `chmod 600 ~/.config/system1/credentials`, containing exactly one line,
 `openrouter_api_key: <key>`.
 
-Other mistakes don't show up here. An unknown top-level key, or a value of the wrong type (such as
-`concurrency: "4"`), is ignored and the default applies. `decide config` shows what resolved.
+A `warn` means the files loaded, but some keys or values were ignored: an unknown key (such as
+`concurency:`), or a value of the wrong type or range (such as `concurrency: "4"`). The default
+or the next layer applied instead. The detail lists each one with its file. Correct or remove
+them; [configuration.md](configuration.md) lists every key.
 
 ### doctor: `path`
 

@@ -10,7 +10,7 @@ import {
 } from "@garygentry/system1-core"
 import { typedParse } from "../args.js"
 import type { Format } from "../envelope.js"
-import type { ExitCode } from "../exit-codes.js"
+import { EXIT, type ExitCode } from "../exit-codes.js"
 import { briefSpecCheck } from "../format.js"
 import type { Io } from "../io.js"
 import { emit } from "../run.js"
@@ -75,13 +75,7 @@ export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<
         (r, f) => (f === "brief" ? `valid: ${r.valid.join(", ") || "(none)"}` : undefined),
       )
     case "check":
-      return emit<SpecCheckResult>(
-        io,
-        "spec",
-        format,
-        () => runSpecCheck(ctx(), checkInput(argv.slice(1))),
-        (r, f) => (f === "brief" ? briefSpecCheck(r) : undefined),
-      )
+      return check(argv.slice(1), io, format, ctx)
     default:
       return emit(io, "spec", format, () => {
         throw new DecisionsError(
@@ -93,8 +87,33 @@ export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<
 }
 
 /**
- * `spec check <name> [--live|--replay] [--confirm] [--model <id>]`. Replay is
- * the default; `--live` records fresh answers into the spec's fixtures.
+ * A mismatch is a result (`passed: false`, exit 0), not an error (0015).
+ * `--strict` opts into exit 7 for it, so a CI step can gate on the exit code.
+ */
+async function check(
+  argv: string[],
+  io: Io,
+  format: Format,
+  ctx: () => ReturnType<typeof createContext>,
+): Promise<ExitCode> {
+  let failed = false
+  const code = await emit<SpecCheckResult>(
+    io,
+    "spec",
+    format,
+    async () => {
+      const result = await runSpecCheck(ctx(), checkInput(argv))
+      failed = !result.passed
+      return result
+    },
+    (r, f) => (f === "brief" ? briefSpecCheck(r) : undefined),
+  )
+  return code === EXIT.ok && failed && parse(argv).values.strict ? EXIT.checkFailed : code
+}
+
+/**
+ * `spec check <name> [--live|--replay] [--confirm] [--model <id>] [--strict]`.
+ * Replay is the default; `--live` records fresh answers into the spec's fixtures.
  */
 function checkInput(argv: string[]): Record<string, unknown> {
   const { values, positionals } = parse(argv)
@@ -102,7 +121,7 @@ function checkInput(argv: string[]): Record<string, unknown> {
   if (!spec || extra !== undefined) {
     throw new DecisionsError(
       "invalid-request",
-      "Usage: decide spec check <name|path> [--live] [--confirm] [--model <id>]",
+      "Usage: decide spec check <name|path> [--live] [--confirm] [--model <id>] [--strict]",
     )
   }
   if (values.live && values.replay) {
@@ -122,6 +141,7 @@ export const SPEC_OPTIONS = {
   replay: { type: "boolean" },
   confirm: { type: "boolean" },
   model: { type: "string" },
+  strict: { type: "boolean" },
 } as const
 
 function parse(argv: string[]) {

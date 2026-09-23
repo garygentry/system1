@@ -289,6 +289,32 @@ describe("decide config egress", () => {
     expect(out.join("")).not.toContain(SECRET)
     expect(JSON.parse(out[0] ?? "").result.apiKey).toBe("present (env)")
   })
+
+  it("config show includes the timeout, config profiles, routing and ignored keys", async () => {
+    const { io, json, out } = rig({
+      ".system1/config.yaml": [
+        "egress: { consent: { granted: true } }",
+        "timeoutMs: 9000",
+        "concurency: 2",
+        "profiles:",
+        "  - { id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2 }",
+        "route: { triggers: [{ name: deploy, pattern: 'is it safe to deploy' }] }",
+      ].join("\n"),
+    })
+    expect(await main(["config"], io)).toBe(0)
+    const r = json().result
+    expect(r.timeoutMs).toBe(9000)
+    expect(r.profiles.map((p: { id: string }) => p.id)).toEqual(["acme/judge-1"])
+    expect(r.route.triggers).toEqual([{ name: "deploy", pattern: "is it safe to deploy" }])
+    expect(r.warnings).toEqual([expect.stringMatching(/unknown key concurency$/)])
+
+    await main(["config", "--format", "brief"], io)
+    const brief = out.at(-1) ?? ""
+    expect(brief).toContain("timeout 9000 ms")
+    expect(brief).toContain("profiles: acme/judge-1")
+    expect(brief).toMatch(/route: on · .*deploy/)
+    expect(brief).toMatch(/ignored: .*unknown key concurency/)
+  })
 })
 
 describe("decide spec", () => {
@@ -365,6 +391,33 @@ describe("decide --questions", () => {
   })
 })
 
+describe("decide ping", () => {
+  it("probes the model and endpoint from the config file, env over file", async () => {
+    const { io, json } = rig({
+      ".system1/config.yaml":
+        "model: acme/judge-1\nendpoint: https://example.test/api/v1/decisions\n",
+    })
+    const probed: string[] = []
+    const fetchImpl = (async (url: string) => {
+      probed.push(url)
+      return Response.json({ data: { endpoints: [] } })
+    }) as unknown as typeof fetch
+    expect(await main(["ping"], { ...io, fetch: fetchImpl })).toBe(0)
+    expect(json().result).toMatchObject({ model: "acme/judge-1", keyPresent: true })
+    expect(probed.at(-1)).toBe("https://example.test/api/v1/models/acme/judge-1/endpoints")
+
+    const env = { ...io.env, SYSTEM1_MODEL: "acme/judge-2" }
+    expect(await main(["ping"], { ...io, env, fetch: fetchImpl })).toBe(0)
+    expect(json().result.model).toBe("acme/judge-2")
+  })
+
+  it("still pings from the environment when the config file is broken", async () => {
+    const { io, json } = rig({ ".system1/config.yaml": "egress: [unclosed\n" })
+    expect(await main(["ping"], io)).toBe(0)
+    expect(json().result).toMatchObject({ ok: true, model: "typesafe/jev-1.13" })
+  })
+})
+
 describe("decide spec check", () => {
   const spec = `description: Auth.
 questions:
@@ -390,6 +443,21 @@ examples:
     )
     expect(brief).toContain("FAIL  helper  relevant=0.05")
     expect(brief).toContain("expected relevant: true")
+
+    // --strict turns the same result into exit 7, for a CI gate; the envelope is unchanged.
+    expect(await main(["spec", "check", "auth", "--strict"], offline)).toBe(7)
+    expect(live.json()).toMatchObject({ ok: true, result: { passed: false } })
+  })
+
+  it("--strict still exits 0 when every example passes", async () => {
+    const live = rig({
+      ".system1/specs/auth.yaml": spec.replace(
+        '{ id: helper, state: "string helper", expect: { relevant: true } }',
+        '{ id: helper, state: "string helper", expect: { relevant: false } }',
+      ),
+    })
+    expect(await main(["spec", "check", "auth", "--live", "--strict"], live.io)).toBe(0)
+    expect(live.json().result.passed).toBe(true)
   })
 
   it("a replay miss is exit 6; no examples or bad usage is exit 2", async () => {

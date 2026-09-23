@@ -24,7 +24,7 @@ export interface ConnectionConfig {
   replay: boolean
 }
 
-/** Env-only connection settings, for `ping` (which must work with no config at all). */
+/** Env-only connection settings: what `ping` falls back to when the config files fail to load. */
 export function resolveConnection(env: NodeJS.ProcessEnv = process.env): ConnectionConfig {
   return {
     endpoint: nonEmpty(env.SYSTEM1_ENDPOINT) ?? DEFAULT_ENDPOINT,

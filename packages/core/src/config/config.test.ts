@@ -1,9 +1,10 @@
 import { chmodSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
+import { resolveProfile } from "../model/profiles.js"
 import { useTempDirs, writeTree } from "../testkit/tmp.js"
 import { assertConsent, setConsent } from "./consent.js"
-import { findRepoRoot, loadConfig } from "./load.js"
+import { allProfiles, findRepoRoot, loadConfig } from "./load.js"
 
 const temp = useTempDirs()
 
@@ -75,6 +76,58 @@ describe("loadConfig", () => {
       const b = setup(`profiles:\n  - ${base}, maxChoices: ${bad} }\n`)
       expect(() => loadConfig({ cwd: b.repo, env: {}, home: b.home }), bad).toThrow(/maxChoices/)
     }
+  })
+
+  it("has no warnings for a clean config", () => {
+    const { repo, home } = setup("concurrency: 4\nbudget: { maxUsd: 1 }\n")
+    expect(loadConfig({ cwd: repo, env: {}, home }).warnings).toEqual([])
+  })
+
+  it("ignores unknown keys and bad values, but warns about each with its file", () => {
+    const { repo, home } = setup(
+      [
+        "concurency: 4",
+        'concurrency: "4"',
+        "timeoutMs: 0",
+        "model: 7",
+        "budget: { maxUsd: -1, maxCals: 5 }",
+        "egress: { exclud: [x] }",
+      ].join("\n"),
+      "concurrency: 2.5\nbudget: nope\n",
+    )
+    const config = loadConfig({ cwd: repo, env: {}, home })
+    expect(config.concurrency).toBe(8)
+    expect(config.timeoutMs).toBe(5_000)
+    expect(config.budget).toEqual({ maxCalls: 200, maxUsd: 0.05 })
+    const repoFile = join(repo, ".system1/config.yaml")
+    const userFile = join(home, ".config/system1/config.yaml")
+    expect(config.warnings).toEqual(
+      expect.arrayContaining([
+        `${repoFile}: unknown key concurency`,
+        `${repoFile}: concurrency must be a whole number of at least 1 (ignored)`,
+        `${repoFile}: timeoutMs must be a number above 0 (ignored)`,
+        `${repoFile}: model must be text (ignored)`,
+        `${repoFile}: budget.maxUsd must be a number of at least 0 (ignored)`,
+        `${repoFile}: unknown key budget.maxCals`,
+        `${repoFile}: unknown key egress.exclud`,
+        `${userFile}: concurrency must be a whole number of at least 1 (ignored)`,
+        `${userFile}: budget must be a mapping (ignored)`,
+      ]),
+    )
+    expect(config.warnings).toHaveLength(9)
+  })
+
+  it("lets a config profile replace a built-in of the same id, repo over user", () => {
+    const profile = (floor: number) =>
+      `profiles:\n  - { id: typesafe/jev-1.13, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: ${floor} }\n`
+    const { repo, home } = setup(profile(0.4), profile(0.3))
+    const all = allProfiles(loadConfig({ cwd: repo, env: {}, home }))
+    const jev = all.filter((p) => p.id === "typesafe/jev-1.13")
+    expect(jev).toHaveLength(1)
+    expect(jev[0]?.undecidedFloor).toBe(0.4)
+    expect(resolveProfile("typesafe/jev-1.13", all).undecidedFloor).toBe(0.4)
+    // Still first: an override keeps the built-in's place in the list.
+    expect(all[0]?.id).toBe("typesafe/jev-1.13")
   })
 
   describe("API key", () => {

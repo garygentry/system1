@@ -40,8 +40,8 @@ flowchart TB
 | `@garygentry/system1-pi` | `packages/pi` | Skills only, for `pi install npm:`. Its `package.json` and `prepack.mjs` are generated, and `prepack` copies `plugins/system1/skills` in. |
 
 The three skills are `ask` (hand a closed judgement to `decide`), `design` (save a reusable spec)
-and `setup` (user-only: install, key, consent, network). None ships a spec: the CLI can resolve
-a bundled `specs/` directory (`packages/cli/src/bundled.ts`), but no package carries one today.
+and `setup` (user-only: install, key, consent, network). None ships a spec. The lowest-priority
+spec directory (origin `bundled`) is set only by `SYSTEM1_SPECS_PATH`; no package carries one.
 
 ## Per harness
 

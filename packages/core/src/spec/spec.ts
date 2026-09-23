@@ -16,7 +16,11 @@ import { parseExpect } from "./expect.js"
  * set together with the policy that reads its answers, so thresholds live in a
  * versioned, testable file rather than in anyone's head (charter principle 3).
  */
-const Threshold = Type.Object({ value: Type.Number(), why: Type.String({ minLength: 1 }) })
+// Every object in the format is closed: a misspelled key (`kepe:`, `globs:`,
+// `exepct:`) must fail rather than silently become no policy at all.
+const CLOSED = { additionalProperties: false } as const
+
+const Threshold = Type.Object({ value: Type.Number(), why: Type.String({ minLength: 1 }) }, CLOSED)
 
 export const SPEC_FORMAT = 1
 
@@ -29,36 +33,40 @@ export const SpecSchema = Type.Object(
     keep: Type.Optional(Type.Array(Type.String())),
     sort: Type.Optional(Type.String()),
     policy: Type.Optional(
-      Type.Object({ thresholds: Type.Optional(Type.Record(Type.String(), Threshold)) }),
+      Type.Object({ thresholds: Type.Optional(Type.Record(Type.String(), Threshold)) }, CLOSED),
     ),
     source: Type.Optional(
-      Type.Object({
-        glob: Type.Optional(Type.Array(Type.String())),
-        file: Type.Optional(Type.String()),
-        jsonl: Type.Optional(Type.String()),
-        diff: Type.Optional(Type.String()),
-        split: Type.Optional(Type.String()),
-      }),
+      Type.Object(
+        {
+          glob: Type.Optional(Type.Array(Type.String())),
+          file: Type.Optional(Type.String()),
+          jsonl: Type.Optional(Type.String()),
+          diff: Type.Optional(Type.String()),
+          split: Type.Optional(Type.String()),
+        },
+        CLOSED,
+      ),
     ),
     examples: Type.Optional(
       Type.Array(
-        Type.Object({
-          id: Type.String({ minLength: 1 }),
-          /** The text (or a JSON value, sent as its JSON text) to judge. Give this or `file`. */
-          state: Type.Optional(Type.Unknown()),
-          /** A repo file to judge, `path` or `path:START-END`. Give this or `state`. */
-          file: Type.Optional(Type.String()),
-          expect: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
-        }),
+        Type.Object(
+          {
+            id: Type.String({ minLength: 1 }),
+            /** The text (or a JSON value, sent as its JSON text) to judge. Give this or `file`. */
+            state: Type.Optional(Type.Unknown()),
+            /** A repo file to judge, `path` or `path:START-END`. Give this or `state`. */
+            file: Type.Optional(Type.String()),
+            expect: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+          },
+          CLOSED,
+        ),
       ),
     ),
     provenance: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
     /** Anything else a team wants to carry, ignored by the engine. */
     meta: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
   },
-  // A misspelled key (`kepe:`, `exepct:`) must fail rather than silently
-  // becoming no policy at all.
-  { additionalProperties: false },
+  CLOSED,
 )
 
 export type SpecFile = Static<typeof SpecSchema>

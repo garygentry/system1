@@ -28,12 +28,19 @@ The **repo** is the nearest directory, from where `decide` runs, that holds `.sy
 `.git`. If there is none, it is the current directory.
 
 Both files are YAML mappings. An empty file is fine. A file that isn't valid YAML, or isn't a
-mapping, is a `config-error` (exit 2) that names the file. Unknown top-level keys are ignored.
-Unknown keys under `route:` are a `config-error`.
+mapping, is a `config-error` (exit 2) that names the file. Unknown keys under `route:` are a
+`config-error`.
 
-A single value of the wrong type (for example `concurrency: "4"`) is skipped without an error,
-and the next layer or the default applies. So is a negative `budget.*` value. Run `decide config`
-to see what resolved.
+Other mistakes are ignored, with a warning rather than an error, so an old or hand-edited file
+never stops `decide`:
+
+- an unknown top-level key, or an unknown key under `budget:` or `egress:`
+- a value of the wrong type or out of range: `model` or `endpoint` that isn't text,
+  `concurrency` that isn't a whole number of at least 1, `timeoutMs` that isn't above 0, or a
+  negative `budget.*`. The next layer or the default applies instead.
+
+`decide doctor` reports each one as a `config` warning, and `decide config` lists them in
+`warnings`.
 
 ## Keys
 
@@ -107,8 +114,8 @@ Optional fields, with the default a config profile gets:
 A missing required field, or a bad `maxChoices`, is a `config-error`. The other optional fields
 aren't checked.
 
-A model id resolves to the first profile whose `id` matches, built-ins first. So a config
-profile with the same `id` as a built-in one has no effect. A dated build such as
+A config profile with the same `id` as a built-in one replaces it, and a repo profile replaces a
+user one with the same `id`. A model id resolves to the profile with that `id`. A dated build such as
 `typesafe/jev-1.13-20260917` resolves to its family's profile, and the dated id is what gets
 sent. An id with no profile is `unknown-model` (exit 2).
 
@@ -165,8 +172,9 @@ openrouter_api_key: <key>
 | `SYSTEM1_ROUTE` | `off`, `0`, `false` or `no`: no routing hints |
 | `XDG_CONFIG_HOME` | Moves the user config, the credentials file and the user specs directory |
 
-An empty value counts as unset. `decide ping` reads only the environment: it ignores `model` and
-`endpoint` in the config files. The other commands read every layer.
+An empty value counts as unset. Every command reads every layer. The one exception is
+`decide ping`: if a config file fails to load, it falls back to the environment alone, so the
+network check still runs.
 
 **Harness session ids.** Without `SYSTEM1_SESSION`, the ledger records the id of the harness
 running the shell, as `<harness>:<id>`. The variables read are `CLAUDE_CODE_SESSION_ID` (Claude
@@ -195,7 +203,8 @@ The user config directory can hold specs too, in `$XDG_CONFIG_HOME/system1/specs
 
 ## What resolved
 
-`decide config` prints the resolved `model`, `endpoint`, `concurrency`, `budget` and `egress`
-settings, whether a key is present, the session, the files that contributed and the spec
-directories. It doesn't show `timeoutMs`, `profiles` or `route`. For `route`, use
-`decide route --text "…"` or `decide doctor`. See [cli.md § config](cli.md#config).
+`decide config` prints every resolved setting: `model`, `endpoint`, `concurrency`, `timeoutMs`,
+`budget`, `egress`, the `profiles` the config files add and the `route` config. It also shows
+whether a key is present, the session, the files that contributed, the spec directories, and
+`warnings` for the keys and values that were ignored. To test routing on a prompt, use
+`decide route --text "…"`. See [cli.md § config](cli.md#config).

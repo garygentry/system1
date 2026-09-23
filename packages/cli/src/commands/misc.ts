@@ -1,6 +1,9 @@
 import {
+  type ConnectionConfig,
   createContext,
   DecisionsError,
+  isDecisionsError,
+  loadConfig,
   ping,
   resolveConnection,
   runUsage,
@@ -59,7 +62,7 @@ export async function runPingCommand(io: Io, format: Format): Promise<ExitCode> 
     "ping",
     format,
     async () => {
-      const result = await ping(resolveConnection(io.env), io.fetch ? { fetch: io.fetch } : {})
+      const result = await ping(connection(io), io.fetch ? { fetch: io.fetch } : {})
       failed = !result.ok
       if (!result.ok && format !== "brief") {
         throw new DecisionsError("provider-unreachable", result.error ?? "unreachable", {
@@ -77,4 +80,24 @@ export async function runPingCommand(io: Io, format: Format): Promise<ExitCode> 
     },
   )
   return failed ? EXIT.providerError : code
+}
+
+/**
+ * What `ping` probes: the layered config, as every other command sees it. A
+ * config file that fails to load must not stop the network check, so that
+ * falls back to the environment alone (`doctor` reports the config problem).
+ */
+function connection(io: Io): ConnectionConfig {
+  try {
+    const config = loadConfig({
+      cwd: io.cwd ?? process.cwd(),
+      env: io.env,
+      ...(io.home ? { home: io.home } : {}),
+    })
+    const { endpoint, model, apiKey, replay } = config
+    return { endpoint, model, apiKey, replay }
+  } catch (error) {
+    if (isDecisionsError(error) && error.code === "config-error") return resolveConnection(io.env)
+    throw error
+  }
 }

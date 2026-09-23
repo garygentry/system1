@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs"
-import { bundledSpecsDir } from "./bundled.js"
 import { main } from "./main.js"
 
 const line = (stream: NodeJS.WriteStream) => (text: string) =>
@@ -13,5 +12,4 @@ process.exitCode = await main(process.argv.slice(2), {
   cwd: process.cwd(),
   readStdin: () => readFileSync(0, "utf8"),
   interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
-  ...(bundledSpecsDir() ? { bundledSpecs: bundledSpecsDir() as string } : {}),
 })

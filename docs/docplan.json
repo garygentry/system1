@@ -1427,15 +1427,11 @@
       "affects": ["concepts", "cookbook", "cli", "troubleshooting", "getting-started"]
     },
     {
-      "note": "Drafting found config behaviour that may be a bug, not a design choice. Unknown top-level config keys and wrong-typed values (concurrency: \"4\", a negative budget) are silently ignored. `decide ping` ignores model and endpoint set in config files. `decide config` doesn't show timeoutMs, profiles or route. A profile with a built-in's id has no effect. `route.builtin: false` also drops the built-in ignore. The pages describe the behaviour as it is; whether to change it is a code decision.",
-      "affects": ["config-reference", "troubleshooting"]
-    },
-    {
-      "note": "Drafting found spec behaviour that may be a bug, not a design choice. `policy.thresholds` is never read by the engine (keep filters), so the two can drift. Unknown keys inside source, policy, questions or examples pass validation. A spec's `source.file` takes no :START-END range, though an example's `file` does. What `provenance` should hold is unspecified.",
+      "note": "Spec behaviour left as is after triage (2026-09-23). `policy.thresholds` is never read by the engine (`keep` filters), so the two can drift; that is by design, and spec-format says so. A spec's `source.file` takes no :START-END range, though an example's `file` does. What `provenance` should hold is unspecified. (Unknown nested keys are now refused.)",
       "affects": ["spec-format", "howto-spec"]
     },
     {
-      "note": "Drafting found CLI behaviour that may be a bug, not a design choice. `decide spec check` exits 0 when examples fail (it reports passed: false), so a CI gate must read the result, not the exit code. Copying fixtures before .system1/fixtures/ exists puts them where lookups miss. bundled.ts looks for a bundled specs/ directory that no package ships. There is an import cycle: tools/doctor → ping → wiring → tools/context.",
+      "note": "CLI behaviour left as is after triage (2026-09-23). Copying fixtures before .system1/fixtures/ exists puts them where lookups miss; that is how `cp -R` works, and specs.md warns about it. There is an import cycle: tools/doctor → ping → wiring → tools/context. (`spec check` now has `--strict`, exit 7; the dead bundled.ts is gone.)",
       "affects": ["howto-ci", "howto-spec", "arch-building-blocks"]
     },
     {

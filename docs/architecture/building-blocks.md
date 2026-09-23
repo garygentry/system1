@@ -162,7 +162,8 @@ nothing but `errors.ts`. `config/` imports it for the defaults, `tools/route.ts`
 ## Loose ends
 
 - `wiring.ts` (`createDeciderFromEnv`, `resolveConnection`) is convenience wiring for scripts and
-  tests. Inside the engine only `ping.ts` uses it, for the env-only connection settings.
+  tests. `ping.ts` takes its `ConnectionConfig` type, and the CLI's `ping` falls back to
+  `resolveConnection` (the environment alone) when a config file fails to load.
 - `testkit/` and `testdata/` are test helpers, not part of the published surface.
 - `index.ts` exports nearly everything, and nothing documents it for outside use. Whether it is a
   stable API is undecided (M6 D1 published it anyway).

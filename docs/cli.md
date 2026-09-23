@@ -89,13 +89,14 @@ Undecided items are listed apart and never thresholded.
 decide spec list
 decide spec show <name>
 decide spec validate [name|path]
-decide spec check <name|path> [--live | --replay] [--confirm] [--model <id>]
+decide spec check <name|path> [--live | --replay] [--confirm] [--model <id>] [--strict]
 ```
 
 `spec check` runs a spec's examples and compares each with its `expect`. Replay is the default.
 `--live` records fresh answers, after the same consent and spend checks as `many`. A mismatch is
-a finding, not an error: the exit code is 0 and `passed` is false. Any example with no recorded
-answer is exit 6.
+a finding, not an error: the exit code is 0 and `passed` is false. `--strict` makes that exit 7
+instead, so a CI step can gate on the exit code; the output is the same. Any example with no
+recorded answer is exit 6.
 
 ### `usage`
 
@@ -115,7 +116,9 @@ decide config egress allow [--by <who>] [--confirm]
 decide config egress deny
 ```
 
-`allow` needs an interactive terminal, or `--confirm`. **Consent is the user's.** Agents must not
+`show` prints every resolved setting, the profiles the config files add, the routing config, and
+`warnings`: keys and values the files hold that loading ignored. `allow` needs an interactive
+terminal, or `--confirm`. **Consent is the user's.** Agents must not
 pass `--confirm` for the user. `--by` records who granted it.
 
 ### `route`
@@ -135,7 +138,9 @@ the agent's context. Use `--text` to test your own `route:` config. See
 ### `schema`, `ping`, `doctor`, `version`
 
 - `decide schema <ask|many|usage|spec-check|route>` prints that tool's input schema.
-- `decide ping` exits 0 when the model's endpoint answers, and 5 when it doesn't.
+- `decide ping` exits 0 when the model's endpoint answers, and 5 when it doesn't. It probes the
+  `model` and `endpoint` from config and environment, like every other command. If a config file
+  fails to load, it probes from the environment alone.
 - `decide doctor` always exits 0: a failed check is a finding, reported in the result
   (`healthy`, `live`) and in the headline. See [troubleshooting.md](troubleshooting.md).
 
@@ -162,6 +167,7 @@ branch on it, not on the message.
 | 4 | spend guard; the projection is in `details` | `budget-exceeded` |
 | 5 | provider failure | `provider-unreachable`, `provider-http`, `malformed-response` |
 | 6 | replay miss | `replay-miss` |
+| 7 | `spec check --strict` only: an example did not pass. Not an error: `ok` is true | — |
 
 When every item in a `many` run fails with the same code, the run fails with that code.
 [troubleshooting.md](troubleshooting.md) gives the cause and fix for each one.

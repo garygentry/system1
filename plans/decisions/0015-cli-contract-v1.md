@@ -1,6 +1,6 @@
 # 0015. CLI contract v1: envelope, exit codes, projection syntax
 
-- **Status:** accepted
+- **Status:** accepted. **Extended 2026-09-23** (additive, same envelope `v`): `spec check --strict` opts into exit **7** when an example does not pass. Without the flag, a mismatch is still exit 0 as below.
 - **Date:** 2026-09-22
 - **Source:** M3. This freezes the draft in the ROADMAP's "CLI contract".
 

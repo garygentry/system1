@@ -1,4 +1,5 @@
 import {
+  activeTriggers,
   createContext,
   DEFAULT_EXCLUDES,
   DecisionsError,
@@ -96,6 +97,7 @@ function show(io: Io, cwd: string) {
     model: config.model,
     endpoint: config.endpoint,
     concurrency: config.concurrency,
+    timeoutMs: config.timeoutMs,
     budget: config.budget,
     egress: {
       consent: config.egress.consent,
@@ -106,8 +108,12 @@ function show(io: Io, cwd: string) {
     replay: config.replay,
     session: config.session ?? null,
     sessionOrigin: config.sessionOrigin ?? null,
+    /** Profiles the config files add or override; the built-ins are not repeated. */
+    profiles: config.profiles,
+    route: config.route,
     files: config.layers,
     specDirs: ctx.specDirs,
+    warnings: config.warnings,
   }
 }
 
@@ -123,7 +129,18 @@ function brief(r: ConfigResult): string {
     `key: ${r.apiKey}${r.replay ? " · SYSTEM1_REPLAY forces replay" : ""}`,
     `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted — run `decide config egress allow`"}`,
     `excludes: ${r.egress.defaultExcludes} default${r.egress.exclude.length ? ` + ${r.egress.exclude.join(", ")}` : ""}`,
-    `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency}`,
+    `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency} · timeout ${r.timeoutMs} ms`,
+    ...(r.profiles.length ? [`profiles: ${r.profiles.map((p) => p.id).join(", ")}`] : []),
+    `route: ${
+      r.route.enabled
+        ? `on · ${
+            activeTriggers(r.route)
+              .map((t) => t.name)
+              .join(", ") || "no triggers"
+          }`
+        : "off"
+    }`,
     `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "SYSTEM1_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
+    ...(r.warnings.length ? [`ignored: ${r.warnings.join("; ")}`] : []),
   ].join("\n")
 }
