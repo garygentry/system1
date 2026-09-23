@@ -1,0 +1,122 @@
+description: Before an agent reports a change done, check the diff and the test output against three common acceptance criteria, one verdict each.
+questions:
+  tests_added:
+    type: noul
+    instructions: The diff adds or changes a test that exercises the behaviour the diff changes.
+    criteria:
+      true: A test file in the diff calls or drives the changed code path.
+      false: No test file changes, or only tests unrelated to the changed code change.
+  tests_pass:
+    type: noul
+    instructions: The test output shows the whole test run passing.
+    criteria:
+      true: The run ends with every test passing and no failure, error or skipped suite reported.
+      false: Any failure, error or skipped suite is reported, the run was cut short, or there is no test output.
+  no_debug_left:
+    type: noul
+    instructions: The diff leaves no debugging code behind.
+    criteria:
+      true: The added lines contain no console or print logging meant for debugging, no commented-out code, no debugger statements and no TODO or FIXME markers.
+      false: The added lines include any of those.
+keep: ["tests_added>=0.7", "tests_pass>=0.7", "no_debug_left>=0.7"]
+policy:
+  thresholds:
+    tests_added:
+      value: 0.7
+      why: The agent acts on this unattended by telling the user "done", so a false pass costs a wrong report. docs/calibration.md measured 98% precision at 0.7 on checkable questions; any criterion below it, or undecided, is reported as not met.
+    tests_pass:
+      value: 0.7
+      why: As for tests_added. Whether a test log shows a clean run is settled by reading it.
+    no_debug_left:
+      value: 0.7
+      why: As for tests_added. A leftover debug line is cheap to fix but embarrassing to ship after "done".
+meta:
+  threshold_basis: calibration
+examples:
+  - id: all-met
+    state: |
+      diff --git a/src/slug.ts b/src/slug.ts
+      @@ -1,3 +1,4 @@
+       export function slugify(s: string) {
+      -  return s.toLowerCase().replace(/\s+/g, "-")
+      +  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+       }
+      diff --git a/src/slug.test.ts b/src/slug.test.ts
+      @@ -5,3 +5,7 @@
+      +it("drops punctuation and trims dashes", () => {
+      +  expect(slugify("  Hello, World! ")).toBe("hello-world")
+      +})
+      ---- test output ----
+       ✓ src/slug.test.ts (6 tests) 4ms
+       Test Files  1 passed (1)
+       Tests  6 passed (6)
+    expect: { tests_added: true, tests_pass: true, no_debug_left: true }
+  - id: failing-run-and-debug-log
+    state: |
+      diff --git a/src/cart.ts b/src/cart.ts
+      @@ -10,6 +10,7 @@ export function total(items: Item[], discount = 0) {
+         const sum = items.reduce((a, i) => a + i.price * i.qty, 0)
+      +  console.log("DEBUG total", sum, discount)
+         return sum * (1 - discount)
+      diff --git a/src/cart.test.ts b/src/cart.test.ts
+      @@ -40,3 +40,6 @@
+      +it("applies the discount", () => {
+      +  expect(total([{ price: 100, qty: 1 }], 0.1)).toBe(90)
+      +})
+      ---- test output ----
+       FAIL  src/cart.test.ts > applies the discount
+       AssertionError: expected 90.00000000000001 to be 90
+       Tests  1 failed | 11 passed (12)
+    expect: { tests_added: true, tests_pass: false, no_debug_left: false }
+  - id: no-tests-touched
+    state: |
+      diff --git a/src/retry.ts b/src/retry.ts
+      @@ -3,7 +3,7 @@
+      -const MAX_ATTEMPTS = 3
+      +const MAX_ATTEMPTS = 5
+       export async function withRetry<T>(fn: () => Promise<T>) {
+      ---- test output ----
+       Test Files  14 passed (14)
+       Tests  201 passed (201)
+    expect: { tests_added: false, tests_pass: true, no_debug_left: true }
+  - id: near-miss-unrelated-test-and-todo
+    state: |
+      diff --git a/src/auth/session.ts b/src/auth/session.ts
+      @@ -22,6 +22,8 @@
+      +  // TODO: remove once the new cookie flag ships
+      +  if (legacy) return refreshLegacy(token)
+      diff --git a/src/format.test.ts b/src/format.test.ts
+      @@ -1,3 +1,6 @@
+      +it("formats zero", () => {
+      +  expect(formatTemp(0)).toBe("0°C")
+      +})
+      ---- test output ----
+       Tests  58 passed (58)
+    expect: { tests_added: false, tests_pass: true, no_debug_left: false }
+  - id: near-miss-skipped-suite
+    state: |
+      diff --git a/src/queue.ts b/src/queue.ts
+      @@ -8,4 +8,4 @@
+      -  if (this.items.length > 100) this.flush()
+      +  if (this.items.length >= this.limit) this.flush()
+      diff --git a/src/queue.test.ts b/src/queue.test.ts
+      @@ -12,3 +12,6 @@
+      +it("flushes at the configured limit", () => {
+      +  const q = new Queue({ limit: 2 }); q.push(1); q.push(2)
+      +  expect(q.flushed).toBe(1)
+      +})
+      ---- test output ----
+       ↓ src/queue.test.ts (4 tests | 4 skipped)
+       Test Files  9 passed | 1 skipped (10)
+       Tests  88 passed | 4 skipped (92)
+    expect: { tests_added: true, tests_pass: false, no_debug_left: true }
+  - id: borderline-no-test-output
+    state: |
+      diff --git a/src/slug.ts b/src/slug.ts
+      @@ -1,3 +1,3 @@
+      -  return s.toLowerCase().replace(/\s+/g, "-")
+      +  return s.toLowerCase().replace(/\s+/g, "_")
+      diff --git a/src/slug.test.ts b/src/slug.test.ts
+      @@ -2,3 +2,3 @@
+      -  expect(slugify("a b")).toBe("a-b")
+      +  expect(slugify("a b")).toBe("a_b")

@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "14ceb97e729d4607b741500aa8a1f7b5d76d2abdacd83d8f49638a6572bc5dd7",
+  "recordedAt": "2026-09-23T05:32:08.750Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "import axios from \"axios\"\nconst api = axios.create({ baseURL: \"https://billing.internal\", timeout: 8000 })\nexport const getInvoice = (id: string) => api.get(`/invoices/${id}`)\n",
+    "questions": {
+      "no_timeout": {
+        "type": "noul",
+        "instructions": "This code contains a direct call to a network API (such as fetch, http.request, axios, requests, or a database, RPC or socket client method) and that call has no time limit.",
+        "criteria": {
+          "true": "A network API call appears in this text, and nothing here bounds how long it may take (no timeout option, deadline, or abort signal that fires on a timer).",
+          "false": "No network API call appears in this text (a call to a function defined in another file is not a network API call, even if that function makes a request), or every network call here has a timeout, a deadline, a timed abort signal, or goes through a client configured here with a timeout."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "no_timeout": {
+        "type": "noul",
+        "noul": 0.04
+      }
+    },
+    "usage": {
+      "input_tokens": 469,
+      "output_tokens": 21,
+      "cost": 0.000019698
+    },
+    "id": "gen-dec-1790141528-hRXtKlbIKmvxsYREBCBv",
+    "provider": "TypeSafe"
+  }
+}

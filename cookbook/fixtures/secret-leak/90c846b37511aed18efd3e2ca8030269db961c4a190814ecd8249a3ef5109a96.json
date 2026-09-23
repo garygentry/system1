@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "90c846b37511aed18efd3e2ca8030269db961c4a190814ecd8249a3ef5109a96",
+  "recordedAt": "2026-09-23T05:31:43.358Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY\nexport function forecastUrl(city: string) {\n  return `https://api.openweather.test/data?q=${city}&appid=${OPENWEATHER_API_KEY}`\n}\n",
+    "questions": {
+      "leaks_secret": {
+        "type": "noul",
+        "instructions": "This code writes a secret value (a password, API key, access token, private key or session cookie) into a log line, console output, an error or exception message, or a URL.",
+        "criteria": {
+          "true": "A variable or field whose name or origin shows it holds a secret is interpolated, concatenated or passed into a log call, console output, an error message, or a URL or query string.",
+          "false": "Secrets are only sent in request headers or bodies, or are masked or redacted before being written, or the code handles no secrets at all."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "leaks_secret": {
+        "type": "noul",
+        "noul": 0.87
+      }
+    },
+    "usage": {
+      "input_tokens": 450,
+      "output_tokens": 22,
+      "cost": 0.0000189
+    },
+    "id": "gen-dec-1790141503-jatgHRG4vFt7KnLnR0Ik",
+    "provider": "TypeSafe"
+  }
+}

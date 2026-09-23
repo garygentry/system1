@@ -1,0 +1,44 @@
+{
+  "v": 1,
+  "key": "4ad9cf8cfdaa0fde6bb20207c4489a669ad454569483ae0e846d52692ed2bf36",
+  "recordedAt": "2026-09-23T05:31:37.148Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "> tsc -b\nsrc/api/orders.ts(118,15): error TS2339: Property 'totalCents' does not exist on type 'Order'.\nError: Process completed with exit code 2.\n",
+    "questions": {
+      "cause": {
+        "type": "choice",
+        "instructions": "What most likely caused the failure shown in this CI log excerpt.",
+        "criteria": {
+          "regression": "The code under test is wrong. An assertion compared an actual value with a different expected one, the code failed to compile or type-check, or project code threw an exception.",
+          "flaky": "The same code could pass on a re-run. The failure depends on timing, ordering or shared state, such as a test that timed out waiting for an event, a race, a port already in use, or a log that says it passed on retry.",
+          "infrastructure": "The CI environment failed, not the code. A network or DNS error while fetching dependencies, a registry rate limit, the runner out of disk or memory, or a service container that never became ready.",
+          "unclear": "The excerpt does not show the cause (it is truncated or has no error message), or it shows no failure at all."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "cause": {
+        "type": "choice",
+        "choice": "regression",
+        "probabilities": {
+          "unclear": 0,
+          "flaky": 0,
+          "regression": 1,
+          "infrastructure": 0
+        },
+        "confidence": 1
+      }
+    },
+    "usage": {
+      "input_tokens": 542,
+      "output_tokens": 54,
+      "cost": 0.000022764
+    },
+    "id": "gen-dec-1790141496-jKTbfM9ZYbFi7ViivB8T",
+    "provider": "TypeSafe"
+  }
+}

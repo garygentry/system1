@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "693c1f7df6f0e4850c28f288182d694f00829b8eadb5fa9b26f8ad337e839d2f",
+  "recordedAt": "2026-09-23T05:31:43.957Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "const redact = (s: string) => `${s.slice(0, 4)}…`\nexport function logSession(sessionId: string, userId: string) {\n  logger.debug({ user: userId, session: redact(sessionId) }, \"session started\")\n}\n",
+    "questions": {
+      "leaks_secret": {
+        "type": "noul",
+        "instructions": "This code writes a secret value (a password, API key, access token, private key or session cookie) into a log line, console output, an error or exception message, or a URL.",
+        "criteria": {
+          "true": "A variable or field whose name or origin shows it holds a secret is interpolated, concatenated or passed into a log call, console output, an error message, or a URL or query string.",
+          "false": "Secrets are only sent in request headers or bodies, or are masked or redacted before being written, or the code handles no secrets at all."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "leaks_secret": {
+        "type": "noul",
+        "noul": 0.28
+      }
+    },
+    "usage": {
+      "input_tokens": 458,
+      "output_tokens": 22,
+      "cost": 0.000019236
+    },
+    "id": "gen-dec-1790141503-Qd521FAIh6drFHGGdzlA",
+    "provider": "TypeSafe"
+  }
+}

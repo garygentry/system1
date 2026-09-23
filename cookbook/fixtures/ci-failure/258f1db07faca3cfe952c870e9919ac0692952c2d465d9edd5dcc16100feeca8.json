@@ -1,0 +1,44 @@
+{
+  "v": 1,
+  "key": "258f1db07faca3cfe952c870e9919ac0692952c2d465d9edd5dcc16100feeca8",
+  "recordedAt": "2026-09-23T05:31:38.413Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "Error: listen EADDRINUSE: address already in use :::5432\n    at Server.setupListenHandle [as _listen2] (node:net:1897:16)\n ❯ test/setup/db.ts:14:10\nFAIL  test/integration/orders.test.ts\n",
+    "questions": {
+      "cause": {
+        "type": "choice",
+        "instructions": "What most likely caused the failure shown in this CI log excerpt.",
+        "criteria": {
+          "regression": "The code under test is wrong. An assertion compared an actual value with a different expected one, the code failed to compile or type-check, or project code threw an exception.",
+          "flaky": "The same code could pass on a re-run. The failure depends on timing, ordering or shared state, such as a test that timed out waiting for an event, a race, a port already in use, or a log that says it passed on retry.",
+          "infrastructure": "The CI environment failed, not the code. A network or DNS error while fetching dependencies, a registry rate limit, the runner out of disk or memory, or a service container that never became ready.",
+          "unclear": "The excerpt does not show the cause (it is truncated or has no error message), or it shows no failure at all."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "cause": {
+        "type": "choice",
+        "choice": "flaky",
+        "probabilities": {
+          "flaky": 0.99,
+          "unclear": 0,
+          "infrastructure": 0.01,
+          "regression": 0
+        },
+        "confidence": 0.99
+      }
+    },
+    "usage": {
+      "input_tokens": 561,
+      "output_tokens": 53,
+      "cost": 0.000023562
+    },
+    "id": "gen-dec-1790141498-OuTQJ8BAGvT9wZPUtDdm",
+    "provider": "TypeSafe"
+  }
+}

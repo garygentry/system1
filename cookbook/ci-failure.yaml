@@ -1,0 +1,68 @@
+description: Triage a failed CI run from the tail of its log, into a code regression, a flaky test, a broken CI environment, or unclear.
+questions:
+  cause:
+    type: choice
+    instructions: What most likely caused the failure shown in this CI log excerpt.
+    criteria:
+      regression: The code under test is wrong. An assertion compared an actual value with a different expected one, the code failed to compile or type-check, or project code threw an exception.
+      flaky: The same code could pass on a re-run. The failure depends on timing, ordering or shared state, such as a test that timed out waiting for an event, a race, a port already in use, or a log that says it passed on retry.
+      infrastructure: The CI environment failed, not the code. A network or DNS error while fetching dependencies, a registry rate limit, the runner out of disk or memory, or a service container that never became ready.
+      unclear: The excerpt does not show the cause (it is truncated or has no error message), or it shows no failure at all.
+keep: ["cause in flaky,infrastructure", "cause.confidence>=0.5"]
+policy:
+  thresholds:
+    cause:
+      value: 0.5
+      why: Unmeasured, so conservative. Only a clear flaky or infrastructure call is routed to an automatic re-run (confidence at least 0.5); everything else, including undecided and unclear, goes to a person. Re-running a regression wastes a CI run and delays the fix, so the rule should rarely re-run one. docs/calibration.md does not cover choice questions.
+meta:
+  threshold_basis: unmeasured
+examples:
+  - id: assertion-mismatch
+    state: |
+      FAIL  src/cart.test.ts > applies the discount
+      AssertionError: expected 90 to be 81
+       ❯ src/cart.test.ts:42:27
+      Test Files  1 failed | 37 passed (38)
+      Tests  1 failed | 412 passed (413)
+    expect: { cause: regression }
+  - id: type-error
+    state: |
+      > tsc -b
+      src/api/orders.ts(118,15): error TS2339: Property 'totalCents' does not exist on type 'Order'.
+      Error: Process completed with exit code 2.
+    expect: { cause: regression }
+  - id: npm-dns-failure
+    state: |
+      npm ERR! code EAI_AGAIN
+      npm ERR! syscall getaddrinfo
+      npm ERR! errno EAI_AGAIN
+      npm ERR! request to https://registry.npmjs.org/esbuild failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+      Error: Process completed with exit code 1.
+    expect: { cause: infrastructure }
+  - id: runner-out-of-disk
+    state: |
+      System.IO.IOException: No space left on device : '/home/runner/runners/2.319.1/_diag/Worker_20260923.log'
+      Error: The operation was canceled.
+    expect: { cause: infrastructure }
+  - id: timeout-passed-on-retry
+    state: |
+      ✗ websocket › reconnects after server restart (5003 ms)
+        Timeout - Async callback was not invoked within the 5000 ms timeout
+      Retrying (1/2)…
+      ✓ websocket › reconnects after server restart (812 ms)
+      Error: 1 test was flaky (failed then passed on retry); failOnFlaky is set.
+    expect: { cause: flaky }
+  - id: truncated-no-error
+    state: |
+      > vitest run
+       RUN  v3.2.4 /home/runner/work/app/app
+       ✓ src/util.test.ts (12 tests) 31ms
+       ✓ src/format.test.ts (8 tests) 12ms
+      Error: Process completed with exit code 1.
+    expect: { cause: unclear }
+  - id: borderline-port-in-use
+    state: |
+      Error: listen EADDRINUSE: address already in use :::5432
+          at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+       ❯ test/setup/db.ts:14:10
+      FAIL  test/integration/orders.test.ts

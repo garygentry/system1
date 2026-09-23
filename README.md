@@ -50,6 +50,8 @@ Three skills ship with it:
 | `design` | Save a question that proved useful as a spec in your repo, with examples, and repair one that misbehaves |
 | `setup` | Get from installed to live-ready, and diagnose what's missing |
 
+For common judgements there are ready-made, tested specs in the [cookbook](docs/cookbook.md): network calls with no timeout, swallowed errors, secrets in logs, destructive commands, CI failure triage, and a pre-"done" check. Copy one into `.system1/specs/` and run it.
+
 ## Install
 
 The CLI needs Node 22 or newer.

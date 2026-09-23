@@ -99,6 +99,21 @@ Walk the first hour **in each harness** from a clean profile, on the working tre
 
 The M6 gates: `pnpm check`, `pnpm release:check`, `pnpm smoke`, `pnpm eval:routing all` (with Claude `ask` at the accepted 5–6/8, gap 1). Publish all three packages at 0.2.0, tag `v0.2.0`, and verify from the published artifacts in each harness, the way M7 §5 did. It's a minor bump: no envelope change.
 
+## Cookbook results (§1, 2026-09-23)
+
+All six recipes survived, and none was tuned to green. They live in `cookbook/<name>.yaml`, with answers in `cookbook/fixtures/<name>/` (settles the open question: `cookbook/` at the root, beside `docs/`). `tools/cookbook.ts record` records live in this repo, using its local consent, into a cleared namespace, so only answers for the current wording are kept. `tools/cookbook.test.ts` adopts each recipe into a temp repo the way `docs/cookbook.md` tells a user to, and replays it with no key and no consent. It fails if an example fails or is undecided, if a clear yes or no lands on the wrong side of the recipe's **own** keep threshold (not just 0.5), if a threshold has no `why`, or if `meta.threshold_basis` is missing, or is `calibration` on a non-noul question.
+
+| Recipe | Type | Examples | Notes from the recording |
+|---|---|---|---|
+| `no-timeout` | noul ≥ 0.3 | 6 + 1 borderline | The first wording left the helper-only near miss **undecided (0.49)**: the walk's finding. Reworded around a *visible* network API call, it dropped to 0.22 |
+| `swallowed-error` | noul ≥ 0.3 | 6 + 1 | A commented deliberate fallback scores 0.70: flagged, and documented as such |
+| `secret-leak` | noul ≥ 0.3 | 6 + 1 | Redacted-prefix near miss 0.28, close to the line; logging a whole config object is undecided (documented caveat) |
+| `destructive-command` | noul ≥ 0.3, escalate only | 7 + 1 | `docker system prune -af` undecided (0.53) |
+| `ci-failure` | choice, **unmeasured** | 6 + 1 | Keeps only a clear (`confidence ≥ 0.5`) `flaky`/`infrastructure` |
+| `done-check` | 3 × noul ≥ 0.7, `--split join` | 5 + 1 | No test output leaves `tests_pass` undecided (0.44) |
+
+Recording cost $0.000982 measured. Every command in `docs/cookbook.md` was then run live in a consented scratch repo, and each worked as written. **Found for §2:** the `ask` skill's `references/thresholds.md` still says "this toolkit does not verify" calibration, which M7 has since done. Update it with the docs pass.
+
 ## Out of scope
 
 - A docs site (D2), `decide spec add` or bundled specs, and any new command.
@@ -110,12 +125,12 @@ The M6 gates: `pnpm check`, `pnpm release:check`, `pnpm smoke`, `pnpm eval:routi
 ## Open, to settle while building
 
 - **Which six recipes survive.** The list above is the intent. A recipe whose examples can't be made to pass for the right reasons is dropped, not tuned to green (the `design` skill's rule).
-- **Where the cookbook directory lives:** `cookbook/` at the root, or under `docs/`. Settle when the test is written.
+- ~~**Where the cookbook directory lives.**~~ Settled: `cookbook/` at the root.
 - **Whether `doctor`'s headline change is wording or contract.** `ok` in the JSON result must stay as it is, or it is a contract change.
 
 ## Acceptance
 
-- [ ] About six recipes in the cookbook, each with passing `expect` examples, replayed by `pnpm test`; each threshold cited from `docs/calibration.md` or marked unmeasured.
+- [x] About six recipes in the cookbook, each with passing `expect` examples, replayed by `pnpm test`; each threshold cited from `docs/calibration.md` or marked unmeasured. *(2026-09-23: six recipes, enforced by `tools/cookbook.test.ts`.)*
 - [ ] `docs/` has getting-started, concepts, CLI reference, troubleshooting and cookbook pages, and the README links to them and carries the supported-model statement.
 - [ ] The CLI reference and the error table are checked against the code by a test.
 - [ ] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline. *(2026-09-23: walked in all three and S1–S5 fixed; the "one cookbook recipe" step waits for §1, so the box stays open.)*

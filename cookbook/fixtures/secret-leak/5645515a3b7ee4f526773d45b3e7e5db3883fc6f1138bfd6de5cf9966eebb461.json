@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "5645515a3b7ee4f526773d45b3e7e5db3883fc6f1138bfd6de5cf9966eebb461",
+  "recordedAt": "2026-09-23T05:31:44.141Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "export function audit(event: string, userId: string, requestId: string) {\n  console.log(`[audit] ${event} user=${userId} request=${requestId}`)\n}\n",
+    "questions": {
+      "leaks_secret": {
+        "type": "noul",
+        "instructions": "This code writes a secret value (a password, API key, access token, private key or session cookie) into a log line, console output, an error or exception message, or a URL.",
+        "criteria": {
+          "true": "A variable or field whose name or origin shows it holds a secret is interpolated, concatenated or passed into a log call, console output, an error message, or a URL or query string.",
+          "false": "Secrets are only sent in request headers or bodies, or are masked or redacted before being written, or the code handles no secrets at all."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "leaks_secret": {
+        "type": "noul",
+        "noul": 0.06
+      }
+    },
+    "usage": {
+      "input_tokens": 435,
+      "output_tokens": 22,
+      "cost": 0.00001827
+    },
+    "id": "gen-dec-1790141503-esoSnAUSIXz6pvjYq7l7",
+    "provider": "TypeSafe"
+  }
+}

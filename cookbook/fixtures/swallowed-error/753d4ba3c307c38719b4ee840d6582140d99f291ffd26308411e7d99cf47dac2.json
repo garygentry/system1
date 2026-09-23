@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "753d4ba3c307c38719b4ee840d6582140d99f291ffd26308411e7d99cf47dac2",
+  "recordedAt": "2026-09-23T05:31:45.670Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "export async function fetchAll(urls: string[]) {\n  const responses = await Promise.all(urls.map((u) => fetch(u)))\n  return Promise.all(responses.map((r) => r.json()))\n}\n",
+    "questions": {
+      "swallowed": {
+        "type": "noul",
+        "instructions": "This code catches an error and discards it, leaving no trace that it happened.",
+        "criteria": {
+          "true": "A catch (or except, or .catch) block is empty, or only continues, returns a default value or ignores the error, without logging, rethrowing, returning, wrapping or recording it.",
+          "false": "Every catch here logs the error, rethrows it, wraps it in another error, returns or passes it to a caller, or records it somewhere; or the code catches nothing."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "swallowed": {
+        "type": "noul",
+        "noul": 0.02
+      }
+    },
+    "usage": {
+      "input_tokens": 423,
+      "output_tokens": 22,
+      "cost": 0.000017766
+    },
+    "id": "gen-dec-1790141505-3L30J6TfHNveUqvHsCJZ",
+    "provider": "TypeSafe"
+  }
+}

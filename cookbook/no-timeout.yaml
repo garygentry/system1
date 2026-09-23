@@ -1,0 +1,71 @@
+description: Screen source files for outbound network requests made with no time limit, so a hung dependency can't hang the caller.
+questions:
+  no_timeout:
+    type: noul
+    instructions: This code contains a direct call to a network API (such as fetch, http.request, axios, requests, or a database, RPC or socket client method) and that call has no time limit.
+    criteria:
+      true: A network API call appears in this text, and nothing here bounds how long it may take (no timeout option, deadline, or abort signal that fires on a timer).
+      false: No network API call appears in this text (a call to a function defined in another file is not a network API call, even if that function makes a request), or every network call here has a timeout, a deadline, a timed abort signal, or goes through a client configured here with a timeout.
+keep: ["no_timeout>=0.3"]
+sort: no_timeout:desc
+policy:
+  thresholds:
+    no_timeout:
+      value: 0.3
+      why: Screening. A missed call can hang production; a false keep costs a minute of reading. On checkable I/O questions, docs/calibration.md measured 88% precision and 97% recall at 0.3.
+source: { glob: ["**/*.{ts,tsx,js,mjs,cjs,py}"], split: file }
+meta:
+  threshold_basis: calibration
+examples:
+  - id: fetch-no-limit
+    state: |
+      export async function getForecast(city: string) {
+        const res = await fetch(`https://api.weather.test/v1?q=${encodeURIComponent(city)}`)
+        return res.json()
+      }
+    expect: { no_timeout: true }
+  - id: python-requests-no-limit
+    state: |
+      import requests
+
+      def fetch_user(user_id):
+          r = requests.get(f"https://users.internal/api/{user_id}")
+          r.raise_for_status()
+          return r.json()
+    expect: { no_timeout: true }
+  - id: fetch-timed-signal
+    state: |
+      export async function postAlert(webhook: string, text: string) {
+        await fetch(webhook, {
+          method: "POST",
+          body: JSON.stringify({ text }),
+          signal: AbortSignal.timeout(5_000),
+        })
+      }
+    expect: { no_timeout: false }
+  - id: client-configured-with-timeout
+    state: |
+      import axios from "axios"
+      const api = axios.create({ baseURL: "https://billing.internal", timeout: 8000 })
+      export const getInvoice = (id: string) => api.get(`/invoices/${id}`)
+    expect: { no_timeout: false }
+  - id: near-miss-calls-a-helper
+    state: |
+      import { getForecast } from "./api.js"
+      import { formatTemp } from "./format.js"
+      const [city = "London"] = process.argv.slice(2)
+      const f = await getForecast(city)
+      console.log(city, formatTemp(f.tempC))
+    expect: { no_timeout: false }
+  - id: near-miss-no-network
+    state: |
+      import { readFile } from "node:fs/promises"
+      export async function loadConfig(path: string) {
+        return JSON.parse(await readFile(path, "utf8"))
+      }
+    expect: { no_timeout: false }
+  - id: borderline-user-cancel-only
+    state: |
+      export function search(q: string, cancel: AbortController) {
+        return fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: cancel.signal })
+      }

@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "4ab0847035bf95f9e1b0457721c533ed96b50625c69fde80b47616d7f0e84cd0",
+  "recordedAt": "2026-09-23T05:31:39.711Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "git push origin feature/login",
+    "questions": {
+      "destructive": {
+        "type": "noul",
+        "instructions": "Running this shell command deletes, overwrites or irreversibly changes data, version-control history or infrastructure that is not a disposable build artifact.",
+        "criteria": {
+          "true": "It removes or overwrites source files, user data, databases, cloud resources or git history (for example rm -rf on a source or home directory, git reset --hard, git push --force, git clean -fdx, DROP TABLE, terraform destroy, kubectl delete, truncating a file with >), or discards uncommitted work.",
+          "false": "It only reads, builds, tests, installs dependencies, commits, or pushes without force; or it deletes only regenerable artifacts such as node_modules, dist, build or cache directories."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "destructive": {
+        "type": "noul",
+        "noul": 0.04
+      }
+    },
+    "usage": {
+      "input_tokens": 427,
+      "output_tokens": 22,
+      "cost": 0.000017934
+    },
+    "id": "gen-dec-1790141499-oWMRnihUGdfYJkMrGOuA",
+    "provider": "TypeSafe"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "ee17f866cdd1c3c4256e9f064a358fda727a7cfca56c042601ecbdf749fe6302",
+  "recordedAt": "2026-09-23T05:31:45.920Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "export async function loadCache(path: string) {\n  try {\n    return JSON.parse(await readFile(path, \"utf8\"))\n  } catch {\n    // First run: no cache file yet, start empty.\n    return {}\n  }\n}\n",
+    "questions": {
+      "swallowed": {
+        "type": "noul",
+        "instructions": "This code catches an error and discards it, leaving no trace that it happened.",
+        "criteria": {
+          "true": "A catch (or except, or .catch) block is empty, or only continues, returns a default value or ignores the error, without logging, rethrowing, returning, wrapping or recording it.",
+          "false": "Every catch here logs the error, rethrows it, wraps it in another error, returns or passes it to a caller, or records it somewhere; or the code catches nothing."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "swallowed": {
+        "type": "noul",
+        "noul": 0.7
+      }
+    },
+    "usage": {
+      "input_tokens": 429,
+      "output_tokens": 22,
+      "cost": 0.000018018
+    },
+    "id": "gen-dec-1790141505-xZAl8nFL7UR9HIB5jjAl",
+    "provider": "TypeSafe"
+  }
+}

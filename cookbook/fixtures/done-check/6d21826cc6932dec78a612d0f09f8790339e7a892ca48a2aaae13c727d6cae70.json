@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "key": "6d21826cc6932dec78a612d0f09f8790339e7a892ca48a2aaae13c727d6cae70",
+  "recordedAt": "2026-09-23T05:31:41.201Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "diff --git a/src/queue.ts b/src/queue.ts\n@@ -8,4 +8,4 @@\n-  if (this.items.length > 100) this.flush()\n+  if (this.items.length >= this.limit) this.flush()\ndiff --git a/src/queue.test.ts b/src/queue.test.ts\n@@ -12,3 +12,6 @@\n+it(\"flushes at the configured limit\", () => {\n+  const q = new Queue({ limit: 2 }); q.push(1); q.push(2)\n+  expect(q.flushed).toBe(1)\n+})\n---- test output ----\n ↓ src/queue.test.ts (4 tests | 4 skipped)\n Test Files  9 passed | 1 skipped (10)\n Tests  88 passed | 4 skipped (92)\n",
+    "questions": {
+      "tests_added": {
+        "type": "noul",
+        "instructions": "The diff adds or changes a test that exercises the behaviour the diff changes.",
+        "criteria": {
+          "true": "A test file in the diff calls or drives the changed code path.",
+          "false": "No test file changes, or only tests unrelated to the changed code change."
+        }
+      },
+      "tests_pass": {
+        "type": "noul",
+        "instructions": "The test output shows the whole test run passing.",
+        "criteria": {
+          "true": "The run ends with every test passing and no failure, error or skipped suite reported.",
+          "false": "Any failure, error or skipped suite is reported, the run was cut short, or there is no test output."
+        }
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "instructions": "The diff leaves no debugging code behind.",
+        "criteria": {
+          "true": "The added lines contain no console or print logging meant for debugging, no commented-out code, no debugger statements and no TODO or FIXME markers.",
+          "false": "The added lines include any of those."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "tests_added": {
+        "type": "noul",
+        "noul": 0.96
+      },
+      "tests_pass": {
+        "type": "noul",
+        "noul": 0.21
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "noul": 0.96
+      }
+    },
+    "usage": {
+      "input_tokens": 654,
+      "output_tokens": 56,
+      "cost": 0.000027468
+    },
+    "id": "gen-dec-1790141500-k15ADsgKkAjVQzwgjtW3",
+    "provider": "TypeSafe"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "67368c23374b622a747b14419bc0d2b6ca6e7be8c4ff4b4721504efef45eadd7",
+  "recordedAt": "2026-09-23T05:31:45.454Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "export function readManifest(path: string) {\n  try {\n    return JSON.parse(readFileSync(path, \"utf8\"))\n  } catch (cause) {\n    throw new ConfigError(`cannot read ${path}`, { cause })\n  }\n}\n",
+    "questions": {
+      "swallowed": {
+        "type": "noul",
+        "instructions": "This code catches an error and discards it, leaving no trace that it happened.",
+        "criteria": {
+          "true": "A catch (or except, or .catch) block is empty, or only continues, returns a default value or ignores the error, without logging, rethrowing, returning, wrapping or recording it.",
+          "false": "Every catch here logs the error, rethrows it, wraps it in another error, returns or passes it to a caller, or records it somewhere; or the code catches nothing."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "swallowed": {
+        "type": "noul",
+        "noul": 0.02
+      }
+    },
+    "usage": {
+      "input_tokens": 431,
+      "output_tokens": 22,
+      "cost": 0.000018102
+    },
+    "id": "gen-dec-1790141505-VZ7fsleiIaSHpFuRYLfl",
+    "provider": "TypeSafe"
+  }
+}

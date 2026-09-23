@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "5930590cdcd35c9f1aa29547ddefca372557b00303b84a1d6a74d0cd3a74995f",
+  "recordedAt": "2026-09-23T05:32:08.487Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "export async function postAlert(webhook: string, text: string) {\n  await fetch(webhook, {\n    method: \"POST\",\n    body: JSON.stringify({ text }),\n    signal: AbortSignal.timeout(5_000),\n  })\n}\n",
+    "questions": {
+      "no_timeout": {
+        "type": "noul",
+        "instructions": "This code contains a direct call to a network API (such as fetch, http.request, axios, requests, or a database, RPC or socket client method) and that call has no time limit.",
+        "criteria": {
+          "true": "A network API call appears in this text, and nothing here bounds how long it may take (no timeout option, deadline, or abort signal that fires on a timer).",
+          "false": "No network API call appears in this text (a call to a function defined in another file is not a network API call, even if that function makes a request), or every network call here has a timeout, a deadline, a timed abort signal, or goes through a client configured here with a timeout."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "no_timeout": {
+        "type": "noul",
+        "noul": 0.02
+      }
+    },
+    "usage": {
+      "input_tokens": 476,
+      "output_tokens": 21,
+      "cost": 0.000019992
+    },
+    "id": "gen-dec-1790141528-VtykBOyrHwnp6NasJ7Ry",
+    "provider": "TypeSafe"
+  }
+}

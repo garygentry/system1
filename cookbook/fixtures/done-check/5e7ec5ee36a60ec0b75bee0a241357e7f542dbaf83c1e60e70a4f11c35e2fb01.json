@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "key": "5e7ec5ee36a60ec0b75bee0a241357e7f542dbaf83c1e60e70a4f11c35e2fb01",
+  "recordedAt": "2026-09-23T05:31:40.798Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "diff --git a/src/retry.ts b/src/retry.ts\n@@ -3,7 +3,7 @@\n-const MAX_ATTEMPTS = 3\n+const MAX_ATTEMPTS = 5\n export async function withRetry<T>(fn: () => Promise<T>) {\n---- test output ----\n Test Files  14 passed (14)\n Tests  201 passed (201)\n",
+    "questions": {
+      "tests_added": {
+        "type": "noul",
+        "instructions": "The diff adds or changes a test that exercises the behaviour the diff changes.",
+        "criteria": {
+          "true": "A test file in the diff calls or drives the changed code path.",
+          "false": "No test file changes, or only tests unrelated to the changed code change."
+        }
+      },
+      "tests_pass": {
+        "type": "noul",
+        "instructions": "The test output shows the whole test run passing.",
+        "criteria": {
+          "true": "The run ends with every test passing and no failure, error or skipped suite reported.",
+          "false": "Any failure, error or skipped suite is reported, the run was cut short, or there is no test output."
+        }
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "instructions": "The diff leaves no debugging code behind.",
+        "criteria": {
+          "true": "The added lines contain no console or print logging meant for debugging, no commented-out code, no debugger statements and no TODO or FIXME markers.",
+          "false": "The added lines include any of those."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "tests_added": {
+        "type": "noul",
+        "noul": 0.03
+      },
+      "tests_pass": {
+        "type": "noul",
+        "noul": 0.98
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "noul": 0.97
+      }
+    },
+    "usage": {
+      "input_tokens": 555,
+      "output_tokens": 56,
+      "cost": 0.00002331
+    },
+    "id": "gen-dec-1790141500-jLRLQqzqLTowJCqyh7Wz",
+    "provider": "TypeSafe"
+  }
+}

@@ -1,0 +1,81 @@
+description: Screen source files for errors that are caught and then discarded without a trace, the usual cause of failures nobody can see.
+questions:
+  swallowed:
+    type: noul
+    instructions: This code catches an error and discards it, leaving no trace that it happened.
+    criteria:
+      true: A catch (or except, or .catch) block is empty, or only continues, returns a default value or ignores the error, without logging, rethrowing, returning, wrapping or recording it.
+      false: Every catch here logs the error, rethrows it, wraps it in another error, returns or passes it to a caller, or records it somewhere; or the code catches nothing.
+keep: ["swallowed>=0.3"]
+sort: swallowed:desc
+policy:
+  thresholds:
+    swallowed:
+      value: 0.3
+      why: Screening. A missed swallow hides failures; a false keep costs a minute of reading. The proposition is settled by reading the code, like the error-handling question docs/calibration.md measured (88% precision, 97% recall at 0.3).
+source: { glob: ["**/*.{ts,tsx,js,mjs,cjs,py}"], split: file }
+meta:
+  threshold_basis: calibration
+examples:
+  - id: empty-catch
+    state: |
+      export function parsePort(raw: string): number {
+        let port = 3000
+        try {
+          port = Number.parseInt(raw, 10)
+        } catch {}
+        return port
+      }
+    expect: { swallowed: true }
+  - id: python-except-pass
+    state: |
+      def send_metrics(client, payload):
+          try:
+              client.post("/metrics", json=payload)
+          except Exception:
+              pass
+    expect: { swallowed: true }
+  - id: promise-catch-noop
+    state: |
+      export function warmCache(keys: string[]) {
+        return Promise.all(keys.map((k) => cache.load(k))).catch(() => undefined)
+      }
+    expect: { swallowed: true }
+  - id: logs-and-rethrows
+    state: |
+      export async function charge(order: Order) {
+        try {
+          return await stripe.charges.create(order.toCharge())
+        } catch (error) {
+          logger.error({ error, orderId: order.id }, "charge failed")
+          throw error
+        }
+      }
+    expect: { swallowed: false }
+  - id: wraps-with-cause
+    state: |
+      export function readManifest(path: string) {
+        try {
+          return JSON.parse(readFileSync(path, "utf8"))
+        } catch (cause) {
+          throw new ConfigError(`cannot read ${path}`, { cause })
+        }
+      }
+    expect: { swallowed: false }
+  - id: near-miss-no-catch
+    state: |
+      export async function fetchAll(urls: string[]) {
+        const responses = await Promise.all(urls.map((u) => fetch(u)))
+        return Promise.all(responses.map((r) => r.json()))
+      }
+    expect: { swallowed: false }
+  - id: borderline-commented-default
+    state: |
+      export async function loadCache(path: string) {
+        try {
+          return JSON.parse(await readFile(path, "utf8"))
+        } catch {
+          // First run: no cache file yet, start empty.
+          return {}
+        }
+      }

@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "key": "288799b70589e1d74c5521a1b5122e062ad7f7a35f958386ebbc7a5525bb41a6",
+  "recordedAt": "2026-09-23T05:31:44.573Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "export function parsePort(raw: string): number {\n  let port = 3000\n  try {\n    port = Number.parseInt(raw, 10)\n  } catch {}\n  return port\n}\n",
+    "questions": {
+      "swallowed": {
+        "type": "noul",
+        "instructions": "This code catches an error and discards it, leaving no trace that it happened.",
+        "criteria": {
+          "true": "A catch (or except, or .catch) block is empty, or only continues, returns a default value or ignores the error, without logging, rethrowing, returning, wrapping or recording it.",
+          "false": "Every catch here logs the error, rethrows it, wraps it in another error, returns or passes it to a caller, or records it somewhere; or the code catches nothing."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "swallowed": {
+        "type": "noul",
+        "noul": 0.96
+      }
+    },
+    "usage": {
+      "input_tokens": 423,
+      "output_tokens": 22,
+      "cost": 0.000017766
+    },
+    "id": "gen-dec-1790141504-ujeqi0FWURd9OsGv4bvD",
+    "provider": "TypeSafe"
+  }
+}

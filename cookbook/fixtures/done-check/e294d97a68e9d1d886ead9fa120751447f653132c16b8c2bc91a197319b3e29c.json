@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "key": "e294d97a68e9d1d886ead9fa120751447f653132c16b8c2bc91a197319b3e29c",
+  "recordedAt": "2026-09-23T05:31:40.560Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "diff --git a/src/cart.ts b/src/cart.ts\n@@ -10,6 +10,7 @@ export function total(items: Item[], discount = 0) {\n   const sum = items.reduce((a, i) => a + i.price * i.qty, 0)\n+  console.log(\"DEBUG total\", sum, discount)\n   return sum * (1 - discount)\ndiff --git a/src/cart.test.ts b/src/cart.test.ts\n@@ -40,3 +40,6 @@\n+it(\"applies the discount\", () => {\n+  expect(total([{ price: 100, qty: 1 }], 0.1)).toBe(90)\n+})\n---- test output ----\n FAIL  src/cart.test.ts > applies the discount\n AssertionError: expected 90.00000000000001 to be 90\n Tests  1 failed | 11 passed (12)\n",
+    "questions": {
+      "tests_added": {
+        "type": "noul",
+        "instructions": "The diff adds or changes a test that exercises the behaviour the diff changes.",
+        "criteria": {
+          "true": "A test file in the diff calls or drives the changed code path.",
+          "false": "No test file changes, or only tests unrelated to the changed code change."
+        }
+      },
+      "tests_pass": {
+        "type": "noul",
+        "instructions": "The test output shows the whole test run passing.",
+        "criteria": {
+          "true": "The run ends with every test passing and no failure, error or skipped suite reported.",
+          "false": "Any failure, error or skipped suite is reported, the run was cut short, or there is no test output."
+        }
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "instructions": "The diff leaves no debugging code behind.",
+        "criteria": {
+          "true": "The added lines contain no console or print logging meant for debugging, no commented-out code, no debugger statements and no TODO or FIXME markers.",
+          "false": "The added lines include any of those."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "tests_added": {
+        "type": "noul",
+        "noul": 0.72
+      },
+      "tests_pass": {
+        "type": "noul",
+        "noul": 0.01
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "noul": 0.01
+      }
+    },
+    "usage": {
+      "input_tokens": 678,
+      "output_tokens": 56,
+      "cost": 0.000028476
+    },
+    "id": "gen-dec-1790141500-9WGm0pjQXDUm0otllPWv",
+    "provider": "TypeSafe"
+  }
+}

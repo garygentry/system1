@@ -1,0 +1,44 @@
+{
+  "v": 1,
+  "key": "b682b01936947ac5c5f276942ed398a24df8ec98ed3251d7aac04532a9864b04",
+  "recordedAt": "2026-09-23T05:31:36.946Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "FAIL  src/cart.test.ts > applies the discount\nAssertionError: expected 90 to be 81\n ❯ src/cart.test.ts:42:27\nTest Files  1 failed | 37 passed (38)\nTests  1 failed | 412 passed (413)\n",
+    "questions": {
+      "cause": {
+        "type": "choice",
+        "instructions": "What most likely caused the failure shown in this CI log excerpt.",
+        "criteria": {
+          "regression": "The code under test is wrong. An assertion compared an actual value with a different expected one, the code failed to compile or type-check, or project code threw an exception.",
+          "flaky": "The same code could pass on a re-run. The failure depends on timing, ordering or shared state, such as a test that timed out waiting for an event, a race, a port already in use, or a log that says it passed on retry.",
+          "infrastructure": "The CI environment failed, not the code. A network or DNS error while fetching dependencies, a registry rate limit, the runner out of disk or memory, or a service container that never became ready.",
+          "unclear": "The excerpt does not show the cause (it is truncated or has no error message), or it shows no failure at all."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "cause": {
+        "type": "choice",
+        "choice": "regression",
+        "probabilities": {
+          "infrastructure": 0,
+          "unclear": 0,
+          "regression": 1,
+          "flaky": 0
+        },
+        "confidence": 1
+      }
+    },
+    "usage": {
+      "input_tokens": 563,
+      "output_tokens": 54,
+      "cost": 0.000023646
+    },
+    "id": "gen-dec-1790141496-vUzrHQtgQ87vmLhQ58gN",
+    "provider": "TypeSafe"
+  }
+}

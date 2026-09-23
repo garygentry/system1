@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "key": "441bc830f7c8315043356bd952810112d036637a5432f7972be7dfaae40dd16d",
+  "recordedAt": "2026-09-23T05:31:40.978Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "diff --git a/src/auth/session.ts b/src/auth/session.ts\n@@ -22,6 +22,8 @@\n+  // TODO: remove once the new cookie flag ships\n+  if (legacy) return refreshLegacy(token)\ndiff --git a/src/format.test.ts b/src/format.test.ts\n@@ -1,3 +1,6 @@\n+it(\"formats zero\", () => {\n+  expect(formatTemp(0)).toBe(\"0°C\")\n+})\n---- test output ----\n Tests  58 passed (58)\n",
+    "questions": {
+      "tests_added": {
+        "type": "noul",
+        "instructions": "The diff adds or changes a test that exercises the behaviour the diff changes.",
+        "criteria": {
+          "true": "A test file in the diff calls or drives the changed code path.",
+          "false": "No test file changes, or only tests unrelated to the changed code change."
+        }
+      },
+      "tests_pass": {
+        "type": "noul",
+        "instructions": "The test output shows the whole test run passing.",
+        "criteria": {
+          "true": "The run ends with every test passing and no failure, error or skipped suite reported.",
+          "false": "Any failure, error or skipped suite is reported, the run was cut short, or there is no test output."
+        }
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "instructions": "The diff leaves no debugging code behind.",
+        "criteria": {
+          "true": "The added lines contain no console or print logging meant for debugging, no commented-out code, no debugger statements and no TODO or FIXME markers.",
+          "false": "The added lines include any of those."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "tests_added": {
+        "type": "noul",
+        "noul": 0.11
+      },
+      "tests_pass": {
+        "type": "noul",
+        "noul": 0.95
+      },
+      "no_debug_left": {
+        "type": "noul",
+        "noul": 0.04
+      }
+    },
+    "usage": {
+      "input_tokens": 590,
+      "output_tokens": 56,
+      "cost": 0.00002478
+    },
+    "id": "gen-dec-1790141500-X1MfyQMNqdTVOxMyw6Mx",
+    "provider": "TypeSafe"
+  }
+}
