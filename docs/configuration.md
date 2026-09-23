@@ -45,8 +45,9 @@ never stops `decide`:
 - `egress.consent` in the user file, which is read only from the repo file
 
 Every layer is checked, so a bad value warns even when the other file's value wins. A key with
-no value (`model:`) counts as unset, with no warning. `budget.maxUsd: .inf` (or `maxCalls`) is
-allowed and switches that guard off.
+no value (`model:`, `budget:`, `egress: { exclude: }`, `profiles:`, or a profile's optional
+field) counts as unset, with no warning. Budgets must be finite: `.inf` is ignored with a warning,
+so set a large number instead.
 
 `decide doctor` reports these as a `config-keys` warning, and `decide config` lists them in
 `warnings`.

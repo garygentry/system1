@@ -1,13 +1,13 @@
 import { DecisionsError, ProviderError } from "../errors.js"
 import type { Answer, Answers, DecisionResponse, QuestionSet, Usage } from "./types.js"
 
+const QUESTION_KEYS = ["type", "instructions", "criteria"]
+
 /**
  * Reject a malformed question set before it costs a call.
  *
  * @throws DecisionsError `invalid-request`, listing every problem found.
  */
-const QUESTION_KEYS = ["type", "instructions", "criteria"]
-
 export function assertQuestionSet(questions: unknown): asserts questions is QuestionSet {
   const problems: string[] = []
   if (!isObject(questions) || Object.keys(questions).length === 0) {

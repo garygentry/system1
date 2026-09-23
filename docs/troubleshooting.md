@@ -31,7 +31,8 @@ as invalid YAML, a bad `route:` setting, or a credentials file that others can r
 it names. For credentials: `chmod 600 ~/.config/system1/credentials`, containing exactly one line,
 `openrouter_api_key: <key>`.
 
-It also fails when the endpoint (from `SYSTEM1_ENDPOINT`) isn't a URL.
+It also fails when `SYSTEM1_ENDPOINT` isn't a URL. (An `endpoint` in a config file that isn't
+an `http(s)` URL is ignored with a `config-keys` warning instead.)
 
 ### doctor: `config-keys`
 

@@ -145,11 +145,34 @@ describe("loadConfig", () => {
     ])
   })
 
-  it("accepts .inf for a budget, which switches that guard off", () => {
+  it("refuses .inf for a budget, which JSON output could not show", () => {
     const { repo, home } = setup("budget: { maxUsd: .inf }\n")
     const config = loadConfig({ cwd: repo, env: {}, home })
-    expect(config.budget.maxUsd).toBe(Number.POSITIVE_INFINITY)
+    expect(config.budget.maxUsd).toBe(0.05)
+    expect(config.warnings).toEqual([expect.stringMatching(/budget.maxUsd must be a number/)])
+  })
+
+  it("treats empty lists, consent and profile fields as unset", () => {
+    const { repo, home } = setup(
+      "egress: { consent:, exclude: }\nprofiles:\n",
+      "profiles:\n  - { id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0, undecidedFloor: 0.2, priceAsOf: }\n",
+    )
+    const config = loadConfig({ cwd: repo, env: {}, home })
+    expect(config.egress).toEqual({ consent: { granted: false }, exclude: [] })
+    expect(config.profiles[0]?.priceAsOf).toBe("unknown")
     expect(config.warnings).toEqual([])
+  })
+
+  it("accepts any http(s) URL as an endpoint, and nothing else", () => {
+    for (const [endpoint, ok] of [
+      ["http://localhost:8080/api/v1/decisions", true],
+      ["HTTPS://openrouter.ai/api/alpha/decisions", true],
+      ["https://open router.ai/x", false],
+      ["ftp://example.test/x", false],
+    ] as const) {
+      const { repo, home } = setup(`endpoint: "${endpoint}"\n`)
+      expect(loadConfig({ cwd: repo, env: {}, home }).warnings, endpoint).toHaveLength(ok ? 0 : 1)
+    }
   })
 
   it("drops unknown profile fields with a warning, so they are never shown or used", () => {

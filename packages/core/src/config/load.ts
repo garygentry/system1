@@ -247,7 +247,8 @@ interface Rule<T> {
 
 const TEXT: Rule<string> = { ok: (v): v is string => typeof v === "string", expected: "text" }
 const URL_TEXT: Rule<string> = {
-  ok: (v): v is string => typeof v === "string" && /^https?:\/\/[^/\s]/.test(v),
+  ok: (v): v is string =>
+    typeof v === "string" && URL.canParse(v) && /^https?:$/.test(new URL(v).protocol),
   expected: "an http(s) URL",
 }
 const WHOLE: Rule<number> = {
@@ -258,9 +259,8 @@ const POSITIVE: Rule<number> = {
   ok: (v): v is number => typeof v === "number" && Number.isFinite(v) && v > 0,
   expected: "a number above 0",
 }
-/** `.inf` is allowed: it switches that spend guard off. */
 const NON_NEGATIVE: Rule<number> = {
-  ok: (v): v is number => typeof v === "number" && v >= 0,
+  ok: (v): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0,
   expected: "a number of at least 0",
 }
 
@@ -295,7 +295,7 @@ function isMapping(value: unknown): value is Record<string, unknown> {
 
 function readConsent(repo: Layer, file: string): Consent {
   const consent = (repo?.egress as Record<string, unknown> | undefined)?.consent
-  if (consent === undefined) return { granted: false }
+  if (consent === undefined || consent === null) return { granted: false }
   if (
     typeof consent !== "object" ||
     consent === null ||
@@ -317,7 +317,7 @@ function readConsent(repo: Layer, file: string): Consent {
 
 function stringList(layer: Layer, path: string, file: string): string[] {
   const value = (layer?.egress as Record<string, unknown> | undefined)?.exclude
-  if (value === undefined) return []
+  if (value === undefined || value === null) return []
   if (!Array.isArray(value) || !value.every((v) => typeof v === "string")) {
     throw new DecisionsError("config-error", `${file}: ${path} must be a list of glob patterns`, {
       file,
@@ -342,7 +342,7 @@ const PROFILE_FIELDS: readonly (keyof ModelProfile)[] = [
 
 function profileList(layer: Layer, file: string, warnings: string[]): ModelProfile[] {
   const value = layer?.profiles
-  if (value === undefined) return []
+  if (value === undefined || value === null) return []
   if (!Array.isArray(value))
     throw new DecisionsError("config-error", `${file}: profiles must be a list`, { file })
   return value.map((p, i) => {
@@ -375,6 +375,10 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
     for (const key of extra) {
       warnings.push(`${file}: unknown key profiles[${i}].${key} (ignored)`)
       delete (profile as Record<string, unknown>)[key]
+    }
+    // A field with no value (`priceAsOf:`) is unset, so the default applies.
+    for (const [key, v] of Object.entries(profile)) {
+      if (v === null) delete (profile as Record<string, unknown>)[key]
     }
     return {
       displayName: profile.id as string,

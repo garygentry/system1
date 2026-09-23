@@ -69,7 +69,7 @@ export async function runPingCommand(io: Io, format: Format): Promise<ExitCode> 
       } catch {
         throw new DecisionsError(
           "config-error",
-          `endpoint ${config.endpoint} is not a URL: correct SYSTEM1_ENDPOINT`,
+          `endpoint ${config.endpoint} is not a URL: correct SYSTEM1_ENDPOINT or \`endpoint\` in the config file`,
           { endpoint: config.endpoint },
         )
       }
