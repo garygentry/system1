@@ -1,6 +1,6 @@
 # 0018. A Claude-only prompt hook hints the ask skill
 
-- **Status:** accepted (acceptance evals pending; see ROADMAP known gap 1)
+- **Status:** accepted; acceptance evals run 2026-09-23. It ships 2 misses over the bar on Claude's held-out sets, by the user's choice (see Results)
 - **Date:** 2026-09-23
 - **Extends:** 0013 (the CLI is the sole execution surface), 0015 (CLI contract: one new command, `route`). **Addresses:** ROADMAP known gap 1.
 
@@ -8,7 +8,7 @@
 
 The Claude Code plugin ships one hook, `UserPromptSubmit`, in `plugins/system1/hooks/claude-hooks.json` (generated, and referenced from `.claude-plugin/plugin.json` rather than left at `hooks/hooks.json`, where another host could discover it). The hook runs `decide route --hook --format brief`. That matches the prompt against a small set of regular expressions (`packages/core/src/route/route.ts`) and, when one fires, prints a one-line hint to load `system1:ask`. Claude adds the hint to the prompt's context.
 
-The skill description is unchanged, and so is everything Codex and Pi see.
+The hook changes nothing Codex or Pi see. The shared `ask` description was changed alongside it, for a separate reason. The 0.2.0 wording had stretched to reach Claude's checks of its own diffs, and blind near-miss prompts showed that it made Codex and Pi over-trigger. With the hook covering Claude, the description could go back to being precise: one verdict per rule, and an explicit list of what is not a handoff.
 
 Everything about the hook is user-configurable under `route:` in the usual config layers: `enabled`, `builtin`, `disable` (built-in trigger names), `triggers` (name + regex), `ignore` (veto regexes) and `message` (the hint, with `{triggers}`). `SYSTEM1_ROUTE=off` turns it off. `decide route --text "…"` shows what a prompt would do, and `decide doctor` reports a bad `route:` config.
 
@@ -31,3 +31,11 @@ Everything about the hook is user-configurable under `route:` in the usual confi
 
 - Codex or Pi show the same gap and support an equivalent hook; or
 - the held-out results show pattern matching too brittle, in which case the next step is a hook that asks `decide` itself whether a prompt is a closed judgement. That sends every prompt to the provider, so it would need explicit opt-in.
+
+## Results
+
+These are the acceptance evals, run on 2026-09-23 against 75decd4. The full table is in ROADMAP known gap 1.
+
+- **Claude with the hook, ×5 runs:** `routing.yaml` 40/40 on positives and on negatives. `routing-holdout.yaml` 53/60 positives, 60/60 negatives. `routing-holdout-2.yaml`, the blind judge, 73/80 positives (53/80 with no hook) and 80/80 negatives. Both held-out sets are **2 misses over the ≤ 5-miss bar**, and the user chose to ship.
+- **Codex and Pi with the new description, ×3 runs:** every set scores 100% on positives and on negatives. With the old description, holdout-2 negatives were 32/48 for Codex and 36/48 for Pi.
+- **The remaining Claude misses:** mostly prompts the hook hinted that Claude sometimes ignored, plus one blind prompt that no trigger matches. Neither was fitted to the held-out sets. The one disclosed exception: the hint's wording was made direct after reading one holdout-2 miss.
