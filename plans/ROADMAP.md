@@ -194,8 +194,8 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M5** | Skills: ad-hoc asking, saved specs, setup | **done 2026-09-22**, see `milestones/M5-skills-specs.md`. `ask` (with the craft references), `design` (save and repair repo specs), `setup` (user-only, consent-gated). `--questions` and `spec check`. Routing evals meet the bar in Claude, Codex and Pi. No bundled specs |
 | **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. The last box, a live decision *through the `ask` skill* in each harness, was blocked by a provider usage limit and closed in M7 (2026-09-23) |
 | **M7** | Evidence: measure what we claim | **done 2026-09-23**, see `milestones/M7-evidence.md`. 478 pairs labelled blind (by one labeller, disclosed); checkable curve published in `docs/calibration.md` (Brier 0.028, ECE 0.054); threshold guidance derived from it; judgement questions reported as unmeasured. M6's last box closed: a live `ask` in each harness. The routing retry held Codex/Pi at 8/8 but not Claude, so it was reverted (gap 1) |
-| **M8** | **Onboarding: the first hour works** | **next**, see `milestones/M8-onboarding.md` (planned 2026-09-23: replay-tested cookbook, Markdown docs, macOS by CI matrix, ends in 0.2.0). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
-| M9 | **Design partners: 3–5 real users** | outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
+| **M8** | **Onboarding: the first hour works** | **done** 2026-09-23, **0.2.0 published**, see `milestones/M8-onboarding.md`. Six replay-tested cookbook recipes, `docs/` checked against the code by a test, six first-run stalls fixed across three harnesses, CI on Ubuntu and macOS (which found a real symlinked-path bug). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
+| M9 | **Design partners: 3–5 real users** | **next**, outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
 | M10 | **Release** | outline. Hygiene informed by M9 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
 | — | *Post-release features:* `scout`, `adopt`, `compare`, `calibrate`, `sweep`, `pairs`, `guard` packs | Cut from the road to release (2026-09-23). None makes the core more trustworthy, and building them for a workflow no outsider has adopted is the wrong problem first. `scout` is planned in detail already: `plans/later-scout-opportunities.md` |
 | — | *Deferred:* MCP adapter over `core/tools` | Revisit if the sandbox/network friction or a shell-less host justifies it |
@@ -228,11 +228,11 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 ### 4. One model, one vendor
 
-`typesafe/jev-1.13` on OpenRouter is the only profile. If it is withdrawn, live calls stop and `decide` replays recorded answers only. Accepted rather than hedged (2026-09-23); M8 states it in the README. A second profile waits until a second suitable model exists.
+`typesafe/jev-1.13` on OpenRouter is the only profile. If it is withdrawn, live calls stop and `decide` replays recorded answers only. Accepted rather than hedged (2026-09-23); the README states it ("One model, one provider", M8). A second profile waits until a second suitable model exists.
 
 ### 5. macOS is unverified
 
-CI runs Ubuntu only, on one Node version. The smoke scripts need GNU `timeout`, carried over from M4. Most design partners will be on macOS, so this closes in M8, before M9.
+**Narrowed in M8 (2026-09-23).** CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed CLI on both. The first macOS run found and fixed a symlinked-path bug. What remains: the harnesses themselves are unverified on macOS (smoke is local and Linux-only, and needs GNU `timeout`). M9's partners on Macs are that check.
 
 ### Why this order
 

@@ -1,6 +1,6 @@
 # M8 — Onboarding: the first hour works
 
-**Status:** next (planned 2026-09-23). The decisions below came from interviewing the user.
+**Status:** **done** (2026-09-23): 0.2.0 published and tagged. Planned the same day; the decisions below came from interviewing the user.
 **Goal:** A developer who has never seen System 1 installs it in their harness, gets a first useful decision in their own repo, and knows which threshold to trust, all without asking us. M9's design partners start from this. Their feedback should be about the product, not about a broken first hour.
 
 ## First principles
@@ -130,6 +130,18 @@ Recording cost $0.000982 measured. Every command in `docs/cookbook.md` was then 
 - `pnpm eval:routing all`: Claude `ask` positive **6/8** (the accepted 5–6/8, gap 1); every other line is 8/8 or 4/4, negatives included.
 - The version bump is committed locally and **not pushed**: the plugin shim pins `npx @garygentry/system1@0.2.0`, so it goes out with the publish. **Publish, tag and the per-harness install from the published artifacts wait for the user's go-ahead.**
 
+## Published (2026-09-23)
+
+All three packages are published at 0.2.0, and `v0.2.0` is tagged at `d0095d3`. The bump was pushed only after npm showed all three (the shim pins `npx @garygentry/system1@0.2.0`). **Verified from the published artifacts**, each on a brand-new profile holding only auth, in a consented toy repo, with the same prompt (*"Use the ask skill from the system1 plugin to find which files under src/ make outbound network requests…"*):
+
+| Harness | Install | `decide` line (verbatim) |
+|---|---|---|
+| Claude (Sonnet) | marketplace `garygentry/system1`, plugin 0.2.0; no `decide` on PATH, so the shim fetched `@garygentry/system1@0.2.0` with `npx` | `3 kept of 5 · 0 undecided · 2 dropped · live typesafe/jev-1.13 · $0.000076 measured · 606 ms` |
+| Codex | marketplace `garygentry/system1`, CLI from npm, the `prefix_rule` | `3 kept of 5 · 0 undecided · 2 dropped · live typesafe/jev-1.13 · $0.000070 measured · 694 ms` |
+| Pi | `npm:@garygentry/system1-pi`, CLI from npm | `3 kept of 5 · 0 undecided · 2 dropped · live typesafe/jev-1.13 · $0.000082 measured · 457 ms` |
+
+All three kept the same files (`src/alerts.js`, `src/api.js`, `src/cli.js`). **One gotcha:** in a fresh Claude profile, declaring the marketplace in `settings.json` is not enough for `claude -p`. The first run had no plugin. `claude plugin marketplace add` plus `claude plugin install system1@system1` fixed it, the same as `/plugin install` in the getting-started table.
+
 ## Out of scope
 
 - A docs site (D2), `decide spec add` or bundled specs, and any new command.
@@ -151,5 +163,5 @@ Recording cost $0.000982 measured. Every command in `docs/cookbook.md` was then 
 - [x] The CLI reference and the error table are checked against the code by a test. *(2026-09-23: `tools/docs.test.ts`.)*
 - [x] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline. *(2026-09-23: four phases plus one cookbook recipe in all three harnesses; S1–S6 fixed.)*
 - [x] CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed-tarball job, and all are green. *(2026-09-23: run 35823543530.)*
-- [ ] 0.2.0 is published and tagged, and installs in all three harnesses from the published artifacts.
+- [x] 0.2.0 is published and tagged, and installs in all three harnesses from the published artifacts. *(2026-09-23; see Published.)*
 - [x] `pnpm check` green. *(2026-09-23: 364 tests at 0.2.0.)*
