@@ -1,6 +1,6 @@
 {
   "name": "@garygentry/system1",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "The `decide` CLI: typed, calibrated decisions for coding agents, hooks and CI.",
   "type": "module",
   "license": "MIT",
