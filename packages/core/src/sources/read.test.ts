@@ -162,5 +162,14 @@ describe("readSources", () => {
       const out = await readSources([{ kind: "file", path: "link.txt" }], { cwd: repo })
       expect(out.skipped[0]).toMatchObject({ path: "link.txt", reason: "outside-repo" })
     })
+
+    it("keeps files inside a repo that is reached through a symlink (macOS /var)", async () => {
+      const repo = temp({ "src/a.ts": "code" })
+      const alias = join(temp({}), "alias")
+      symlinkSync(repo, alias)
+      const r = await readSources([{ kind: "glob", patterns: ["src/*.ts"] }], { cwd: alias })
+      expect(r.skipped).toEqual([])
+      expect(r.documents.map((d) => d.path)).toEqual(["src/a.ts"])
+    })
   })
 })

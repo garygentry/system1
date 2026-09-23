@@ -38,7 +38,13 @@ function resolvePath(cwd: string, path: string): Resolved {
   } catch {
     // Missing files are reported by the caller.
   }
-  const real = toRel(cwd, realAbsolute)
+  // Compare real with real: when `cwd` is itself reached through a symlink
+  // (macOS's /var → /private/var), every file would otherwise look outside.
+  let realCwd = cwd
+  try {
+    realCwd = realpathSync(cwd)
+  } catch {}
+  const real = toRel(realCwd, realAbsolute)
   return {
     absolute,
     display: toRel(cwd, absolute),
