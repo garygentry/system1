@@ -140,6 +140,27 @@ Note: Pi's `design` and `setup` results in that run were void, because its Codex
 5. `decide doctor` reports healthy and live-ready in each harness, and its install hints now name a package that exists.
 6. Update the ROADMAP (M6 row, open questions 5 and 6), and record the release in this doc.
 
+## Phase 3 results — the release (2026-09-22)
+
+Tagged `v0.1.0` at `8cfda6a`, pushed to `origin/main`. All three packages published at 0.1.0:
+
+| Package | What |
+|---|---|
+| `@garygentry/system1` | the `decide` CLI, bundled |
+| `@garygentry/system1-core` | the engine as a library |
+| `@garygentry/system1-pi` | the skills, packaged for Pi |
+
+**Verified from the published artifacts,** not from this working tree:
+
+- `npm i -g @garygentry/system1` then `decide doctor` — healthy and live-ready.
+- `pi install npm:@garygentry/system1-pi` — all three skills load.
+- Installing from GitHub works in all three harnesses; both marketplace manifests resolve from the pushed `main`. So open question 6's doubt is settled: the npm package is the documented path, and the git path also works.
+- A live `decide many` over this repo: **$0.000214 measured**, 16 secrets redacted before sending.
+
+**Gates on the released commit:** `pnpm check` 294 tests green (re-run 2026-09-23), `pnpm release:check` 9/9, `pnpm smoke` 9/9.
+
+**Still open:** the per-harness live decision *through the `ask` skill* (acceptance, last box but one). The Codex/Pi provider returned "The usage limit has been reached" on release night, so it could not be run in those two harnesses. `pnpm smoke` proves the same skill → CLI path in replay, and the live call above proves the CLI's live path; what is unproven is only the two together, in a real Codex and Pi session. Retry once the limit resets.
+
 ## Out of scope
 
 - `scout`, `adopt`, `compare`, `calibrate` and hooks (M7–M10).
@@ -154,13 +175,13 @@ Note: Pi's `design` and `setup` results in that run were void, because its Codex
 
 ## Acceptance
 
-- [ ] `.system1/config.yaml` is untracked and gitignored; a fresh clone starts without consent.
-- [ ] `ask --dry-run` exits 2, with a test, and 0015 says so.
-- [ ] `packages/pi` is generated, validated, and 0.1.0 is stamped everywhere by `pnpm generate`.
-- [ ] README has the install matrix, a worked example, and the egress statement.
-- [ ] `npm pack`/`publish --dry-run` are clean for all three, and the packed CLI runs `doctor` from a scratch install.
-- [ ] `main` is pushed to GitHub, and both marketplace manifests resolve from it.
-- [ ] The astra passes have run, their findings and my triage are recorded here, and the user approved the plan before any fix landed.
-- [ ] All three packages are published at 0.1.0 and tagged.
-- [ ] Each harness installs from the published artifacts and runs one live decision through the `ask` skill, with costs recorded.
-- [ ] `pnpm check`, `pnpm smoke` and `pnpm eval:routing all` pass on the released commit.
+- [x] `.system1/config.yaml` is untracked and gitignored; a fresh clone starts without consent.
+- [x] `ask --dry-run` exits 2, with a test, and 0015 says so. (`packages/cli/src/main.test.ts:254`, 0015 line 126.)
+- [x] `packages/pi` is generated, validated, and 0.1.0 is stamped everywhere by `pnpm generate`.
+- [x] README has the install matrix, a worked example, and the egress statement.
+- [x] `npm pack`/`publish --dry-run` are clean for all three, and the packed CLI runs `doctor` from a scratch install.
+- [x] `main` is pushed to GitHub, and both marketplace manifests resolve from it.
+- [x] The astra passes have run, their findings and my triage are recorded here, and the user approved the plan before any fix landed.
+- [x] All three packages are published at 0.1.0 and tagged.
+- [ ] **Each harness installs from the published artifacts and runs one live decision through the `ask` skill, with costs recorded.** Installs verified in all three; the live decision through the skill is **not** done — the Codex/Pi provider was over its usage limit on release night. See Phase 3 results.
+- [x] `pnpm check` and `pnpm smoke` pass on the released commit. `pnpm eval:routing all` ran but did not fully clear its own bar: Claude scores 6/8 on `ask` positives against a ≥7/8 target, and Pi's `design`/`setup` runs were void on the provider limit. The user accepted 6/8 for this release; the reasoning is under "Routing evals" above.
