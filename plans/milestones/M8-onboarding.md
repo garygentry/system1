@@ -122,6 +122,14 @@ Recording cost $0.000982 measured. Every command in `docs/cookbook.md` was then 
 - **§2 docs.** `docs/` now has `getting-started.md`, `concepts.md`, `cli.md` and `troubleshooting.md`, beside `cookbook.md` and `calibration.md`. The README is shorter: it links to a Documentation table and carries the supported-model statement (M7 D4, "One model, one provider"). `tools/docs.test.ts` checks the docs against the code: every command in `decide help` and every flag of `ask`/`many`/`spec check`/`config`/`usage`; the exit-code table against `EXIT` and `BY_CODE`; a troubleshooting section per error code (with its exit code) and per doctor check (`DOCTOR_CHECKS`, now exported); and every local link and anchor in the README and `docs/`. Mutation check: breaking a flag, a table row, two headings and an anchor made 5 of its 12 tests fail. The troubleshooting page was written from the first-run walk (S1–S6). The `ask` skill's `thresholds.md` now cites the calibration result instead of saying it is unverified.
 - **§4 CI.** `ci.yml` runs `pnpm check` on `ubuntu-latest` and `macos-latest`, each on Node 22 and 24, plus a `packed` job per OS that runs `release:check`. That now also replays a `many` run and an adopted cookbook recipe from the installed CLI tarball. **The first macOS run found a real bug:** a repo reached through a symlinked path (macOS `/var` → `/private/var`) had every file withheld as `outside-repo`, because files were realpath'd and the base directory was not. Fixed (`c0db3e1`) and covered by a test that reproduces it on Linux. The suite also passes locally with a symlinked `TMPDIR`. All six jobs green on run 35823543530.
 
+## Release gates for 0.2.0 (§5, 2026-09-23)
+
+- `pnpm check`: 364 tests, green at 0.2.0.
+- `pnpm release:check`: 11 steps pass at 0.2.0. `npm publish --dry-run` is clean for all three packages (CLI 166.6 kB, Pi 14.4 kB). npm's two auto-corrections, `bin` path cleaning and the `repository.url` form, are cosmetic and the same as for 0.1.0.
+- `pnpm smoke`: 9/9. Claude's setup check failed once because Haiku paraphrased instead of printing verbatim (its output shows it ran doctor and got `SETUP NEEDED (key, consent)`), then passed on a rerun.
+- `pnpm eval:routing all`: Claude `ask` positive **6/8** (the accepted 5–6/8, gap 1); every other line is 8/8 or 4/4, negatives included.
+- The version bump is committed locally and **not pushed**: the plugin shim pins `npx @garygentry/system1@0.2.0`, so it goes out with the publish. **Publish, tag and the per-harness install from the published artifacts wait for the user's go-ahead.**
+
 ## Out of scope
 
 - A docs site (D2), `decide spec add` or bundled specs, and any new command.
@@ -144,4 +152,4 @@ Recording cost $0.000982 measured. Every command in `docs/cookbook.md` was then 
 - [x] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline. *(2026-09-23: four phases plus one cookbook recipe in all three harnesses; S1–S6 fixed.)*
 - [x] CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed-tarball job, and all are green. *(2026-09-23: run 35823543530.)*
 - [ ] 0.2.0 is published and tagged, and installs in all three harnesses from the published artifacts.
-- [ ] `pnpm check` green.
+- [x] `pnpm check` green. *(2026-09-23: 364 tests at 0.2.0.)*

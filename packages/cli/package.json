@@ -1,6 +1,6 @@
 {
   "name": "@garygentry/system1",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The `decide` CLI: typed, calibrated decisions for coding agents, hooks and CI.",
   "type": "module",
   "license": "MIT",
@@ -20,14 +20,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/garygentry/system1",
+    "url": "git+https://github.com/garygentry/system1.git",
     "directory": "packages/cli"
   },
   "engines": {
     "node": ">=22"
   },
   "bin": {
-    "decide": "./dist/bundle/decide.mjs"
+    "decide": "dist/bundle/decide.mjs"
   },
   "files": [
     "dist/bundle",

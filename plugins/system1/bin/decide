@@ -48,7 +48,7 @@ done
 IFS=$old_ifs; set +f
 # SYSTEM1_NO_NPX: never download (doctor's version probe sets it).
 if [ -z "${SYSTEM1_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
-  exec npx --yes "@garygentry/system1@0.1.0" "$@"
+  exec npx --yes "@garygentry/system1@0.2.0" "$@"
 fi
-echo "decide: the System 1 CLI is not installed. Install it with: npm i -g @garygentry/system1@0.1.0" >&2
+echo "decide: the System 1 CLI is not installed. Install it with: npm i -g @garygentry/system1@0.2.0" >&2
 exit 127

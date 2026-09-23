@@ -1,7 +1,7 @@
 {
   "name": "system1-monorepo",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Decision-model tools for coding agents (Claude Code, Codex, Pi). Also a Pi package: skills are exposed via the `pi` key.",
   "type": "module",
   "license": "MIT",
