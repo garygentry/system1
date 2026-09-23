@@ -8,11 +8,21 @@ import { BUILTIN_TRIGGERS, ROUTE_DEFAULTS, type RouteConfig, route } from "./rou
 
 const cfg = (over: Partial<RouteConfig> = {}): RouteConfig => ({ ...ROUTE_DEFAULTS, ...over })
 
-// The tuning set. The held-out set (routing-holdout.yaml) is deliberately not
-// read here: it judges the triggers, so they must not be fitted to it.
-const tuning = parse(
-  readFileSync(join(import.meta.dirname, "../../../../tools/evals/routing.yaml"), "utf8"),
-) as { ask: { positive: string[]; negative: string[] } }
+// Tuning sets: routing.yaml, and routing-holdout.yaml (held out for v1 of the
+// triggers, tuned on for v2). routing-holdout-2.yaml is deliberately not read
+// here: it judges the triggers, so they must not be fitted to it.
+const load = (name: string) =>
+  (
+    parse(readFileSync(join(import.meta.dirname, "../../../../tools/evals", name), "utf8")) as {
+      ask: { positive: string[]; negative: string[] }
+    }
+  ).ask
+const tuning = {
+  ask: {
+    positive: [...load("routing.yaml").positive, ...load("routing-holdout.yaml").positive],
+    negative: [...load("routing.yaml").negative, ...load("routing-holdout.yaml").negative],
+  },
+}
 
 describe("built-in triggers on the tuning set", () => {
   it.each(tuning.ask.positive)("hints: %s", (prompt) => {
@@ -34,6 +44,20 @@ describe("near misses stay quiet", () => {
     "Review what changed in the last commit and summarise it.",
     "Sort these lines alphabetically.",
     "Fix the failing test in test-output.log.",
+    "Add a lint rule against console.log.",
+    "Is the migration finished running?",
+    "Split utils.ts into two files.",
+    "Mark the function chargeCard as deprecated.",
+    "Rate-limit every request to the API.",
+    "The score is wrong in the leaderboard component; fix it.",
+    "Pull out the retry helper into its own module.",
+    "Add a test that every command in cli.ts has help text.",
+    "Is my PR description complete enough? Here it is: adds timeouts.",
+    "Before we deploy, bump the version in package.json.",
+    "Write a script that runs every test file one by one.",
+    "Tell me which branch I am on.",
+    "Which of the two approaches in the design doc is simpler to implement?",
+    "Grep test-output.log for the failing test names and fix them.",
   ])("%s", (prompt) => {
     expect(route(prompt, cfg()).triggers).toEqual([])
   })
@@ -93,6 +117,20 @@ describe("route", () => {
   it("an invalid pattern is a config error even when disabled", () => {
     const bad = cfg({ enabled: false, ignore: ["(unclosed"] })
     expect(() => route(prompt, bad)).toThrow(/route.ignore: invalid regular expression/)
+  })
+
+  it("stays fast on a huge pasted prompt (the hook runs on every prompt)", () => {
+    const shapes = [
+      "a/".repeat(1e5),
+      "word ".repeat(4e4),
+      "which of the x ".repeat(1.4e4),
+      "is the x ".repeat(2.3e4),
+    ]
+    for (const text of shapes) {
+      const start = performance.now()
+      route(text, cfg())
+      expect(performance.now() - start).toBeLessThan(500)
+    }
   })
 
   it("every built-in compiles and has a unique name", () => {

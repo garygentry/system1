@@ -144,11 +144,13 @@ the agent gets a one-line hint to use the `ask` skill. The hint is added to what
 nothing is sent to the model, and the prompt never leaves your machine. Codex and Pi don't get
 the hook.
 
-The built-in triggers are `criteria-check` ("check the diff against these rules"),
-`verdict-per-item` ("one verdict each"), `done-check` ("is the task actually done?"),
-`gate-check` ("before I commit… is it safe?"), `batch-judgement` ("triage every CI failure") and
-`pick-from-many` ("250 packages… which one"). A prompt that says not to use System 1 or `decide`
-gets no hint.
+Each built-in trigger needs two things together: an intent to judge, and something to judge.
+`batch-judgement` pairs a judging verb or "which of these" with a data file or a batch ("triage
+every CI failure", "go through tickets.jsonl and flag any where…"). `pick-from-many` pairs "best
+fit" or "which one" with a long list. `criteria-check` pairs "against", "meets" or "pass or fail"
+with rules, criteria or a checklist. `done-check` pairs "is it done?", "ready to merge?" or "can I
+ship this" with a diff, a PR or a test log. `gate-check` pairs "before I commit" with rules or
+"is it safe". A prompt that says not to use System 1 or `decide` gets no hint.
 
 Everything is configurable under `route:`, in either config layer:
 

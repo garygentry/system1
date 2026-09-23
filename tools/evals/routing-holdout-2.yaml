@@ -1,0 +1,52 @@
+# HELD-OUT routing evals for the `ask` skill, set 2. Written blind to the routing
+# hook: the author saw only the skill text, the YAML format of routing.yaml and
+# routing-holdout.yaml (read to avoid overlapping them) and the fixture repo.
+# NEVER tune the hook, the skill description or the other eval files against
+# these prompts; they exist only to measure generalisation. If a prompt here
+# fails, fix the cause elsewhere and leave this file unchanged.
+# Prompts run in tools/evals/fixture-repo with fixture-changes as the
+# uncommitted change, and every file named exists there.
+#
+# `positive`: the skill must load. `negative`: it must not.
+
+ask:
+  positive:
+    # batch judgement over many items
+    - 'anything in tickets.jsonl that looks like a security or account-takeover report? need those escalated today'
+    - 'Split the reviews in reviews.jsonl into three piles for me: onboarding confusion, crashes, and everything else.'
+    - 'I''m putting together the changelog and half of commits.txt is noise. Mark which commits a customer would actually notice.'
+    - 'go over failures.jsonl and tell me which failures are caused by the test runner machine itself rather than our code'
+    - 'pull out the tickets where someone is asking for a refund, tickets.jsonl'
+    - 'Is each of these CI failures something that would block a release? failures.jsonl, one call per entry is fine.'
+    - 'We got a pile of feedback after the redesign. Can you bucket reviews.jsonl by sentiment toward the new look: likes it, hates it, doesn''t mention it?'
+    # pick the best of many
+    - 'I need something that sends emails in the background and retries if the mail server is down. Which package from packages.jsonl fits that best?'
+    - 'which ticket in tickets.jsonl is the best example to show new support hires of a really angry but fair complaint'
+    - 'There are a couple hundred internal libs listed in packages.jsonl. Recommend the one that is most suitable for rate limiting outbound API calls, just the top pick.'
+    # criteria / rules / readiness checks of the diff, test-output.log or TASK.md
+    - 'does this pass our bar? rules: no any types, no fetch without an abort signal, no commented-out code. look at what I haven''t committed yet'
+    - 'anything in my working changes violate the no-secrets-in-source policy?'
+    - 'can I ship this? use TASK.md as the definition of done and test-output.log as proof'
+    - 'Tick off each item in TASK.md against the uncommitted changes, yes or no per line, and tell me which ones are still open.'
+    - 'My reviewer is strict about two things: no leftover console output and every new branch in the code having a test. Hold my current diff up against that before I request review.'
+    - 'Give me a per-criterion verdict for the acceptance list in TASK.md, based only on test-output.log.'
+  negative:
+    # run, count, lookups
+    - 'check out the main branch and pull'
+    - 'which node version does this project expect?'
+    - 'is the build done yet? tail test-output.log'
+    - 'How many lines does tickets.jsonl have?'
+    - 'Print each review in reviews.jsonl that has exactly 1 star.'
+    - 'list every package name in packages.jsonl that starts with @shop/auth'
+    - 'Show me the diff for src/http/legacy.ts.'
+    - 'What''s the hash of the commit in commits.txt that mentions the coupon parser?'
+    # explain, summarise
+    - 'Explain what the rules in TASK.md are asking for, in plain words.'
+    - 'Summarise the uncommitted changes as a bullet list for my standup.'
+    - 'what does cleanup-plan.sh do step by step? I''m just curious, not running it'
+    # edit, fix, write, git
+    - 'rename each test file under test/ to use the .spec.ts suffix'
+    - 'Add a timeout to the fetch call in src/http/legacy.ts so criterion 2 in TASK.md is done.'
+    - 'Write a small script that converts failures.jsonl to CSV with id and first line of output.'
+    - 'Stage everything and commit with the message "add request timeouts".'
+    - 'review the naming in src/util/retry.ts and rename anything unclear to something safer to read'

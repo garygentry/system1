@@ -41,46 +41,84 @@ export const ROUTE_DEFAULTS: RouteConfig = {
   ignore: [],
 }
 
-// Nouns a batch judgement runs over. Kept to things that are items of text,
-// so "route all /api requests" (code) does not read as a batch of tickets.
+// Built-in triggers pair two features, each a lookahead over the whole prompt:
+// an intent to judge, and something to judge (a batch, a data file, a diff, a
+// rule set). Either alone is common in ordinary coding requests ("check out
+// main", "list every file", "is the build done"); together they are rare.
+const both = (...parts: string[]) => `^${parts.map((p) => `(?=[\\s\\S]*?(?:${p}))`).join("")}`
+
+// Items of text a batch judgement runs over. Not code nouns like "requests",
+// so "route all /api requests" does not read as a batch of tickets.
 const ITEMS =
-  "tickets?|reviews?|commits?|failures?|errors?|log lines?|lines|rows?|entries|entry|items?|issues?|" +
-  "comments?|messages?|emails?|commands?|records?|files?|tests?|alerts?|findings?|results?|" +
-  "prs?|pull requests?|responses?|reports?|incidents?|warnings?|changes?|hunks?|dependencies|packages?"
-const GATES = "commit|merge|push|ship|release|approve|deploy|land"
-const RULES =
-  "rules?|criteri(?:a|on)|requirements?|checklist|polic(?:y|ies)|guidelines?|conventions?|standards?"
+  "tickets?|reviews?|commits?|failures?|errors?|lines|rows?|entries|items?|issues?|comments?|" +
+  "messages?|emails?|commands?|records?|files?|tests?|alerts?|findings?|results?|prs?|" +
+  "pull requests?|responses?|reports?|incidents?|warnings?|changes?|hunks?|packages?|candidates?"
+const FILE = "\\b[\\w./-]+\\.(?:jsonl|ndjson|csv|tsv|txt|log|sh)\\b"
+const BATCH = `\\b(?:each|every|all\\s+(?:the\\s+|of\\s+the\\s+)?(?:\\d+\\s+)?(?:${ITEMS})|line\\s+by\\s+line|one\\s+by\\s+one)\\b|\\b\\d{2,}\\s+(?:[\\w-]+\\s+){0,2}(?:${ITEMS})\\b`
+const RULESET =
+  "\\b(?:rules?|criteri(?:a|on)|requirements?|checklist|polic(?:y|ies)|guidelines?|conventions?|standards?|our\\s+bar|TASK\\.md)\\b"
+const EVIDENCE =
+  "\\b(?:diff|uncommitted|working\\s+tree|staged|changes?|patch|pr|pull\\s+request|branch|test[-\\s]output(?:\\.log)?|test\\s+results?|TASK\\.md)\\b"
+const GATES = "commit|merge|push|ship|release|approve|deploy|land|run"
 
 export const BUILTIN_TRIGGERS: readonly Trigger[] = [
   {
-    // "check the diff against these rules", "verify the log against the checklist"
-    name: "criteria-check",
-    pattern: `\\b(?:check|verify|validate|audit|review|vet|compare|go (?:over|through))\\b[^.?!\\n]{0,80}\\bagainst\\b[^.?!\\n]{0,80}\\b(?:${RULES}|spec(?:ification)?)\\b`,
-  },
-  {
-    // "one verdict each", "a verdict for every command", "check each acceptance criterion"
-    name: "verdict-per-item",
-    pattern: `\\b(?:(?:one|a|separate)\\s+verdict\\s+(?:each|per|for\\s+(?:each|every)|on\\s+(?:each|every))|verdicts?\\s+(?:for|on)\\s+(?:each|every)|(?:each|every)\\s+(?:acceptance\\s+)?(?:criteri(?:a|on)|rule|requirement|checklist\\s+item))\\b`,
-  },
-  {
-    // "is the task in TASK.md actually done?", "does this diff meet the requirements?"
-    name: "done-check",
-    pattern: `\\bis\\s+(?:the|this|my|our|that)\\s+(?:task|ticket|story|issue|feature|work|change|pr|fix|todo)\\b[^?\\n]{0,60}?\\b(?:actually\\s+|really\\s+|fully\\s+|truly\\s+)?(?:done|complete|completed|finished)\\b|\\b(?:does|do)\\s+(?:this|the|my|our)\\s+(?:diff|change|changes|pr|patch|commit|branch)\\s+(?:actually\\s+|really\\s+|fully\\s+)?(?:meet|satisf(?:y|ies)|fulfil+|cover)\\b`,
-  },
-  {
-    // "before I commit, is this safe?", "vet it against the policy before we merge"
-    name: "gate-check",
-    pattern: `\\bbefore\\s+(?:i|we)\\s+(?:${GATES})\\b[^\\n]{0,100}\\b(?:${RULES}|safe|destructive|verdict)\\b|\\b(?:${RULES}|safe|destructive|verdict)\\b[^\\n]{0,100}\\bbefore\\s+(?:i|we)\\s+(?:${GATES})\\b`,
-  },
-  {
-    // "triage every CI failure", "route each of the support tickets"
+    // "triage every CI failure", "go through tickets.jsonl and flag any where…",
+    // "which of these would pass on a rerun", "the ones complaining about…"
     name: "batch-judgement",
-    pattern: `\\b(?:classify|categori[sz]e|route|triage|label|screen|vet|bucket|grade|rate|score|rank|assess|judge|sort\\s+out|flag\\s+(?:any|all|every|each|which))\\b[^.?!\\n]{0,60}\\b(?:each|every|all|these|those|the\\s+\\d+)\\b[^.?!\\n]{0,30}?\\b(?:${ITEMS})\\b`,
+    pattern: both(
+      // A verb glued to a hyphen is another word: "rate-limit", "score-board".
+      "\\b(?:(?:classify|categori[sz]e|label|triage|bucket|grade|rate|score|rank|screen|vet|judge|assess)(?!-)|sort\\s+out|" +
+        "route\\s+(?:each|every|all|these|those|the)|flag\\s+(?:any|all|every|each|which|the\\s+ones|anything)|" +
+        "mark\\s+(?:any|all|every|each|which|the\\s+ones)|split\\s+(?:\\w+\\s+)?into|pull\\s+out\\s+(?:the|any|all|every)|" +
+        "tell\\s+me\\s+which|which\\s+of\\s+(?:them|these|those|the\\s+\\w+)|which\\s+ones|" +
+        `which\\s+(?:${ITEMS})\\s+(?:could|would|might|should|are|is|will|look|seem|need)|` +
+        "the\\s+ones\\s+(?:that|where|which|who|with|about|complaining|mentioning)|" +
+        "anything\\s+that\\s+(?:looks|seems|sounds|reads)|is\\s+each|are\\s+any\\s+of|whether\\s+each|verdicts?)\\b",
+      `${FILE}|${BATCH}`,
+    ),
   },
   {
-    // "300 commits. Which of them…", "250 packages. Which single one…"
+    // "250 packages. Which single one…", "which of the packages is the best fit"
     name: "pick-from-many",
-    pattern: `\\b\\d{2,}\\s+(?:[\\w-]+\\s+){0,3}(?:${ITEMS}|libraries|options|helpers|modules|functions|candidates)\\b[^\\n]{0,160}?\\bwhich\\s+(?:of\\s+(?:them|these|those)|ones?|single|one)\\b`,
+    pattern: both(
+      "\\b(?:best\\s+(?:fit|match|one|option|choice)|which\\s+(?:single\\s+)?one|single\\s+best|pick\\s+(?:the|one)|choose\\s+(?:the|one))\\b",
+      `${FILE}|\\b\\d{2,}\\s+(?:[\\w-]+\\s+){0,2}(?:${ITEMS}|libraries|options|helpers|modules|functions)\\b|\\bout\\s+of\\s+(?:all|the|these)\\b`,
+    ),
+  },
+  {
+    // "check the diff against these rules", "does it meet the acceptance
+    // criteria", "grade each criterion pass or fail", "hold the diff to our rules"
+    name: "criteria-check",
+    pattern: both(
+      "\\b(?:against\\s+(?:our|the|these|this|my|each|every)?\\s*(?:[\\w-]+\\s+){0,2}(?:rules?|criteri(?:a|on)|requirements?|checklist|polic(?:y|ies)|guidelines?|conventions?|standards?|spec)|" +
+        "hold\\s+(?:it|this|them|the\\s+[\\w-]+(?:\\s+[\\w-]+)?)\\s+(?:up\\s+)?(?:to|against)|meets?|satisf(?:y|ies)|violat\\w*|compl(?:y|ies|iant)|" +
+        "pass(?:es)?\\s+(?:our|the)\\s+(?:bar|rules|checks?|checklist)|pass\\s+or\\s+fail|pass/fail|per[-\\s]criteri(?:on|a)|tick\\s+off|" +
+        "(?:one|a|separate)\\s+verdict|verdicts?\\s+(?:for|on)|grade\\s+(?:each|every|them|it)|" +
+        "(?:each|every)\\s+(?:acceptance\\s+)?(?:criteri(?:on|a)|rule|requirement|checklist\\s+item|item))\\b",
+      RULESET,
+    ),
+  },
+  {
+    // "is the task actually done?", "am i done?", "ready to merge?", "can I ship this"
+    name: "done-check",
+    pattern: both(
+      "\\b(?:am\\s+i\\s+(?:actually\\s+|really\\s+)?done|are\\s+we\\s+(?:actually\\s+|really\\s+)?done|" +
+        // The subject, not a part of it: "is my PR done", not "is my PR description complete".
+        "is\\s+(?:it|this|that|(?:the|my|our)\\s+\\w+(?!\\s+(?:description|message|title|name|docs?|readme|summary|text|comment)))(?:\\s+[\\w.]+){0,4}?\\s+(?:actually\\s+|really\\s+|fully\\s+|truly\\s+)?(?:done|complete|finished)|" +
+        "(?:ready|good|ok|safe)\\s+to\\s+(?:merge|ship|commit|push|land|release)|can\\s+(?:i|we)\\s+(?:ship|merge|land|commit|push)\\s+(?:this|it)|" +
+        "(?:about|going)\\s+to\\s+(?:open\\s+a\\s+pr|merge|ship|push|commit|release))\\b",
+      `${EVIDENCE}|${FILE}`,
+      "\\?|\\b(?:check|verify|confirm|tell\\s+me|make\\s+sure|grade|hold)\\b",
+    ),
+  },
+  {
+    // "before I commit… is it safe?", "which commands could lose data before the bot runs it"
+    name: "gate-check",
+    pattern: both(
+      `\\bbefore\\s+(?:i|we|the\\s+\\w+)\\s+(?:${GATES})s?\\b`,
+      `${RULESET}|\\b(?:safe|destructive|verdict|violat\\w*|could\\s+(?:lose|break|delete|destroy|wipe))\\b`,
+    ),
   },
 ]
 
