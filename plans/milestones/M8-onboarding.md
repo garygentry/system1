@@ -54,6 +54,9 @@ No harness tried to grant consent, and nothing was written to a repo before cons
 | S3 | Inside the Codex sandbox without the rule, `--glob` stalls 10 s on `git check-ignore`, and the message doesn't mention the sandbox | Codex | **Fixed:** the message says a sandbox is the likely cause and that `decide doctor` prints the Codex fix (harness-neutral, since the source reader has no harness) |
 | S4 | `doctor`'s key fix always prints `~/.config/system1/credentials`, even when `XDG_CONFIG_HOME` moves it | all | **Fixed:** the fix line prints the resolved path |
 | S5 | The refusal's "(or use the setup skill) to consent" reads as if the skill can grant it | Claude | **Fixed:** "Consent is the user's: they run … themselves (the setup skill explains what gets sent)" |
+| S6 | With a recipe adopted in `.system1/specs/`, Codex wrote its own question instead of using it (Claude and Pi used the spec) | Codex | **Fixed:** the `ask` skill's first step is now `decide spec list`, then `--spec` if one fits. Rerun: Codex listed the specs and ran `--spec swallowed-error` |
+
+**Phase 5, one cookbook recipe (after §1 was pushed).** In each repo the recipe was adopted with the `curl` command from `docs/cookbook.md`, and the prompt was *"Are there any places in this repo where errors get swallowed? Use System 1."* All three flagged `src/cache.js` (0.88–0.97). Claude used `--spec swallowed-error`. Pi used it too: its output hides tool calls, but the ledger shows the spec's 433 input tokens per call, against 364 for Codex's own question. Codex skipped the spec (S6).
 
 **Re-checked after the fixes** (working tree re-packed and reinstalled): from a plain shell, all four new messages print as intended with exit codes 6 and 3 unchanged; in Codex without the rule, the new `git check-ignore` message came up, Codex fell back to `--file`, and then relayed the new key-first `replay-miss`. `setup`'s description of the headline and smoke's `DOCTOR_MARKER` were updated to match. The contract is untouched: no code, exit code or envelope field changed.
 
@@ -133,7 +136,7 @@ Recording cost $0.000982 measured. Every command in `docs/cookbook.md` was then 
 - [x] About six recipes in the cookbook, each with passing `expect` examples, replayed by `pnpm test`; each threshold cited from `docs/calibration.md` or marked unmeasured. *(2026-09-23: six recipes, enforced by `tools/cookbook.test.ts`.)*
 - [ ] `docs/` has getting-started, concepts, CLI reference, troubleshooting and cookbook pages, and the README links to them and carries the supported-model statement.
 - [ ] The CLI reference and the error table are checked against the code by a test.
-- [ ] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline. *(2026-09-23: walked in all three and S1–S5 fixed; the "one cookbook recipe" step waits for §1, so the box stays open.)*
+- [x] A first-run walk in each of Claude, Codex and Pi is recorded here, and every stall it found is fixed or deferred with a reason. This includes the no-key message and `doctor`'s headline. *(2026-09-23: four phases plus one cookbook recipe in all three harnesses; S1–S6 fixed.)*
 - [ ] CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed-tarball job, and all are green.
 - [ ] 0.2.0 is published and tagged, and installs in all three harnesses from the published artifacts.
 - [ ] `pnpm check` green.

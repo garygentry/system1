@@ -28,9 +28,10 @@ Don't use it:
 
 ## How to ask
 
-1. **Write the question before you run anything.** Use `references/question-craft.md` for anything beyond a plain yes/no, and `references/primitives.md` to choose the type.
-2. **Decide the threshold before you look at the answers.** See `references/thresholds.md`.
-3. **Run it.** `references/recipes.md` has a complete command for each use case. The shapes:
+1. **Check for a saved spec first:** `decide spec list --format brief`. If one fits the judgement, run it with `--spec <name>` and skip to step 4: its question and threshold are already written and tested.
+2. **Otherwise, write the question before you run anything.** Use `references/question-craft.md` for anything beyond a plain yes/no, and `references/primitives.md` to choose the type.
+3. **Decide the threshold before you look at the answers.** See `references/thresholds.md`.
+4. **Run it.** `references/recipes.md` has a complete command for each use case. The shapes:
 
 ```sh
 # one piece of text, one call
@@ -56,7 +57,7 @@ name:
 - **Several sources as one state:** `--split join`, e.g. a diff plus a test log for a criteria check. Excludes still apply to each file first.
 - **Filtering and ranking** (`many` only): `--keep`, `--sort`, `--limit`.
 - **Inline `--questions` YAML:** keep it inside single quotes. Don't put an apostrophe or `: ` inside a value. For anything longer, write the YAML to a file and pass `--questions <file>`.
-- **Saved question sets:** `decide spec list --format brief` lists them, and `--spec <name>` uses one. Add a source only when the user names one; the spec's own default source is part of its design.
+- **Saved specs** (`--spec <name>`): add a source only when the user names one; the spec's own default source is part of its design.
 
 ## Reading the answers
 
