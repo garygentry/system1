@@ -45,7 +45,7 @@ export const ROUTE_DEFAULTS: RouteConfig = {
 // an intent to judge, and something to judge (a batch, a data file, a diff, a
 // rule set). Either alone is common in ordinary coding requests ("check out
 // main", "list every file", "is the build done"); together they are rare.
-const both = (...parts: string[]) => `^${parts.map((p) => `(?=[\\s\\S]*?(?:${p}))`).join("")}`
+const both = (...parts: string[]) => `^${parts.map((p) => `(?=[\\s\\S]*?(${p}))`).join("")}`
 
 // Items of text a batch judgement runs over. Not code nouns like "requests",
 // so "route all /api requests" does not read as a batch of tickets.
@@ -135,7 +135,7 @@ export const DEFAULT_MESSAGE =
 export interface RouteMatch {
   name: string
   source: "builtin" | "config"
-  /** The text that matched, trimmed to 120 characters. */
+  /** The text that matched (for a paired trigger, each part), trimmed to 120 characters. */
   text: string
 }
 
@@ -196,7 +196,9 @@ export function route(prompt: string, config: RouteConfig): RouteResult {
   const hits: RouteMatch[] = []
   for (const t of compiled) {
     const m = t.re.exec(prompt)
-    if (m) hits.push({ name: t.name, source: t.source, text: m[0].slice(0, 120) })
+    // A lookahead matches nothing itself; its captured parts say what fired.
+    const text = m?.[0] || m?.slice(1).filter(Boolean).join(" … ")
+    if (m) hits.push({ name: t.name, source: t.source, text: (text ?? "").slice(0, 120) })
   }
   if (hits.length === 0) return { enabled: true, matched: false, triggers: [] }
   const veto = vetoes.find((v) => v.re.test(prompt))
