@@ -39,7 +39,7 @@ pnpm check      # build · typecheck · lint · test · generate:check · valida
 pnpm generate   # after editing catalog.yaml or the generator
 pnpm test:live  # one real decision call (~$0.00003); loads this repo's .env, skipped without a key
 pnpm smoke      # local only: drives real Claude/Codex/Pi sessions (spends their tokens)
-pnpm eval:routing [claude|codex|pi|all]   # local only: does each skill load for the right prompts?
+pnpm eval:routing [claude|codex|pi|all] [--repeat N]   # local only: does each skill load for the right prompts? (judge changes on --repeat 3+)
 pnpm bench:startup   # decide startup overhead over bare node (target < 150 ms)
 node packages/cli/dist/bundle/decide.mjs ping --format brief
 node --env-file=.env packages/cli/dist/bundle/decide.mjs many --glob 'src/**/*.ts' --question 'q:noul:…' --keep 'q>=0.7' --format brief

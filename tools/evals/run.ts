@@ -2,7 +2,11 @@
  * Routing evals: drive real headless agent sessions with the prompts in
  * `routing.yaml` and record which of the plugin's skills each one loaded.
  *
- *   pnpm eval:routing [claude|codex|pi|all] [--only <skill>] [--concurrency N]
+ *   pnpm eval:routing [claude|codex|pi|all] [--only <skill>] [--concurrency N] [--repeat N]
+ *
+ * One run of 8 prompts cannot resolve a one-prompt change: the same Claude
+ * description scored 5/8 to 7/8 across runs. `--repeat N` runs every prompt N
+ * times and judges the mean, with a per-prompt hit rate for anything unsteady.
  *
  * Local only, like smoke: every prompt spends that harness's model tokens. No
  * decision calls are made (replay, no key). Workdirs live outside this repo,
@@ -375,12 +379,62 @@ async function pool<T, R>(items: T[], width: number, fn: (item: T, i: number) =>
   return results
 }
 
-async function evaluate(harness: Harness, cases: Case[], width: number) {
+export interface Row extends Case {
+  rep: number
+  loaded: Skill[]
+  ran: boolean
+  pass: boolean
+}
+
+export interface Score {
+  skill: Skill
+  polarity: Case["polarity"]
+  /** Prompts in the set, and runs of each. */
+  size: number
+  repeat: number
+  passed: number
+  met: boolean
+  /** Prompts that did not pass every run, with how many runs they passed. */
+  unsteady: Array<{ prompt: string; passed: number }>
+}
+
+/**
+ * Bar, per skill: on average at most one missed positive per run (so N misses
+ * in total over N runs), and every negative holds in every run.
+ */
+export function score(rows: Row[], repeat: number): Score[] {
+  const scores: Score[] = []
+  for (const skill of SKILLS) {
+    for (const polarity of ["positive", "negative"] as const) {
+      const set = rows.filter((r) => r.skill === skill && r.polarity === polarity)
+      if (set.length === 0) continue
+      const passed = set.filter((r) => r.pass).length
+      const misses = set.length - passed
+      const byPrompt = new Map<string, number>()
+      for (const r of set) byPrompt.set(r.prompt, (byPrompt.get(r.prompt) ?? 0) + (r.pass ? 1 : 0))
+      scores.push({
+        skill,
+        polarity,
+        size: byPrompt.size,
+        repeat,
+        passed,
+        met: polarity === "positive" ? misses <= repeat : misses === 0,
+        unsteady: [...byPrompt]
+          .filter(([, n]) => n < repeat)
+          .map(([prompt, n]) => ({ prompt, passed: n })),
+      })
+    }
+  }
+  return scores
+}
+
+async function evaluate(harness: Harness, cases: Case[], width: number, repeat: number) {
   const home =
     harness === "codex" ? await setupCodexHome() : harness === "pi" ? setupPiAgent() : undefined
   const logs = join(WORK, harness)
   mkdirSync(logs, { recursive: true })
-  const rows = await pool(cases, width, async (c, i) => {
+  const jobs = Array.from({ length: repeat }, (_, rep) => cases.map((c) => ({ ...c, rep }))).flat()
+  const rows = await pool(jobs, width, async (c, i): Promise<Row> => {
     const dir = join(WORK, "runs", `${harness}-${i}`)
     await prepare(dir)
     const output = await drive(harness, dir, c.prompt, home)
@@ -389,8 +443,9 @@ async function evaluate(harness: Harness, cases: Case[], width: number) {
     const ran = completed(harness, output)
     const pass = ran && (c.polarity === "positive" ? loaded.has(c.skill) : !loaded.has(c.skill))
     const mark = !ran ? "ERROR" : pass ? "pass" : "FAIL"
+    const nth = repeat > 1 ? ` #${c.rep + 1}` : ""
     console.log(
-      `${harness} ${mark} ${c.skill} ${c.polarity}: ${c.prompt.slice(0, 70)}  [loaded: ${[...loaded].join(",") || "-"}]`,
+      `${harness}${nth} ${mark} ${c.skill} ${c.polarity}: ${c.prompt.slice(0, 70)}  [loaded: ${[...loaded].join(",") || "-"}]`,
     )
     return { ...c, loaded: [...loaded], ran, pass }
   })
@@ -398,20 +453,18 @@ async function evaluate(harness: Harness, cases: Case[], width: number) {
   return rows
 }
 
-function summarise(harness: Harness, rows: Awaited<ReturnType<typeof evaluate>>): boolean {
+function summarise(harness: Harness, rows: Row[], repeat: number): boolean {
   let ok = true
-  for (const skill of SKILLS) {
-    for (const polarity of ["positive", "negative"] as const) {
-      const set = rows.filter((r) => r.skill === skill && r.polarity === polarity)
-      if (set.length === 0) continue
-      const passed = set.filter((r) => r.pass).length
-      // Bar: at most one missed positive per skill; every negative must hold.
-      const bar = polarity === "positive" ? set.length - 1 : set.length
-      const met = passed >= bar
-      ok &&= met
-      console.log(
-        `${harness.padEnd(6)} ${skill.padEnd(6)} ${polarity.padEnd(8)} ${passed}/${set.length} ${met ? "ok" : "BELOW BAR"}`,
-      )
+  for (const s of score(rows, repeat)) {
+    ok &&= s.met
+    const mean =
+      repeat > 1 ? ` (mean ${(s.passed / repeat).toFixed(1)}/${s.size} over ${repeat} runs)` : ""
+    console.log(
+      `${harness.padEnd(6)} ${s.skill.padEnd(6)} ${s.polarity.padEnd(8)} ${s.passed}/${s.size * repeat}${mean} ${s.met ? "ok" : "BELOW BAR"}`,
+    )
+    if (repeat > 1) {
+      for (const u of s.unsteady)
+        console.log(`         ${u.passed}/${repeat}  ${u.prompt.slice(0, 70)}`)
     }
   }
   return ok
@@ -425,16 +478,19 @@ async function main() {
   }
   const only = flag("--only")
   const width = Number(flag("--concurrency") ?? 3)
+  const repeat = Number(flag("--repeat") ?? 1)
+  if (!Number.isInteger(repeat) || repeat < 1)
+    throw new Error("--repeat must be a positive integer")
   const target = args[0] ?? "all"
   const harnesses: Harness[] = target === "all" ? ["claude", "codex", "pi"] : [target as Harness]
   const cases = loadCases(process.env.EVAL_ROUTING).filter((c) => !only || c.skill === only)
   mkdirSync(WORK, { recursive: true })
   stagePlugin()
   let ok = true
-  const summaries: Array<[Harness, Awaited<ReturnType<typeof evaluate>>]> = []
-  for (const h of harnesses) summaries.push([h, await evaluate(h, cases, width)])
+  const summaries: Array<[Harness, Row[]]> = []
+  for (const h of harnesses) summaries.push([h, await evaluate(h, cases, width, repeat)])
   console.log("\nsummary")
-  for (const [h, rows] of summaries) ok = summarise(h, rows) && ok
+  for (const [h, rows] of summaries) ok = summarise(h, rows, repeat) && ok
   console.log(`\nlogs: ${WORK}`)
   process.exitCode = ok ? 0 : 1
 }

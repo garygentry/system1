@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { completed, loadCases, loadedSkills, MINIMUMS, workDir } from "./run.js"
+import { completed, loadCases, loadedSkills, MINIMUMS, type Row, score, workDir } from "./run.js"
 
 const lines = (...events: unknown[]) => events.map((e) => JSON.stringify(e)).join("\n")
 
@@ -145,5 +145,47 @@ describe("routing.yaml", () => {
       if (c.skill === "setup" && c.polarity === "negative") continue // mentions decide on purpose
       expect(c.prompt, c.prompt).not.toMatch(/\bdecide\b|\bskill\b|\$ask|\/system1\b/)
     }
+  })
+})
+
+describe("score", () => {
+  const row = (polarity: Row["polarity"], prompt: string, rep: number, pass: boolean): Row => ({
+    skill: "ask",
+    polarity,
+    prompt,
+    rep,
+    loaded: pass === (polarity === "positive") ? ["ask"] : [],
+    ran: true,
+    pass,
+  })
+  /** Four positives run `repeat` times, failing at the given [prompt, run] pairs. */
+  const positives = (repeat: number, ...misses: Array<[string, number]>) =>
+    score(
+      ["a", "b", "c", "d"].flatMap((p) =>
+        Array.from({ length: repeat }, (_, rep) =>
+          row("positive", p, rep, !misses.some(([m, r]) => m === p && r === rep)),
+        ),
+      ),
+      repeat,
+    )[0]
+
+  it("one run: at most one missed positive", () => {
+    expect(positives(1, ["a", 0])?.met).toBe(true)
+    expect(positives(1, ["a", 0], ["b", 0])?.met).toBe(false)
+  })
+
+  it("repeats: judges the mean, so misses spread over runs may reach N", () => {
+    const s = positives(3, ["a", 0], ["b", 1], ["a", 2])
+    expect(s).toMatchObject({ size: 4, repeat: 3, passed: 9, met: true })
+    expect(s?.unsteady).toEqual([
+      { prompt: "a", passed: 1 },
+      { prompt: "b", passed: 2 },
+    ])
+    expect(positives(3, ["a", 0], ["b", 1], ["a", 2], ["c", 2])?.met).toBe(false)
+  })
+
+  it("a negative that fails in any run is below the bar", () => {
+    const rows = [0, 1, 2].map((rep) => row("negative", "x", rep, rep !== 1))
+    expect(score(rows, 3)[0]).toMatchObject({ polarity: "negative", met: false, passed: 2 })
   })
 })

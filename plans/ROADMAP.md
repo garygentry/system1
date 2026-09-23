@@ -218,6 +218,8 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 **Retried once in M7 (2026-09-23), and closed as a wording problem.** A fresh baseline gave 6/8 with different misses. A user-request trigger for criteria checks, moved into the first sentence, kept Codex and Pi at 8/8 each way but moved Claude to 5/8, so it was reverted. Claude's misses move between prompts from run to run. No more description rounds: this waits for the hook.
 
+**Measured as noise, 2026-09-23 (post-0.2.0).** Six Claude runs on the unchanged description scored 6, 6, 6, 6, 5 and **7**/8 on `ask` positives (M6, the M7 baseline, the 0.2.0 run, and three new baselines), with negatives 8/8 every time. The pre-commit rules check missed in 4 of the 6, the TASK.md check in 3, and the 300-commit triage in 3; cleanup-plan and reviews missed once each. So Claude sits at about 6/8 ± 1 per run, and one run cannot tell a one-prompt change from noise: baseline 3 cleared the bar with no change at all. Every earlier description round was judged on a single run. The eval now takes `--repeat N` (`tools/evals/run.ts`), which judges the mean over N runs (at most N missed positives in total, every negative held in every run) and prints each prompt's hit rate. **Any further wording change is judged on `--repeat 3` or more**, for Claude and for the Codex/Pi guard rail alike.
+
 ### 2. ~~No live decision through the `ask` skill has been run per harness~~
 
 **Closed in M7 (2026-09-23).** Claude, Codex and Pi each ran one live `ask` from the published 0.1.0 artifacts on a clean profile. Each chose `decide many`, kept the same 2 of 7 files, and cost about $0.0004 measured. See `milestones/M7-evidence.md` § Results.
