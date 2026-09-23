@@ -1,0 +1,58 @@
+# M7 calibration question set, v1. Swept over 40-line excerpts of our own code
+# (see evidence/README.md). Each question's `criteria` is also the labelling
+# rubric: the model and the human labeller judge the same proposition.
+#
+# Two groups, reported separately:
+#   checkable — truth is verifiable by reading the excerpt; labels are reliable.
+#   judgement — closer to real screening use; labels are softer.
+io:
+  type: noul
+  instructions: >-
+    This excerpt itself performs I/O: it calls something that reads or writes
+    files or directories, makes a network request, or spawns a subprocess.
+  criteria:
+    "true": >-
+      At least one call in the excerpt performs file-system, network or
+      subprocess I/O — e.g. readFile/writeFile/mkdir/readdir, fetch or an
+      injected fetch, spawn/exec/execFile — whether or not a test stubs it.
+    "false": >-
+      No such call occurs in the excerpt. Imports, type declarations, and
+      mentions of I/O functions that are not called do not count.
+errors:
+  type: noul
+  instructions: >-
+    This excerpt raises or handles an error: it throws, catches, rejects, or
+    checks for a failure and returns an error value or error result.
+  criteria:
+    "true": >-
+      The excerpt contains a throw, a try/catch, a .catch or rejection, a
+      process exit with a failure code, or returns an error object/result
+      (e.g. ok: false, an error code). Test assertions that expect an error
+      (toThrow, rejects) count.
+    "false": >-
+      None of these occur in the excerpt. Merely defining an error type or
+      importing an error class does not count.
+defect:
+  type: noul
+  instructions: >-
+    This excerpt contains a defect: code that would behave incorrectly for some
+    realistic input, or a comment that the code visibly contradicts.
+  criteria:
+    "true": >-
+      A concrete wrong behaviour can be pointed to within the excerpt itself.
+    "false": >-
+      No concrete defect is visible in the excerpt. Style issues, missing
+      features, and doubts about code not shown do not count.
+standalone:
+  type: noul
+  instructions: >-
+    A reader can tell what this excerpt does and why without opening any other
+    file.
+  criteria:
+    "true": >-
+      The excerpt's purpose and behaviour are clear from its own text, names
+      and comments, plus standard library or well-known APIs.
+    "false": >-
+      Understanding what it does depends on project-specific functions, types
+      or data defined elsewhere whose behaviour cannot be inferred from their
+      names.

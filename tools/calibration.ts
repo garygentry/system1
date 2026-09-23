@@ -250,7 +250,7 @@ function clamp01(x: number): number {
  * epsilon defeats float error at bucket edges — `0.7 / 0.1` is 6.999…, which
  * would otherwise drop a predicted 0.7 into the 0.6–0.7 bucket.
  */
-function bucketIndex(p: number, width = BUCKET_WIDTH): number {
+export function bucketIndex(p: number, width = BUCKET_WIDTH): number {
   const count = Math.round(1 / width)
   return Math.min(count - 1, Math.floor(p / width + 1e-9))
 }
