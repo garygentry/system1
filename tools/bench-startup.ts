@@ -27,11 +27,18 @@ if (!existsSync(BUNDLE)) {
   process.exit(2)
 }
 
-const cases: { name: string; args: string[]; gated: boolean }[] = [
+const cases: { name: string; args: string[]; gated: boolean; input?: string }[] = [
   { name: "node -e 0", args: ["-e", "0"], gated: false },
   { name: "decide version", args: [BUNDLE, "version"], gated: true },
   { name: "decide help", args: [BUNDLE, "help"], gated: true },
   { name: "decide config", args: [BUNDLE, "config"], gated: false },
+  // The Claude hook runs this on every prompt (0018), so it is held to the target.
+  {
+    name: "decide route --hook",
+    args: [BUNDLE, "route", "--hook", "--format", "brief"],
+    gated: true,
+    input: JSON.stringify({ prompt: "Is every item in TASK.md done? Check it against the diff." }),
+  },
   {
     name: "decide many --dry-run",
     args: [
@@ -52,18 +59,22 @@ function median(xs: number[]): number {
   return s[Math.floor(s.length / 2)] as number
 }
 
-function time(args: string[]): number {
+function time(args: string[], input?: string): number {
   const start = process.hrtime.bigint()
-  const r = spawnSync(process.execPath, args, { cwd: ROOT, stdio: "ignore" })
+  const r = spawnSync(process.execPath, args, {
+    cwd: ROOT,
+    input: input ?? "",
+    stdio: ["pipe", "ignore", "ignore"],
+  })
   if (r.status !== 0) throw new Error(`bench: \`node ${args.join(" ")}\` exited ${r.status}`)
   return Number(process.hrtime.bigint() - start) / 1e6
 }
 
 // One warm-up run each fills the OS file cache and Node's compile cache.
-for (const c of cases) time(c.args)
+for (const c of cases) time(c.args, c.input)
 const results = cases.map((c) => ({
   ...c,
-  ms: median(Array.from({ length: RUNS }, () => time(c.args))),
+  ms: median(Array.from({ length: RUNS }, () => time(c.args, c.input))),
 }))
 const base = results[0]?.ms ?? 0
 let failed = false

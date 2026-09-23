@@ -15,6 +15,11 @@ You need Node 22 or newer.
 
 Scripts, hooks and CI only need the CLI: `npm i -g @garygentry/system1`.
 
+In Claude Code the plugin also installs one prompt hook. When a prompt asks for a closed
+judgement (a batch to triage, a checklist to tick off, "is this done?"), it adds a hint to use the
+`ask` skill. It is local pattern matching and sends nothing. See
+[routing hints](concepts.md#routing-hints) to tune it or switch it off.
+
 ## 2. Run setup
 
 In the agent, run the **setup** skill:

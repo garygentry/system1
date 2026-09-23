@@ -62,6 +62,8 @@ The CLI needs Node 22 or newer.
 | **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | `npm i -g @garygentry/system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules` |
 | **Pi** | `pi install npm:@garygentry/system1-pi` | `npm i -g @garygentry/system1` | no sandbox |
 
+In Claude Code the plugin also adds a prompt hook that hints the `ask` skill when a prompt asks for a closed judgement. It matches patterns locally and sends nothing; tune or turn it off under `route:` ([routing hints](docs/concepts.md#routing-hints)).
+
 Then, in the agent, run the **setup** skill (`/system1:setup` in Claude Code, `$system1:setup` in Codex, `/skill:setup` in Pi). It checks the install, the key, consent and network access, and walks you through whatever is missing. Or check it yourself with `decide doctor --format brief`.
 
 Two things are yours to do: set an [OpenRouter](https://openrouter.ai) key (`OPENROUTER_API_KEY`, or `~/.config/system1/credentials`), and agree, once per repo, to content being sent (`decide config egress allow`, run by you, never by the agent). [Getting started](docs/getting-started.md) walks through both. Without a key, `decide` still replays answers recorded earlier, which is how the test suites here run.

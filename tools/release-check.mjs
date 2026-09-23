@@ -93,6 +93,26 @@ step("installed CLI replays a many run", () => {
   return out.split("\n")[0].slice(0, 60)
 })
 
+// The Claude plugin's UserPromptSubmit hook runs this on every prompt (0018).
+step("installed CLI answers the routing hook", () => {
+  const event = JSON.stringify({
+    prompt: "Is every item in TASK.md done? Check it against the diff.",
+  })
+  const out = run(decide, ["route", "--hook", "--format", "brief"], {
+    cwd: repo,
+    env: offline,
+    input: event,
+  })
+  if (!out.includes("system1:ask")) throw new Error(`no hint: ${out.slice(0, 120)}`)
+  const quiet = run(decide, ["route", "--hook", "--format", "brief"], {
+    cwd: repo,
+    env: offline,
+    input: JSON.stringify({ prompt: "rename this function to fooBar" }),
+  })
+  if (quiet.trim() !== "") throw new Error(`hinted a near miss: ${quiet.slice(0, 120)}`)
+  return "hints a done-check, quiet on a rename"
+})
+
 step("installed CLI replays an adopted cookbook recipe", () => {
   const dir = join(work, "cookbook")
   mkdirSync(join(dir, ".system1/specs"), { recursive: true })
