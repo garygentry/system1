@@ -1,0 +1,143 @@
+{
+  "seed": 20260923,
+  "cap": 25,
+  "bucketWidth": 0.1,
+  "runs": {
+    "system1": "evidence/runs/system1-v1.json",
+    "jev-poc": "evidence/runs/jev-poc-v1.json"
+  },
+  "groups": {
+    "checkable": [
+      "io",
+      "errors"
+    ],
+    "judgement": [
+      "defect",
+      "standalone"
+    ]
+  },
+  "populationTotal": 3988,
+  "sampledTotal": 478,
+  "strata": [
+    {
+      "group": "checkable",
+      "bucket": 0,
+      "population": 1246,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 1,
+      "population": 142,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 2,
+      "population": 56,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 3,
+      "population": 39,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 4,
+      "population": 21,
+      "sampled": 21
+    },
+    {
+      "group": "checkable",
+      "bucket": 5,
+      "population": 36,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 6,
+      "population": 51,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 7,
+      "population": 63,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 8,
+      "population": 80,
+      "sampled": 25
+    },
+    {
+      "group": "checkable",
+      "bucket": 9,
+      "population": 260,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 0,
+      "population": 37,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 1,
+      "population": 139,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 2,
+      "population": 556,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 3,
+      "population": 490,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 4,
+      "population": 327,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 5,
+      "population": 218,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 6,
+      "population": 128,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 7,
+      "population": 67,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 8,
+      "population": 25,
+      "sampled": 25
+    },
+    {
+      "group": "judgement",
+      "bucket": 9,
+      "population": 7,
+      "sampled": 7
+    }
+  ]
+}

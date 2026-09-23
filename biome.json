@@ -17,7 +17,8 @@
       "!tools/evals/fixture-repo",
       "!tools/evals/fixture-changes",
       "!.remember",
-      "!.claude"
+      "!.claude",
+      "!evidence"
     ]
   },
   "formatter": {

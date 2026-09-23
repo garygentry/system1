@@ -56,6 +56,15 @@ describe("parseRun", () => {
     ).toEqual(["a", "b"])
   })
 
+  it("unwraps the envelope `many --format json` prints", () => {
+    const result = {
+      kept: [{ id: "a", answers: { q: { type: "noul", noul: 0.9 } } }],
+      undecided: [],
+    }
+    const text = JSON.stringify({ v: 1, ok: true, command: "many", result })
+    expect(parseRun(text).map((r) => r.id)).toEqual(["a"])
+  })
+
   it("accepts a bare array of rows", () => {
     const text = JSON.stringify([{ id: "a", answers: { q: { type: "noul", noul: 0.3 } } }])
     expect(parseRun(text)).toHaveLength(1)

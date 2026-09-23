@@ -1,0 +1,478 @@
+{"id": "src/lib/jev-client.ts:81-97", "question": "io", "label": true, "corpus": "jev-poc", "n": 1}
+{"id": "src/demos/context-pruner/view.tsx:241-242", "question": "defect", "label": false, "corpus": "jev-poc", "n": 2}
+{"id": "scripts/capture-baseline.ts:361-390", "question": "defect", "label": false, "corpus": "jev-poc", "n": 3, "note": "exits 0 after per-demo failures, but failures are logged by design"}
+{"id": "tools/bench-startup.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 4}
+{"id": "packages/core/src/project/project.ts:161-200", "question": "defect", "label": false, "corpus": "system1", "n": 5}
+{"id": "packages/core/src/decide.ts:161-164", "question": "standalone", "label": true, "corpus": "system1", "n": 6, "note": "trivial fragment"}
+{"id": "packages/core/src/model/validate.ts:161-177", "question": "standalone", "label": true, "corpus": "system1", "n": 7}
+{"id": "tools/calibration-sample.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 8}
+{"id": "packages/cli/src/main.ts:81-108", "question": "io", "label": false, "corpus": "system1", "n": 9, "note": "dynamic import() is module loading, not file I/O"}
+{"id": "tools/evals/run.ts:121-160", "question": "defect", "label": false, "corpus": "system1", "n": 10}
+{"id": "packages/core/src/sources/read.ts:321-342", "question": "errors", "label": false, "corpus": "system1", "n": 11, "note": "returns undefined as a parse-failure sentinel; rubric counts explicit error values only"}
+{"id": "packages/cli/src/bundled.ts:1-37", "question": "errors", "label": true, "corpus": "system1", "n": 12}
+{"id": "packages/core/src/tools/tools.test.ts:161-200", "question": "io", "label": true, "corpus": "system1", "n": 13, "note": "runAsk calls the provider through the injected fetch"}
+{"id": "scripts/capture.ts:81-120", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 14}
+{"id": "src/components/layout/DemoFrame.tsx:81-83", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 15, "note": "trivial fragment"}
+{"id": "packages/core/src/fixtures/store.ts:41-80", "question": "errors", "label": true, "corpus": "system1", "n": 16}
+{"id": "src/components/layout/RunBar.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 17}
+{"id": "packages/core/src/tools/doctor.ts:161-200", "question": "io", "label": true, "corpus": "system1", "n": 18, "note": "probe runs the version-check subprocess"}
+{"id": "shared/assessment.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 19}
+{"id": "src/demos/pr-triage/view.tsx:241-245", "question": "defect", "label": false, "corpus": "jev-poc", "n": 20}
+{"id": "src/demos/personas/spread.ts:41-77", "question": "errors", "label": false, "corpus": "jev-poc", "n": 21, "note": "returns null for empty input, a sentinel, not an error value"}
+{"id": "src/demos/taxonomy/taxonomy.ts:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 22}
+{"id": "src/components/jev/ConfidenceMeter.tsx:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 23, "note": "UI warning for a flat answer, not error handling"}
+{"id": "packages/core/src/run/pool.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 24}
+{"id": "shared/baseline.ts:321-360", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 25}
+{"id": "src/demos/bulk/demo.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 26}
+{"id": "packages/core/src/ping.ts:81-88", "question": "standalone", "label": true, "corpus": "system1", "n": 27}
+{"id": "src/components/layout/AppShell.tsx:161-163", "question": "io", "label": false, "corpus": "jev-poc", "n": 28}
+{"id": "packages/core/src/ping.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 29, "note": "ping called with an injected fake fetch"}
+{"id": "src/demos/guardrail/policy.ts:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 30}
+{"id": "src/demos/pr-triage/Demo.tsx:41-43", "question": "defect", "label": false, "corpus": "jev-poc", "n": 31}
+{"id": "packages/core/src/tools/context.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 32, "note": "loadConfig reads config files from disk"}
+{"id": "e2e/method.spec.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 33, "note": "asserts no console errors; nothing raised or caught here"}
+{"id": "server/fixtures.ts:121-160", "question": "defect", "label": false, "corpus": "jev-poc", "n": 34}
+{"id": "packages/core/src/tools/spec-check.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 35, "note": "prepare() reads the example's file source"}
+{"id": "src/demos/loop-detector/policy.ts:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 36, "note": "onsetStep 0 would drop the trace note, but step 0 is not shown to be reachable"}
+{"id": "src/demos/moderation/view.tsx:161-200", "question": "defect", "label": false, "corpus": "jev-poc", "n": 37}
+{"id": "src/demos/doc-sweep/document.ts:81-97", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 38}
+{"id": "tools/evals/run.ts:201-240", "question": "errors", "label": true, "corpus": "system1", "n": 39}
+{"id": "packages/core/src/tools/many.ts:41-80", "question": "standalone", "label": true, "corpus": "system1", "n": 40}
+{"id": "src/demos/moderation/Demo.tsx:1-39", "question": "io", "label": true, "corpus": "jev-poc", "n": 41, "note": "useSingleRun asks upstream on mount (auto defaults to true)"}
+{"id": "src/demos/loop-detector/trace.ts:121-157", "question": "errors", "label": false, "corpus": "jev-poc", "n": 42, "note": "error strings are data"}
+{"id": "src/demos/_kit/DemoScaffold.tsx:121-160", "question": "errors", "label": true, "corpus": "jev-poc", "n": 43, "note": "branches on run.error and renders it: handling a failure"}
+{"id": "src/demos/alert-dedup/policy.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 44}
+{"id": "packages/core/src/tools/spec-check.test.ts:161-165", "question": "standalone", "label": true, "corpus": "system1", "n": 45}
+{"id": "e2e/demos/done-check.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 46, "note": "page.goto navigates, which is a network request"}
+{"id": "src/demos/_kit/DemoScaffold.tsx:121-160", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 47}
+{"id": "src/demos/flaky-triage/failures.ts:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 48}
+{"id": "packages/core/src/spec/expect.ts:1-40", "question": "errors", "label": true, "corpus": "system1", "n": 49}
+{"id": "src/demos/rerank/corpus.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 50}
+{"id": "e2e/demos/pr-triage.spec.ts:41-56", "question": "errors", "label": false, "corpus": "jev-poc", "n": 51}
+{"id": "packages/cli/src/main.test.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 52, "note": "main runs many over files and the injected fetch"}
+{"id": "src/components/jev/Displacement.tsx:121-144", "question": "defect", "label": false, "corpus": "jev-poc", "n": 53}
+{"id": "src/demos/flaky-triage/view.tsx:81-120", "question": "errors", "label": true, "corpus": "jev-poc", "n": 54, "note": "branches on the baseline error and renders it"}
+{"id": "src/demos/triage/policy.ts:201-204", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 55, "note": "trivial fragment"}
+{"id": "e2e/demos/guardrail.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 56, "note": "page.goto"}
+{"id": "packages/core/src/version.ts:1-5", "question": "defect", "label": false, "corpus": "system1", "n": 57}
+{"id": "packages/cli/src/run.ts:1-40", "question": "io", "label": false, "corpus": "system1", "n": 58, "note": "writes to io.out (stdout), which the rubric does not count"}
+{"id": "src/demos/_kit/runners/useFanOut.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 59, "note": "the throw sits past the excerpt's end"}
+{"id": "server/transport.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 60}
+{"id": "packages/core/src/run/budget.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 61, "note": "@throws documented, but the throw is past the excerpt's end"}
+{"id": "src/demos/semantic-grep/Demo.tsx:41-50", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 62, "note": "trivial fragment"}
+{"id": "src/demos/done-check/evidence.ts:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 63, "note": "deliberately flawed demo content is data"}
+{"id": "packages/core/src/testkit/tmp.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 64}
+{"id": "src/demos/done-check/evidence.ts:81-118", "question": "defect", "label": false, "corpus": "jev-poc", "n": 65}
+{"id": "packages/cli/src/envelope.ts:1-40", "question": "errors", "label": true, "corpus": "system1", "n": 66, "note": "fail() builds and returns an error envelope"}
+{"id": "packages/core/src/config/load.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 67, "note": "readLayer reads the config files"}
+{"id": "src/components/jev/ScoreRail.tsx:81-82", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 68, "note": "trivial fragment"}
+{"id": "src/demos/guardrail/demo.ts:161-163", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 69}
+{"id": "packages/cli/src/bundled.test.ts:41-57", "question": "io", "label": true, "corpus": "system1", "n": 70, "note": "tree() creates the fixture tree on disk"}
+{"id": "packages/core/src/ping.ts:81-88", "question": "errors", "label": false, "corpus": "system1", "n": 71, "note": "formats an error message; does not raise, catch or return an error"}
+{"id": "src/components/jev/Baseline.tsx:121-160", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 72}
+{"id": "tools/evals/run.test.ts:41-80", "question": "errors", "label": false, "corpus": "system1", "n": 73, "note": "is_error in test data only"}
+{"id": "packages/core/src/config/load.ts:281-308", "question": "defect", "label": false, "corpus": "system1", "n": 74}
+{"id": "src/demos/bulk/demo.ts:81-104", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 75}
+{"id": "src/demos/loop-detector/policy.test.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 76}
+{"id": "e2e/demos/rerank.spec.ts:41-54", "question": "errors", "label": false, "corpus": "jev-poc", "n": 77}
+{"id": "packages/core/src/tools/spec-check.test.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 78, "note": "runSpecCheck record mode, plus writeFileSync"}
+{"id": "e2e/api.spec.ts:201-240", "question": "errors", "label": true, "corpus": "jev-poc", "n": 79, "note": "asserts an HTTP 400 rejection"}
+{"id": "src/demos/context-pruner/context.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 80}
+{"id": "server/routes.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 81, "note": "defines routes that return responses; no outbound request"}
+{"id": "src/demos/_kit/fixtures.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 82}
+{"id": "src/demos/flaky-triage/failures.ts:81-88", "question": "defect", "label": false, "corpus": "jev-poc", "n": 83}
+{"id": "e2e/demos/guardrail.spec.ts:41-62", "question": "io", "label": true, "corpus": "jev-poc", "n": 84, "note": "page.goto"}
+{"id": "src/components/ui/tabs.tsx:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 85}
+{"id": "e2e/demos/semantic-grep.spec.ts:1-34", "question": "defect", "label": false, "corpus": "jev-poc", "n": 86}
+{"id": "packages/core/src/config/load.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 87, "note": "existsSync probes the file system"}
+{"id": "src/demos/_kit/runners/useSingleRun.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 88}
+{"id": "packages/cli/src/entry.ts:1-8", "question": "io", "label": false, "corpus": "system1", "n": 89, "note": "dynamic import() is module loading"}
+{"id": "src/demos/typewriter/Demo.tsx:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 90, "note": "useLiveRun re-asks upstream on each pause"}
+{"id": "src/demos/clause-risk/policy.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 91}
+{"id": "src/demos/flaky-triage/failures.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 92, "note": "error strings are data"}
+{"id": "src/lib/use-jev.ts:81-102", "question": "io", "label": false, "corpus": "jev-poc", "n": 93, "note": "no request issued inside the excerpt"}
+{"id": "packages/core/src/tools/doctor.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 94, "note": "which() searches PATH on disk"}
+{"id": "packages/core/src/decide.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 95}
+{"id": "scripts/capture-baseline.ts:241-280", "question": "io", "label": true, "corpus": "jev-poc", "n": 96}
+{"id": "src/demos/taxonomy/beam.ts:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 97}
+{"id": "packages/core/src/config/load.ts:161-200", "question": "io", "label": true, "corpus": "system1", "n": 98}
+{"id": "packages/cli/src/main.test.ts:41-80", "question": "io", "label": false, "corpus": "system1", "n": 99, "note": "main() for help and usage errors; no file or network I/O"}
+{"id": "scripts/assess.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 100}
+{"id": "src/demos/_kit/runners/usePairwise.ts:41-42", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 101, "note": "trivial fragment"}
+{"id": "shared/assessment.ts:121-160", "question": "defect", "label": false, "corpus": "jev-poc", "n": 102}
+{"id": "packages/core/src/transport/openrouter.ts:41-80", "question": "errors", "label": true, "corpus": "system1", "n": 103, "note": "try block around the fetch, for retry"}
+{"id": "src/demos/_kit/index.ts:41-51", "question": "defect", "label": false, "corpus": "jev-poc", "n": 104}
+{"id": "shared/jev.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 105}
+{"id": "src/demos/semantic-grep/corpus.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 106}
+{"id": "packages/cli/src/bundled.ts:1-37", "question": "standalone", "label": true, "corpus": "system1", "n": 107}
+{"id": "src/demos/rerank/view.tsx:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 108, "note": "UI notice, not error handling"}
+{"id": "src/demos/triage/policy.ts:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 109}
+{"id": "src/demos/_kit/plan.test.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 110}
+{"id": "packages/cli/src/exit-codes.ts:1-37", "question": "defect", "label": false, "corpus": "system1", "n": 111}
+{"id": "e2e/demos/cascade.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 112, "note": "page.goto"}
+{"id": "src/pages/Gallery.tsx:121-152", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 113}
+{"id": "scripts/capture-baseline.ts:121-160", "question": "io", "label": true, "corpus": "jev-poc", "n": 114, "note": "spawn"}
+{"id": "src/demos/triage/demo.ts:121-158", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 115}
+{"id": "server/spend.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 116}
+{"id": "server/fixtures.ts:201-201", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 117, "note": "empty excerpt"}
+{"id": "src/demos/_kit/runners/useBaseline.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 118, "note": "error state declared, not yet handled"}
+{"id": "src/components/layout/AppShell.tsx:161-163", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 119, "note": "trivial fragment"}
+{"id": "packages/core/src/model/validate.ts:161-177", "question": "io", "label": false, "corpus": "system1", "n": 120}
+{"id": "src/demos/done-check/view.tsx:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 121}
+{"id": "e2e/responsive.spec.ts:41-54", "question": "io", "label": true, "corpus": "jev-poc", "n": 122, "note": "page.goto"}
+{"id": "packages/core/src/tools/doctor.test.ts:81-120", "question": "errors", "label": true, "corpus": "system1", "n": 123, "note": "asserts failed checks and HTTP error handling"}
+{"id": "src/demos/alert-dedup/alerts.ts:121-147", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 124}
+{"id": "packages/core/src/split/split.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 125}
+{"id": "packages/core/src/tools/ask.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 126, "note": "prepare() reads the sources"}
+{"id": "packages/core/src/model/profiles.ts:1-40", "question": "defect", "label": false, "corpus": "system1", "n": 127}
+{"id": "src/demos/_kit/DemoScaffold.tsx:161-192", "question": "defect", "label": false, "corpus": "jev-poc", "n": 128}
+{"id": "src/demos/loop-detector/view.tsx:161-200", "question": "errors", "label": false, "corpus": "jev-poc", "n": 129}
+{"id": "packages/core/src/index.ts:81-101", "question": "defect", "label": false, "corpus": "system1", "n": 130}
+{"id": "packages/core/src/sources/read.test.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 131, "note": "gitRepo, writeTree and readSources hit the disk"}
+{"id": "e2e/shell.spec.ts:121-127", "question": "defect", "label": false, "corpus": "jev-poc", "n": 132}
+{"id": "scripts/capture-baseline.ts:361-390", "question": "errors", "label": true, "corpus": "jev-poc", "n": 133}
+{"id": "packages/core/src/spec/spec.test.ts:201-216", "question": "standalone", "label": true, "corpus": "system1", "n": 134}
+{"id": "packages/core/src/run/spend.ts:41-80", "question": "errors", "label": true, "corpus": "system1", "n": 135}
+{"id": "e2e/errors.spec.ts:81-120", "question": "errors", "label": true, "corpus": "jev-poc", "n": 136, "note": "e2e test of failure handling; expects the error surfaced"}
+{"id": "packages/cli/src/main.test.ts:41-80", "question": "defect", "label": false, "corpus": "system1", "n": 137}
+{"id": "src/demos/bulk/summarize.ts:1-40", "question": "errors", "label": true, "corpus": "jev-poc", "n": 138, "note": "branches on row.error and routes failures to review"}
+{"id": "packages/cli/src/main.test.ts:121-160", "question": "errors", "label": false, "corpus": "system1", "n": 139}
+{"id": "shared/assessment.ts:161-200", "question": "errors", "label": false, "corpus": "jev-poc", "n": 140, "note": "returns null for division by zero, a sentinel"}
+{"id": "packages/cli/src/commands/decide.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 141}
+{"id": "server/transport.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 142, "note": "@throws documented, but no throw in the excerpt"}
+{"id": "src/demos/guardrail/Demo.tsx:41-43", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 143, "note": "trivial fragment"}
+{"id": "tools/calibration-sample.ts:81-120", "question": "defect", "label": false, "corpus": "system1", "n": 144}
+{"id": "tools/calibration.ts:441-449", "question": "io", "label": false, "corpus": "system1", "n": 145, "note": "console and process.exit only"}
+{"id": "src/demos/_kit/runners/usePairwise.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 146}
+{"id": "src/demos/cascade/view.tsx:161-200", "question": "io", "label": false, "corpus": "jev-poc", "n": 147}
+{"id": "packages/core/src/fixtures/store.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 148}
+{"id": "scripts/assess.ts:81-103", "question": "io", "label": true, "corpus": "jev-poc", "n": 149}
+{"id": "packages/cli/src/commands/config.ts:41-80", "question": "defect", "label": false, "corpus": "system1", "n": 150}
+{"id": "scripts/assess.ts:81-103", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 151}
+{"id": "src/demos/guardrail/Demo.tsx:41-43", "question": "defect", "label": false, "corpus": "jev-poc", "n": 152}
+{"id": "packages/core/src/errors.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 153}
+{"id": "packages/core/src/config/consent.ts:41-44", "question": "io", "label": false, "corpus": "system1", "n": 154, "note": "trivial fragment, no call"}
+{"id": "packages/core/src/model/types.ts:121-125", "question": "defect", "label": false, "corpus": "system1", "n": 155}
+{"id": "src/pages/Method.tsx:321-360", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 156}
+{"id": "scripts/assess.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 157, "note": "spawn is imported, but the call is past the excerpt"}
+{"id": "shared/jev.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 158}
+{"id": "packages/cli/src/bundle.test.ts:41-56", "question": "defect", "label": false, "corpus": "system1", "n": 159}
+{"id": "src/pages/Gallery.tsx:81-120", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 160}
+{"id": "packages/cli/src/io.ts:1-13", "question": "defect", "label": false, "corpus": "system1", "n": 161}
+{"id": "shared/baseline.ts:321-360", "question": "defect", "label": false, "corpus": "jev-poc", "n": 162}
+{"id": "src/demos/bulk/summarize.ts:81-114", "question": "defect", "label": false, "corpus": "jev-poc", "n": 163}
+{"id": "e2e/demos/pr-triage.spec.ts:41-56", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 164}
+{"id": "packages/core/src/tools/ask.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 165, "note": "decide() makes the provider call; prepare() reads sources"}
+{"id": "src/demos/_kit/runners/useLiveRun.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 166}
+{"id": "shared/jev.ts:81-120", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 167}
+{"id": "packages/core/src/tools/many.ts:201-236", "question": "errors", "label": true, "corpus": "system1", "n": 168, "note": "describe() turns an error into a {code, message} failure record"}
+{"id": "src/demos/done-check/evidence.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 169}
+{"id": "src/demos/pr-triage/prs.ts:81-92", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 170}
+{"id": "src/demos/bulk/Demo.tsx:81-116", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 171}
+{"id": "packages/cli/src/commands/config.ts:1-40", "question": "io", "label": false, "corpus": "system1", "n": 172}
+{"id": "packages/core/src/sources/read.ts:281-320", "question": "defect", "label": false, "corpus": "system1", "n": 173, "note": "a surrogate pair in an unquoted git path would be mis-encoded, but only with quotePath off plus a quoted path: not realistic"}
+{"id": "packages/cli/src/main.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 174}
+{"id": "e2e/responsive.spec.ts:41-54", "question": "defect", "label": false, "corpus": "jev-poc", "n": 175}
+{"id": "src/demos/_kit/runners/useFanOut.ts:121-128", "question": "defect", "label": false, "corpus": "jev-poc", "n": 176}
+{"id": "packages/core/src/testdata/index.ts:1-9", "question": "errors", "label": false, "corpus": "system1", "n": 177}
+{"id": "packages/core/src/tools/doctor.ts:161-200", "question": "defect", "label": false, "corpus": "system1", "n": 178}
+{"id": "src/demos/_kit/runners/useFanOut.ts:41-80", "question": "io", "label": true, "corpus": "jev-poc", "n": 179, "note": "batch() calls the server API"}
+{"id": "src/App.tsx:1-26", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 180}
+{"id": "e2e/demos/cascade.spec.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 181}
+{"id": "packages/core/src/decide.live.test.ts:81-90", "question": "errors", "label": false, "corpus": "system1", "n": 182}
+{"id": "src/pages/DemoPage.tsx:1-40", "question": "errors", "label": true, "corpus": "jev-poc", "n": 183, "note": "wraps in an error boundary and handles a missing demo"}
+{"id": "packages/cli/src/args.ts:81-120", "question": "defect", "label": false, "corpus": "system1", "n": 184}
+{"id": "src/demos/semantic-grep/policy.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 185}
+{"id": "src/pages/Method.tsx:321-360", "question": "defect", "label": false, "corpus": "jev-poc", "n": 186}
+{"id": "src/demos/clause-risk/Demo.tsx:41-50", "question": "defect", "label": false, "corpus": "jev-poc", "n": 187}
+{"id": "packages/cli/src/main.test.ts:481-501", "question": "io", "label": true, "corpus": "system1", "n": 188, "note": "main doctor probes through the injected fetch"}
+{"id": "e2e/demos/alert-dedup.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 189, "note": "page.goto"}
+{"id": "src/demos/loop-detector/trace.ts:121-157", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 190}
+{"id": "src/demos/loop-detector/trace.ts:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 191, "note": "error text is data"}
+{"id": "packages/core/src/transport/openrouter.test.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 192, "note": "transport.decide over a scripted fetch"}
+{"id": "src/demos/pr-triage/view.tsx:241-245", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 193}
+{"id": "e2e/demos/context-pruner.spec.ts:41-53", "question": "io", "label": true, "corpus": "jev-poc", "n": 194, "note": "serverMode() GETs /api/health"}
+{"id": "packages/cli/src/commands/doctor.ts:41-73", "question": "standalone", "label": true, "corpus": "system1", "n": 195}
+{"id": "e2e/demos/triage.spec.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 196}
+{"id": "packages/core/src/tools/spec-check.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 197, "note": "imports only"}
+{"id": "packages/core/src/project/project.ts:201-205", "question": "standalone", "label": true, "corpus": "system1", "n": 198}
+{"id": "e2e/errors.spec.ts:121-160", "question": "io", "label": true, "corpus": "jev-poc", "n": 199, "note": "page.goto and route interception"}
+{"id": "packages/core/src/spec/spec.test.ts:81-120", "question": "errors", "label": true, "corpus": "system1", "n": 200, "note": "toThrow assertions"}
+{"id": "e2e/shell.spec.ts:81-120", "question": "io", "label": true, "corpus": "jev-poc", "n": 201, "note": "page.goto and reload"}
+{"id": "packages/core/src/decide.test.ts:201-209", "question": "io", "label": false, "corpus": "system1", "n": 202}
+{"id": "src/demos/guardrail/view.tsx:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 203}
+{"id": "src/demos/done-check/view.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 204}
+{"id": "tools/calibration.ts:201-240", "question": "errors", "label": true, "corpus": "system1", "n": 205, "note": "invalid labels become dropped records with a reason"}
+{"id": "tools/evals/run.ts:361-400", "question": "errors", "label": false, "corpus": "system1", "n": 206}
+{"id": "src/pages/Method.tsx:161-200", "question": "io", "label": false, "corpus": "jev-poc", "n": 207}
+{"id": "server/concurrency.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 208}
+{"id": "src/demos/pr-triage/demo.ts:81-91", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 209}
+{"id": "packages/core/src/model/validate.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 210}
+{"id": "src/demos/flaky-triage/view.tsx:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 211}
+{"id": "src/demos/pr-triage/prs.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 212}
+{"id": "packages/core/src/model/validate.ts:41-80", "question": "errors", "label": true, "corpus": "system1", "n": 213}
+{"id": "src/demos/context-pruner/policy.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 214}
+{"id": "src/demos/flaky-triage/Demo.tsx:41-43", "question": "defect", "label": false, "corpus": "jev-poc", "n": 215}
+{"id": "e2e/helpers.ts:1-40", "question": "errors", "label": true, "corpus": "jev-poc", "n": 216, "note": "records page errors and asserts none"}
+{"id": "packages/core/src/model/types.ts:41-80", "question": "standalone", "label": true, "corpus": "system1", "n": 217}
+{"id": "src/components/jev/Sparkline.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 218}
+{"id": "packages/core/src/tools/doctor.ts:241-256", "question": "io", "label": true, "corpus": "system1", "n": 219, "note": "accessSync and statSync"}
+{"id": "packages/cli/src/commands/config.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 220, "note": "DecisionsError imported; no throw in the excerpt"}
+{"id": "packages/core/src/egress/egress.test.ts:81-120", "question": "defect", "label": false, "corpus": "system1", "n": 221}
+{"id": "tools/evals/run.test.ts:121-150", "question": "io", "label": true, "corpus": "system1", "n": 222, "note": "loadCases reads routing.yaml"}
+{"id": "packages/core/src/egress/scrub.ts:41-80", "question": "standalone", "label": true, "corpus": "system1", "n": 223}
+{"id": "shared/assessment.ts:361-365", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 224}
+{"id": "src/pages/Method.tsx:361-400", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 225}
+{"id": "src/components/jev/NoulGauge.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 226}
+{"id": "src/demos/bulk/view.tsx:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 227}
+{"id": "e2e/errors.spec.ts:161-181", "question": "errors", "label": true, "corpus": "jev-poc", "n": 228, "note": "e2e test of the sidecar-unreachable failure path"}
+{"id": "src/demos/guardrail/view.tsx:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 229}
+{"id": "packages/core/src/config/load.ts:201-240", "question": "defect", "label": false, "corpus": "system1", "n": 230}
+{"id": "packages/cli/src/bundle.test.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 231}
+{"id": "packages/cli/src/main.test.ts:201-240", "question": "io", "label": true, "corpus": "system1", "n": 232, "note": "rig writes files; main runs many"}
+{"id": "src/demos/guardrail/policy.test.ts:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 233}
+{"id": "src/demos/done-check/evidence.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 234}
+{"id": "src/demos/bulk/summarize.test.ts:161-176", "question": "errors", "label": false, "corpus": "jev-poc", "n": 235, "note": "asserts behaviour on failed rows; nothing raised or caught"}
+{"id": "src/demos/typewriter/demo.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 236}
+{"id": "src/demos/personas/personas.ts:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 237}
+{"id": "packages/cli/src/main.test.ts:481-501", "question": "standalone", "label": true, "corpus": "system1", "n": 238}
+{"id": "e2e/errors.spec.ts:121-160", "question": "errors", "label": true, "corpus": "jev-poc", "n": 239, "note": "asserts the malformed response surfaces as an error"}
+{"id": "e2e/errors.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 240}
+{"id": "tools/calibration.ts:361-400", "question": "errors", "label": false, "corpus": "system1", "n": 241, "note": "prints a refusal report; no error raised"}
+{"id": "src/components/layout/DemoFrame.tsx:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 242}
+{"id": "packages/core/src/testkit/fake-model.ts:41-59", "question": "io", "label": false, "corpus": "system1", "n": 243, "note": "defines a fake fetch; nothing called"}
+{"id": "e2e/demos/taxonomy.spec.ts:41-80", "question": "io", "label": true, "corpus": "jev-poc", "n": 244, "note": "page.goto"}
+{"id": "src/demos/rerank/baseline.ts:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 245}
+{"id": "packages/core/src/split/split.ts:81-120", "question": "errors", "label": true, "corpus": "system1", "n": 246}
+{"id": "e2e/api.spec.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 247}
+{"id": "src/demos/clause-risk/contract.ts:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 248}
+{"id": "src/demos/router/demo.ts:161-162", "question": "defect", "label": false, "corpus": "jev-poc", "n": 249, "note": "trivial fragment"}
+{"id": "packages/core/src/ping.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 250}
+{"id": "packages/core/src/tools/doctor.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 251, "note": "which() checks the file system"}
+{"id": "src/demos/rerank/demo.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 252}
+{"id": "packages/cli/src/main.test.ts:161-200", "question": "errors", "label": true, "corpus": "system1", "n": 253, "note": "asserts error codes and exit codes"}
+{"id": "packages/core/src/model/answers.test.ts:1-40", "question": "defect", "label": false, "corpus": "system1", "n": 254}
+{"id": "packages/core/src/model/validate.ts:121-160", "question": "standalone", "label": true, "corpus": "system1", "n": 255}
+{"id": "packages/core/src/tools/doctor.ts:201-240", "question": "defect", "label": false, "corpus": "system1", "n": 256}
+{"id": "src/demos/done-check/view.tsx:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 257}
+{"id": "packages/core/src/testkit/tmp.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 258, "note": "rmSync with force; no raise or catch"}
+{"id": "src/demos/done-check/policy.test.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 259}
+{"id": "e2e/method.spec.ts:41-71", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 260}
+{"id": "src/demos/_kit/runners/usePairwise.ts:41-42", "question": "defect", "label": false, "corpus": "jev-poc", "n": 261}
+{"id": "src/demos/doc-sweep/demo.ts:41-48", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 262}
+{"id": "packages/core/src/ping.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 263, "note": "error field declared in a type only"}
+{"id": "src/components/jev/ScoreRail.tsx:81-82", "question": "defect", "label": false, "corpus": "jev-poc", "n": 264}
+{"id": "packages/core/src/tools/spec-check.test.ts:121-160", "question": "standalone", "label": true, "corpus": "system1", "n": 265}
+{"id": "tools/evals/run.ts:321-360", "question": "io", "label": true, "corpus": "system1", "n": 266, "note": "run() spawns codex and pi"}
+{"id": "packages/core/src/spec/spec.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 267, "note": "exampleFileProblem checks the example file on disk"}
+{"id": "src/demos/taxonomy/demo.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 268}
+{"id": "src/demos/doc-sweep/document.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 269}
+{"id": "scripts/capture.ts:161-180", "question": "defect", "label": false, "corpus": "jev-poc", "n": 270, "note": "logs per-demo failures and carries on by design"}
+{"id": "src/demos/personas/Demo.tsx:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 271, "note": "hook only"}
+{"id": "src/demos/threshold-fitter/policy.test.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 272}
+{"id": "src/demos/_kit/plan.ts:81-94", "question": "io", "label": false, "corpus": "jev-poc", "n": 273, "note": "visit() is an abstract callback"}
+{"id": "src/demos/flaky-triage/policy.ts:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 274}
+{"id": "e2e/demos/router.spec.ts:41-51", "question": "io", "label": true, "corpus": "jev-poc", "n": 275, "note": "page.goto"}
+{"id": "src/demos/loop-detector/demo.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 276}
+{"id": "packages/cli/src/main.test.ts:161-200", "question": "io", "label": true, "corpus": "system1", "n": 277, "note": "main runs many over temp files"}
+{"id": "tools/calibration.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 278}
+{"id": "scripts/assess.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 279}
+{"id": "src/demos/done-check/Demo.tsx:41-42", "question": "defect", "label": false, "corpus": "jev-poc", "n": 280}
+{"id": "packages/core/src/tools/spec-check.ts:41-80", "question": "defect", "label": false, "corpus": "system1", "n": 281}
+{"id": "tools/evals/run.test.ts:81-120", "question": "io", "label": false, "corpus": "system1", "n": 282}
+{"id": "e2e/errors.spec.ts:41-80", "question": "errors", "label": true, "corpus": "jev-poc", "n": 283, "note": "e2e test of a 502 failure path"}
+{"id": "packages/core/src/tools/doctor.ts:241-256", "question": "defect", "label": false, "corpus": "system1", "n": 284}
+{"id": "src/demos/rerank/Demo.tsx:81-91", "question": "defect", "label": false, "corpus": "jev-poc", "n": 285}
+{"id": "packages/core/src/decide.test.ts:161-200", "question": "io", "label": true, "corpus": "system1", "n": 286, "note": "tempDir() creates directories"}
+{"id": "src/demos/flaky-triage/demo.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 287}
+{"id": "src/demos/cascade/view.tsx:281-320", "question": "defect", "label": false, "corpus": "jev-poc", "n": 288}
+{"id": "src/demos/_kit/runners/useSingleRun.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 289, "note": "ask() sends the decision request"}
+{"id": "src/components/ui/separator.tsx:1-25", "question": "errors", "label": false, "corpus": "jev-poc", "n": 290}
+{"id": "packages/core/src/project/project.test.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 291}
+{"id": "packages/cli/src/commands/config.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 292, "note": "loadConfig reads and setConsent writes the config file"}
+{"id": "scripts/assess.ts:41-80", "question": "io", "label": true, "corpus": "jev-poc", "n": 293, "note": "spawn and existsSync"}
+{"id": "packages/core/src/model/answers.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 294}
+{"id": "packages/cli/src/main.test.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 295, "note": "rig writes temp files; main many reads them"}
+{"id": "e2e/demos/context-pruner.spec.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 296}
+{"id": "src/demos/_kit/runners/useSingleRun.ts:41-57", "question": "defect", "label": false, "corpus": "jev-poc", "n": 297}
+{"id": "src/demos/threshold-fitter/policy.ts:41-66", "question": "defect", "label": false, "corpus": "jev-poc", "n": 298}
+{"id": "src/demos/bulk/summarize.test.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 299}
+{"id": "tools/generate.ts:201-240", "question": "io", "label": false, "corpus": "system1", "n": 300, "note": "builds shell-script text; performs no I/O itself"}
+{"id": "src/pages/Method.tsx:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 301}
+{"id": "src/demos/router/demo.ts:161-162", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 302, "note": "trivial fragment"}
+{"id": "e2e/responsive.spec.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 303}
+{"id": "src/components/layout/AppShell.tsx:81-120", "question": "io", "label": false, "corpus": "jev-poc", "n": 304, "note": "localStorage is web storage, not file, network or subprocess I/O"}
+{"id": "packages/core/src/errors.ts:41-60", "question": "standalone", "label": true, "corpus": "system1", "n": 305}
+{"id": "e2e/contract.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 306, "note": "askDemo and serverMode drive the page and GET /api/health"}
+{"id": "e2e/shell.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 307, "note": "page.goto"}
+{"id": "src/demos/moderation/view.tsx:121-160", "question": "errors", "label": true, "corpus": "jev-poc", "n": 308, "note": "branches on the baseline error and renders it"}
+{"id": "src/components/layout/DemoBoundary.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 309}
+{"id": "packages/cli/src/main.test.ts:481-501", "question": "errors", "label": true, "corpus": "system1", "n": 310, "note": "asserts a failing check is reported"}
+{"id": "src/demos/doc-sweep/view.tsx:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 311}
+{"id": "src/pages/Method.tsx:361-400", "question": "defect", "label": false, "corpus": "jev-poc", "n": 312}
+{"id": "packages/core/src/tools/spec-check.ts:161-200", "question": "errors", "label": false, "corpus": "system1", "n": 313, "note": "expectation misses are results, not errors"}
+{"id": "src/demos/bulk/view.tsx:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 314}
+{"id": "src/demos/bulk/summarize.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 315}
+{"id": "server/routes.ts:161-200", "question": "io", "label": true, "corpus": "jev-poc", "n": 316, "note": "reads the request body and calls askChat upstream"}
+{"id": "src/demos/taxonomy/beam.test.ts:41-80", "question": "errors", "label": true, "corpus": "jev-poc", "n": 317, "note": "throw new Error(\"unreachable\")"}
+{"id": "packages/core/src/model/validate.ts:1-40", "question": "defect", "label": false, "corpus": "system1", "n": 318}
+{"id": "scripts/capture.ts:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 319, "note": "imports only"}
+{"id": "src/demos/doc-sweep/policy.test.ts:41-64", "question": "errors", "label": false, "corpus": "jev-poc", "n": 320}
+{"id": "e2e/shell.spec.ts:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 321}
+{"id": "src/demos/_kit/runners/useRounds.ts:121-139", "question": "errors", "label": false, "corpus": "jev-poc", "n": 322, "note": "passes the error through"}
+{"id": "src/demos/registry.ts:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 323}
+{"id": "src/demos/guardrail/policy.ts:41-80", "question": "errors", "label": true, "corpus": "jev-poc", "n": 324}
+{"id": "src/demos/registry.ts:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 325, "note": "import.meta.glob resolves at build time"}
+{"id": "packages/core/src/decide.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 326, "note": "transport.decide, and the fixture lookup and record"}
+{"id": "e2e/method.spec.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 327}
+{"id": "src/demos/_kit/runners/useRounds.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 328}
+{"id": "e2e/shell.spec.ts:121-127", "question": "io", "label": false, "corpus": "jev-poc", "n": 329, "note": "page assertions only; no navigation here"}
+{"id": "packages/cli/src/commands/decide.ts:41-79", "question": "io", "label": true, "corpus": "system1", "n": 330, "note": "createContext loads config; stdin is read with readFileSync(0)"}
+{"id": "packages/core/src/tools/context.ts:161-198", "question": "defect", "label": false, "corpus": "system1", "n": 331}
+{"id": "src/demos/loop-detector/trace.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 332}
+{"id": "packages/core/src/ping.test.ts:41-78", "question": "io", "label": true, "corpus": "system1", "n": 333, "note": "ping over an injected fake fetch"}
+{"id": "server/fixtures.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 334}
+{"id": "src/demos/moderation/policies.ts:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 335}
+{"id": "packages/core/src/project/project.ts:201-205", "question": "errors", "label": false, "corpus": "system1", "n": 336}
+{"id": "src/demos/_kit/runners/useBaseline.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 337}
+{"id": "packages/core/src/config/config.test.ts:41-80", "question": "io", "label": true, "corpus": "system1", "n": 338, "note": "setup writes temp config; loadConfig reads it"}
+{"id": "src/demos/_kit/runners/useFanOut.ts:121-128", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 339, "note": "trivial fragment"}
+{"id": "scripts/capture.ts:121-160", "question": "defect", "label": false, "corpus": "jev-poc", "n": 340}
+{"id": "src/demos/doc-sweep/document.ts:81-97", "question": "defect", "label": false, "corpus": "jev-poc", "n": 341}
+{"id": "src/demos/context-pruner/Demo.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 342}
+{"id": "src/lib/utils.ts:1-7", "question": "defect", "label": false, "corpus": "jev-poc", "n": 343}
+{"id": "packages/cli/src/exit-codes.ts:1-37", "question": "errors", "label": true, "corpus": "system1", "n": 344, "note": "maps error codes to failure exit codes"}
+{"id": "e2e/shell.spec.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 345}
+{"id": "src/demos/moderation/content.ts:41-62", "question": "defect", "label": false, "corpus": "jev-poc", "n": 346}
+{"id": "src/demos/context-pruner/context.ts:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 347}
+{"id": "src/demos/_kit/types.ts:81-120", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 348}
+{"id": "src/demos/cascade/view.tsx:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 349}
+{"id": "src/demos/guardrail/policy.ts:161-182", "question": "errors", "label": false, "corpus": "jev-poc", "n": 350}
+{"id": "tools/evals/run.ts:1-40", "question": "io", "label": false, "corpus": "system1", "n": 351, "note": "imports and path resolution only"}
+{"id": "e2e/responsive.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 352, "note": "page.goto"}
+{"id": "packages/core/src/sources/read.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 353, "note": "statSync and readFileSync"}
+{"id": "e2e/shell.spec.ts:41-80", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 354}
+{"id": "src/demos/triage/demo.ts:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 355}
+{"id": "packages/core/src/config/consent.ts:1-40", "question": "defect", "label": false, "corpus": "system1", "n": 356}
+{"id": "shared/baseline.ts:361-400", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 357}
+{"id": "e2e/demos/guardrail.spec.ts:41-62", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 358}
+{"id": "tools/calibration.test.ts:81-120", "question": "errors", "label": true, "corpus": "system1", "n": 359, "note": "toThrow assertions"}
+{"id": "packages/cli/src/args.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 360, "note": "readText reads the questions file; readStdin"}
+{"id": "shared/assessment.ts:121-160", "question": "errors", "label": false, "corpus": "jev-poc", "n": 361}
+{"id": "src/demos/threshold-fitter/data.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 362}
+{"id": "packages/core/src/transport/openrouter.test.ts:1-40", "question": "errors", "label": true, "corpus": "system1", "n": 363, "note": "the scripted fetch throws"}
+{"id": "src/demos/bulk/summarize.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 364}
+{"id": "packages/core/src/model/validate.test.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 365, "note": "error cases set up, but no assertion in the excerpt"}
+{"id": "tools/calibration.ts:1-40", "question": "io", "label": false, "corpus": "system1", "n": 366, "note": "readFileSync imported, not called"}
+{"id": "src/demos/_kit/runners/useRounds.ts:81-120", "question": "errors", "label": true, "corpus": "jev-poc", "n": 367, "note": ".catch sets the error"}
+{"id": "src/demos/threshold-fitter/view.tsx:121-160", "question": "defect", "label": false, "corpus": "jev-poc", "n": 368}
+{"id": "src/demos/done-check/view.tsx:121-160", "question": "errors", "label": true, "corpus": "jev-poc", "n": 369, "note": "branches on error and renders ErrorNote"}
+{"id": "e2e/demos/typewriter.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 370, "note": "page.goto"}
+{"id": "e2e/helpers.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 371, "note": "page.request.get"}
+{"id": "src/demos/_kit/runners/useRounds.ts:41-80", "question": "io", "label": true, "corpus": "jev-poc", "n": 372, "note": "decide() calls the API"}
+{"id": "packages/core/src/decide.test.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 373, "note": "record mode writes fixtures to the temp store"}
+{"id": "packages/core/src/run/pool.ts:1-40", "question": "errors", "label": true, "corpus": "system1", "n": 374}
+{"id": "src/demos/rerank/corpus.ts:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 375}
+{"id": "packages/core/src/transport/openrouter.ts:81-120", "question": "io", "label": true, "corpus": "system1", "n": 376, "note": "reads the HTTP response body"}
+{"id": "src/demos/_kit/load-manifests.ts:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 377}
+{"id": "tools/calibration.ts:241-280", "question": "defect", "label": false, "corpus": "system1", "n": 378}
+{"id": "src/demos/alert-dedup/view.tsx:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 379}
+{"id": "packages/cli/src/exit-codes.ts:1-37", "question": "standalone", "label": true, "corpus": "system1", "n": 380}
+{"id": "packages/core/src/testdata/index.ts:1-9", "question": "io", "label": true, "corpus": "system1", "n": 381, "note": "readFileSync"}
+{"id": "packages/core/src/spec/spec.ts:81-120", "question": "defect", "label": false, "corpus": "system1", "n": 382}
+{"id": "src/demos/taxonomy/beam.test.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 383}
+{"id": "packages/core/src/egress/exclude.ts:41-75", "question": "io", "label": false, "corpus": "system1", "n": 384}
+{"id": "tools/generate.ts:161-200", "question": "io", "label": true, "corpus": "system1", "n": 385, "note": "existsSync and readFileSync"}
+{"id": "packages/core/src/sources/types.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 386}
+{"id": "e2e/demos/loop-detector.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 387, "note": "page.goto"}
+{"id": "server/routes.ts:121-160", "question": "io", "label": true, "corpus": "jev-poc", "n": 388, "note": "askJev per item"}
+{"id": "packages/core/src/sources/read.ts:241-280", "question": "io", "label": true, "corpus": "system1", "n": 389, "note": "execFileSync git"}
+{"id": "src/components/layout/DemoBoundary.tsx:41-77", "question": "errors", "label": true, "corpus": "jev-poc", "n": 390, "note": "renders the caught error, with a retry"}
+{"id": "e2e/demos/threshold-fitter.spec.ts:1-31", "question": "io", "label": true, "corpus": "jev-poc", "n": 391, "note": "page.goto"}
+{"id": "src/demos/taxonomy/taxonomy.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 392}
+{"id": "src/demos/pr-triage/policy.ts:41-80", "question": "defect", "label": true, "corpus": "jev-poc", "n": 393, "note": "comment says an unanswered read counts against the change; an unanswered 'reversible' does not escalate"}
+{"id": "tools/evals/run.test.ts:121-150", "question": "errors", "label": false, "corpus": "system1", "n": 394, "note": "asserts failure detection returns false; nothing raised or caught"}
+{"id": "src/demos/triage/policy.test.ts:121-147", "question": "errors", "label": true, "corpus": "jev-poc", "n": 395, "note": "toThrow"}
+{"id": "src/demos/router/policy.ts:81-120", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 396}
+{"id": "tools/generate.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 397}
+{"id": "src/demos/guardrail/view.tsx:121-140", "question": "errors", "label": false, "corpus": "jev-poc", "n": 398}
+{"id": "tools/calibration-sample.test.ts:1-40", "question": "defect", "label": false, "corpus": "system1", "n": 399}
+{"id": "packages/cli/src/main.ts:41-80", "question": "errors", "label": true, "corpus": "system1", "n": 400, "note": "try/catch and rethrow through emit"}
+{"id": "src/demos/personas/spread.test.ts:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 401, "note": "asserts error rows are skipped; nothing raised or caught"}
+{"id": "src/demos/guardrail/policy.test.ts:121-124", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 402, "note": "trivial fragment"}
+{"id": "src/demos/bulk/dataset.ts:81-95", "question": "defect", "label": false, "corpus": "jev-poc", "n": 403}
+{"id": "src/components/ui/tooltip.tsx:1-29", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 404}
+{"id": "packages/core/src/model/types.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 405}
+{"id": "packages/cli/src/commands/spec.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 406, "note": "DecisionsError imported only"}
+{"id": "packages/core/src/sources/read.ts:121-160", "question": "defect", "label": false, "corpus": "system1", "n": 407}
+{"id": "e2e/demos/rerank.spec.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 408, "note": "page.goto"}
+{"id": "packages/core/src/sources/read.ts:281-320", "question": "errors", "label": true, "corpus": "system1", "n": 409, "note": "an unparseable diff path becomes a skipped record with a reason"}
+{"id": "src/demos/cascade/useCascadeWork.ts:81-100", "question": "io", "label": false, "corpus": "jev-poc", "n": 410, "note": "no request issued in the excerpt"}
+{"id": "src/demos/cascade/demo.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 411}
+{"id": "src/demos/taxonomy/taxonomy.ts:161-200", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 412}
+{"id": "e2e/demos/loop-detector.spec.ts:41-55", "question": "io", "label": true, "corpus": "jev-poc", "n": 413, "note": "page.goto"}
+{"id": "packages/core/src/egress/egress.test.ts:81-120", "question": "io", "label": false, "corpus": "system1", "n": 414}
+{"id": "src/demos/_kit/load-manifests.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 415}
+{"id": "src/demos/doc-sweep/Demo.tsx:1-40", "question": "io", "label": false, "corpus": "jev-poc", "n": 416, "note": "windowed fan-out hook, runs on click"}
+{"id": "shared/baseline.ts:281-320", "question": "defect", "label": false, "corpus": "jev-poc", "n": 417}
+{"id": "src/demos/personas/Demo.tsx:1-40", "question": "defect", "label": false, "corpus": "jev-poc", "n": 418}
+{"id": "packages/core/src/tools/ask.ts:1-40", "question": "errors", "label": false, "corpus": "system1", "n": 419, "note": "DecisionsError imported only"}
+{"id": "packages/core/src/tools/tools.test.ts:41-80", "question": "errors", "label": false, "corpus": "system1", "n": 420, "note": "the rejection assertion is cut off at the excerpt's end"}
+{"id": "src/lib/format.ts:1-28", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 421}
+{"id": "packages/core/src/sources/read.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 422, "note": "realpathSync"}
+{"id": "src/demos/loop-detector/trace.ts:121-157", "question": "io", "label": false, "corpus": "jev-poc", "n": 423}
+{"id": "packages/cli/src/main.test.ts:361-400", "question": "io", "label": true, "corpus": "system1", "n": 424, "note": "rig writes spec files; spec check --live"}
+{"id": "packages/core/src/tools/spec-check.test.ts:161-165", "question": "defect", "label": false, "corpus": "system1", "n": 425}
+{"id": "packages/core/src/config/config.test.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 426, "note": "readFileSync, writeFileSync and setConsent"}
+{"id": "packages/core/src/transport/openrouter.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 427, "note": "guardrailQuestions() reads testdata from disk; decide over the scripted fetch"}
+{"id": "scripts/capture.ts:121-160", "question": "io", "label": false, "corpus": "jev-poc", "n": 428, "note": "loadManifests loads modules, not an evident file or network read"}
+{"id": "packages/core/src/config/config.test.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 429}
+{"id": "packages/core/src/tools/spec-check.test.ts:161-165", "question": "io", "label": true, "corpus": "system1", "n": 430, "note": "runSpecCheck in record mode calls the provider"}
+{"id": "server/fixtures.ts:1-40", "question": "io", "label": true, "corpus": "jev-poc", "n": 431, "note": "existsSync and readdirSync"}
+{"id": "src/demos/_kit/runners/useRounds.ts:81-120", "question": "io", "label": true, "corpus": "jev-poc", "n": 432, "note": "refresh() re-reads spend from the sidecar"}
+{"id": "packages/core/src/config/config.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 433, "note": "temp() and writeTree write to disk"}
+{"id": "packages/cli/src/main.test.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 434}
+{"id": "packages/core/src/egress/egress.test.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 435}
+{"id": "packages/core/src/transport/openrouter.test.ts:81-107", "question": "io", "label": true, "corpus": "system1", "n": 436, "note": "transport.decide over a scripted fetch"}
+{"id": "packages/core/src/spec/spec.test.ts:161-200", "question": "io", "label": false, "corpus": "system1", "n": 437}
+{"id": "src/demos/_kit/plan.ts:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 438}
+{"id": "e2e/helpers.ts:41-80", "question": "io", "label": false, "corpus": "jev-poc", "n": 439, "note": "UI clicks and innerText only"}
+{"id": "src/demos/_kit/runners/useBaseline.ts:41-76", "question": "io", "label": true, "corpus": "jev-poc", "n": 440, "note": "runBaseline calls the chat API"}
+{"id": "shared/assessment.test.ts:121-149", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 441}
+{"id": "tools/bench-startup.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 442, "note": "existsSync"}
+{"id": "tools/generate.ts:201-240", "question": "errors", "label": false, "corpus": "system1", "n": 443, "note": "shell text inside a string"}
+{"id": "src/demos/router/view.tsx:1-40", "question": "errors", "label": false, "corpus": "jev-poc", "n": 444}
+{"id": "src/demos/flaky-triage/failures.ts:81-88", "question": "errors", "label": false, "corpus": "jev-poc", "n": 445, "note": "failure text is data"}
+{"id": "packages/cli/src/args.ts:161-200", "question": "standalone", "label": true, "corpus": "system1", "n": 446}
+{"id": "e2e/helpers.ts:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 447}
+{"id": "packages/cli/src/format.ts:81-120", "question": "defect", "label": false, "corpus": "system1", "n": 448}
+{"id": "src/components/jev/ScoreRail.tsx:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 449}
+{"id": "src/demos/_kit/runners/useLiveRun.ts:81-90", "question": "defect", "label": false, "corpus": "jev-poc", "n": 450}
+{"id": "src/demos/taxonomy/demo.ts:81-113", "question": "defect", "label": false, "corpus": "jev-poc", "n": 451}
+{"id": "src/components/layout/RunBar.tsx:41-80", "question": "defect", "label": false, "corpus": "jev-poc", "n": 452}
+{"id": "src/demos/done-check/demo.ts:81-107", "question": "defect", "label": false, "corpus": "jev-poc", "n": 453}
+{"id": "src/demos/context-pruner/view.tsx:241-242", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 454, "note": "trivial fragment: nothing depends on other files"}
+{"id": "packages/core/src/ping.ts:41-80", "question": "errors", "label": true, "corpus": "system1", "n": 455, "note": "try/catch returning an error result"}
+{"id": "src/demos/_kit/runners/useFanOut.ts:81-120", "question": "io", "label": true, "corpus": "jev-poc", "n": 456, "note": "refresh() re-reads spend from the sidecar"}
+{"id": "src/components/jev/ConfidenceMeter.tsx:81-101", "question": "defect", "label": false, "corpus": "jev-poc", "n": 457}
+{"id": "shared/assessment.test.ts:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 458}
+{"id": "src/demos/_kit/runners/usePairwise.ts:41-42", "question": "io", "label": false, "corpus": "jev-poc", "n": 459}
+{"id": "packages/core/src/tools/context.ts:161-198", "question": "io", "label": false, "corpus": "system1", "n": 460, "note": "constructs stores; no I/O performed here"}
+{"id": "src/demos/rerank/view.tsx:201-240", "question": "defect", "label": false, "corpus": "jev-poc", "n": 461}
+{"id": "src/demos/flaky-triage/policy.ts:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 462}
+{"id": "src/demos/triage/policy.ts:81-120", "question": "defect", "label": false, "corpus": "jev-poc", "n": 463}
+{"id": "packages/core/src/tools/spec-check.ts:121-160", "question": "io", "label": true, "corpus": "system1", "n": 464, "note": "decider.decide"}
+{"id": "e2e/demos/taxonomy.spec.ts:41-80", "question": "errors", "label": false, "corpus": "jev-poc", "n": 465}
+{"id": "src/components/jev/AnswerCard.tsx:81-84", "question": "defect", "label": false, "corpus": "jev-poc", "n": 466}
+{"id": "src/demos/flaky-triage/demo.ts:41-70", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 467}
+{"id": "src/lib/spend-context.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 468}
+{"id": "packages/cli/src/envelope.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 469}
+{"id": "src/components/jev/Readouts.tsx:1-40", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 470}
+{"id": "src/demos/pr-triage/prs.ts:81-92", "question": "defect", "label": false, "corpus": "jev-poc", "n": 471, "note": "destructive migration is demo data"}
+{"id": "packages/core/src/config/load.ts:241-280", "question": "errors", "label": true, "corpus": "system1", "n": 472}
+{"id": "src/demos/_kit/types.ts:201-220", "question": "defect", "label": false, "corpus": "jev-poc", "n": 473}
+{"id": "src/pages/Method.tsx:441-443", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 474, "note": "trivial fragment"}
+{"id": "e2e/responsive.spec.ts:41-54", "question": "standalone", "label": true, "corpus": "jev-poc", "n": 475}
+{"id": "src/demos/clause-risk/view.tsx:81-120", "question": "errors", "label": false, "corpus": "jev-poc", "n": 476}
+{"id": "tools/bench-startup.ts:1-40", "question": "standalone", "label": true, "corpus": "system1", "n": 477}
+{"id": "packages/core/src/tools/tools.test.ts:1-40", "question": "io", "label": true, "corpus": "system1", "n": 478, "note": "temp() writes files; createContext loads config"}

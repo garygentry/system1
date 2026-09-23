@@ -33,6 +33,35 @@ Everything here is committed so the result can be audited and re-derived.
    ground truth for the judgement group is itself a judgement.
 7. **Score.** `tsx tools/calibration.ts --run <run> --labels <labels>`, per corpus and per group.
 
-## Pins
+## Pins (v1, recorded 2026-09-23)
 
-Filled in when the sweep is recorded.
+| Corpus | Commit | Globs (`--split lines:40`) | Excerpts | Failed |
+|---|---|---|---|---|
+| system1 | `baf4eb5` | `packages/*/src/**/*.ts`, `tools/*.ts`, `tools/{smoke,evals}/*.ts` | 320 | 1 |
+| jev-poc | `3111ae9` | `{src,server,shared,scripts,e2e}/**/*.{ts,tsx}` | 680 | 2 |
+
+- Model `typesafe/jev-1.13`, `source: live`. Measured cost: $0.0142 (system1) + $0.0290 (jev-poc).
+- **The 3 failed excerpts** (`tools/calibration-sample.ts:161-198`, `server/transport.ts:121-160`,
+  `src/demos/guardrail/demo.ts:121-160`) were refused upstream with a Cloudflare HTTP 403. One
+  retry reproduced it, so the block is deterministic and depends on the content, not on any
+  answer. They are outside the population.
+- Population: 997 excerpts × 4 questions = 3,988 `noul` answers. Sample: seed `20260923`,
+  cap 25 per stratum, 478 pairs across 389 excerpts, with all 20 strata populated. The seed and
+  cap were fixed before the stratum counts were seen.
+- Agreement subset: `labels/agreement-v1.worksheet.jsonl`, 30 pairs drawn from the sample with
+  seed `20260924`.
+
+## Labelling rules applied (v1)
+
+Recorded because they decide borderline cases and a second labeller should apply the same ones.
+
+- **io:** counts a call whose evident purpose is file, network or subprocess I/O, directly or
+  through a wrapper that does it (`loadConfig`, `prepare`, `runAsk`, `page.goto`, hooks that ask
+  on mount), including stubbed or injected fetches. Printing to stdout, `localStorage`, dynamic
+  `import()`, and an import that is never called do not count.
+- **errors:** counts `throw`, `try/catch`, `.catch`, rejection or `toThrow` assertions, a
+  structured failure result (an error envelope, `{code, message}`, a skipped or dropped record
+  with a reason), and branching on an operation's error to surface it. A bare
+  `null`/`undefined` sentinel, and a `throw` that falls past the excerpt's end, do not count.
+- A fact learned from another excerpt (for example that `serverMode()` issues a GET) was applied
+  to every excerpt that uses it, including ones already labelled.

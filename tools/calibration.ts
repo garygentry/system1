@@ -127,13 +127,15 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 /**
- * Read the rows of a recorded sweep. Accepts the full `many` result — merging
- * `kept` and `undecided`, because the undecided (≈0.5) items are exactly the
- * ones §1 insists on keeping in the sample — or a bare array of rows. Failed
- * and skipped items carry no answers and are absent by construction.
+ * Read the rows of a recorded sweep. Accepts the `many --format json` envelope
+ * or the bare `many` result — merging `kept` and `undecided`, because the
+ * undecided (≈0.5) items are exactly the ones §1 insists on keeping in the
+ * sample — or a bare array of rows. Failed and skipped items carry no answers
+ * and are absent by construction.
  */
 export function parseRun(text: string): RunRow[] {
-  const data: unknown = JSON.parse(text)
+  let data: unknown = JSON.parse(text)
+  if (isRecord(data) && isRecord(data.result)) data = data.result
   const raw: unknown[] = Array.isArray(data)
     ? data
     : isRecord(data)
