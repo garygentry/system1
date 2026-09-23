@@ -1,6 +1,6 @@
 # M7 — Evidence: measure what we claim
 
-**Status:** next (planned 2026-09-23). The decisions below came from interviewing the user.
+**Status:** done 2026-09-23 (planned the same day). The decisions below came from interviewing the user.
 **Goal:** The load-bearing word in the pitch is "calibrated", and today the README admits nobody has checked it. Replace that with **our own measurement**, published with its scope and its sample sizes, and derive the threshold guidance a newcomer actually needs from it. Close the two things M6 left open while we are in the harnesses anyway.
 
 ## First principles
@@ -98,7 +98,8 @@ Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attem
   | Pi | `2 kept of 7 · 0 undecided · 5 dropped · live typesafe/jev-1.13 · $0.000425 measured · 1.2 s` |
 
   Decision spend: $0.001266 measured, for all three together. Harness tokens are not included.
-- **Still open:** §6 (the routing retry).
+- **§6, the routing retry (2026-09-23): tried once, failed, reverted.** First a fresh Claude baseline, on the unchanged description: **6/8** again, but with different misses from M6's. The TASK.md check now passed; the pre-commit rules check missed again, and so did the 300-commit triage, where Claude noticed the commits come from about 15 templates and grepped them itself. The one change tried: move the criteria check into the description's first sentence, phrased as a request from the *user* ("whenever the user asks for one verdict per rule or acceptance criterion over a diff, log or test output… however small the diff"), not as an agent lifecycle rule like round 5's "before you report a task done". Result: **Claude 5/8** (the pre-commit check now loaded; TASK.md, cleanup-plan and commits missed), negatives 8/8; **Codex and Pi 8/8 positive and 8/8 negative**. The guard rail held, but the gap did not close, so the wording was reverted.
+- **What the two runs show.** Over three runs on these two wordings, Claude's misses move between the two criteria-check prompts and two of the batch prompts, and it scores 5 or 6 out of 8. That looks like noise around a model that often prefers to read small inputs itself, not a wording defect that one sentence can fix. As the gap entry says: **stop pulling this lever.** Known gap 1 stays open for the post-release hook (`guard`).
 
 ## Acceptance
 
@@ -109,5 +110,5 @@ Fresh eyes on the 6/8, as described under Known gaps in the ROADMAP. **One attem
 - [x] The README no longer rests the central claim on the provider's assertion.
 - [x] A finding about `UNDECIDED_FLOOR` is recorded, whether or not it moves. *(It stays: the band came true 53% of the time, weighted; see the docs.)*
 - [x] One live decision through the `ask` skill in each of Claude, Codex and Pi, with costs recorded — M6's last open box. *(2026-09-23: all three, from the published artifacts; see Results.)*
-- [ ] The routing retry has been attempted once and its outcome recorded, with Codex/Pi negatives still 8/8.
-- [ ] `pnpm check` green.
+- [x] The routing retry has been attempted once and its outcome recorded, with Codex/Pi negatives still 8/8. *(2026-09-23: Codex/Pi held 8/8; Claude 5/8, so the wording was reverted; see Results.)*
+- [x] `pnpm check` green. *(2026-09-23: 329 tests.)*
