@@ -54,7 +54,7 @@ Question craft is covered by the `ask` skill's references. Read `question-craft.
    ```
 
    If it fails, stop and tell the user why, by exit code:
-   - **Exit 3:** the repo has no egress consent. Suggest the `setup` skill, and never grant consent yourself.
+   - **Exit 3:** the repo has no egress consent. Suggest the `setup` skill, and never grant consent yourself (no `decide config egress allow`, with or without `--confirm`).
    - **Exit 2 with `no-key`:** live calls need an API key. Suggest the `setup` skill.
    - **Exit 4:** the spend guard stopped it. Show the projection, and let the user decide.
 4. **Read the distributions before trusting the result.** A `pass` with a 0.6 noul, or a choice split 0.5/0.45, is a warning. For each `FAIL` or `UNDECIDED`:

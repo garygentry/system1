@@ -1,6 +1,7 @@
 # Keep a large run within budget
 
-At about $0.00003 per 700-token item, one run rarely costs much. A fan-out over a large tree can
+At about $0.00004 per 700-token item (counting the ~300 tokens the provider adds to every call),
+one run rarely costs much. A fan-out over a large tree can
 still add up. This page projects a run before it starts, narrows it, and reviews what it cost.
 Why the guard exists is in [concepts.md](concepts.md#spend).
 
@@ -14,14 +15,15 @@ decide many --spec no-timeout --dry-run --format brief
 ```
 
 ```text
-decide many (dry run): would send 2 item(s) to typesafe/jev-1.13 · projected $0.000041 (~987 tokens, price as of 2026-09-19) · no calls made
+decide many (dry run): would send 2 item(s) to typesafe/jev-1.13 · projected $0.000046 (~1087 tokens, price as of 2026-09-19) · no calls made
 first: src/a.ts, src/b.ts
 ```
 
 The projection is an estimate from the listed price, and it's labelled as projected. It counts
 each item and the questions at about 3 characters a token, plus the tokens the provider adds to
-every call (about 250 for Jev), so it errs high. What was actually spent comes from the
-provider's usage report, after the run.
+every call (300 for Jev, measured). For yes/no questions and small choices that comes out a
+little high; a choice with many options can come in above it. What was actually spent comes
+from the provider's usage report, after the run.
 
 ## Narrow the run
 

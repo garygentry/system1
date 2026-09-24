@@ -58,7 +58,7 @@ describe("profiles", () => {
   })
 
   it("projects cost from the listed price, with the per-call overhead", () => {
-    // 1000 calls × (700 + 250 overhead) tokens × $0.042 per million
-    expect(projectCost(resolveProfile("typesafe/jev-1.13"), 1000, 700)).toBeCloseTo(0.0399)
+    // 1000 calls × (700 + 300 overhead) tokens × $0.042 per million
+    expect(projectCost(resolveProfile("typesafe/jev-1.13"), 1000, 700)).toBeCloseTo(0.042, 12)
   })
 })

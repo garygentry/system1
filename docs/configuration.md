@@ -115,7 +115,7 @@ Optional fields, with the default a config profile gets:
 | Field | Default | Meaning |
 |---|---|---|
 | `maxChoices` | `255` | The most options one `choice` question may have. A whole number, at least 2 |
-| `callOverheadTokens` | `250` | Input tokens the provider bills on every call beyond the item and the questions, added to each call in a **projection**. Jev's measured value. A whole number, at least 0 |
+| `callOverheadTokens` | `300` | Input tokens the provider bills on every call beyond the item and the questions, added to each call in a **projection**. Jev's measured value. A whole number, at least 0 |
 | `displayName` | the `id` | A name for display |
 | `transport` | `openrouter-decisions` | How the model is reached. It's the only one there is |
 | `usdPerOutputToken` | `0` | Listed output price |

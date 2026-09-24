@@ -275,23 +275,31 @@ describe("decide config egress", () => {
     expect(json().error.message).toMatch(/user's decision/)
   })
 
-  it("points a user without a terminal at the form that works: `!` has no TTY", async () => {
+  it("tells the agent not to grant it, and the user how to without a terminal", async () => {
     const { io, json } = rig({}, { consent: false })
     await main(["config", "egress", "allow"], io)
-    // Suggesting `! decide config egress allow` alone would just fail the same way again.
-    expect(json().error.message).toContain("`! decide config egress allow --confirm`")
+    const message: string = json().error.message
+    expect(message).toMatch(/An agent must not grant it, with or without --confirm/)
+    // `!` prompts have no TTY, so the user needs --confirm there. But agents read
+    // this, and in a shell `! cmd` runs cmd, so the envelope never carries that form.
+    expect(message).toContain("--confirm")
+    expect(message).not.toContain("! decide")
   })
 
-  it("grants on --confirm without a terminal, which the user typed themselves", async () => {
+  it("grants on --confirm without a terminal, and records that route", async () => {
     const { cwd, io } = rig({}, { consent: false })
     expect(await main(["config", "egress", "allow", "--confirm"], io)).toBe(0)
-    expect(readFileSync(join(cwd, ".system1/config.yaml"), "utf8")).toContain("granted: true")
+    const written = readFileSync(join(cwd, ".system1/config.yaml"), "utf8")
+    expect(written).toContain("granted: true")
+    expect(written).toContain("by: decide config --confirm")
   })
 
   it("grants when a human is at the terminal, and reports status", async () => {
     const { cwd, io, out } = rig({}, { consent: false, interactive: true })
     expect(await main(["config", "egress", "allow"], io)).toBe(0)
-    expect(readFileSync(join(cwd, ".system1/config.yaml"), "utf8")).toContain("granted: true")
+    const written = readFileSync(join(cwd, ".system1/config.yaml"), "utf8")
+    expect(written).toContain("granted: true")
+    expect(written).toContain("by: decide config\n")
     await main(["config", "egress", "status", "--format", "brief"], io)
     expect(out.at(-1)).toMatch(/^egress consent: granted/)
   })

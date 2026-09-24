@@ -159,7 +159,8 @@ withheld. That is fixed and covered by a test.
 
 ## Speed and cost
 
-- **Price.** About $0.00003 for a 700-token item at Jev's listed price. The live runs above
+- **Price.** $0.042 per million input tokens, Jev's listed price: about $0.00004 for a 700-token
+  item, counting the ~300 tokens the provider adds to every call. The live runs above
   cost $0.00007 to $0.00043 for 5 to 7 files. A 57-file run over this repo cost $0.0035.
 - **Latency, end to end.** A 5-to-7-file fan-out took 0.46 to 1.2 s, and the 57-file run 2.6 s.
   An endpoint check (`decide ping`) answered in about 175 ms.

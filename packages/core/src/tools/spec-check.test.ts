@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { resolveProfile } from "../model/profiles.js"
 import { fakeDecisionsFetch } from "../testkit/fake-model.js"
 import { useTempDirs } from "../testkit/tmp.js"
 import { createContext } from "./context.js"
@@ -107,6 +108,31 @@ describe("spec check", () => {
       code: "egress-refused",
     })
     expect(model.calls).toBe(0)
+  })
+
+  it("projects a live check with the per-call overhead counted once per example", async () => {
+    const cwd = temp({
+      ".system1/config.yaml": `${CONSENT}budget:\n  maxCalls: 1\n`,
+      ".system1/specs/authy.yaml": SPEC,
+      "src/auth.ts": "export const auth = () => {}",
+    })
+    const model = fakeDecisionsFetch()
+    const ctx = createContext({
+      cwd,
+      home: temp(),
+      env: { OPENROUTER_API_KEY: "k" },
+      fetch: model.fetch,
+    })
+    const error = await runSpecCheck(ctx, { spec: "authy", mode: "record" }).catch((e) => e)
+    expect(error).toMatchObject({ code: "budget-exceeded" })
+    expect(model.calls).toBe(0)
+    const { projection } = error.details
+    const overhead = resolveProfile("typesafe/jev-1.13").callOverheadTokens
+    expect(projection.calls).toBe(8)
+    // Each example is a short state plus this spec's questions, well under one
+    // overhead's worth of tokens. Counting the overhead twice would pass 2×.
+    expect(projection.estimatedInputTokens / projection.calls).toBeGreaterThan(overhead)
+    expect(projection.estimatedInputTokens / projection.calls).toBeLessThan(2 * overhead)
   })
 
   it("reports an excluded example file as withheld, never sent", async () => {

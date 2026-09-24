@@ -38,7 +38,9 @@ replay miss is an error, never a synthesised answer
 
 - **Projected.** `project()` in `packages/core/src/run/budget.ts` returns `basis: "projected"`
   and the price date it used. The token estimate (`packages/core/src/egress/size.ts`, 3 characters
-  per token) overestimates on purpose. The spend guard compares only projections.
+  per token) overestimates on purpose, and the projection adds the profile's `callOverheadTokens`
+  per call, for the prompt the provider wraps around each request. The spend guard compares only
+  projections.
 - **Measured.** `usage` comes only from the provider's response (`packages/core/src/decide.ts`)
   and is zero for a replay. When the provider sends no usage, the response is marked
   `reported: false`, and `sumUsage()` in `packages/core/src/run/spend.ts` carries that mark into

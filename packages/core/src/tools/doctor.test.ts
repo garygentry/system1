@@ -84,6 +84,10 @@ describe("doctor", () => {
     expect(noKey).toMatchObject({ healthy: true, live: false })
     const noConsent = await doctor({ OPENROUTER_API_KEY: SECRET }, reachable)
     expect(noConsent).toMatchObject({ healthy: true, live: false })
+    const fix = noConsent.checks.find((c) => c.name === "consent")?.fix ?? ""
+    expect(fix).toMatch(/an agent must not/)
+    expect(fix).toContain("--confirm")
+    expect(fix).not.toContain("! decide")
     const replay = await doctor(
       { OPENROUTER_API_KEY: SECRET, SYSTEM1_REPLAY: "1" },
       reachable,

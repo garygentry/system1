@@ -73,6 +73,10 @@ describe("loadConfig", () => {
     const ok = setup(`profiles:\n  - ${base} }\n`)
     const [profile] = loadConfig({ cwd: ok.repo, env: {}, home: ok.home }).profiles
     expect(profile?.callOverheadTokens).toBe(JEV_CALL_OVERHEAD_TOKENS)
+    const empty = setup(`profiles:\n  - ${base}, callOverheadTokens: }\n`)
+    expect(loadConfig({ cwd: empty.repo, env: {}, home: empty.home }).profiles[0]).toMatchObject({
+      callOverheadTokens: JEV_CALL_OVERHEAD_TOKENS,
+    })
     const zero = setup(`profiles:\n  - ${base}, callOverheadTokens: 0 }\n`)
     expect(loadConfig({ cwd: zero.repo, env: {}, home: zero.home }).profiles[0]).toMatchObject({
       callOverheadTokens: 0,
@@ -90,7 +94,11 @@ describe("loadConfig", () => {
       "{ id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2"
     const ok = setup(`profiles:\n  - ${base} }\n`)
     expect(loadConfig({ cwd: ok.repo, env: {}, home: ok.home }).profiles[0]?.maxChoices).toBe(255)
-    for (const bad of ['"x"', "null", "0", "1.5"]) {
+    const empty = setup(`profiles:\n  - ${base}, maxChoices: }\n`)
+    expect(loadConfig({ cwd: empty.repo, env: {}, home: empty.home }).profiles[0]?.maxChoices).toBe(
+      255,
+    )
+    for (const bad of ['"x"', "0", "1.5"]) {
       const b = setup(`profiles:\n  - ${base}, maxChoices: ${bad} }\n`)
       expect(() => loadConfig({ cwd: b.repo, env: {}, home: b.home }), bad).toThrow(/maxChoices/)
     }
@@ -294,10 +302,18 @@ describe("consent", () => {
     )
   })
 
-  it("explains how to consent when refusing", () => {
-    expect(() => assertConsent({ granted: false }, "/r")).toThrow(
-      /decide config egress allow --confirm/,
-    )
+  it("explains how the user consents, and that an agent must not", () => {
+    let message = ""
+    try {
+      assertConsent({ granted: false }, "/r")
+    } catch (error) {
+      message = (error as Error).message
+    }
+    expect(message).toContain("`decide config egress allow`")
+    expect(message).toContain("--confirm")
+    expect(message).toMatch(/an agent must not grant it/)
+    // Agents read this. In a shell, `! cmd` runs cmd, so never hand them that form.
+    expect(message).not.toContain("! decide")
   })
 
   it("leaves unrelated files alone", () => {

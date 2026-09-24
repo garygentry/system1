@@ -118,8 +118,10 @@ decide config egress deny
 
 `show` prints every resolved setting, the profiles the config files add, the routing config, and
 `warnings`: keys and values the files hold that loading ignored. `allow` needs an interactive
-terminal, or `--confirm`. **Consent is the user's.** Agents must not
-pass `--confirm` for the user. `--by` records who granted it.
+terminal (typing it there is the decision; there's no further prompt), or `--confirm`, which is
+how a user grants it where there's no terminal, such as Claude Code's `!` prompt.
+**Consent is the user's.** Agents must not pass `--confirm` for the user. `--by` records who
+granted it; without it, the record says `decide config` or `decide config --confirm`.
 
 ### `route`
 

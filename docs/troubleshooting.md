@@ -68,7 +68,7 @@ Never paste the key into the conversation.
 
 This repo hasn't agreed to send content to the provider, so live calls are refused. If you agree,
 run `decide config egress allow` yourself in a terminal at the repo root. At the Claude Code
-prompt, where there's no terminal to confirm in, type `! decide config egress allow --confirm`.
+prompt, which has no terminal, type `! decide config egress allow --confirm`.
 An agent can't grant it for you. See
 [getting-started.md](getting-started.md#4-consent-per-repo).
 

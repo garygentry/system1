@@ -35,11 +35,13 @@ export interface ModelProfile {
 
 /**
  * Jev's per-call overhead. Measured 2026-09-24: a 1-character state with one
- * noul question billed 273 input tokens where the estimate was 23, and with a
- * four-option choice 339 where it was 48. Without it, a dry run over 300 short
+ * noul question billed 273 input tokens where the estimate was 23 (250 more),
+ * and with a four-option choice 339 where it was 48 (291 more). 300 covers
+ * both, so a projection errs slightly high for these; much larger choice sets
+ * can still come in above it. Without any overhead, a dry run over 300 short
  * tickets projected $0.0026 and the live run measured $0.0055.
  */
-export const JEV_CALL_OVERHEAD_TOKENS = 250
+export const JEV_CALL_OVERHEAD_TOKENS = 300
 
 export const PROFILES: readonly ModelProfile[] = [
   {

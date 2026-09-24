@@ -64,6 +64,8 @@ When a `many` run fails for every item with the same code, that code is raised f
 
 `decide config egress allow` needs an interactive terminal or `--confirm`. Skills must never pass `--confirm` for the user, because consent is the user's decision (decision 0009).
 
+*Amended 2026-09-24:* a terminal gets no further prompt; typing the command there is the decision. `--confirm` is also the documented way for a **user** to grant consent where there is no terminal: Claude Code's `!` prompt has no TTY (verified on 2.1.281), so a user there types `! decide config egress allow --confirm`. Machine-read messages (error envelopes, doctor `fix:` lines) never carry the `!` form, because in a shell a leading `!` runs the command and only inverts its exit status. Without `--by`, the record says which route granted it: `decide config` or `decide config --confirm`.
+
 ## Inline questions
 
 `--question name:noul:<text>`, `name:choice:<text>:key=desc|…` and `name:score:<text>:l0|l1|…`. The instruction text cannot contain `:`. Anything richer goes in `--questions`, a spec, or `--input`.

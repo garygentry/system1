@@ -67,24 +67,24 @@ Egress consent is the user's decision, given once per repo.
    - files that look like secrets (`.env*`, keys, credentials) are excluded;
    - secret-shaped strings are scrubbed from everything sent;
    - oversized items are refused, never truncated.
-3. **Give them the command to run themselves.** Pick the form that fits where they are:
-   - **In a terminal at this repo's root,** if `decide` is on that shell's PATH. It asks them to confirm:
+3. **Give them the command to type themselves.** Show it; don't run it.
+   - **In a terminal at this repo's root,** if `decide` is on that shell's PATH. Typing it there is the decision:
 
-     ```sh
+     ```text
      decide config egress allow
      ```
 
-   - **From the agent's own prompt,** through a shell escape such as Claude Code's `!`. That is also the way when `decide` came only with the plugin, since the plugin puts it on the agent's PATH but not the user's shell's. There is no terminal there to confirm in, so the user types the confirmation as part of the command:
+   - **Through your prompt's shell escape,** if they have one (in Claude Code, a line starting with `!`). Use this when `decide` isn't on their own shell's PATH. The escape has no terminal, so `decide` needs `--confirm` to know the decision is theirs, and they type it themselves:
 
-     ```sh
+     ```text
      ! decide config egress allow --confirm
      ```
 
-     Typing `--confirm` there is the user's own confirmation. It is never yours to add.
+     `--confirm` is theirs to type, never yours to add.
 
    Consent is recorded in `.system1/config.yaml`. Committing that file shares the consent with everyone who clones the repo. That's the team's call, so point it out and don't decide it for them.
 
-4. **Never run `decide config egress allow` yourself, with or without `--confirm`.**
+4. **Never run `decide config egress allow` yourself, with or without `--confirm`.** Don't run the `!` line either: in a shell, a leading `!` only inverts the exit status, so it would grant consent and then report failure.
 
 ### `config`
 

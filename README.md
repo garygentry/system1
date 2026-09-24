@@ -48,7 +48,8 @@ scrubber reporting what it removed before anything was sent.
 
 The model is [Jev](https://openrouter.ai/typesafe/jev-1.13) (`typesafe/jev-1.13`) on OpenRouter.
 It never writes text, and its output tokens are free, so cost scales with what you send: about
-$0.00003 for a 700-token item. That run cost about $0.00006 an item.
+$0.00004 for a 700-token item, counting the ~300 tokens the provider adds to every call. That run
+cost about $0.00006 an item.
 
 Three skills ship with it:
 

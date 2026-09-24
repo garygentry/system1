@@ -4,7 +4,7 @@ import { DecisionsError, isDecisionsError } from "../errors.js"
 import { resolveProfile } from "../model/profiles.js"
 import type { Answers, Usage } from "../model/types.js"
 import { type Prepared, prepare } from "../prepare.js"
-import { checkBudget, project } from "../run/budget.js"
+import { checkBudget, combineProjections } from "../run/budget.js"
 import { type AnswerSource, sumUsage } from "../run/spend.js"
 import { parseFileRef } from "../sources/read.js"
 import type { SourceSpec } from "../sources/types.js"
@@ -121,8 +121,8 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
   const decider = deciderFor(ctx, profile, input.mode ?? "replay")
   if (decider.mode !== "replay") {
     assertConsent(ctx.config.egress.consent, root)
-    const tokens = prepared.flatMap((p) => (p.prep ? [p.prep.projection.estimatedInputTokens] : []))
-    checkBudget(project(profile, tokens), ctx.config.budget, input.confirm ?? false)
+    const parts = prepared.flatMap((p) => (p.prep ? [p.prep.projection] : []))
+    checkBudget(combineProjections(profile, parts), ctx.config.budget, input.confirm ?? false)
   }
 
   const results: ExampleResult[] = []

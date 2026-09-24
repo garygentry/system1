@@ -41,7 +41,7 @@ decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · s
   warn key: no API key: only replay works
        fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (create its directory first; chmod 600)
   warn consent: no egress consent for /path/to/repo: live calls are refused
-       fix: if the user agrees, they run `decide config egress allow` in a terminal in this repo (in Claude Code: `! decide config egress allow --confirm`)
+       fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, adding --confirm if they type it at an agent's prompt instead
   ok   network: typesafe/jev-1.13 reachable in 175 ms
 ```
 
@@ -86,7 +86,7 @@ OpenRouter. With or without consent, these always apply:
 If you agree, run it **yourself**, in one of two ways:
 
 - **In a terminal at the repo root,** if `decide` is on your shell's PATH (you installed the CLI
-  with npm, as Codex and Pi need). It asks you to confirm:
+  with npm, as Codex and Pi need). Typing it there is your decision; there's no further prompt:
 
   ```sh
   decide config egress allow
@@ -94,7 +94,7 @@ If you agree, run it **yourself**, in one of two ways:
 
 - **At the Claude Code prompt.** The plugin puts `decide` on Claude's PATH, not your shell's, so
   with a plugin-only install this is the way. `!` runs a command in the session as you, but
-  there's no terminal there to confirm in, so you type the confirmation as part of the command:
+  without a terminal, so `decide` needs `--confirm` to know the decision is yours:
 
   ```text
   ! decide config egress allow --confirm

@@ -55,9 +55,7 @@ describe("budget", () => {
   it("adds the profile's per-call overhead to every call", () => {
     const projection = project(profile, [10, 20])
     expect(projection.estimatedInputTokens).toBe(30 + 2 * profile.callOverheadTokens)
-    expect(projection.projectedUsd).toBeCloseTo(
-      projection.estimatedInputTokens * profile.usdPerInputToken,
-    )
+    expect(projection.projectedUsd).toBe(projection.estimatedInputTokens * profile.usdPerInputToken)
   })
 
   it("passes within limits", () => {

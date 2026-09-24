@@ -353,6 +353,11 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
     throw new DecisionsError("config-error", `${file}: profiles must be a list`, { file })
   return value.map((p, i) => {
     const profile = { ...(p as object) } as Partial<ModelProfile>
+    // A field with no value (`priceAsOf:`) is unset, so the default applies. This
+    // runs before the checks below, so an empty optional field is never an error.
+    for (const [key, v] of Object.entries(profile)) {
+      if (v === null) delete (profile as Record<string, unknown>)[key]
+    }
     const ok =
       typeof profile.id === "string" &&
       typeof profile.maxStateTokens === "number" &&
@@ -392,17 +397,14 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
       warnings.push(`${file}: unknown key profiles[${i}].${key} (ignored)`)
       delete (profile as Record<string, unknown>)[key]
     }
-    // A field with no value (`priceAsOf:`) is unset, so the default applies.
-    for (const [key, v] of Object.entries(profile)) {
-      if (v === null) delete (profile as Record<string, unknown>)[key]
-    }
     return {
       displayName: profile.id as string,
       transport: "openrouter-decisions",
       usdPerOutputToken: 0,
       priceAsOf: "unknown",
       calibrated: true,
-      // Same wire contract as Jev unless the config says otherwise.
+      // Same wire contract as Jev unless the config says otherwise. The overhead is
+      // Jev's measured one: unknown for another model, but it errs toward stopping.
       maxChoices: 255,
       callOverheadTokens: JEV_CALL_OVERHEAD_TOKENS,
       ...profile,

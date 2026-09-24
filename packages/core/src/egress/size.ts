@@ -7,6 +7,11 @@ import type { QuestionSet, State } from "../model/types.js"
  * Real tokenizers average nearer 4 for English and code, so this
  * over-estimates. That is the right direction for a limit check and a cost
  * projection.
+ *
+ * The provider's own per-call prompt is not counted here: a projection adds
+ * the profile's `callOverheadTokens` (run/budget.ts), but the size limit
+ * doesn't, since `maxStateTokens` limits the item and the 3-characters-a-token
+ * overcount already leaves more headroom than that prompt takes.
  */
 export const CHARS_PER_TOKEN = 3
 

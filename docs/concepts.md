@@ -48,7 +48,8 @@ ask first", never "if `safe ≥ 0.9`, skip the review".
 ## Live and replay
 
 - **Live:** the question goes to the model now. It needs a key and the repo's consent, and it
-  costs about $0.00003 per 700-token item. Measured costs come from the provider's usage report.
+  costs about $0.00004 per 700-token item, counting the ~300 tokens the provider adds to every
+  call. Measured costs come from the provider's usage report.
 - **Record** (`--record`, or `decide spec check --live`): live, and the answer is also saved in
   `.system1/fixtures/<namespace>/`. A spec's namespace is its name; one-off questions use `adhoc`.
 - **Replay:** the answer comes from a saved fixture, keyed by the exact text and questions. It
