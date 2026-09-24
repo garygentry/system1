@@ -3,6 +3,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute, relative, resolve } from "node:path"
 import { glob } from "tinyglobby"
 import { DecisionsError } from "../errors.js"
+import { applyFilter } from "./filter.js"
 import type { Document, LineRange, Skipped, SourceSpec } from "./types.js"
 
 export interface ReadOptions {
@@ -10,6 +11,11 @@ export interface ReadOptions {
   cwd: string
   /** Files larger than this are skipped as `too-large` without being read. */
   maxFileBytes?: number
+  /**
+   * Leave out paths matching these (`--exclude`). Glob matches are dropped
+   * before they are read; the caller filters every other source after.
+   */
+  filter?: readonly string[]
   /**
    * Allow content from outside `cwd`. Off by default: consent is given per
    * repo, so a path (or a symlink) that resolves elsewhere is withheld.
@@ -172,12 +178,19 @@ async function readGlob(patterns: readonly string[], options: ReadOptions): Prom
   })
   matches.sort()
   const ignored = new Set(gitIgnored(options.cwd, matches))
-  const kept = matches.filter((m) => !ignored.has(m))
-  const result = readFiles(kept, options)
+  const unfiltered = applyFilter(
+    matches.filter((m) => !ignored.has(m)).map((path) => ({ path })),
+    options.filter,
+  )
+  const result = readFiles(
+    unfiltered.items.map((m) => m.path),
+    options,
+  )
   return {
     documents: result.documents,
     skipped: [
       ...[...ignored].map((path) => ({ path, reason: "gitignored" as const })),
+      ...unfiltered.filtered,
       ...result.skipped,
     ],
   }

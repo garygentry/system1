@@ -6,10 +6,11 @@
  * Unlike the other tools it builds its own context: a broken config is one of
  * the things it diagnoses, so it must not fail before it can report it.
  */
-import { accessSync, constants, statSync } from "node:fs"
+import { accessSync, constants, existsSync, statSync } from "node:fs"
 import { delimiter, join } from "node:path"
 import { userConfigDir } from "../config/load.js"
 import { detectHarness, type Harness } from "../config/session.js"
+import { backlogPath, readBacklog } from "../opportunities/backlog.js"
 import { ping } from "../ping.js"
 import { activeTriggers, route } from "../route/route.js"
 import { CLI_PACKAGE, VERSION } from "../version.js"
@@ -27,6 +28,7 @@ export const DOCTOR_CHECKS = [
   "key",
   "consent",
   "route",
+  "backlog",
   "network",
 ] as const
 
@@ -88,6 +90,27 @@ function routeCheck(config: ToolContext["config"]["route"]): DoctorCheck {
       status: "warn",
       detail: `routing hints are silent: ${error instanceof Error ? error.message : String(error)}`,
       fix: 'correct route: in the config file (test it with `decide route --text "…"`)',
+    }
+  }
+}
+
+/** The scout backlog is optional; a malformed one is worth knowing about before `list` fails on it. */
+function backlogCheck(repoRoot: string): DoctorCheck {
+  const file = backlogPath(repoRoot)
+  if (!existsSync(file)) return { name: "backlog", status: "ok", detail: "no scout backlog yet" }
+  try {
+    const { opportunities } = readBacklog(file)
+    return {
+      name: "backlog",
+      status: "ok",
+      detail: `${opportunities.length} opportunit${opportunities.length === 1 ? "y" : "ies"} in ${file}`,
+    }
+  } catch (error) {
+    return {
+      name: "backlog",
+      status: "warn",
+      detail: (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "",
+      fix: "`decide opportunities check` lists every problem; correct the file by hand or move it aside (decide never repairs it)",
     }
   }
 }
@@ -167,6 +190,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
   )
 
   checks.push(routeCheck(config.route))
+  checks.push(backlogCheck(config.repoRoot))
 
   let reach: Awaited<ReturnType<typeof ping>>
   try {

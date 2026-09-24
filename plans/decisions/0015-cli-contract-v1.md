@@ -1,6 +1,6 @@
 # 0015. CLI contract v1: envelope, exit codes, projection syntax
 
-- **Status:** accepted. **Extended 2026-09-23** (additive, same envelope `v`): `spec check --strict` opts into exit **7** when an example does not pass. Without the flag, a mismatch is still exit 0 as below.
+- **Status:** accepted. **Extended 2026-09-23** (additive, same envelope `v`): `spec check --strict` opts into exit **7** when an example does not pass. Without the flag, a mismatch is still exit 0 as below. **Extended 2026-09-24 (M9, additive):** `spec lint`, `opportunities`, `--exclude` and the `filtered` skip reason; exit 7 widened to `spec lint` (see the last section).
 - **Date:** 2026-09-22
 - **Source:** M3. This freezes the draft in the ROADMAP's "CLI contract".
 
@@ -138,3 +138,19 @@ A `many` result row with no `path` (e.g. piped `--stdin`), or covering a single 
 ## `doctor` path-version check (added in M5)
 
 When `decide` is on PATH, `doctor` runs it with `version` and warns if it differs from the running version. The probe has a 2 s timeout and kills the process after it. It sets `SYSTEM1_NO_NPX=1`, so the plugin shim won't fall back to downloading the package with `npx`. It's a warning, because agents run the one on PATH. The CLI supplies the probe, so the engine itself still spawns only `git` (0014).
+
+## M9 foundation: `spec lint`, `opportunities`, `--exclude` (added 2026-09-24, additive)
+
+Same envelope `v`: every addition is a new command, a new field or a new enum value. Plan: `milestones/M9-M11-scout-guard-adopt.md` §M9.
+
+- **`--exclude <glob>`** (`ask`, `many`; input field `exclude`), repeatable. Paths matching it are left out and reported in `skipped` with the new reason **`filtered`** and the pattern as `detail`. It is kept apart from `excluded`, which stays the egress safety rule, so withheld secrets stay easy to spot. Patterns are repo-relative and re-anchored like `--glob`. Egress excludes still apply on top.
+- **`decide spec lint [name|path] [--strict]`** (tool `spec-lint`). Offline: no key, no consent, no egress. The result is `{specs: [{name, file, origin, findings, invalid?}], counts: {specs, errors, warnings, invalid}, passed}`; each finding is `{check, severity, question?, message, fix}`. Checks and severities are listed in `docs/cli.md`. Heuristics warn; only a certain problem is an error.
+- **Exit 7 widened.** It means "a check ran and did not pass": `spec check --strict` (unchanged), or `spec lint` when there is an error-level finding or an invalid spec, or with `--strict` any warning. As with `spec check`, the envelope stays `ok: true`; the result says why.
+- **`spec check` carries `lint`** (the same findings, run first). They are reported only: `passed` and `spec check --strict` still judge the examples alone, so existing CI gates behave as before.
+- **`decide opportunities add --file <json> | list | check`** (tools `opportunities-add`, `opportunities-list`, `opportunities-check`): the scout backlog in `.system1/opportunities.json`. Local; nothing is sent.
+  - `add` takes a JSON array of candidates, or `{candidates}`, from a file. There is no stdin form, because the Codex `prefix_rule` doesn't cover a pipe into `decide`. It returns `{file, added, updated, staled, total}`.
+  - `list` takes the `--keep`/`--sort` grammar over **record fields**, not answers: there is no undecided rule, and field names are checked against the record. It returns `{file, total, matched, basis: "projected", opportunities}`.
+  - `check` returns `{file, exists, entries, byStatus}`.
+  - A malformed backlog is `invalid-request`, exit 2, listing every problem, and is never repaired or overwritten. `add` and `list` refuse it the same way.
+- **`doctor` gains a `backlog` check**: ok when the file is absent or valid, and a warning when it is malformed.
+

@@ -41,9 +41,24 @@ describe("doctor", () => {
       key: "ok",
       consent: "ok",
       route: "ok",
+      backlog: "ok",
       network: "ok",
     })
     expect(JSON.stringify(r)).not.toContain(SECRET)
+  })
+
+  it("warns about a malformed scout backlog, without failing", async () => {
+    const env = { PATH: binDir(), OPENROUTER_API_KEY: SECRET }
+    const r = await doctor(env, reachable, {
+      ...CONSENT,
+      ".system1/opportunities.json": '{"version":1,"opportunities":[{"id":"nope"}]}',
+    })
+    expect(r.healthy).toBe(true)
+    expect(check(r, "backlog")).toMatchObject({
+      status: "warn",
+      detail: expect.stringContaining("is not a valid backlog"),
+      fix: expect.stringContaining("decide opportunities check"),
+    })
   })
 
   it("warns, without failing, about config keys and values that loading ignored", async () => {

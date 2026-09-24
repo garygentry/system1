@@ -17,8 +17,9 @@ Commands:
   many      One question set over many items (fan-out), filtered to what matters
   usage     Measured spend from the ledger (--session, --since)
   config    Show resolved config; \`config egress allow|deny|status\` for consent
-  spec      list | show <name> | validate [name|path] | check <name> [--live]
-  schema    Print the JSON Schema of a tool's input (ask, many, usage, spec-check, route)
+  spec      list | show <name> | validate [name|path] | lint [name|path] | check <name> [--live]
+  opportunities  add --file <json> | list [--keep …] | check: the scout backlog (local)
+  schema    Print the JSON Schema of a tool's input (\`decide schema\` lists them)
   route     Does a prompt call for the ask skill? (--text|--stdin|--hook; local, sends nothing)
   ping      Check the endpoint is reachable (no key, no spend)
   doctor    Check decide works from this shell; prints the fix for each problem
@@ -31,6 +32,7 @@ Questions:  --spec <name|path>  |  --question name:noul:<text>
             --input <file|->  (full tool input as JSON; flags override it)
 Sources:    --glob <pattern>…  --file <path[:L1-L2]>…  --jsonl <path>
             --diff <range> [--staged]  --text <text>  --stdin
+            --exclude <glob>…  (leave matching paths out; reported as filtered)
 Split:      --split file|hunk|row|join|lines:N[/overlap]      (default: file; join = one state)
 Project:    --keep 'relevant>=0.7'…  --sort relevant:desc  --limit N  --fields a,b
             --allow-outside   (read files that resolve outside the repo)
@@ -38,7 +40,7 @@ Run:        --dry-run  --confirm  --record | --replay | --live  --model <id>  --
 
 Output is one JSON envelope by default: {v, ok, command, result | error}.
 Exit codes: 0 ok · 1 failure · 2 usage · 3 egress refused · 4 budget guard
-            5 provider error · 6 replay miss
+            5 provider error · 6 replay miss · 7 check or lint did not pass
 `
 
 /** Commands whose default output is for agents to read. */
@@ -80,6 +82,8 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return (await import("./commands/config.js")).runConfigCommand(rest, io, format)
     case "spec":
       return (await import("./commands/spec.js")).runSpecCommand(rest, io, format)
+    case "opportunities":
+      return (await import("./commands/opportunities.js")).runOpportunitiesCommand(rest, io, format)
     case "schema":
       return (await import("./commands/misc.js")).runSchemaCommand(rest, io, format)
     case "route":

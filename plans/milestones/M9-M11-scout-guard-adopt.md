@@ -56,7 +56,7 @@
 
 ## M9 — `scout` (release 0.4.0)
 
-**Status:** not started.
+**Status:** in progress. The foundation (§1, §2, §3, §3a, §8) landed on 2026-09-24 in PR #10; next are the signal tables (§4) and the skill (§5).
 **Carries over** `later-scout-opportunities.md` §1–§6 and its D1–D4. The detail there is authoritative where this section is brief, except where this section differs: the lint is its own command (§2), and candidates go to `opportunities add --file <path>`, never stdin (the Codex `prefix_rule` doesn't cover a pipe into `decide`).
 
 ### Work
@@ -92,10 +92,10 @@
 
 ### Acceptance
 
-- [ ] `decide opportunities add|list|check` ship as one typed tool with schema, handler and tests; `--format brief` and the envelope behave per 0015 as amended (§3).
-- [ ] `check` reports a malformed backlog as a typed error, exit 2, and never repairs it.
-- [ ] Re-running a sweep after moving a file keeps the candidate's id (X4) (tested).
-- [ ] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
+- [x] `decide opportunities add|list|check` ship as one typed tool with schema, handler and tests; `--format brief` and the envelope behave per 0015 as amended (§3).
+- [x] `check` reports a malformed backlog as a typed error, exit 2, and never repairs it.
+- [x] Re-running a sweep after moving a file keeps the candidate's id (X4) (tested).
+- [x] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
 - [ ] Signal tables replay in `pnpm check` through `spec check`.
 - [ ] A sweep over more than 200 items stops at the projection until the user approves; oversize files are windowed, not dropped.
 - [ ] Mode A finds at least one real, defensible candidate in this repo or `jev-poc` (the pre-check already found one: `route.ts`); measured cost recorded.
@@ -328,6 +328,8 @@
   Both move into a local, free prefilter (M9 §3a, §5.2). Before and after the prefilter, the agent still has to tell an intentional baseline from a replaceable mechanism (§5.6).
 - **Bias disclosed.** Both targets are System 1 / Jev code, the worst case for the decision-model anti-signal and the best case for finding baselines. The new M9 acceptance box requires an unrelated repo.
 - **A bug found along the way:** 11 of 385 calls (2.9%) failed on HTTP 529 `system_overloaded`, which the transport did not retry. Fixed alongside these results: 529 is added to `RETRY_STATUSES`, with a test.
+
+**Open question it raised, for §5 (found while dogfooding the backlog, 2026-09-24).** Some opportunities pay back in quality, not money. `route.ts` is one: regexes cost nothing, so a decision model projects −$0.00003 per prompt, and the real gain is recall (73/80 on the blind set) paid for with egress and latency. As built, the record carries money only, with `projected.note` for the rest. Before the skill ranks by `projected`, decide whether candidates need a typed `benefit` (`cost` | `quality` | `latency`) so a quality opportunity isn't ranked last. It is additive either way.
 
 **Verdict: go.** Scout finds the right things, and its noise has concrete, cheap fixes that are now in the M9 work list. `route.ts` is the first backlog entry, and a natural first dogfood for M11's `adopt`.
 

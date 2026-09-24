@@ -71,8 +71,8 @@ These objects appear in several results.
 | Field | |
 |---|---|
 | `total` | number withheld |
-| `byReason` | reason → count. Reasons: `binary`, `too-large`, `gitignored`, `excluded`, `outside-repo` |
-| `sample` | up to 5 of them, excluded ones first: `{path, reason, detail?}`. For `excluded`, `detail` is the pattern that matched |
+| `byReason` | reason → count. Reasons: `binary`, `too-large`, `gitignored`, `excluded`, `outside-repo`, `filtered` (`--exclude`) |
+| `sample` | up to 5 of them, excluded ones first: `{path, reason, detail?}`. For `excluded` and `filtered`, `detail` is the pattern that matched |
 
 **`redactions`**: `{total, items}`, the number of secret-shaped strings removed before sending,
 and how many items they were in.
@@ -231,6 +231,7 @@ The envelope's `command` is `spec`.
 | `examples` | one result per example, in file order |
 | `usage` | see [Shared fields](#shared-fields) |
 | `skipped` | see [Shared fields](#shared-fields) |
+| `lint` | the [`spec lint`](#spec-lint) findings for this spec, run first. Reported only: they don't change `passed` |
 
 Each example result:
 
@@ -263,6 +264,43 @@ A mismatch is a result (`passed: false`, exit 0, or 7 with `--strict`), not an e
 ```
 
 (Examples cut to two, `usage` and `skipped` left out, and the path shortened.)
+
+## `spec lint`
+
+The envelope's `command` is `spec`.
+
+| Field | |
+|---|---|
+| `specs` | one entry per spec: `{name, file, origin, findings, invalid?}`. `invalid` is the parse error of a spec that couldn't be linted |
+| `counts` | `{specs, errors, warnings, invalid}` |
+| `passed` | `true` when there is no error and no invalid spec. Warnings don't fail it; `--strict` makes them exit 7 too |
+
+Each finding is `{check, severity, question?, message, fix}`. The checks are listed in
+[cli.md § spec](cli.md#spec).
+
+## `opportunities`
+
+The envelope's `command` is `opportunities`. Each entry in the backlog:
+
+| Field | |
+|---|---|
+| `id` | `op-` and 12 hex digits, derived from `mode` and the whitespace-collapsed `evidence` |
+| `mode` | `code` (a codebase) or `agents` (skills, hooks, agent configuration) |
+| `location` | `{path, lines?}` |
+| `mechanism` | what does the job today |
+| `shape` | `single`, `fanout`, `cascade` or `pairwise` |
+| `evidence` | the text that triggered it, verbatim |
+| `questions` | a draft question set that would replace the mechanism |
+| `projected` | `{basis: "projected", volume, per, currentCostPerItemUsd, decisionCostPerItemUsd, savingUsd, note?}`. `savingUsd` is `volume × (current − decision)`, computed by `decide` |
+| `risk` | `{level: low\|medium\|high, note}` |
+| `next` | the next step |
+| `status` | `new`, `stale`, `adopted` or `rejected`. `statusReason` is required for `rejected` |
+| `source` | `{sweep, answers: live\|replay}` |
+| `firstSeenAt`, `seenAt` | ISO timestamps |
+
+**`add`**: `{file, added, updated, staled, total}`, each list of ids. **`list`**: `{file, total,
+matched, basis: "projected", opportunities}`, where `matched` counts entries before `--limit`.
+**`check`**: `{file, exists, entries, byStatus}`.
 
 ## Other commands
 

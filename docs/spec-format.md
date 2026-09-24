@@ -194,6 +194,10 @@ examples:
 `file`, and each `expect` against its question (a real option key, a level in range). `spec
 validate` also checks that each example `file` exists inside the repo.
 
+Validation checks that a spec *works*. `decide spec lint` checks that it's *well posed*: a
+`choice` with no way out, adjective score levels, counting or dates, two questions in one, a
+threshold with no `why`. See [cli.md § spec](cli.md#spec).
+
 ## A complete example
 
 The `no-timeout` recipe from the [cookbook](cookbook.md), with its examples cut to three. The

@@ -28,20 +28,24 @@ export interface SortKey {
 
 const FILTER = /^\s*([A-Za-z_][\w-]*)((?:\.[\w-]+)*)\s*(>=|<=|!=|>|<|=|\s+in\s+)\s*(.+?)\s*$/
 
-/** Parse `relevant>=0.7`, `kind=fix`, `kind in fix,feature`, `kind.probabilities.fix>=0.5`. */
-export function parseFilter(text: string, questions?: QuestionSet): Filter {
+/**
+ * The `--keep` grammar, shared by answer filters and record filters
+ * (`decide opportunities list`): `<name>[.<path>]<op><value>`.
+ */
+export interface FilterTokens {
+  name: string
+  /** The dotted path after the name, without the leading dot; "" when absent. */
+  path: string
+  op: Op
+  value: number | string | string[]
+}
+
+export function tokenizeFilter(text: string): FilterTokens | undefined {
   const m = FILTER.exec(text)
-  if (!m?.[1] || !m[3] || m[4] === undefined) {
-    throw new DecisionsError(
-      "invalid-request",
-      `Cannot parse --keep "${text}". Use <question>[.<field>]<op><value>, e.g. relevant>=0.7 or kind in fix,feature`,
-    )
-  }
-  const question = m[1]
+  if (!m?.[1] || !m[3] || m[4] === undefined) return undefined
   const op = m[3].trim() as Op
-  const field = m[2] ? m[2].slice(1) : defaultField(question, questions)
   const raw = m[4]
-  const value: Filter["value"] =
+  const value: FilterTokens["value"] =
     op === "in"
       ? raw
           .split(",")
@@ -50,6 +54,35 @@ export function parseFilter(text: string, questions?: QuestionSet): Filter {
       : isNumeric(raw)
         ? Number(raw)
         : raw
+  return { name: m[1], path: m[2] ? m[2].slice(1) : "", op, value }
+}
+
+/** The `--sort` grammar: `<name>[.<path>][:asc|desc]`. */
+export function tokenizeSort(
+  text: string,
+): { name: string; path: string; direction: "asc" | "desc" } | undefined {
+  const m = /^\s*([A-Za-z_][\w-]*)((?:\.[\w-]+)*)(?::(asc|desc))?\s*$/.exec(text)
+  if (!m?.[1]) return undefined
+  return {
+    name: m[1],
+    path: m[2] ? m[2].slice(1) : "",
+    direction: (m[3] as "asc" | "desc" | undefined) ?? "desc",
+  }
+}
+
+/** Parse `relevant>=0.7`, `kind=fix`, `kind in fix,feature`, `kind.probabilities.fix>=0.5`. */
+export function parseFilter(text: string, questions?: QuestionSet): Filter {
+  const t = tokenizeFilter(text)
+  if (!t) {
+    throw new DecisionsError(
+      "invalid-request",
+      `Cannot parse --keep "${text}". Use <question>[.<field>]<op><value>, e.g. relevant>=0.7 or kind in fix,feature`,
+    )
+  }
+  const question = t.name
+  const op = t.op
+  const field = t.path || defaultField(question, questions)
+  const value = t.value
   const filter: Filter = { question, field, op, value, source: text }
   if (questions) assertKnown(question, questions, text)
   if ((op === ">" || op === ">=" || op === "<" || op === "<=") && typeof value !== "number") {
@@ -60,16 +93,16 @@ export function parseFilter(text: string, questions?: QuestionSet): Filter {
 
 /** Parse `relevant`, `relevant.noul:asc`, `risk.score:desc`. Defaults to descending. */
 export function parseSort(text: string, questions?: QuestionSet): SortKey {
-  const m = /^\s*([A-Za-z_][\w-]*)((?:\.[\w-]+)*)(?::(asc|desc))?\s*$/.exec(text)
-  if (!m?.[1]) {
+  const t = tokenizeSort(text)
+  if (!t) {
     throw new DecisionsError(
       "invalid-request",
       `Cannot parse --sort "${text}". Use <question>[.<field>][:asc|desc]`,
     )
   }
-  if (questions) assertKnown(m[1], questions, text)
-  const field = m[2] ? m[2].slice(1) : sortField(m[1], questions)
-  return { question: m[1], field, direction: (m[3] as "asc" | "desc" | undefined) ?? "desc" }
+  if (questions) assertKnown(t.name, questions, text)
+  const field = t.path || sortField(t.name, questions)
+  return { question: t.name, field, direction: t.direction }
 }
 
 export function matches(answers: Answers, filter: Filter): boolean {

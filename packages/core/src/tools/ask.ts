@@ -41,6 +41,7 @@ export async function runAsk(ctx: ToolContext, rawInput: unknown): Promise<AskRe
     profile: req.profile,
     cwd: ctx.config.repoRoot,
     exclude: ctx.config.egress.exclude,
+    filter: req.exclude,
     ...(input.allowOutside ? { allowOutside: true } : {}),
   })
   const [item, ...rest] = prepared.items

@@ -12,7 +12,11 @@ export const EXIT = {
   budgetGuard: 4,
   providerError: 5,
   replayMiss: 6,
-  /** `spec check --strict` only: the check ran, and an example did not pass. */
+  /**
+   * The check ran and did not pass: `spec check --strict` (an example missed),
+   * or `spec lint` (an error-level finding or invalid spec; with `--strict`, any
+   * warning).
+   */
   checkFailed: 7,
 } as const
 

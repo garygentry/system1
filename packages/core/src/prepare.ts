@@ -6,6 +6,7 @@ import type { ModelProfile } from "./model/profiles.js"
 import type { QuestionSet, State } from "./model/types.js"
 import { assertQuestionSet } from "./model/validate.js"
 import { type Projection, project } from "./run/budget.js"
+import { applyFilter } from "./sources/filter.js"
 import { readSources } from "./sources/read.js"
 import type { Item, Skipped, SourceSpec } from "./sources/types.js"
 import { joinItems, type SplitSpec, split } from "./split/split.js"
@@ -18,6 +19,8 @@ export interface PrepareInput {
   cwd: string
   /** Extra exclude patterns from config. */
   exclude?: readonly string[]
+  /** Paths the caller asked to leave out (`--exclude`), reported as `filtered`. */
+  filter?: readonly string[]
   maxFileBytes?: number
   /** Allow content from outside the repo (off by default). */
   allowOutside?: boolean
@@ -46,7 +49,10 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
     cwd: input.cwd,
     ...(input.maxFileBytes ? { maxFileBytes: input.maxFileBytes } : {}),
     ...(input.allowOutside ? { allowOutside: true } : {}),
+    ...(input.filter?.length ? { filter: input.filter } : {}),
   })
+  // Globs were filtered before reading; this catches files, diffs and rows.
+  const chosen = applyFilter(read.documents, input.filter)
 
   const byKind: ScrubCounts = {}
   /** How many documents or items had at least one redaction. */
@@ -59,7 +65,7 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
 
   // Excluded files are dropped before anything else touches them, so a
   // withheld file is never reported as scrubbed.
-  const allowed = applyExcludes(read.documents, input.exclude)
+  const allowed = applyExcludes(chosen.items, input.exclude)
 
   // Then scrub whole documents: a private key cut across two line windows
   // would otherwise lose the markers that identify it.
@@ -91,7 +97,7 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
 
   return {
     items,
-    skipped: [...read.skipped, ...allowed.excluded, ...filtered.excluded],
+    skipped: [...read.skipped, ...chosen.filtered, ...allowed.excluded, ...filtered.excluded],
     redactions: {
       total: Object.values(byKind).reduce((a, b) => a + b, 0),
       byKind,

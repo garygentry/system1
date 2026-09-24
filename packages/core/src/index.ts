@@ -41,6 +41,16 @@ export type { ModelProfile } from "./model/profiles.js"
 export { DEFAULT_MODEL_ID, PROFILES, projectCost, resolveProfile } from "./model/profiles.js"
 export type * from "./model/types.js"
 export { assertQuestionSet, parseDecisionResponse } from "./model/validate.js"
+export type { Backlog, Candidate, Opportunity, OpportunityStatus } from "./opportunities/backlog.js"
+export {
+  BACKLOG_FORMAT,
+  BacklogSchema,
+  backlogPath,
+  backlogProblems,
+  CandidateSchema,
+  opportunityId,
+  projectedSaving,
+} from "./opportunities/backlog.js"
 export type { PingOptions, PingResult } from "./ping.js"
 export { ping, probeUrl } from "./ping.js"
 export type { Prepared, PrepareInput } from "./prepare.js"
@@ -61,10 +71,20 @@ export { checkBudget, project } from "./run/budget.js"
 export { mapWithConcurrency } from "./run/pool.js"
 export type { AnswerSource, SpendEntry, SpendSummary } from "./run/spend.js"
 export { SpendLedger, sumUsage } from "./run/spend.js"
+export type { FilterResult } from "./sources/filter.js"
+export { applyFilter } from "./sources/filter.js"
 export { gitIgnored, parseFileRef, readSources, splitDiffByFile } from "./sources/read.js"
 export type { Document, Item, LineRange, Skipped, SourceSpec } from "./sources/types.js"
 export type { Expectation } from "./spec/expect.js"
 export { describeExpectation, meets, parseExpect } from "./spec/expect.js"
+export type { LintCheck, LintFinding, LintSeverity } from "./spec/lint.js"
+export {
+  LINT_CHECKS,
+  LINT_SEVERITY,
+  lintQuestions,
+  lintSpec,
+  lintStatement,
+} from "./spec/lint.js"
 export type { Spec, SpecDirs, SpecFile, SpecListing } from "./spec/spec.js"
 export {
   assertExamples,
@@ -86,19 +106,35 @@ export type { CheckStatus, DoctorCheck, DoctorOptions, DoctorResult } from "./to
 export { CODEX_RULE, DOCTOR_CHECKS, runDoctor, which } from "./tools/doctor.js"
 export type { ManyResult, ResultRow, SkippedSummary } from "./tools/many.js"
 export { runMany, summariseSkipped } from "./tools/many.js"
+export type {
+  OpportunitiesAddResult,
+  OpportunitiesCheckResult,
+  OpportunitiesListResult,
+} from "./tools/opportunities.js"
+export {
+  runOpportunitiesAdd,
+  runOpportunitiesCheck,
+  runOpportunitiesList,
+} from "./tools/opportunities.js"
 export type { RouteToolResult } from "./tools/route.js"
 export { runRoute } from "./tools/route.js"
 export type { ToolName } from "./tools/schemas.js"
 export {
   AskInput,
   ManyInput,
+  OpportunitiesAddInput,
+  OpportunitiesCheckInput,
+  OpportunitiesListInput,
   RouteInput,
   SpecCheckInput,
+  SpecLintInput,
   TOOL_SCHEMAS,
   UsageInput,
 } from "./tools/schemas.js"
 export type { ExampleResult, ExampleStatus, SpecCheckResult } from "./tools/spec-check.js"
 export { runSpecCheck } from "./tools/spec-check.js"
+export type { SpecLintEntry, SpecLintResult } from "./tools/spec-lint.js"
+export { runSpecLint } from "./tools/spec-lint.js"
 export type { UsageResult } from "./tools/usage.js"
 export { runUsage } from "./tools/usage.js"
 export type { Transport, TransportOptions, TransportResult } from "./transport/openrouter.js"

@@ -5,11 +5,13 @@ import { describe, expect, it } from "vitest"
 import { DECIDE_OPTIONS } from "../packages/cli/src/args.js"
 import { CONFIG_OPTIONS } from "../packages/cli/src/commands/config.js"
 import { USAGE_OPTIONS } from "../packages/cli/src/commands/misc.js"
+import { OPPORTUNITIES_OPTIONS } from "../packages/cli/src/commands/opportunities.js"
 import { ROUTE_OPTIONS } from "../packages/cli/src/commands/route.js"
 import { SPEC_OPTIONS } from "../packages/cli/src/commands/spec.js"
 import { BY_CODE, EXIT } from "../packages/cli/src/exit-codes.js"
 import { HELP } from "../packages/cli/src/main.js"
 import { DEFAULTS } from "../packages/core/src/config/load.js"
+import { LINT_CHECKS, LINT_SEVERITY } from "../packages/core/src/spec/lint.js"
 import { SpecSchema } from "../packages/core/src/spec/spec.js"
 import { DOCTOR_CHECKS } from "../packages/core/src/tools/doctor.js"
 import { ROOT } from "./cookbook.js"
@@ -65,9 +67,16 @@ describe("docs/cli.md", () => {
       ...Object.keys(CONFIG_OPTIONS),
       ...Object.keys(USAGE_OPTIONS),
       ...Object.keys(ROUTE_OPTIONS),
+      ...Object.keys(OPPORTUNITIES_OPTIONS),
       "format",
     ]
     for (const flag of flags) expect(cli, `--${flag}`).toMatch(new RegExp(`--${flag}\\b`))
+  })
+
+  it("lists every spec lint check with its severity", () => {
+    for (const check of LINT_CHECKS) {
+      expect(cli, check).toContain(`| \`${check}\` | ${LINT_SEVERITY[check]} |`)
+    }
   })
 
   it("has the exit-code table decide uses", () => {

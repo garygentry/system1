@@ -2,11 +2,13 @@ import type {
   Answer,
   Answers,
   AskResult,
+  LintFinding,
   ManyResult,
   Projection,
   ResultRow,
   SkippedSummary,
   SpecCheckResult,
+  SpecLintResult,
   Usage,
 } from "@garygentry/system1-core"
 
@@ -117,7 +119,33 @@ export function briefSpecCheck(r: SpecCheckResult): string {
     }
   }
   lines.push(...withheld(r.skipped, { total: 0, items: 0 }))
+  if (r.lint.length) {
+    lines.push(
+      `lint: ${r.lint.length} finding(s), not part of PASSED/FAILED (decide spec lint ${r.spec})`,
+    )
+    lines.push(...r.lint.map(briefFinding))
+  }
   return lines.join("\n")
+}
+
+export function briefSpecLint(r: SpecLintResult): string {
+  const c = r.counts
+  const lines = [
+    `decide spec lint: ${r.passed ? "PASSED" : "FAILED"} · ${c.specs} spec(s) · ${c.errors} error(s) · ${c.warnings} warning(s)${c.invalid ? ` · ${c.invalid} invalid` : ""}`,
+  ]
+  for (const s of r.specs) {
+    if (s.invalid) lines.push(`  INVALID  ${s.name}  ${s.invalid.split("\n")[0]}`)
+    else if (s.findings.length === 0) lines.push(`  ok  ${s.name}`)
+    else {
+      lines.push(`  ${s.name}  (${s.file})`)
+      lines.push(...s.findings.map(briefFinding))
+    }
+  }
+  return lines.join("\n")
+}
+
+function briefFinding(f: LintFinding): string {
+  return `    ${f.severity} ${f.check}: ${f.message}\n      fix: ${f.fix}`
 }
 
 function distribution(probabilities: Record<string, number>): string {
@@ -129,15 +157,20 @@ function distribution(probabilities: Record<string, number>): string {
 
 function withheld(skipped: SkippedSummary, redactions: { total: number; items: number }): string[] {
   const lines: string[] = []
-  if (skipped.total > 0) {
+  // `--exclude` is the caller's choice, not something held back: its own line.
+  const filtered = skipped.byReason.filtered ?? 0
+  const held = skipped.total - filtered
+  if (held > 0) {
     const reasons = Object.entries(skipped.byReason)
+      .filter(([k]) => k !== "filtered")
       .map(([k, v]) => `${k} ${v}`)
       .join(", ")
     const excluded = skipped.sample.filter((s) => s.reason === "excluded").map((s) => s.path)
     lines.push(
-      `withheld: ${skipped.total} (${reasons})${excluded.length ? ` e.g. ${excluded.join(", ")}` : ""}`,
+      `withheld: ${held} (${reasons})${excluded.length ? ` e.g. ${excluded.join(", ")}` : ""}`,
     )
   }
+  if (filtered > 0) lines.push(`left out by --exclude: ${filtered}`)
   if (redactions.total > 0)
     lines.push(
       `redacted: ${redactions.total} secret(s) in ${redactions.items} item(s) before sending`,

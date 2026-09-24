@@ -78,6 +78,8 @@ export interface Resolved {
   keep: ReturnType<typeof parseFilter>[]
   sort?: ReturnType<typeof parseSort>
   profile: ModelProfile
+  /** `--exclude` patterns, re-anchored to the repo root like command-line sources. */
+  exclude: string[]
 }
 
 /** Merge a spec's defaults with explicit input. Explicit input wins; inline questions and a spec conflict. */
@@ -87,6 +89,7 @@ export function resolveRequest(
     spec?: string
     questions?: Record<string, unknown>
     sources?: SourceSpec[]
+    exclude?: string[]
     split?: string
     keep?: string[]
     sort?: string
@@ -127,7 +130,16 @@ export function resolveRequest(
     keep: keepText.map((k) => parseFilter(k, questions)),
     ...(sortText ? { sort: parseSort(sortText, questions) } : {}),
     profile,
+    exclude: (input.exclude ?? []).map((p) => rebasePattern(p, ctx.cwd, ctx.config.repoRoot)),
   }
+}
+
+/** A command-line exclude pattern means what `--glob` would mean from the same directory. */
+function rebasePattern(pattern: string, cwd: string, repoRoot: string): string {
+  const prefix = relative(repoRoot, cwd)
+  if (prefix === "" || prefix.startsWith("..") || isAbsolute(prefix) || isAbsolute(pattern))
+    return pattern
+  return join(prefix, pattern)
 }
 
 /**
