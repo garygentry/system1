@@ -6,16 +6,18 @@ import {
   listSpecs,
   loadSpec,
   runSpecCheck,
+  runSpecLint,
   type SpecCheckResult,
+  type SpecLintResult,
 } from "@garygentry/system1-core"
 import { typedParse } from "../args.js"
 import type { Format } from "../envelope.js"
 import { EXIT, type ExitCode } from "../exit-codes.js"
-import { briefSpecCheck } from "../format.js"
+import { briefSpecCheck, briefSpecLint } from "../format.js"
 import type { Io } from "../io.js"
 import { emit } from "../run.js"
 
-/** `decide spec list | show <name> | validate [name|path] | check <name|path>`. */
+/** `decide spec list | show <name> | validate [name|path] | lint [name|path] | check <name|path>`. */
 export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<ExitCode> {
   const [action = "list", ref] = argv
   const ctx = () => createContext({ ...io, cwd: io.cwd ?? process.cwd(), env: io.env })
@@ -76,11 +78,13 @@ export function runSpecCommand(argv: string[], io: Io, format: Format): Promise<
       )
     case "check":
       return check(argv.slice(1), io, format, ctx)
+    case "lint":
+      return lint(argv.slice(1), io, format, ctx)
     default:
       return emit(io, "spec", format, () => {
         throw new DecisionsError(
           "invalid-request",
-          `Unknown spec action "${action}". Use: list, show, validate, check`,
+          `Unknown spec action "${action}". Use: list, show, validate, lint, check`,
         )
       })
   }
@@ -110,6 +114,50 @@ async function check(
   )
   return code === EXIT.ok && failed && parse(argv).values.strict ? EXIT.checkFailed : code
 }
+
+/**
+ * Findings are a result (exit 0), like a `spec check` mismatch. Exit 7 when
+ * the lint fails: an error-level finding or an invalid spec, or with
+ * `--strict` any warning too (0015, amended for M9).
+ */
+async function lint(
+  argv: string[],
+  io: Io,
+  format: Format,
+  ctx: () => ReturnType<typeof createContext>,
+): Promise<ExitCode> {
+  let failed = false
+  let strict = false
+  const code = await emit<SpecLintResult>(
+    io,
+    "spec",
+    format,
+    () => {
+      const { values, positionals } = typedParse({
+        args: argv,
+        allowPositionals: true,
+        strict: true,
+        options: LINT_OPTIONS,
+      })
+      const [spec, extra] = positionals
+      if (extra !== undefined) {
+        throw new DecisionsError(
+          "invalid-request",
+          "Usage: decide spec lint [name|path] [--strict]",
+        )
+      }
+      strict = values.strict ?? false
+      const result = runSpecLint(ctx(), spec ? { spec } : {})
+      failed = !result.passed || (strict && result.counts.warnings > 0)
+      return result
+    },
+    (r, f) => (f === "brief" ? briefSpecLint(r) : undefined),
+  )
+  return code === EXIT.ok && failed ? EXIT.checkFailed : code
+}
+
+/** Flags of `spec lint`. */
+const LINT_OPTIONS = { strict: { type: "boolean" } } as const
 
 /**
  * `spec check <name> [--live|--replay] [--confirm] [--model <id>] [--strict]`.

@@ -78,6 +78,8 @@ export interface Resolved {
   keep: ReturnType<typeof parseFilter>[]
   sort?: ReturnType<typeof parseSort>
   profile: ModelProfile
+  /** `--exclude` patterns, re-anchored to the repo root like command-line sources. */
+  exclude: string[]
 }
 
 /** Merge a spec's defaults with explicit input. Explicit input wins; inline questions and a spec conflict. */
@@ -87,6 +89,7 @@ export function resolveRequest(
     spec?: string
     questions?: Record<string, unknown>
     sources?: SourceSpec[]
+    exclude?: string[]
     split?: string
     keep?: string[]
     sort?: string
@@ -127,7 +130,37 @@ export function resolveRequest(
     keep: keepText.map((k) => parseFilter(k, questions)),
     ...(sortText ? { sort: parseSort(sortText, questions) } : {}),
     profile,
+    exclude: (input.exclude ?? []).map((p) => rebasePattern(p, ctx.cwd, ctx.config.repoRoot)),
   }
+}
+
+/**
+ * A command-line exclude pattern means what `--glob` would mean from the same
+ * directory. A pattern that starts with a globstar already matches anywhere,
+ * so it isn't narrowed to the directory. An absolute pattern is made repo-relative; one outside the repo
+ * matches nothing, and a negation would invert the filter, so both are refused.
+ */
+function rebasePattern(pattern: string, cwd: string, repoRoot: string): string {
+  if (pattern.startsWith("!")) {
+    throw new DecisionsError(
+      "invalid-request",
+      `--exclude "${pattern}": negation isn't supported; name what to leave out`,
+    )
+  }
+  if (isAbsolute(pattern)) {
+    const rel = relative(repoRoot, pattern)
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      throw new DecisionsError(
+        "invalid-request",
+        `--exclude "${pattern}" is outside the repo (${repoRoot}), so it would match nothing`,
+      )
+    }
+    return rel
+  }
+  const prefix = relative(repoRoot, cwd)
+  if (prefix === "" || prefix.startsWith("..") || isAbsolute(prefix) || pattern.startsWith("**/"))
+    return pattern
+  return join(prefix, pattern)
 }
 
 /**

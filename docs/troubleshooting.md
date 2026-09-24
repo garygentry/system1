@@ -79,6 +79,14 @@ Whether the Claude Code routing hook will hint, and with which triggers. A warni
 name under `disable`. The hook stays silent until it's fixed, and your prompts are never blocked.
 Test a fix with `decide route --text "…"`. See [routing-hints.md](routing-hints.md).
 
+### doctor: `backlog`
+
+Whether the scout backlog, `.system1/opportunities.json`, is valid. It's fine for it not to
+exist. A warning means the file doesn't validate, often because it was edited by hand: an entry's
+`id` no longer matches its evidence, or `savingUsd` no longer matches its inputs. `decide
+opportunities check` lists every problem. Correct the file, or move it aside and re-run the
+sweep; `decide` never repairs or overwrites it.
+
 ### doctor: `network`
 
 The model's endpoint couldn't be reached from this shell. The fix depends on where you are:

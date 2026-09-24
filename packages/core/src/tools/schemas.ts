@@ -1,4 +1,6 @@
 import { type Static, Type } from "typebox"
+import { QuestionSchema } from "../model/schema.js"
+import { CandidateSchema } from "../opportunities/backlog.js"
 
 /**
  * Tool inputs, defined once. The CLI builds these from argv. A future MCP or Pi
@@ -28,40 +30,6 @@ const Source = Type.Union([
   }),
 ])
 
-/**
- * A question, as it goes on the wire. Spelled out here (rather than an opaque
- * record) so `decide schema <tool>` describes what a valid question is.
- */
-const Question = Type.Union([
-  Type.Object(
-    {
-      type: Type.Literal("noul"),
-      instructions: Type.String({ minLength: 1 }),
-      /** Optional `true`/`false` criteria that sharpen an ambiguous statement. */
-      criteria: Type.Optional(Type.Record(Type.String(), Type.String())),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("choice"),
-      instructions: Type.String({ minLength: 1 }),
-      /** Option key to when it applies. At least two, including a way out. */
-      criteria: Type.Record(Type.String(), Type.String(), { minProperties: 2 }),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("score"),
-      instructions: Type.String({ minLength: 1 }),
-      /** Levels, lowest first and 0-indexed. */
-      criteria: Type.Array(Type.String(), { minItems: 2 }),
-    },
-    { additionalProperties: false },
-  ),
-])
-
 const Mode = Type.Union([
   Type.Literal("auto"),
   Type.Literal("live"),
@@ -73,9 +41,14 @@ const Common = {
   /** A saved spec: name (repo → user → bundled) or path. */
   spec: Type.Optional(Type.String()),
   /** An inline question set; mutually exclusive with `spec`. */
-  questions: Type.Optional(Type.Record(Type.String(), Question)),
+  questions: Type.Optional(Type.Record(Type.String(), QuestionSchema)),
   /** Where the content comes from. Defaults to the spec's `source`. */
   sources: Type.Optional(Type.Array(Source)),
+  /**
+   * Leave out paths matching these globs (repo-relative, like `glob`). A per-call
+   * choice, reported as `filtered`; egress excludes still apply on top.
+   */
+  exclude: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
   /** `file` | `hunk` | `row` | `lines:N[/overlap]`. */
   split: Type.Optional(Type.String()),
   /** Filters, ANDed: `relevant>=0.7`, `kind in fix,feature`. */
@@ -133,6 +106,37 @@ export const SpecCheckInput = Type.Object(
   strict,
 )
 
+export const SpecLintInput = Type.Object(
+  {
+    /** Spec name (repo → user → bundled) or path. Omitted: every spec in reach. */
+    spec: Type.Optional(Type.String({ minLength: 1 })),
+  },
+  strict,
+)
+
+export const OpportunitiesAddInput = Type.Object(
+  {
+    /** Candidates to merge into `.system1/opportunities.json`. */
+    candidates: Type.Array(CandidateSchema, { minItems: 1 }),
+  },
+  strict,
+)
+
+export const OpportunitiesListInput = Type.Object(
+  {
+    /** Record filters, ANDed: `status=new`, `risk in medium,high`, `projected>=0.01`. */
+    keep: Type.Optional(Type.Array(Type.String())),
+    /** `projected:desc` (the default), `seenAt:asc`, … */
+    sort: Type.Optional(Type.String()),
+    limit: Type.Optional(Type.Integer({ minimum: 0 })),
+    /** Top-level fields to include per entry; `id` always is. */
+    fields: Type.Optional(Type.Array(Type.String())),
+  },
+  strict,
+)
+
+export const OpportunitiesCheckInput = Type.Object({}, strict)
+
 export const RouteInput = Type.Object(
   {
     /** The user's prompt, as the harness hook received it. */
@@ -146,12 +150,19 @@ export type ManyInput = Static<typeof ManyInput>
 export type UsageInput = Static<typeof UsageInput>
 export type SpecCheckInput = Static<typeof SpecCheckInput>
 export type RouteInput = Static<typeof RouteInput>
+export type SpecLintInput = Static<typeof SpecLintInput>
+export type OpportunitiesAddInput = Static<typeof OpportunitiesAddInput>
+export type OpportunitiesListInput = Static<typeof OpportunitiesListInput>
 
 export const TOOL_SCHEMAS = {
   ask: AskInput,
   many: ManyInput,
   usage: UsageInput,
   "spec-check": SpecCheckInput,
+  "spec-lint": SpecLintInput,
+  "opportunities-add": OpportunitiesAddInput,
+  "opportunities-list": OpportunitiesListInput,
+  "opportunities-check": OpportunitiesCheckInput,
   route: RouteInput,
 } as const
 export type ToolName = keyof typeof TOOL_SCHEMAS

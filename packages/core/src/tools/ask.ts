@@ -41,13 +41,17 @@ export async function runAsk(ctx: ToolContext, rawInput: unknown): Promise<AskRe
     profile: req.profile,
     cwd: ctx.config.repoRoot,
     exclude: ctx.config.egress.exclude,
+    filter: req.exclude,
     ...(input.allowOutside ? { allowOutside: true } : {}),
   })
   const [item, ...rest] = prepared.items
   if (!item || rest.length > 0) {
-    const withheld = prepared.skipped.length
-      ? ` (${prepared.skipped.length} withheld: ${prepared.skipped.map((s) => `${s.path} ${s.reason}`).join(", ")})`
-      : ""
+    const held = prepared.skipped.filter((s) => s.reason !== "filtered")
+    const left = prepared.skipped.length - held.length
+    const withheld =
+      (held.length
+        ? ` (${held.length} withheld: ${held.map((s) => `${s.path} ${s.reason}`).join(", ")})`
+        : "") + (left ? ` (${left} left out by --exclude)` : "")
     throw new DecisionsError(
       "invalid-request",
       item

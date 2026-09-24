@@ -9,6 +9,7 @@ import { type AnswerSource, sumUsage } from "../run/spend.js"
 import { parseFileRef } from "../sources/read.js"
 import type { SourceSpec } from "../sources/types.js"
 import { describeExpectation, type Expectation, meets, parseExpect } from "../spec/expect.js"
+import { type LintFinding, lintSpec } from "../spec/lint.js"
 import { assertExamples, exampleFileProblem, loadSpec } from "../spec/spec.js"
 import { parseSplit } from "../split/split.js"
 import { checkInput, deciderFor, type ToolContext } from "./context.js"
@@ -45,6 +46,11 @@ export interface SpecCheckResult {
   examples: ExampleResult[]
   usage: Usage
   skipped: SkippedSummary
+  /**
+   * `spec lint` findings, run first and offline. Reported only: `passed` and
+   * `--strict` still judge the examples alone.
+   */
+  lint: LintFinding[]
 }
 
 /**
@@ -58,6 +64,7 @@ export interface SpecCheckResult {
 export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise<SpecCheckResult> {
   const input = checkInput<SpecCheckInput>("spec-check", rawInput)
   const spec = loadSpec(input.spec, ctx.specDirs, ctx.cwd)
+  const lint = lintSpec(spec)
   const examples = spec.examples ?? []
   if (examples.length === 0) {
     throw new DecisionsError(
@@ -178,6 +185,7 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
     examples: results,
     usage: sumUsage(usages),
     skipped: summariseSkipped(prepared.flatMap((p) => p.prep?.skipped ?? [])),
+    lint,
   }
 }
 

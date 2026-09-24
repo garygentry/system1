@@ -20,11 +20,12 @@ decide <command> [options] [--format json|jsonl|brief]
 |---|---|
 | `decide ask` | One item, one question set, one call |
 | `decide many` | One question set over many items, filtered in the engine to what matters |
-| `decide spec` | `list`, `show <name>`, `validate [name\|path]`, `check <name\|path>` |
+| `decide spec` | `list`, `show <name>`, `validate [name\|path]`, `lint [name\|path]`, `check <name\|path>` |
+| `decide opportunities` | The scout backlog: `add --file`, `list`, `check`. Local; sends nothing |
 | `decide usage` | Measured spend from the ledger |
 | `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent |
 | `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
-| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `route` |
+| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route` |
 | `decide ping` | Check the endpoint is reachable. No key needed, no spend |
 | `decide doctor` | Check `decide` works from this shell, with the fix for each problem |
 | `decide version` | Print the version |
@@ -56,6 +57,7 @@ Inline instruction text can't contain `:`. For anything richer, use `--questions
 | `--text <text>` | the text itself |
 | `--stdin` | piped input |
 | `--allow-outside` | read files that resolve outside the repo (withheld otherwise) |
+| `--exclude <glob>` | repeatable: leave out paths that match, e.g. `'**/*.test.ts'`. Relative to where you run it, like `--glob`, except a pattern starting with `**/`, which matches anywhere; an absolute path inside the repo works, one outside it or a `!` negation is refused. A symlink is matched by its target too. Glob matches are dropped before they're read. Reported as `filtered`; a path the egress rules would withhold anyway is still reported as `excluded` |
 
 **Split:** `--split file|hunk|row|join|lines:N[/overlap]`. The default is `file`. `join` makes
 all sources one item.
@@ -89,6 +91,7 @@ Undecided items are listed apart and never thresholded.
 decide spec list
 decide spec show <name>
 decide spec validate [name|path]
+decide spec lint [name|path] [--strict]
 decide spec check <name|path> [--live | --replay] [--confirm] [--model <id>] [--strict]
 ```
 
@@ -97,6 +100,60 @@ decide spec check <name|path> [--live | --replay] [--confirm] [--model <id>] [--
 a finding, not an error: the exit code is 0 and `passed` is false. `--strict` makes that exit 7
 instead, so a CI step can gate on the exit code; the output is the same. Any example with no
 recorded answer is exit 6.
+
+`spec lint` checks question sets for failure modes you can see in their text, offline: no key,
+no consent, nothing sent. With no name it lints every spec in reach. Each finding has a
+`severity`, the `check` that raised it, a `message` and a `fix`:
+
+| Check | Severity | Flags |
+|---|---|---|
+| `no-way-out` | warning | a `choice` with no `none`/`other`/`unclear` option |
+| `abstract-levels` | warning | `score` levels of one or two words (`low`, `medium`, `high`) rather than situations |
+| `unsupported-task` | warning | counting or arithmetic ("longer than 300 lines"), date arithmetic ("within the last 30 days"), reading images, or an exact fact to read or run ("all tests pass"), which a decision model can't do |
+| `merged-question` | warning | two claims in one instruction: two statements, `and/or`, or `either … or`. Framing sentences ("Consider only …", "Answer true if …") don't count |
+| `unjustified-threshold` | warning | a numeric `keep` cut (`>=`, `>`, `<=`, `<`) with no `policy.thresholds` entry saying why |
+| `unknown-threshold` | error | a `policy.thresholds` entry naming no question in the spec |
+
+The heuristics warn, because a well-posed question can trip one; only a certain problem is an
+error. Findings are a result: exit 0 and `passed: true` with warnings only. The lint *fails*, exit
+7, on an error or a spec that doesn't parse (named or not), and with `--strict` on any warning
+too. With no specs in reach it passes, and says `0 spec(s)`. A named spec that doesn't exist is
+`invalid-request`, exit 2. Two failure
+modes can't be seen in the text alone and are left to the `design` skill: criteria a literal
+reader takes the wrong way, and questions written for different items mixed into one set.
+
+`spec check` runs the lint first and reports its findings as `lint`. They don't change `passed`
+or what `spec check --strict` gates on, so an existing CI step behaves as before.
+
+### `opportunities`
+
+```sh
+decide opportunities add --file <candidates.json>
+decide opportunities list [--keep '<field><op><value>']… [--sort <field>[:asc|desc]] [--limit N] [--fields a,b]
+decide opportunities check
+```
+
+The backlog the `scout` skill writes, in `.system1/opportunities.json`. The skill decides what
+counts as an opportunity; `decide` validates, merges and stores it. Nothing is sent anywhere.
+
+- **`add`** reads a JSON array of candidates, or `{"candidates": [...]}`, from a file (`decide
+  schema opportunities-add` has the shape). The id comes from the mode and the evidence text, so
+  re-running a sweep updates an entry instead of duplicating it, and a moved file keeps its id. A
+  `new` entry from the same sweep (`source.sweep`) at a path the add covers, whose evidence wasn't
+  seen again, becomes `stale`; a stale entry seen again is `new` again; nothing is deleted. A
+  `rejected` candidate needs a `statusReason`, and a status stays as it is when a re-sweep doesn't
+  give one. Concurrent adds take turns on a lock file (`opportunities.json.lock`), so none is
+  lost; a lock left by a crashed run is taken over after 30 s.
+- **Savings are projected.** Each entry carries the inputs (`volume` per `per`, the current and
+  the decision cost per item) and `decide` computes `savingUsd` from them, so a reader can
+  disagree with an input rather than trust a figure.
+- **`list`** filters and sorts on record fields with the `--keep` syntax: `status=new`,
+  `risk in medium,high`, `projected>=0.01`, `location.path=src/a.ts`. A bare `risk`,
+  `projected`, `location` or `source` means its `level`, `savingUsd`, `path` or `sweep`. The
+  default sort is `projected:desc`. Field and sub-field names are checked, so a typo is an error
+  even on an empty backlog.
+- **`check`** validates the file. A malformed backlog is `invalid-request`, exit 2, listing every
+  problem, and `add` and `list` refuse it the same way. `decide` never repairs or overwrites it.
 
 ### `usage`
 
@@ -139,7 +196,7 @@ the agent's context. Use `--text` to test your own `route:` config. See
 
 ### `schema`, `ping`, `doctor`, `version`
 
-- `decide schema <ask|many|usage|spec-check|route>` prints that tool's input schema.
+- `decide schema <tool>` prints that tool's input schema; with no tool, the error lists them.
 - `decide ping` exits 0 when the model's endpoint answers, and 5 when it doesn't. It probes the
   `model` and `endpoint` from config and environment, like every other command. If a config file
   fails to load, it probes from the environment alone and says so in `configError`. An endpoint
@@ -170,7 +227,7 @@ branch on it, not on the message.
 | 4 | spend guard; the projection is in `details` | `budget-exceeded` |
 | 5 | provider failure | `provider-unreachable`, `provider-http`, `malformed-response` |
 | 6 | replay miss | `replay-miss` |
-| 7 | `spec check --strict` only: an example did not pass. Not an error: `ok` is true | — |
+| 7 | a check ran and did not pass: `spec check --strict` (an example missed) or `spec lint` (an error, an invalid spec, or with `--strict` a warning). Not an error: `ok` is true | — |
 
 When every item in a `many` run fails with the same code, the run fails with that code.
 [troubleshooting.md](troubleshooting.md) gives the cause and fix for each one.

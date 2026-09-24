@@ -12,7 +12,8 @@ Edges are imports, read from the source files. `model/` (types, profiles, valida
 ```mermaid
 flowchart TB
     cli["packages/cli<br/>commands/*"]
-    tools["tools/<br/>ask · many · spec-check · usage · route · doctor<br/>schemas · context"]
+    tools["tools/<br/>ask · many · spec-check · spec-lint · opportunities<br/>usage · route · doctor · schemas · context"]
+    opps["opportunities/<br/>backlog"]
     prepare["prepare.ts"]
     decide["decide.ts"]
     spec["spec/"]
@@ -29,6 +30,9 @@ flowchart TB
     wiring["wiring.ts"]
 
     cli --> tools
+    tools --> opps
+    opps --> project
+    opps --> config
     tools --> prepare
     tools --> decide
     tools --> spec
@@ -102,7 +106,7 @@ readers. Keep that path lean: `pnpm bench:startup` holds it to the target
 - **`sources/`** reads `glob`, `file` (with an optional line range), `jsonl`, `diff`, `text` and
   `stdin` into documents (`sources/read.ts`). It honours `.gitignore`, resolves symlinks, withholds
   anything outside the repo unless `allowOutside`, and reports every skip with a reason
-  (`binary`, `too-large`, `gitignored`, `excluded`, `outside-repo`).
+  (`binary`, `too-large`, `gitignored`, `excluded`, `outside-repo`, and `filtered` for `--exclude`).
 - **`split/`** turns documents into items, one call each: `file`, `hunk`, `row`, `lines:N[/overlap]`
   and `join` (everything as one state).
 - **`spec/`** parses and validates saved specs (`SpecSchema`), resolves a name through repo, user
@@ -150,6 +154,20 @@ library directly cannot skip them. See [runtime.md](runtime.md#where-each-guaran
   unreported usage as a lower bound.
 - **`project/project.ts`**: the `--keep`, `--sort`, `--limit` and `--fields` projection. Undecided
   rows come out separately and are never thresholded.
+
+## spec/lint.ts and opportunities/
+
+- **`spec/lint.ts`**: the offline `spec lint` checks, over the text of a question set and a spec's
+  `keep` and `policy`. `lintStatement` lints one bare sentence (for criteria read from a file).
+  `tools/spec-check.ts` runs it too and reports the findings as `lint`.
+- **`opportunities/backlog.ts`**: the scout backlog in `.system1/opportunities.json`. Its TypeBox
+  schema, the content-derived id, the projected saving (computed, never given), the merge rules
+  (update by id, stale by path, a status kept across re-sweeps) and record-field filters. The
+  filters share the `--keep` tokenizer with `project/project.ts` but not its evaluator, which is
+  about answers and undecided.
+- **`sources/filter.ts`**: `--exclude`, applied to glob matches before they're read and to every
+  other source after, reported as `filtered`.
+- **`model/schema.ts`**: the TypeBox question schema, shared by tool inputs and the backlog.
 
 ## route/
 

@@ -48,8 +48,8 @@ export interface Document {
 
 export interface Skipped {
   path: string
-  reason: "binary" | "too-large" | "gitignored" | "excluded" | "outside-repo"
-  /** For `excluded`: the pattern that matched. */
+  reason: "binary" | "too-large" | "gitignored" | "excluded" | "outside-repo" | "filtered"
+  /** For `excluded` and `filtered`: the pattern that matched. */
   detail?: string
 }
 

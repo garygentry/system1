@@ -21,6 +21,7 @@ export const DECIDE_OPTIONS = {
   staged: { type: "boolean" },
   text: { type: "string" },
   stdin: { type: "boolean" },
+  exclude: { type: "string", multiple: true },
   "allow-outside": { type: "boolean" },
   split: { type: "string" },
   keep: { type: "string", multiple: true },
@@ -128,6 +129,7 @@ export function buildInput(
     )
   }
   if (sources.length) input.sources = sources
+  set("exclude", values.exclude?.length ? values.exclude : undefined)
   set("split", values.split)
   set("keep", values.keep?.length ? values.keep : undefined)
   set("sort", values.sort)

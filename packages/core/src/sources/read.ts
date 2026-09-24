@@ -2,7 +2,9 @@ import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute, relative, resolve } from "node:path"
 import { glob } from "tinyglobby"
+import { isExcluded } from "../egress/exclude.js"
 import { DecisionsError } from "../errors.js"
+import { applyFilter } from "./filter.js"
 import type { Document, LineRange, Skipped, SourceSpec } from "./types.js"
 
 export interface ReadOptions {
@@ -10,6 +12,16 @@ export interface ReadOptions {
   cwd: string
   /** Files larger than this are skipped as `too-large` without being read. */
   maxFileBytes?: number
+  /**
+   * Leave out paths matching these (`--exclude`). Glob matches are dropped
+   * before they are read; the caller filters every other source after.
+   */
+  filter?: readonly string[]
+  /**
+   * Egress exclude patterns beyond the defaults. The glob prefilter leaves such
+   * paths to `prepare()`, so they are reported as `excluded`, never `filtered`.
+   */
+  withhold?: readonly string[]
   /**
    * Allow content from outside `cwd`. Off by default: consent is given per
    * repo, so a path (or a symlink) that resolves elsewhere is withheld.
@@ -172,12 +184,18 @@ async function readGlob(patterns: readonly string[], options: ReadOptions): Prom
   })
   matches.sort()
   const ignored = new Set(gitIgnored(options.cwd, matches))
-  const kept = matches.filter((m) => !ignored.has(m))
-  const result = readFiles(kept, options)
+  const candidates = matches.filter((m) => !ignored.has(m))
+  const withheld = candidates.filter((m) => isExcluded(m, options.withhold))
+  const unfiltered = applyFilter(
+    candidates.filter((m) => !withheld.includes(m)).map((path) => ({ path })),
+    options.filter,
+  )
+  const result = readFiles([...withheld, ...unfiltered.items.map((m) => m.path)].sort(), options)
   return {
     documents: result.documents,
     skipped: [
       ...[...ignored].map((path) => ({ path, reason: "gitignored" as const })),
+      ...unfiltered.filtered,
       ...result.skipped,
     ],
   }

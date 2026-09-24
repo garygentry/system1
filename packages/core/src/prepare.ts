@@ -6,6 +6,7 @@ import type { ModelProfile } from "./model/profiles.js"
 import type { QuestionSet, State } from "./model/types.js"
 import { assertQuestionSet } from "./model/validate.js"
 import { type Projection, project } from "./run/budget.js"
+import { applyFilter } from "./sources/filter.js"
 import { readSources } from "./sources/read.js"
 import type { Item, Skipped, SourceSpec } from "./sources/types.js"
 import { joinItems, type SplitSpec, split } from "./split/split.js"
@@ -18,6 +19,8 @@ export interface PrepareInput {
   cwd: string
   /** Extra exclude patterns from config. */
   exclude?: readonly string[]
+  /** Paths the caller asked to leave out (`--exclude`), reported as `filtered`. */
+  filter?: readonly string[]
   maxFileBytes?: number
   /** Allow content from outside the repo (off by default). */
   allowOutside?: boolean
@@ -46,6 +49,7 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
     cwd: input.cwd,
     ...(input.maxFileBytes ? { maxFileBytes: input.maxFileBytes } : {}),
     ...(input.allowOutside ? { allowOutside: true } : {}),
+    ...(input.filter?.length ? { filter: input.filter, withhold: input.exclude ?? [] } : {}),
   })
 
   const byKind: ScrubCounts = {}
@@ -60,10 +64,13 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
   // Excluded files are dropped before anything else touches them, so a
   // withheld file is never reported as scrubbed.
   const allowed = applyExcludes(read.documents, input.exclude)
+  // Then what the caller left out. Globs were filtered before reading; this
+  // catches files, diffs and rows. After egress, so a secret is never `filtered`.
+  const chosen = applyFilter(allowed.items, input.filter)
 
   // Then scrub whole documents: a private key cut across two line windows
   // would otherwise lose the markers that identify it.
-  const documents = allowed.items.map((doc) => {
+  const documents = chosen.items.map((doc) => {
     const counts: ScrubCounts = {}
     const scrubbed = {
       ...doc,
@@ -91,7 +98,12 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
 
   return {
     items,
-    skipped: [...read.skipped, ...allowed.excluded, ...filtered.excluded],
+    skipped: unique([
+      ...read.skipped,
+      ...allowed.excluded,
+      ...chosen.filtered,
+      ...filtered.excluded,
+    ]),
     redactions: {
       total: Object.values(byKind).reduce((a, b) => a + b, 0),
       byKind,
@@ -114,4 +126,15 @@ function assertChoicesFit(questions: QuestionSet, profile: ModelProfile): void {
       )
     }
   }
+}
+
+/** One entry per path and reason: a glob and a `--file` can name the same path. */
+function unique(skipped: Skipped[]): Skipped[] {
+  const seen = new Set<string>()
+  return skipped.filter((s) => {
+    const key = `${s.path}\0${s.reason}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
