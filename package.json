@@ -31,6 +31,9 @@
     "smoke:published": "sh tools/smoke/published.sh",
     "eval:routing": "tsx tools/evals/run.ts",
     "bench:startup": "tsx tools/bench-startup.ts",
+    "dev:link": "sh tools/dev-link.sh link",
+    "dev:unlink": "sh tools/dev-link.sh unlink",
+    "dev:status": "sh tools/dev-link.sh status",
     "test:live": "vitest run --config vitest.live.config.ts --silent=false",
     "release:check": "node tools/release-check.mjs",
     "release:publish": "node tools/release-publish.mjs"

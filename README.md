@@ -169,8 +169,9 @@ most likely to close with design partners' data.
 | [Calibration](docs/calibration.md) | what the probabilities mean, and which threshold to use |
 | [Evaluation](docs/evaluation.md) | everything we measured, including what didn't work |
 
-For maintainers: [architecture](docs/architecture/README.md), [cutting a release](docs/contributing/release.md),
-[`AGENTS.md`](AGENTS.md) (layout, rules, commands) and [decision records](plans/decisions/).
+For maintainers: [architecture](docs/architecture/README.md),
+[running the plugin from a checkout](docs/contributing/local-plugin.md),
+[cutting a release](docs/contributing/release.md), [`AGENTS.md`](AGENTS.md) (layout, rules, commands) and [decision records](plans/decisions/).
 
 ## Packages
 
