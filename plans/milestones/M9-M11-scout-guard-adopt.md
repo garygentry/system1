@@ -67,14 +67,16 @@
    - `check` on a malformed file: a typed error, exit 2 (`usage`: the input is invalid), never a repair.
 2. **`decide spec lint`**, and `spec check` runs it first and prints its findings. Offline: no key, no consent, no egress. The checks are the failure-mode catalogue in `later-scout-opportunities.md` §2, with severity per X2. The "criteria a literal reader will take the wrong way" check can't be done offline: it stays in `design`'s reference, not in lint. The lint also exposes a single-question entry point, which M10 uses on criteria bullets.
 3. **Contract.** Amend [0015](../decisions/0015-cli-contract-v1.md) additively (same `v`): the new commands, their result shapes, error codes and exit codes, and the wider exit 7 (X2). `decide schema <tool>` for each new tool. Update `packages/cli/src/exit-codes.ts`, `docs/cli.md` and `AGENTS.md`. The docs-vs-code test covers them.
+3a. **`--exclude <glob>` on sources** (`many`, `ask`), repeatable, applied before anything is read. It is per call, unlike `egress.exclude`, which is persistent config. The pre-check sent every test, fixture and eval file to the model and asked `test_or_fixture`, which the model can't answer from content alone (it doesn't see the path). Path rules belong in the partition step, where they cost nothing.
 4. **The signal tables** (X3), shipped **as specs with examples** (true and false positives from the dogfood, recorded once) so that `spec check` replays them in `pnpm check`. A wording change that kills recall then fails CI. The anti-signal questions go in the same pass, so one call screens items both in and out.
 5. **`scout` skill** (user-invocable: `disable-model-invocation`, and `allow_implicit_invocation: false` in `agents/openai.yaml`):
    1. Resolve the target and pick the mode.
-   2. Partition by file (Mode A) or by skill/plugin (Mode B). Files over the size cap are windowed with `--split lines:N`, never dropped.
-   3. **Project first:** run `decide many … --dry-run` and show the user the item count, bytes, excluded files and projected cost. Pass `--confirm` only after the user approves (0011 trips at 200 items).
-   4. Screen with `--questions … --keep … --format brief`.
-   5. Read survivors only, and draft a question set and a projected saving per candidate.
-   6. `decide opportunities add --file <path>`, then report the ranked top N.
+   2. **Local prefilter, no egress:** exclude tests, fixtures, eval harnesses and generated code by path (`--exclude`). Grep the target for the repo's own decision-model call sites (imports of the engine, `decide`, `/decisions` endpoints) and exclude files that only reach the model through them. In the pre-check, the per-file `already_decision_model` question couldn't see an indirect call: 32 of 38 `jev-poc` survivors were demos that already use Jev through a shared runner.
+   3. Partition by file (Mode A) or by skill/plugin (Mode B). Files over the size cap are windowed with `--split lines:N`, never dropped.
+   4. **Project first:** run `decide many … --dry-run` and show the user the item count, bytes, excluded files and projected cost. Pass `--confirm` only after the user approves (0011 trips at 200 items).
+   5. Screen with `--questions … --keep … --format brief`. Re-run items that failed with a provider error once before reporting them.
+   6. Read survivors only, and draft a question set and a projected saving per candidate. **Tell a mechanism that is intentional apart from one that can be replaced.** A chat-model or keyword *baseline* kept on purpose for comparison is a correct detection but not an opportunity, and is recorded as `rejected` with that reason.
+   7. `decide opportunities add --file <path>`, then report the ranked top N.
 
    `--depth quick|full`. Undecided and skipped items are listed apart. **Mode B scope:** by default, only agent configuration inside the repo. Content outside it (installed plugins, `~/.claude`) needs the user to name it in the conversation, and the skill never adds `--allow-outside` on its own.
 6. **`design` gains `references/failure-modes.md`**, each failure with an example and its repair, and runs `spec lint` before saving.
@@ -96,7 +98,9 @@
 - [ ] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
 - [ ] Signal tables replay in `pnpm check` through `spec check`.
 - [ ] A sweep over more than 200 items stops at the projection until the user approves; oversize files are windowed, not dropped.
-- [ ] Mode A finds at least one real, defensible candidate in this repo or `jev-poc`; measured cost recorded.
+- [ ] Mode A finds at least one real, defensible candidate in this repo or `jev-poc` (the pre-check already found one: `route.ts`); measured cost recorded.
+- [ ] Mode A runs on at least one repo the signal questions were not written against (the pre-check's targets are both System 1 / Jev code, which skews them). Its precision and recall are written up.
+- [ ] With the local prefilter, `jev-poc`'s survivors no longer consist mostly of demos that already use Jev.
 - [ ] Mode B over this plugin plus one cloned third-party plugin, with the false positives written up; the settings-file scrub test passes.
 - [ ] Every projected saving shows its inputs and says projected. No output claims a measured saving.
 - [ ] Undecided and skipped items are reported apart.
@@ -297,3 +301,75 @@
 ## Results
 
 *(Filled in per milestone as each closes.)*
+
+### M9 pre-check: does scout find anything? (2026-09-24, before any M9 code)
+
+**How it ran.** Draft Mode A signal questions ran as an ad-hoc `--questions` file through the shipped 0.3.2 `decide many`, one item per file, with no prefilter.
+- **Signals:** `calls_llm` ∧ `llm_output_closed`, `semantic_heuristic`, `judge_over_many`.
+- **Anti-signals:** `test_or_fixture`, `already_decision_model`.
+- **Thresholds, fixed before the run:** a signal keeps at ≥ 0.3 (recall first); an anti-signal drops at ≥ 0.7.
+- **Targets:**
+  - `jev-poc`: `{src,server,shared,scripts}/**/*.{ts,tsx}`, 188 files, **$0.0150 measured**;
+  - this repo: `{packages/*/src,tools}/**/*.ts`, 197 files, **$0.0130 measured**.
+
+  The dry runs projected $0.0200 and $0.0172.
+
+| Repo | Screened | Survivors | Real and actionable | Correct detection, but intentional | False positives |
+|---|---|---|---|---|---|
+| `jev-poc` | 182 (6 failed) | 38 | 0 | 4: `scripts/capture-baseline.ts` and `src/lib/baseline-client.ts` (chat model with a structured closed answer, over many items), `src/demos/rerank/baseline.ts` (keyword relevance), `server/transport.ts` | 34: 32 demo and `_kit` files that already call Jev through `_kit/runners`, plus `scripts/capture.ts` and `server/routes.ts` |
+| this repo | 192 (5 failed) | 11 | **1: `packages/core/src/route/route.ts`**, `semantic_heuristic` 0.96. Regexes classify the prompt's intent, the step [0018](../decisions/0018-claude-routing-hook.md) already names as next ("an opt-in hook that asks `decide` to classify the prompt itself") | 2: `tools/evals/route-static.ts` (replays the route regexes), `tools/evals/fixture-repo/src/search/index.ts` (a keyword scorer in an eval fixture) | 8: the engine's own fan-out (`tools/many.ts`, `schemas.ts`, `cli/commands/decide.ts`), `egress/scrub.ts` (secret regexes are syntax, undecided at 0.48), `tools/cookbook.ts`, `tools/evals/run.ts`, `core/decide.ts` |
+
+**What it says:**
+- **Recall looks right.** Every known place in either repo where a chat model or a keyword rule does a decision job was kept. No known one was missed: the chat-model baseline, the keyword rerank baseline, the route regexes and the fixture scorer.
+- **Precision without a prefilter is poor, for two fixable reasons.**
+  - A per-file question can't see an indirect call. `already_decision_model` sat at 0.3–0.5 on demos that reach Jev through a shared hook. This is question-craft rule 9: the text doesn't contain the evidence.
+  - The model doesn't see the path, so `test_or_fixture` can't catch eval fixtures.
+
+  Both move into a local, free prefilter (M9 §3a, §5.2). Before and after the prefilter, the agent still has to tell an intentional baseline from a replaceable mechanism (§5.6).
+- **Bias disclosed.** Both targets are System 1 / Jev code, the worst case for the decision-model anti-signal and the best case for finding baselines. The new M9 acceptance box requires an unrelated repo.
+- **A bug found along the way:** 11 of 385 calls (2.9%) failed on HTTP 529 `system_overloaded`, which the transport did not retry. Fixed alongside these results: 529 is added to `RETRY_STATUSES`, with a test.
+
+**Verdict: go.** Scout finds the right things, and its noise has concrete, cheap fixes that are now in the M9 work list. `route.ts` is the first backlog entry, and a natural first dogfood for M11's `adopt`.
+
+<details><summary>The draft Mode A signal questions used (the starting point for M9 §4)</summary>
+
+```yaml
+calls_llm:
+  type: noul
+  instructions: The code in this file itself sends a prompt to a large language model and reads its reply.
+  criteria:
+    true: it calls a chat or completion API, an LLM SDK (OpenAI, Anthropic, Vercel AI, LangChain and similar), or makes an HTTP request to an LLM provider endpoint
+    false: it never calls a language model, or it only defines types, prompts, docs or configuration without making the call
+llm_output_closed:
+  type: noul
+  instructions: This file uses the reply of a language model as a fixed label, a yes or no, one of a fixed set of options, or a number, rather than as free text.
+  criteria:
+    true: the reply is constrained or parsed into an enum, boolean, category, verdict or score, for example a JSON schema with enum or boolean fields, a prompt demanding only yes or no, or code that matches the reply against fixed values
+    false: the reply is used as prose, code, a summary or other generated text, or the file does not use a language model reply at all
+semantic_heuristic:
+  type: noul
+  instructions: This file decides a meaning-based property of text using hand-written keyword lists, regular expressions or string matching.
+  criteria:
+    true: the property is about meaning, such as intent, topic, urgency, sentiment, relevance, risk or whether two texts say the same thing, and it is decided by lists of words, regexes or substring checks
+    false: the matching is about exact syntax or format (parsing flags, file paths, versions, identifiers, JSON), or there is no such matching
+judge_over_many:
+  type: noul
+  instructions: This file asks a model to grade, rank, rerank, classify or filter many items, one call per item or in a loop.
+  criteria:
+    true: it loops or fans out over records, candidates, search results, files or messages and asks a model for a verdict, label or score on each
+    false: it makes a single model call, generates text per item, or makes no model calls
+test_or_fixture:
+  type: noul
+  instructions: This file is a test, a fixture, a mock or example data rather than code that runs in the product.
+  criteria:
+    true: it is a unit, integration or end-to-end test, test helper, recorded fixture, mock or sample data
+    false: it is application, library, server, script or tool code that runs outside a test suite
+already_decision_model:
+  type: noul
+  instructions: The judgement in this file is already sent to a decision model that returns typed probabilities, not to a chat model.
+  criteria:
+    true: it calls Jev, the typesafe/jev model, a /decisions endpoint, or the decide CLI or its engine to get noul, choice or score answers
+    false: it calls a chat or completion model, uses hand-written rules, or calls no model
+```
+
+</details>
