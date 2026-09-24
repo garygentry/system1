@@ -18,9 +18,10 @@ import { emit } from "../run.js"
  * `decide config [show]` and `decide config egress allow|deny|status`.
  *
  * Granting egress consent is the user's decision, not the agent's. So `allow`
- * needs an interactive terminal (a human typed it, e.g. `! decide config
- * egress allow` in Claude Code) or an explicit `--confirm`. Skills must never
- * pass `--confirm` on the user's behalf.
+ * needs an interactive terminal (a human typed it and confirms at the prompt)
+ * or an explicit `--confirm`. Claude Code's `!` shell has no TTY, so a user
+ * there types `! decide config egress allow --confirm`. Skills must never pass
+ * `--confirm` on the user's behalf.
  */
 export function runConfigCommand(argv: string[], io: Io, format: Format): Promise<ExitCode> {
   return emit(
@@ -63,8 +64,10 @@ function body(argv: string[], io: Io): ConfigResult {
       if (!io.interactive && !values.confirm) {
         throw new DecisionsError(
           "egress-refused",
-          "Egress consent is the user's decision. Ask the user to run `decide config egress allow` themselves " +
-            "(in Claude Code: `! decide config egress allow`).",
+          "Egress consent is the user's decision; don't grant it yourself. Ask the user to run " +
+            "`decide config egress allow` in a terminal at the repo root. Claude Code's `!` prompt " +
+            "has no terminal to confirm in, so there the user types the confirmation " +
+            "themselves: `! decide config egress allow --confirm`.",
         )
       }
       return {

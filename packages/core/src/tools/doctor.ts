@@ -149,7 +149,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           status: "warn",
           detail: "no API key: only replay works",
           // The file this shell would read: XDG_CONFIG_HOME moves it.
-          fix: `set OPENROUTER_API_KEY, or write \`openrouter_api_key: <key>\` to ${join(userConfigDir(env, options.home), "credentials")} (chmod 600)`,
+          fix: `set OPENROUTER_API_KEY, or write \`openrouter_api_key: <key>\` to ${join(userConfigDir(env, options.home), "credentials")} (create its directory first; chmod 600)`,
         },
   )
   checks.push(
@@ -159,7 +159,9 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           name: "consent",
           status: "warn",
           detail: `no egress consent for ${config.repoRoot}: live calls are refused`,
-          fix: "the user runs `decide config egress allow` in this repo, if they agree",
+          fix:
+            "if the user agrees, they run `decide config egress allow` in a terminal in this repo " +
+            "(in Claude Code: `! decide config egress allow --confirm`)",
         },
   )
 

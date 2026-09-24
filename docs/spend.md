@@ -14,12 +14,14 @@ decide many --spec no-timeout --dry-run --format brief
 ```
 
 ```text
-decide many (dry run): would send 2 item(s) to typesafe/jev-1.13 · projected $0.000020 (~487 tokens, price as of 2026-09-19) · no calls made
+decide many (dry run): would send 2 item(s) to typesafe/jev-1.13 · projected $0.000041 (~987 tokens, price as of 2026-09-19) · no calls made
 first: src/a.ts, src/b.ts
 ```
 
-The projection is an estimate from the listed price, and it's labelled as projected. What was
-actually spent comes from the provider's usage report, after the run.
+The projection is an estimate from the listed price, and it's labelled as projected. It counts
+each item and the questions at about 3 characters a token, plus the tokens the provider adds to
+every call (about 250 for Jev), so it errs high. What was actually spent comes from the
+provider's usage report, after the run.
 
 ## Narrow the run
 

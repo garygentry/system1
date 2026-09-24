@@ -1,7 +1,7 @@
 import { chmodSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { resolveProfile } from "../model/profiles.js"
+import { JEV_CALL_OVERHEAD_TOKENS, resolveProfile } from "../model/profiles.js"
 import { useTempDirs, writeTree } from "../testkit/tmp.js"
 import { assertConsent, setConsent } from "./consent.js"
 import { allProfiles, findRepoRoot, loadConfig } from "./load.js"
@@ -65,6 +65,24 @@ describe("loadConfig", () => {
       transport: "openrouter-decisions",
       priceAsOf: "unknown",
     })
+  })
+
+  it("defaults callOverheadTokens to Jev's, and refuses one that isn't a whole number", () => {
+    const base =
+      "{ id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2"
+    const ok = setup(`profiles:\n  - ${base} }\n`)
+    const [profile] = loadConfig({ cwd: ok.repo, env: {}, home: ok.home }).profiles
+    expect(profile?.callOverheadTokens).toBe(JEV_CALL_OVERHEAD_TOKENS)
+    const zero = setup(`profiles:\n  - ${base}, callOverheadTokens: 0 }\n`)
+    expect(loadConfig({ cwd: zero.repo, env: {}, home: zero.home }).profiles[0]).toMatchObject({
+      callOverheadTokens: 0,
+    })
+    for (const bad of ['"x"', "-1", "1.5"]) {
+      const b = setup(`profiles:\n  - ${base}, callOverheadTokens: ${bad} }\n`)
+      expect(() => loadConfig({ cwd: b.repo, env: {}, home: b.home }), bad).toThrow(
+        /callOverheadTokens/,
+      )
+    }
   })
 
   it("defaults maxChoices, and refuses one that isn't a whole number of at least 2", () => {
@@ -277,7 +295,9 @@ describe("consent", () => {
   })
 
   it("explains how to consent when refusing", () => {
-    expect(() => assertConsent({ granted: false }, "/r")).toThrow(/decide config egress allow/)
+    expect(() => assertConsent({ granted: false }, "/r")).toThrow(
+      /decide config egress allow --confirm/,
+    )
   })
 
   it("leaves unrelated files alone", () => {

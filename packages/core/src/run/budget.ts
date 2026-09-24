@@ -12,8 +12,15 @@ export interface Projection {
   priceAsOf: string
 }
 
+/**
+ * @param tokensPerCall the estimated state-plus-questions tokens of each call;
+ *   the profile's per-call overhead is added to every one.
+ */
 export function project(profile: ModelProfile, tokensPerCall: readonly number[]): Projection {
-  const estimatedInputTokens = tokensPerCall.reduce((a, b) => a + b, 0)
+  const estimatedInputTokens = tokensPerCall.reduce(
+    (sum, tokens) => sum + tokens + profile.callOverheadTokens,
+    0,
+  )
   return {
     basis: "projected",
     calls: tokensPerCall.length,

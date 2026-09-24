@@ -275,6 +275,19 @@ describe("decide config egress", () => {
     expect(json().error.message).toMatch(/user's decision/)
   })
 
+  it("points a user without a terminal at the form that works: `!` has no TTY", async () => {
+    const { io, json } = rig({}, { consent: false })
+    await main(["config", "egress", "allow"], io)
+    // Suggesting `! decide config egress allow` alone would just fail the same way again.
+    expect(json().error.message).toContain("`! decide config egress allow --confirm`")
+  })
+
+  it("grants on --confirm without a terminal, which the user typed themselves", async () => {
+    const { cwd, io } = rig({}, { consent: false })
+    expect(await main(["config", "egress", "allow", "--confirm"], io)).toBe(0)
+    expect(readFileSync(join(cwd, ".system1/config.yaml"), "utf8")).toContain("granted: true")
+  })
+
   it("grants when a human is at the terminal, and reports status", async () => {
     const { cwd, io, out } = rig({}, { consent: false, interactive: true })
     expect(await main(["config", "egress", "allow"], io)).toBe(0)

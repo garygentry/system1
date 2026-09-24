@@ -13,7 +13,12 @@ import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { parse } from "yaml"
 import { DecisionsError } from "../errors.js"
-import { DEFAULT_MODEL_ID, type ModelProfile, PROFILES } from "../model/profiles.js"
+import {
+  DEFAULT_MODEL_ID,
+  JEV_CALL_OVERHEAD_TOKENS,
+  type ModelProfile,
+  PROFILES,
+} from "../model/profiles.js"
 import { ROUTE_DEFAULTS, type RouteConfig, type Trigger } from "../route/route.js"
 import { DEFAULT_ENDPOINT, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
 import { type DetectedSession, detectSession } from "./session.js"
@@ -333,6 +338,7 @@ const PROFILE_FIELDS: readonly (keyof ModelProfile)[] = [
   "transport",
   "maxStateTokens",
   "maxChoices",
+  "callOverheadTokens",
   "usdPerInputToken",
   "usdPerOutputToken",
   "priceAsOf",
@@ -356,6 +362,16 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
       throw new DecisionsError(
         "config-error",
         `${file}: profiles[${i}] needs id, maxStateTokens, usdPerInputToken and undecidedFloor`,
+        { file },
+      )
+    }
+    if (
+      profile.callOverheadTokens !== undefined &&
+      !(Number.isInteger(profile.callOverheadTokens) && (profile.callOverheadTokens as number) >= 0)
+    ) {
+      throw new DecisionsError(
+        "config-error",
+        `${file}: profiles[${i}].callOverheadTokens must be a whole number of at least 0`,
         { file },
       )
     }
@@ -388,6 +404,7 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
       calibrated: true,
       // Same wire contract as Jev unless the config says otherwise.
       maxChoices: 255,
+      callOverheadTokens: JEV_CALL_OVERHEAD_TOKENS,
       ...profile,
     } as ModelProfile
   })

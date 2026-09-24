@@ -54,7 +54,7 @@ Show the `fix:` line. Sandbox allowlists, proxies and firewalls are the user's s
 
 1. Tell the user where the key goes, in whichever form they prefer:
    - the `OPENROUTER_API_KEY` environment variable;
-   - `~/.config/system1/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. Any other format makes every `decide` command fail with a config error.
+   - `~/.config/system1/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. They may need to create `~/.config/system1` first. Any other format makes every `decide` command fail with a config error.
 2. **Never ask for the key in the conversation, and never print, echo or write it yourself.**
 3. Without a key, only replay of recorded answers works. That's a supported mode, not an error.
 
@@ -67,11 +67,20 @@ Egress consent is the user's decision, given once per repo.
    - files that look like secrets (`.env*`, keys, credentials) are excluded;
    - secret-shaped strings are scrubbed from everything sent;
    - oversized items are refused, never truncated.
-3. **Give them the command to run themselves,** in their own terminal at this repo's root. It asks them to confirm, so it needs a real terminal:
+3. **Give them the command to run themselves.** Pick the form that fits where they are:
+   - **In a terminal at this repo's root,** if `decide` is on that shell's PATH. It asks them to confirm:
 
-   ```sh
-   decide config egress allow
-   ```
+     ```sh
+     decide config egress allow
+     ```
+
+   - **From the agent's own prompt,** through a shell escape such as Claude Code's `!`. That is also the way when `decide` came only with the plugin, since the plugin puts it on the agent's PATH but not the user's shell's. There is no terminal there to confirm in, so the user types the confirmation as part of the command:
+
+     ```sh
+     ! decide config egress allow --confirm
+     ```
+
+     Typing `--confirm` there is the user's own confirmation. It is never yours to add.
 
    Consent is recorded in `.system1/config.yaml`. Committing that file shares the consent with everyone who clones the repo. That's the team's call, so point it out and don't decide it for them.
 
