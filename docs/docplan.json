@@ -1084,6 +1084,37 @@
       "verification": "There is no publish script. The publish step exists only in M6's milestone record and git history. Confirm the exact commands with the maintainer before drafting."
     },
     {
+      "id": "howto-local-plugin",
+      "title": "Run the plugin from your checkout",
+      "slug": "contributing/local-plugin",
+      "path": "docs/contributing/local-plugin.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["maintainer"],
+      "purpose": "Load plugins/system1 into Claude Code from a clone with one symlink, and switch back to the marketplace install.",
+      "sourceRefs": ["s-root-pkg", "s-shim"],
+      "status": "drafted",
+      "priority": 3,
+      "outline": [
+        {
+          "heading": "Link and unlink",
+          "intent": "pnpm dev:link / dev:status / dev:unlink; the skills-dir symlink and what it leaves alone.",
+          "sourceRefs": ["s-root-pkg"]
+        },
+        {
+          "heading": "What updates when",
+          "intent": "Skills and hook next session; CLI after pnpm build, via the shim's checkout bundle.",
+          "sourceRefs": ["s-shim"]
+        },
+        {
+          "heading": "Switch to the marketplace version",
+          "intent": "An installed system1 shadows the link; the commands to go each way.",
+          "sourceRefs": ["s-root-pkg"]
+        }
+      ],
+      "verification": "Checked against Claude Code 2.1.281 in throwaway CLAUDE_CONFIG_DIRs: skills-dir loading, bin/ on PATH, and the name-clash precedence."
+    },
+    {
       "id": "contributing",
       "title": "Contributing",
       "path": "CONTRIBUTING.md",
@@ -1355,7 +1386,7 @@
     },
     {
       "title": "Contributing",
-      "documents": ["agents-md", "howto-release", "contributing"]
+      "documents": ["agents-md", "howto-release", "howto-local-plugin", "contributing"]
     },
     {
       "title": "Decisions",

@@ -41,6 +41,7 @@ pnpm test:live  # one real decision call (~$0.00003); loads this repo's .env, sk
 pnpm smoke      # local only: drives real Claude/Codex/Pi sessions (spends their tokens)
 pnpm eval:routing [claude|codex|pi|all] [--repeat N]   # local only: does each skill load for the right prompts? (judge changes on --repeat 3+)
 pnpm bench:startup   # decide startup overhead over bare node (target < 150 ms)
+pnpm dev:link | dev:unlink | dev:status   # Claude Code loads plugins/system1 from this checkout (docs/contributing/local-plugin.md)
 node packages/cli/dist/bundle/decide.mjs ping --format brief
 node --env-file=.env packages/cli/dist/bundle/decide.mjs many --glob 'src/**/*.ts' --question 'q:noul:…' --keep 'q>=0.7' --format brief
 ```

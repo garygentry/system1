@@ -47,7 +47,8 @@ detail lists each one with its file. Correct or remove them;
 `decide` isn't on PATH in this shell, so an agent can't run it.
 
 - **Claude Code:** the plugin's `bin/` puts it there. Install the plugin from its marketplace, or
-  start Claude Code with `--plugin-dir <checkout>/plugins/system1`.
+  start Claude Code with `--plugin-dir <checkout>/plugins/system1`, or link a checkout with
+  `pnpm dev:link` ([contributing/local-plugin.md](contributing/local-plugin.md)).
 - **Codex and Pi** don't put plugin `bin/` on PATH: `npm i -g @garygentry/system1`.
 
 ### doctor: `path-version`
