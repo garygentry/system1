@@ -10,7 +10,7 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-24 (0.3.2).** Evidence (M7) and onboarding (M8) are done: calibration is measured for checkable questions, the docs are checked against the code, and 0.3.x added the Claude routing hook. What is still missing is **outside users**: nobody but the author has used it. M9 is next. `docs/evaluation.md` summarises every measurement.
+**Updated 2026-09-24 (0.3.2).** Evidence (M7) and onboarding (M8) are done: calibration is measured for checkable questions, the docs are checked against the code, and 0.3.x added the Claude routing hook. What is still missing is **outside users**: nobody but the author has used it. M9 (`scout`) is next; design partners moved to M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). `docs/evaluation.md` summarises every measurement.
 
 **0.3.2, released and verified 2026-09-24** (tag `v0.3.2` on `ab29a02`). It came out of walking setup and a first run end to end in Claude Code.
 
@@ -58,6 +58,7 @@ Full records are in `plans/decisions/NNNN-*.md`. A superseded record is kept and
 | 0014 | There is no live `command` source. Command output is piped into `--stdin`. The engine only ever spawns `git`, through `execFile` | accepted |
 | 0017 | Fan-out goes through `decide many`, not harness subagents. No skill dispatches a subagent | accepted |
 | 0018 | A Claude-only `UserPromptSubmit` hook (`decide route`, configurable `route:`) hints the `ask` skill; the shared `ask` description is scoped precisely | accepted |
+| 0019 | `scout`, `guard`/`done-check` and `adopt`+`compare` ship as M9–M11 (0.4.0–0.6.0) before design partners (now M12) | accepted |
 
 Carried over from the archived brief and still in force:
 - the vocabulary (state, question set, primitives, policy, shape, undecided);
@@ -213,9 +214,12 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. The last box, a live decision *through the `ask` skill* in each harness, was blocked by a provider usage limit and closed in M7 (2026-09-23) |
 | **M7** | Evidence: measure what we claim | **done 2026-09-23**, see `milestones/M7-evidence.md`. 478 pairs labelled blind (by one labeller, disclosed); checkable curve published in `docs/calibration.md` (Brier 0.028, ECE 0.054); threshold guidance derived from it; judgement questions reported as unmeasured. M6's last box closed: a live `ask` in each harness. The routing retry held Codex/Pi at 8/8 but not Claude, so it was reverted (gap 1) |
 | **M8** | **Onboarding: the first hour works** | **done** 2026-09-23, **0.2.0 published**, see `milestones/M8-onboarding.md`. Six replay-tested cookbook recipes, `docs/` checked against the code by a test, six first-run stalls fixed across three harnesses, CI on Ubuntu and macOS (which found a real symlinked-path bug). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
-| M9 | **Design partners: 3–5 real users** | **next**, outline. Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
-| M10 | **Release** | outline. Hygiene informed by M9 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
-| — | *Post-release features:* `scout`, `adopt`, `compare`, `calibrate`, `sweep`, `pairs`, `guard` packs | Cut from the road to release (2026-09-23). None makes the core more trustworthy, and building them for a workflow no outsider has adopted is the wrong problem first. `scout` is planned in detail already: `plans/later-scout-opportunities.md` |
+| **M9** | **`scout` → 0.4.0** | **next**, see `milestones/M9-M11-scout-guard-adopt.md` ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Screen a codebase or agent configuration for decisions worth handing over; typed backlog via `decide opportunities`; offline `decide spec lint` |
+| **M10** | **`guard` + `done-check` → 0.5.0** | planned, same plan. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 |
+| **M11** | **`adopt` + `compare` → 0.6.0** | planned, same plan. TS/Python policy modules through the engine with fallback; shadow run against the current mechanism and an `emulated` baseline |
+| M12 | **Design partners: 3–5 real users** (was M9) | outline, after M11 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
+| M13 | **Release** (was M10) | outline. Hygiene informed by M9 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
+| — | *Post-release features:* `calibrate`, `sweep`, `pairs`, the `command-guard` and `loop-check` packs | Cut from the road to release (2026-09-23). `scout`, `adopt`, `compare` and `guard`/`done-check` were brought back as M9–M11 on 2026-09-24 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)) |
 | — | *Deferred:* MCP adapter over `core/tools` | Revisit if the sandbox/network friction or a shell-less host justifies it |
 
 ## Known gaps
@@ -266,7 +270,7 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 ### 3. "Calibrated" is measured only for checkable propositions
 
-**Mostly closed in M7 (2026-09-23).** The checkable curve is measured and published in `docs/calibration.md` (Brier 0.028, ECE 0.054, two repos, one author), and the README cites it. Three things remain open. The labels come from one AI labeller: the human agreement pass was deferred, and the tooling for it is kept (`tools/calibration-agreement.ts`). The subjective questions produced degenerate single-labeller labels, so they are reported as unmeasured rather than as a curve. And the claim rests on two TypeScript repos by one author. A better-posed judgement set, and data from other people's code, are the ways to widen it. Design partners (M9) are the natural source of the second.
+**Mostly closed in M7 (2026-09-23).** The checkable curve is measured and published in `docs/calibration.md` (Brier 0.028, ECE 0.054, two repos, one author), and the README cites it. Three things remain open. The labels come from one AI labeller: the human agreement pass was deferred, and the tooling for it is kept (`tools/calibration-agreement.ts`). The subjective questions produced degenerate single-labeller labels, so they are reported as unmeasured rather than as a curve. And the claim rests on two TypeScript repos by one author. A better-posed judgement set, and data from other people's code, are the ways to widen it. Design partners (M12) are the natural source of the second.
 
 ### 4. One model, one vendor
 
@@ -274,11 +278,11 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 ### 5. macOS is unverified
 
-**Narrowed in M8 (2026-09-23).** CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed CLI on both. The first macOS run found and fixed a symlinked-path bug. What remains: the harnesses themselves are unverified on macOS (smoke is local and Linux-only, and needs GNU `timeout`). M9's partners on Macs are that check.
+**Narrowed in M8 (2026-09-23).** CI runs `pnpm check` on Ubuntu and macOS, on Node 22 and 24, plus the packed CLI on both. The first macOS run found and fixed a symlinked-path bug. What remains: the harnesses themselves are unverified on macOS (smoke is local and Linux-only, and needs GNU `timeout`). M12's partners on Macs are that check.
 
 ### Why this order
 
-Each milestone removes the risk that would make the next one wasted work. Measuring calibration (M7) before writing docs (M8) means the docs can state a number instead of a disclaimer. Getting the first hour right (M8) before inviting partners (M9) means their feedback is about the product, not about a broken install. Partners (M9) before release hygiene (M10) means the CHANGELOG and the policy describe what people actually hit.
+Each milestone removes the risk that would make the next one wasted work. Measuring calibration (M7) before writing docs (M8) means the docs can state a number instead of a disclaimer. Getting the first hour right (M8) before inviting partners means their feedback is about the product, not about a broken install. Partners (M12) before release hygiene (M13) means the CHANGELOG and the policy describe what people actually hit. [0019](decisions/0019-scout-guard-adopt-before-partners.md) puts scout, guard and adopt (M9–M11) ahead of partners, by the user's choice: partners then try the whole chain.
 
 **M0 acceptance:**
 - **Setup:** git init, pnpm workspace, TS NodeNext, vitest, biome, `AGENTS.md`/`CLAUDE.md`, `catalog.yaml`.

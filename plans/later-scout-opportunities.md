@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Superseded 2026-09-24** by [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) §M9, which carries this plan's scope and D1–D4 forward. Kept as the detailed reference that section points to.
+
 # M7 — `scout`: find the decisions worth handing over
 
 **Status:** planned (2026-09-23). The decisions below came from interviewing the user.
