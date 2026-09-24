@@ -3,6 +3,9 @@
 From nothing to a first live decision in your own repo. It takes four steps, and two of them are
 yours alone: the API key and the consent.
 
+For a guided, hands-on version in a throwaway repo, with checkpoints at each step, try the
+[tutorial](tutorial.md) first.
+
 ## 1. Install
 
 You need Node 22 or newer.
