@@ -10,7 +10,19 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-23 (0.3.1).** Evidence (M7) and onboarding (M8) are done: calibration is measured for checkable questions, the docs are checked against the code, and 0.3.x added the Claude routing hook. What is still missing is **outside users**: nobody but the author has used it. M9 is next. `docs/evaluation.md` summarises every measurement.
+**Updated 2026-09-24 (0.3.2).** Evidence (M7) and onboarding (M8) are done: calibration is measured for checkable questions, the docs are checked against the code, and 0.3.x added the Claude routing hook. What is still missing is **outside users**: nobody but the author has used it. M9 is next. `docs/evaluation.md` summarises every measurement.
+
+**0.3.2, released and verified 2026-09-24** (tag `v0.3.2` on `ab29a02`). It came out of walking setup and a first run end to end in Claude Code.
+
+- **What it fixes (#5):**
+  - Consent can be granted from Claude Code's `!` prompt, which has no TTY, with `--confirm` typed by the user. Agent-read messages never carry that form.
+  - Dry runs count the ~300 input tokens the provider adds to every call. A 300-ticket run had projected $0.0026 against $0.0055 measured.
+- **Alongside it:** `pnpm dev:link` loads the plugin from a checkout (#4), and a hands-on tutorial lab pinned to this tag (#6).
+- **Gates:** `pnpm check` (510 tests), `release:check` 12/12, smoke 9/9, and one `eval:routing all` run at 100% in every category on all three harnesses.
+- **Published artifacts, fresh profiles:**
+  - Claude, Codex and Pi each ran a live `decide many` from a prompt that doesn't name the skill: 3 kept of 5, at $0.000075, $0.000070 and $0.000082 measured.
+  - The Claude hook stayed silent until the first `decide` call and hinted after it. That first call fetched the CLI through npx in 3.7 s.
+- **Watch:** `bench:startup` read `route --hook` at +178 ms over bare node, over the 150 ms target. 0.3.1 measured the same on the same machine that day (272 ms against 278 ms end to end), with bare `node -e 0` itself at 92–150 ms, so it is not a regression. Re-measure on a quiet machine.
 
 *As written at 0.1.0:* 0.1.0 is on npm and installs in all three harnesses. The engine and the CLI surface are in good shape. What is missing is not features — it is **evidence, onboarding and outside users**. Nobody outside this machine has used it, and the load-bearing word in the pitch ("calibrated") is one we repeat from the provider rather than one we have measured. The milestones below are ordered to fix that, in that order.
 
