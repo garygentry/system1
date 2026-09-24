@@ -98,6 +98,8 @@ Then, at the Claude Code prompt:
 /reload-plugins
 ```
 
+The same from your terminal, before starting Claude Code:
+`claude plugin marketplace add garygentry/system1 && claude plugin install system1@system1`.
 If `/plugin install` asks where to install, choose your user. (Restarting Claude Code works in
 place of `/reload-plugins`.) If you run Claude Code with its sandbox on, allow outbound
 access to `openrouter.ai`, and to `registry.npmjs.org` for the first run, which downloads the CLI.

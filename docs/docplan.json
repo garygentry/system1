@@ -309,7 +309,7 @@
           "sourceRefs": ["s-spec"]
         }
       ],
-      "verification": "Exercises 2-8 walked in Claude Code 2.1.281 on 2026-09-24 with the plugin linked from a checkout; outputs are from those runs. Not yet walked: Exercise 1 from a real marketplace install (install prompts, the first-run npx fetch, the hook finding the CLI in the npx cache); do that against the published 0.3.2 before pointing readers at the lab. tools/docs.test.ts checks the lab version, tag and tracked files."
+      "verification": "Exercises 2-8 walked in Claude Code 2.1.281 on 2026-09-24 with the plugin linked from a checkout; outputs are from those runs. Exercises 0-1 walked on 2026-09-24 against the published 0.3.2 in a fresh profile: the v0.3.2 tarball matches the checkpoint listing; the marketplace installs 0.3.2 at user scope; the hook is silent before the first decide call and hints after it; the first `decide version` fetched the CLI via npx in 3.7 s; doctor inside a session runs the npx-cached published CLI. tools/docs.test.ts checks the lab version, tag and tracked files."
     },
     {
       "id": "getting-started",
