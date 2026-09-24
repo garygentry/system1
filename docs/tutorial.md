@@ -35,24 +35,29 @@ Each exercise has the same parts:
 - **Do** — the steps. Lines starting with `>` are prompts you type into Claude Code, word for word.
   Code blocks are commands for your terminal, unless they start with `!`, which you type at the
   Claude Code prompt.
-- **Checkpoint** — what you should see before moving on. Your numbers will differ a little; the
-  shape should match.
+- **Checkpoint** — what you should see before moving on. The outputs shown are from one real
+  run. Claude writes its own questions, so your numbers, and now and then a verdict, will differ;
+  the shape should match.
 - **If it didn't** — the usual cause and fix.
 - **What just happened** — the idea behind the step.
 
-Work through them in order. Each one assumes the ones before it.
+Work through them in order. Each one assumes the ones before it, and all of them assume one
+Claude Code session from Exercise 3 on (Exercise 7 counts spend per session).
+
+Claude Code will ask you to trust the lab folder the first time, and to approve each `decide …`
+command. Approving `decide` for the session saves a lot of clicking.
 
 ---
 
 ## Exercise 0: Make the lab repo
 
-**Do.** Download the lab material, a small made-up codebase with tickets, reviews, logs and a
-cleanup script with problems planted in them, and make it a git repo:
+**Do.** Download the lab material from the 0.3.2 release, a small made-up codebase with tickets,
+reviews, logs and a cleanup script with problems planted in them, and make it a git repo:
 
 ```sh
 mkdir -p ~/system1-lab
-curl -sL https://codeload.github.com/garygentry/system1/tar.gz/refs/heads/main \
-  | tar -xz -C ~/system1-lab --strip-components=4 system1-main/tools/evals/fixture-repo
+curl -sL https://codeload.github.com/garygentry/system1/tar.gz/refs/tags/v0.3.2 \
+  | tar -xz -C ~/system1-lab --strip-components=4 system1-0.3.2/tools/evals/fixture-repo
 cd ~/system1-lab
 git init -q
 ```
@@ -67,7 +72,7 @@ reviews.jsonl  src  test-output.log  tickets.jsonl
 and `ls ~/system1-lab/.system1/specs` shows `timeouts.yaml`.
 
 **If it didn't.** An empty directory usually means the `tar` path didn't match. Check that `curl`
-fetched something: `curl -sIL https://codeload.github.com/garygentry/system1/tar.gz/refs/heads/main`
+fetched something: `curl -sIL https://codeload.github.com/garygentry/system1/tar.gz/refs/tags/v0.3.2`
 should end with `200`.
 
 **What just happened.** `decide` treats the nearest directory holding `.git` or `.system1` as the
@@ -93,7 +98,8 @@ Then, at the Claude Code prompt:
 /reload-plugins
 ```
 
-(Restarting Claude Code works too.) If you run Claude Code with its sandbox on, allow outbound
+If `/plugin install` asks where to install, choose your user. (Restarting Claude Code works in
+place of `/reload-plugins`.) If you run Claude Code with its sandbox on, allow outbound
 access to `openrouter.ai`, and to `registry.npmjs.org` for the first run, which downloads the CLI.
 
 **Checkpoint.** Type `/system1:` and you should see `setup` offered. Then run:
@@ -122,7 +128,8 @@ it reuses the copy after that. Your own shell doesn't get `decide` unless you al
 Your OpenRouter key goes in a file that only you can read. Every Claude Code session, in any repo,
 then finds it without you exporting anything.
 
-**Do.** In your terminal (not in Claude Code, so the key never appears in the conversation).
+**Do.** In your terminal, in bash or zsh (not in Claude Code, so the key never appears in the
+conversation).
 `read -rs` takes the key without showing it or saving it in your shell history: paste it, then
 press Enter.
 
@@ -208,9 +215,9 @@ decide doctor: healthy · live ready · harness claude · session claude:…
 
 **What just happened.** Consent is recorded in `.system1/config.yaml` in this repo only. Claude
 didn't grant it: the skills tell it never to, and `decide` refuses the command without a terminal
-unless `--confirm` is given. That flag is yours to type, never the agent's. In a real project, committing
-`.system1/config.yaml` shares the consent with everyone who clones the repo, so make that a team
-decision.
+unless `--confirm` is given. That flag is yours to type, never the agent's. In a real project,
+committing `.system1/config.yaml` shares the consent with everyone who clones the repo, so make
+that a team decision.
 
 ---
 
@@ -243,7 +250,9 @@ Watch what Claude does. You should see, roughly in this order:
    ```
 
    Claude should show you the projection and **ask you** whether to go ahead. Say yes. Only then
-   does it re-run with `--confirm`.
+   does it re-run with `--confirm`. This `--confirm` approves spend, and Claude adds it only
+   because you said yes. It has nothing to do with consent's `--confirm` in Exercise 3, which is
+   only ever yours to type.
 
 **Checkpoint.** The run's first line looks like this:
 
@@ -274,7 +283,7 @@ Claude then summarises how many tickets went to each team, and which answers it 
   answer is one whose probabilities came back too flat to act on. `decide` lists undecided items
   separately and never counts them as kept or dropped; you (or the agent) read those yourself.
 - **The number in brackets** is the model's confidence in its pick: how concentrated its answer
-  is on that team rather than spread across the four. `infra(1)` is certain; `infra(0.59)` is a
+  is on that team rather than spread across the four. `infra(1)` is as confident as it gets; `infra(0.59)` is a
   genuine lean, not a coin flip. Low confidence is not undecided: it's a signal
   to look. In our run, Claude read the 14 answers below 0.7, agreed with 13, and fixed one
   (a partnership enquiry sent to infra at 0.50) by hand.
@@ -435,7 +444,8 @@ rm -rf ~/system1-lab
 It's per repo, so no other repo is affected.)
 
 Keep `~/.config/system1/credentials` if you'll use System 1 elsewhere; otherwise delete it. To
-remove the plugin: `/plugin uninstall system1@system1`.
+remove the plugin: `/plugin uninstall system1@system1`. The CLI copy it downloaded sits in npm's
+`npx` cache, which npm manages; `npm cache clean --force` clears it if you want it gone.
 
 ## Troubleshooting
 

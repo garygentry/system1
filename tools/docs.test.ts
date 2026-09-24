@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { describe, expect, it } from "vitest"
@@ -12,6 +13,7 @@ import { DEFAULTS } from "../packages/core/src/config/load.js"
 import { SpecSchema } from "../packages/core/src/spec/spec.js"
 import { DOCTOR_CHECKS } from "../packages/core/src/tools/doctor.js"
 import { ROOT } from "./cookbook.js"
+import { loadCatalog } from "./generate.js"
 
 /**
  * The docs promise to match the code. These checks make the promise hold:
@@ -120,13 +122,27 @@ describe("docs/spec-format.md", () => {
 
 describe("docs/tutorial.md", () => {
   const tutorial = read("docs/tutorial.md")
-  // The lab downloads tools/evals/fixture-repo from main. Moving or renaming it,
-  // or the files the exercises use, would break the lab for every reader.
+  // The lab downloads tools/evals/fixture-repo from a release tag, so the lab
+  // material matches the CLI that release pins. Moving or renaming it, or a
+  // file the exercises use, would break the lab for every reader.
   const lab = "tools/evals/fixture-repo"
+  const [, version = ""] = /written for System 1 (\d+\.\d+\.\d+)/.exec(tutorial) ?? []
 
-  it("downloads the lab from where it lives", () => {
-    expect(tutorial).toContain(`--strip-components=4 system1-main/${lab}`)
-    expect(lab.split("/").length + 1).toBe(4)
+  it("downloads the lab from the release it's written for", () => {
+    expect(version).not.toBe("")
+    expect(tutorial).toContain(`/tar.gz/refs/tags/v${version}`)
+    // codeload unpacks under <repo>-<version>/; strip that plus the lab's path.
+    const strip = lab.split("/").length + 1
+    expect(tutorial).toContain(`--strip-components=${strip} system1-${version}/${lab}`)
+  })
+
+  it("isn't written for a release newer than this one", () => {
+    const newer = (a: string, b: string) => {
+      const [x, y] = [a, b].map((v) => v.split(".").map(Number))
+      for (let i = 0; i < 3; i++) if (x?.[i] !== y?.[i]) return (x?.[i] ?? 0) > (y?.[i] ?? 0)
+      return false
+    }
+    expect(newer(version, loadCatalog().version), `${version} vs catalog`).toBe(false)
   })
 
   it.each([
@@ -135,9 +151,14 @@ describe("docs/tutorial.md", () => {
     "cleanup-plan.sh",
     "src/billing/charge.ts",
     ".system1/specs/timeouts.yaml",
-  ])("uses %s, which the lab repo has", (file) => {
+  ])("uses %s, which the lab repo tracks", (file) => {
     expect(tutorial).toContain(file.replace(/^.*\//, ""))
-    expect(existsSync(join(ROOT, lab, file)), file).toBe(true)
+    // Tracked, not just on disk: a globally ignored file exists locally but
+    // never reaches the tarball.
+    const tracked = spawnSync("git", ["ls-files", "--error-unmatch", join(lab, file)], {
+      cwd: ROOT,
+    })
+    expect(tracked.status, file).toBe(0)
   })
 })
 

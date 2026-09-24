@@ -309,7 +309,7 @@
           "sourceRefs": ["s-spec"]
         }
       ],
-      "verification": "Walked end to end in Claude Code 2.1.281 on 2026-09-24 (plugin linked from a checkout); outputs are from those runs. tools/docs.test.ts checks the lab files it uses still exist."
+      "verification": "Exercises 2-8 walked in Claude Code 2.1.281 on 2026-09-24 with the plugin linked from a checkout; outputs are from those runs. Not yet walked: Exercise 1 from a real marketplace install (install prompts, the first-run npx fetch, the hook finding the CLI in the npx cache); do that against the published 0.3.2 before pointing readers at the lab. tools/docs.test.ts checks the lab version, tag and tracked files."
     },
     {
       "id": "getting-started",
