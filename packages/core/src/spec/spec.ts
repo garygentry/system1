@@ -31,6 +31,8 @@ export const SpecSchema = Type.Object(
     description: Type.String({ minLength: 1 }),
     questions: Type.Record(Type.String(), Type.Unknown()),
     keep: Type.Optional(Type.Array(Type.String())),
+    /** Kept when any of these matches, as well as every `keep`. */
+    keepAny: Type.Optional(Type.Array(Type.String())),
     sort: Type.Optional(Type.String()),
     policy: Type.Optional(
       Type.Object({ thresholds: Type.Optional(Type.Record(Type.String(), Threshold)) }, CLOSED),
@@ -123,7 +125,8 @@ export function parseSpec(text: string, file: string, origin: Spec["origin"]): S
     throw new DecisionsError("invalid-request", `${file}: ${(error as Error).message}`, { file })
   }
   const questions = spec.questions as QuestionSet
-  for (const text of spec.keep ?? []) wrap(file, () => parseFilter(text, questions))
+  for (const text of [...(spec.keep ?? []), ...(spec.keepAny ?? [])])
+    wrap(file, () => parseFilter(text, questions))
   if (spec.sort) wrap(file, () => parseSort(spec.sort as string, questions))
   if (spec.source?.split) wrap(file, () => parseSplit(spec.source?.split as string))
   const name = basename(file, extname(file))

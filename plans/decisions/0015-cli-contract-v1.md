@@ -153,4 +153,4 @@ Same envelope `v`: every addition is a new command, a new field or a new enum va
   - `check` returns `{file, exists, entries, byStatus}`.
   - A malformed backlog is `invalid-request`, exit 2, listing every problem, and is never repaired or overwritten. `add` and `list` refuse it the same way.
 - **`doctor` gains a `backlog` check**: ok when the file is absent or valid, and a warning when it is malformed.
-
+- **`--keep-any` / `keepAny`** (added with the scout signal tables): filters of which at least one must match, as well as every `keep`. Undecided stays first and is never thresholded, narrowed to what can change the outcome: a flat `keepAny` answer holds an item only when no decided `keepAny` filter already matches. `keep` and `sort` keep their rule. Spec field `keepAny`, input field `keepAny`; `ask`'s `verdict` uses both.

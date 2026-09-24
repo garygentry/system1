@@ -76,6 +76,7 @@ export interface Resolved {
   sources: SourceSpec[]
   split: SplitSpec
   keep: ReturnType<typeof parseFilter>[]
+  keepAny: ReturnType<typeof parseFilter>[]
   sort?: ReturnType<typeof parseSort>
   profile: ModelProfile
   /** `--exclude` patterns, re-anchored to the repo root like command-line sources. */
@@ -92,6 +93,7 @@ export function resolveRequest(
     exclude?: string[]
     split?: string
     keep?: string[]
+    keepAny?: string[]
     sort?: string
     model?: string
   },
@@ -128,6 +130,7 @@ export function resolveRequest(
     sources,
     split: parseSplit(input.split ?? spec?.source?.split ?? "file"),
     keep: keepText.map((k) => parseFilter(k, questions)),
+    keepAny: (input.keepAny ?? spec?.keepAny ?? []).map((k) => parseFilter(k, questions)),
     ...(sortText ? { sort: parseSort(sortText, questions) } : {}),
     profile,
     exclude: (input.exclude ?? []).map((p) => rebasePattern(p, ctx.cwd, ctx.config.repoRoot)),

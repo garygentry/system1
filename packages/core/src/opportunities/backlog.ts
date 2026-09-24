@@ -70,6 +70,13 @@ const candidateFields = {
   evidence: Type.String({ pattern: "\\S" }),
   /** A draft question set that would replace the mechanism. */
   questions: Type.Record(Type.String(), QuestionSchema, { minProperties: 1 }),
+  /**
+   * What replacing the mechanism would mainly buy. `cost`: cheaper calls.
+   * `quality`: better or more consistent verdicts (a regex or heuristic that
+   * costs nothing today, so its `savingUsd` can be negative). `latency`:
+   * faster answers. Rank within a benefit, not across them.
+   */
+  benefit: Type.Union([Type.Literal("cost"), Type.Literal("quality"), Type.Literal("latency")]),
   /** The inputs of the projected saving. The saving itself is computed here. */
   projected: Type.Object(
     {
@@ -358,6 +365,7 @@ export function mergeCandidates(
 const FIELDS: Record<string, { default?: string; subs?: readonly string[] }> = {
   id: {},
   mode: {},
+  benefit: {},
   status: {},
   statusReason: {},
   shape: {},

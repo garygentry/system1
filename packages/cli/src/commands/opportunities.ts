@@ -162,7 +162,14 @@ function briefList(r: OpportunitiesListResult): string {
     const saving = o.projected
       ? ` · $${o.projected.savingUsd} per ${o.projected.per} (projected)`
       : ""
-    const head = [o.id, o.status, o.mode, o.shape, o.risk ? `risk ${o.risk.level}` : undefined]
+    const head = [
+      o.id,
+      o.status,
+      o.mode,
+      o.shape,
+      o.benefit,
+      o.risk ? `risk ${o.risk.level}` : undefined,
+    ]
       .filter(Boolean)
       .join(" · ")
     lines.push(`  ${head}${saving}${where ? `  ${where}` : ""}`)

@@ -168,6 +168,27 @@ withheld. That is fixed and covered by a test.
   The routing hook adds a `decide route --hook` run to every Claude prompt, and that command is
   held to the same target.
 
+## Scout: does screening find the right things?
+
+Before `scout` was built (2026-09-24), draft signal questions were run through `decide many` over
+two repos, one call per file, with no local prefilter:
+
+| Repo | Files | Cost (measured) | Kept | Real | Correct but intentional | False positives |
+|---|---|---|---|---|---|---|
+| `jev-poc` | 188 | $0.0150 | 38 | 0 | 4 (chat-model and keyword baselines kept for comparison) | 34, nearly all demos that already use a decision model through a shared helper |
+| this repo | 197 | $0.0130 | 11 | 1 (the routing hook's regexes) | 2 | 8 |
+
+- **Recall:** every known place in either repo where a chat model or a keyword rule makes such a
+  judgement was kept.
+- **Precision:** poor without a prefilter, for two reasons that scout now handles locally. A
+  per-file question can't see a decision-model call made through another file, and the model
+  doesn't see file paths, so it can't tell a fixture from product code.
+- **Bias:** both repos are System 1 or Jev code. A repo the questions weren't written against is
+  still to come.
+
+The signal tables scout ships are replay-tested in CI: every example passes, and the screen keeps
+and drops exactly the examples it should (`tools/signals.test.ts`).
+
 ## Not measured
 
 - Calibration on subjective questions, on `choice` and `score`, on languages other than

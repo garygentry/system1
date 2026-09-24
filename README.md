@@ -164,6 +164,7 @@ most likely to close with design partners' data.
 | [Tutorial: zero to first decisions](docs/tutorial.md) | a 20-minute hands-on lab in Claude Code: install, set up, then route 300 tickets and gate a risky script |
 | [Getting started](docs/getting-started.md) | install, key, consent and a first decision |
 | [Specs](docs/specs.md) | save a question as a spec, adopt a cookbook recipe, test it offline |
+| [Scout](docs/scout.md) | find where a decision model would pay off in your code or agent config |
 | [CI and scripts](docs/ci-and-scripts.md) | run `decide` without an agent |
 | [Routing hints](docs/routing-hints.md) | tune or turn off the Claude Code hint |
 | [Spend](docs/spend.md) | keep a large run within budget |

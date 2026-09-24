@@ -289,6 +289,7 @@ The envelope's `command` is `opportunities`. Each entry in the backlog:
 | `location` | `{path, lines?}` |
 | `mechanism` | what does the job today |
 | `shape` | `single`, `fanout`, `cascade` or `pairwise` |
+| `benefit` | what replacing it would mainly buy: `cost`, `quality` (better or steadier verdicts; a free regex replaced by a model has a negative `savingUsd`) or `latency`. Rank within a benefit, not across |
 | `evidence` | the text that triggered it, verbatim |
 | `questions` | a draft question set that would replace the mechanism |
 | `projected` | `{basis: "projected", volume, per, currentCostPerItemUsd, decisionCostPerItemUsd, savingUsd, note?}`. `savingUsd` is `volume × (current − decision)`, computed by `decide` |

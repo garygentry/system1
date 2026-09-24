@@ -67,6 +67,7 @@ all sources one item.
 | Flag | |
 |---|---|
 | `--keep '<question>[.<field>]<op><value>'` | repeatable, ANDed. Operators: `>= > <= < = !=` and `in a,b`. Fields: the natural value, `confidence`, `probabilities.<key>` |
+| `--keep-any '<question>[.<field>]<op><value>'` | repeatable: kept when **any** of these matches, as well as every `--keep`. A flat answer makes an item undecided only if it could change the outcome |
 | `--sort <question>[.<field>][:asc\|desc]` | descending by default |
 | `--limit <N>` | at most N kept items |
 | `--fields <a,b>` | only these questions in each result |
@@ -150,7 +151,8 @@ counts as an opportunity; `decide` validates, merges and stores it. Nothing is s
 - **`list`** filters and sorts on record fields with the `--keep` syntax: `status=new`,
   `risk in medium,high`, `projected>=0.01`, `location.path=src/a.ts`. A bare `risk`,
   `projected`, `location` or `source` means its `level`, `savingUsd`, `path` or `sweep`. The
-  default sort is `projected:desc`. Field and sub-field names are checked, so a typo is an error
+  default sort is `projected:desc`, which only ranks `benefit=cost` entries meaningfully: filter
+  by `benefit` first. Field and sub-field names are checked, so a typo is an error
   even on an empty backlog.
 - **`check`** validates the file. A malformed backlog is `invalid-request`, exit 2, listing every
   problem, and `add` and `list` refuse it the same way. `decide` never repairs or overwrites it.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { Answers, QuestionSet } from "../model/types.js"
-import { matches, parseFilter, parseSort, project } from "./project.js"
+import { matches, parseFilter, parseSort, project, verdictOf } from "./project.js"
 
 const questions: QuestionSet = {
   relevant: { type: "noul", instructions: "x" },
@@ -130,5 +130,47 @@ describe("project", () => {
     })
     expect(out.kept.map((r) => r.id)).toEqual(["certain"])
     expect(out.undecided.map((u) => u.row.id)).toEqual(["uncertain"])
+  })
+})
+
+describe("verdictOf with keepAny", () => {
+  const qs: QuestionSet = {
+    a: { type: "noul", instructions: "x" },
+    b: { type: "noul", instructions: "x" },
+    test: { type: "noul", instructions: "x" },
+  }
+  const n = (a: number, b: number, test = 0.05): Answers => ({
+    a: { type: "noul", noul: a },
+    b: { type: "noul", noul: b },
+    test: { type: "noul", noul: test },
+  })
+  const any = [parseFilter("a>=0.3", qs), parseFilter("b>=0.3", qs)]
+  const all = [parseFilter("test<0.7", qs)]
+
+  it("keeps on any decided match, even when another keepAny answer is flat", () => {
+    expect(verdictOf(n(0.9, 0.5), ["b"], [], any)).toEqual({ verdict: "kept", questions: [] })
+  })
+
+  it("is undecided only when a flat keepAny answer could still change the outcome", () => {
+    expect(verdictOf(n(0.05, 0.5), ["b"], [], any)).toEqual({
+      verdict: "undecided",
+      questions: ["b"],
+    })
+    expect(verdictOf(n(0.05, 0.1), [], [], any)).toEqual({ verdict: "dropped", questions: [] })
+  })
+
+  it("applies keep first: a decided keep failure drops, a flat keep answer is undecided", () => {
+    expect(verdictOf(n(0.9, 0.9, 0.95), [], all, any).verdict).toBe("dropped")
+    expect(verdictOf(n(0.9, 0.9, 0.5), ["test"], all, any)).toEqual({
+      verdict: "undecided",
+      questions: ["test"],
+    })
+  })
+
+  it("leaves projection unchanged without keepAny", () => {
+    const rows = [{ answers: n(0.9, 0.1) }, { answers: n(0.1, 0.1) }]
+    const out = project({ rows, keepAny: any, undecidedOf: () => [] })
+    expect(out.kept).toHaveLength(1)
+    expect(out.dropped).toBe(1)
   })
 })

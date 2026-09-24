@@ -53,6 +53,8 @@ const Common = {
   split: Type.Optional(Type.String()),
   /** Filters, ANDed: `relevant>=0.7`, `kind in fix,feature`. */
   keep: Type.Optional(Type.Array(Type.String())),
+  /** Kept when any of these matches (and every `keep` does): `a>=0.3`, `b>=0.3`. */
+  keepAny: Type.Optional(Type.Array(Type.String())),
   mode: Type.Optional(Mode),
   model: Type.Optional(Type.String()),
   /**

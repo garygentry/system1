@@ -25,6 +25,7 @@ export const DECIDE_OPTIONS = {
   "allow-outside": { type: "boolean" },
   split: { type: "string" },
   keep: { type: "string", multiple: true },
+  "keep-any": { type: "string", multiple: true },
   sort: { type: "string" },
   limit: { type: "string" },
   fields: { type: "string" },
@@ -132,6 +133,7 @@ export function buildInput(
   set("exclude", values.exclude?.length ? values.exclude : undefined)
   set("split", values.split)
   set("keep", values.keep?.length ? values.keep : undefined)
+  set("keepAny", values["keep-any"]?.length ? values["keep-any"] : undefined)
   set("sort", values.sort)
   set("limit", int(values.limit, "--limit"))
   set(

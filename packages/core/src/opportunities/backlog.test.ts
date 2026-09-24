@@ -26,6 +26,7 @@ function candidate(over: Partial<Candidate> = {}): Candidate {
     location: { path: "src/route.ts", lines: { start: 10, end: 40 } },
     mechanism: "regex list classifying prompt intent",
     shape: "single",
+    benefit: "cost",
     evidence: "const TRIGGERS = [/\\b(classify|triage)\\b/]",
     questions: {
       intent: { type: "noul", instructions: "The prompt asks for a verdict per item." },

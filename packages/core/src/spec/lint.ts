@@ -96,7 +96,9 @@ export function lintStatement(text: string, question?: string): LintFinding[] {
   return unsupported(text, question)
 }
 
-export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): LintFinding[] {
+export function lintSpec(
+  spec: Pick<Spec, "questions" | "keep" | "keepAny" | "policy">,
+): LintFinding[] {
   const out = lintQuestions(spec.questions)
   const thresholds = spec.policy?.thresholds ?? {}
   for (const name of Object.keys(thresholds)) {
@@ -112,7 +114,7 @@ export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): Lin
   }
   const justified = new Set(Object.keys(thresholds))
   const reported = new Set<string>()
-  for (const text of spec.keep ?? []) {
+  for (const text of [...(spec.keep ?? []), ...(spec.keepAny ?? [])]) {
     const { question, op } = parseFilter(text, spec.questions)
     // Only a numeric cut is a threshold; `kind=fix` has no value to justify.
     if (!NUMERIC.has(op)) continue
@@ -161,7 +163,8 @@ function lintQuestion(name: string, q: Question): LintFinding[] {
     )
   }
   // All of a question's text at once: one finding per kind, not per phrase.
-  out.push(...unsupported(texts.join("\n"), name))
+  // Quoted text is an example of what to spot ("stop after 20 tries"), not the ask.
+  out.push(...unsupported(unquoted(texts.join("\n")), name))
   if (merged(q.instructions)) {
     out.push(
       finding(
@@ -209,6 +212,10 @@ function merged(instructions: string): boolean {
 /** Sentences that frame the question rather than make a second claim. */
 const FRAMING =
   /^(consider|only|ignore|answer|note|treat|assume|look|focus|read|judge|use|do not|don't|exclude|include|given|for example|e\.g|if|when|here|this question|count only|disregard)\b/i
+
+function unquoted(text: string): string {
+  return text.replace(/"[^"\n]*"|“[^”\n]*”/g, '""')
+}
 
 function criteriaTexts(q: Question): string[] {
   if (q.type === "noul") return q.criteria ? Object.values(q.criteria) : []

@@ -1,0 +1,83 @@
+{
+  "v": 1,
+  "key": "7d0f55832e18e47ff3c7f34377fd4d92a8dd6504894cfec738495606a42cb91c",
+  "recordedAt": "2026-09-24T21:14:20.283Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "Run the tests. If any fail, fix the code and run them again. Stop after 20 attempts even if\ntests still fail, and report what is left.\n",
+    "questions": {
+      "read_each_decide": {
+        "type": "noul",
+        "instructions": "This file tells an agent to go through many items one by one and make the same closed judgement about each.",
+        "criteria": {
+          "true": "It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.",
+          "false": "It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction."
+        }
+      },
+      "classify_fanout": {
+        "type": "noul",
+        "instructions": "This file dispatches subagents or parallel agent runs whose job is to classify, check or grade items.",
+        "criteria": {
+          "true": "It spawns, dispatches or fans out agents, one per item or partition, and each returns a verdict, label or score.",
+          "false": "It dispatches no agents, or the agents it dispatches write, edit, research or generate rather than judge."
+        }
+      },
+      "prompt_hook_verdict": {
+        "type": "noul",
+        "instructions": "This file configures a hook or gate that asks a language model for a yes or no, allow or deny, or pass or fail verdict.",
+        "criteria": {
+          "true": "A hook, check or gate runs a prompt through a language model (a prompt-type hook, claude -p, codex exec or an API call) and acts on a closed verdict from it.",
+          "false": "Its hooks run ordinary scripts, commands or pattern matching, or it has no hooks."
+        }
+      },
+      "fixed_rubric": {
+        "type": "noul",
+        "instructions": "This file has a step that grades work against a fixed rubric or checklist and returns a verdict.",
+        "criteria": {
+          "true": "A reviewer, critic, verifier or grading step checks output against listed criteria and returns pass or fail, a score or a label per criterion.",
+          "false": "The review is open-ended (write feedback, suggest improvements), or there is no grading step."
+        }
+      },
+      "iteration_cap": {
+        "type": "noul",
+        "instructions": "This file stops an agent loop after a fixed number of iterations or retries instead of checking whether it is making progress.",
+        "criteria": {
+          "true": "A loop, retry or repair cycle ends on a hard count (\"stop after 20 tries\", \"at most 5 rounds\") with no check of progress.",
+          "false": "The loop ends when a condition is met or progress stops, or there is no loop."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "read_each_decide": {
+        "type": "noul",
+        "noul": 0.04
+      },
+      "classify_fanout": {
+        "type": "noul",
+        "noul": 0.08
+      },
+      "prompt_hook_verdict": {
+        "type": "noul",
+        "noul": 0.14
+      },
+      "fixed_rubric": {
+        "type": "noul",
+        "noul": 0.49
+      },
+      "iteration_cap": {
+        "type": "noul",
+        "noul": 0.92
+      }
+    },
+    "usage": {
+      "input_tokens": 820,
+      "output_tokens": 98,
+      "cost": 0.00003444
+    },
+    "id": "gen-dec-1790284460-JB5NK5LotFa7NLMKerTS",
+    "provider": "TypeSafe"
+  }
+}
