@@ -114,7 +114,11 @@ export function lintSpec(
   }
   const justified = new Set(Object.keys(thresholds))
   const reported = new Set<string>()
-  for (const text of [...(spec.keep ?? []), ...(spec.keepAny ?? [])]) {
+  const filters = [
+    ...(spec.keep ?? []).map((text) => ({ text, list: "keep" })),
+    ...(spec.keepAny ?? []).map((text) => ({ text, list: "keepAny" })),
+  ]
+  for (const { text, list } of filters) {
     const { question, op } = parseFilter(text, spec.questions)
     // Only a numeric cut is a threshold; `kind=fix` has no value to justify.
     if (!NUMERIC.has(op)) continue
@@ -123,7 +127,7 @@ export function lintSpec(
     out.push(
       finding(
         "unjustified-threshold",
-        `keep "${text}" has no policy.thresholds.${question} saying why`,
+        `${list} "${text}" has no policy.thresholds.${question} saying why`,
         `Add policy.thresholds.${question}: {value, why}, with the cost of a wrong keep and a wrong drop (see thresholds.md).`,
         question,
       ),
@@ -163,8 +167,9 @@ function lintQuestion(name: string, q: Question): LintFinding[] {
     )
   }
   // All of a question's text at once: one finding per kind, not per phrase.
-  // Quoted text is an example of what to spot ("stop after 20 tries"), not the ask.
-  out.push(...unsupported(unquoted(texts.join("\n")), name))
+  // Quoted text in criteria is an example of what to spot ("stop after 20
+  // tries"), not the ask; the instructions are linted as written.
+  out.push(...unsupported([q.instructions, ...criteriaTexts(q).map(unquoted)].join("\n"), name))
   if (merged(q.instructions)) {
     out.push(
       finding(

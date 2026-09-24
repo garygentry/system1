@@ -17,12 +17,14 @@ Each of these could be handed to a decision model. Scout records the ones it fin
 
 1. **It filters locally first, and sends nothing for that.** It leaves out tests, fixtures,
    generated code and anything that already calls a decision model, with `--exclude`.
-2. **It projects the cost and waits for you.** It runs a dry run and shows what would be sent: the
-   number of items, what's left out, and the projected cost. Above 200 items or $0.05, nothing is
-   sent until you approve.
+2. **It projects the cost first.** It runs a dry run and shows what would be sent: the number of
+   items, what's left out, and the projected cost. Above the spend guard (200 items or $0.05 by
+   default) it waits for your approval; below it, it says what it will cost and goes ahead unless
+   you object.
 3. **It screens with `decide many`**, one call per file, against a signal table shipped with the
    skill. The code table asks three signal questions and one exclusion, the agents table five
-   signals. Recall comes first: a file is kept if any signal reaches 0.3.
+   signals. Recall comes first: a file is kept if any signal reaches 0.3. A file too big for one
+   call is reported and re-screened in line windows, and one over 2 MB is reported as not screened.
 4. **It reads only the files the screen kept**, and writes up the real opportunities. For each it
    records the evidence, a draft question set, what replacing it would buy (`cost`, `quality` or
    `latency`), and the inputs of a projected saving. `decide` computes the saving itself, and every

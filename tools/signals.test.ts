@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
 import { parse } from "yaml"
 import { main } from "../packages/cli/src/main.js"
+import { undecidedNames } from "../packages/core/src/model/answers.js"
 import { parseFilter, verdictOf } from "../packages/core/src/project/project.js"
 import { ROOT } from "./cookbook.js"
 
@@ -76,7 +77,9 @@ describe.each(TABLES)("%s", (name) => {
     const keepAny = (table.keepAny ?? []).map((k) => parseFilter(k, questions))
     const verdicts: Record<string, string> = {}
     for (const e of envelope.result.examples) {
-      verdicts[e.id] = verdictOf(e.answers, e.undecided ?? [], keep, keepAny).verdict
+      // Flat as `many` sees it: every answer at or under the floor, not only
+      // the ones an example happens to expect.
+      verdicts[e.id] = verdictOf(e.answers, undecidedNames(e.answers), keep, keepAny).verdict
     }
     const expected = Object.fromEntries([
       ...table.meta.screen.kept.map((id) => [id, "kept"]),

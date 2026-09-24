@@ -97,7 +97,7 @@
 - [x] Re-running a sweep after moving a file keeps the candidate's id (X4) (tested).
 - [x] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
 - [x] Signal tables replay in `pnpm check` through `spec check`, and the screen keeps and drops exactly the examples it should (`tools/signals.test.ts`).
-- [ ] A sweep over more than 200 items stops at the projection until the user approves; oversize files are windowed, not dropped.
+- [ ] A sweep over more than 200 items stops at the projection until the user approves (the guard and the skill text are in place; to be seen in a harness run). *Oversize files are windowed, not dropped: done in PR #11: `many` reports an oversize item as `too-large` with the split in `detail` rather than failing the run, and `--file <path> --split lines:400/40` screens it.*
 - [ ] Mode A finds at least one real, defensible candidate in this repo or `jev-poc` (the pre-check already found one: `route.ts`); measured cost recorded.
 - [ ] Mode A runs on at least one repo the signal questions were not written against (the pre-check's targets are both System 1 / Jev code, which skews them). Its precision and recall are written up.
 - [ ] With the local prefilter, `jev-poc`'s survivors no longer consist mostly of demos that already use Jev.

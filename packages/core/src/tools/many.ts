@@ -86,6 +86,7 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
     cwd: ctx.config.repoRoot,
     exclude: ctx.config.egress.exclude,
     filter: req.exclude,
+    oversize: "skip",
     ...(input.allowOutside ? { allowOutside: true } : {}),
   })
   const base = {

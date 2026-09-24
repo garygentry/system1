@@ -16,7 +16,7 @@
 # the prompts depend on them, and a comment would give the answer away.
 #
 # `positive`: the skill must load. `negative`: it must not.
-# Minimums (checked by tools/evals/run.test.ts, so `pnpm test` enforces them): ask 8/8, design 4/4, setup 0/4, scout 0/4.
+# Minimums (checked by tools/evals/run.test.ts, so `pnpm test` enforces them): ask 8/8, design 4/4, setup 0/4, scout 0/2.
 
 ask:
   positive:
@@ -64,11 +64,11 @@ setup:
     - 'Which files under src/ make network requests without a timeout?'
 
 scout:
-  # User-only, like setup: explicit invocation is covered by smoke. These are
-  # prompts it must not take from ask or design.
+  # User-only, like setup: `disable-model-invocation` (Claude, Pi) and
+  # `allow_implicit_invocation: false` (Codex) keep it from loading on its own,
+  # so these can only fail if those flags are lost. Two are enough for that
+  # guard; explicit invocation is covered by smoke.
   positive: []
   negative:
     - 'Which files under src/ call an external API without a timeout?'
-    - 'Go through tickets.jsonl and label each ticket billing, auth, infra or other.'
-    - 'Save the ticket routing question as a reusable spec for this repo.'
     - 'Where in src/ is the choice made about whether to retry a request?'

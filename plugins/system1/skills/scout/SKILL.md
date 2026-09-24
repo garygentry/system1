@@ -13,7 +13,7 @@ Arguments, all optional: a target (a path, `skills`, `plugins` or `agents`) and 
 ## Before you start
 
 - Run `decide doctor --format brief`. Scouting sends the content of the files it screens to the decision model, so it needs a key and **egress consent for this repo**. If consent is missing, tell the user and stop. Granting it is theirs to do; never run `decide config egress allow` yourself.
-- **Stay inside the repo.** Only screen content inside this repo. Content outside it, such as installed plugins or a home-directory agent config, needs the user to name it in this conversation. Even then, never add `--allow-outside` yourself: suggest the user copies it into a scratch repo, or ask them to confirm, and say what would leave the machine.
+- **Stay inside the repo.** Only screen content inside this repo. Content outside it, such as installed plugins or a home-directory agent config, is screened only if the user asks for that content by name in this conversation. Then say exactly what would leave the machine and suggest copying it into a scratch repo with its own consent. Add `--allow-outside` only if they confirm after that; never on your own.
 
 ## 1. Pick the mode and the table
 
@@ -40,15 +40,15 @@ decide many --spec <path>/references/signals-code.yaml --glob '<target>/**/*.{ts
   --exclude '…' --dry-run --format brief
 ```
 
-Over 200 items or $0.05, `decide` stops at this projection. Pass `--confirm` only after the user has approved the projected cost. Below that, say what it will cost and go ahead unless they object.
+Above the spend guard (200 items or $0.05 by default; `decide config` shows this repo's `budget`), the real run refuses without `--confirm`. Pass `--confirm` only after the user has approved the projected cost. Below it, say what it will cost and go ahead unless they object.
 
 ## 4. Screen
 
 Run the same command without `--dry-run`.
 
-- **`--depth quick`**: add `--keep-any` with a tighter cut (`>=0.5`) on each of the table's signals. `full` uses the table's own recall-first threshold (`>=0.3`).
+- **`--depth quick`**: pass `--keep-any` once for **every** signal in the table's `keepAny`, each with `>=0.5`. `--keep-any` replaces the table's list rather than adding to it, so a signal you leave out is not screened for. The table's `keep` exclusion still applies. `full` uses the table's own recall-first threshold (`>=0.3`).
 - **Failed items** (a provider error): re-run them once, with `--file` for each, before you report them.
-- **Oversize files** (`state-too-large`, or skipped as `too-large`): re-run them with `--split lines:400/40`. Never drop them silently. Large modules are where model calls tend to hide.
+- **Oversize files** are listed under `skipped` as `too-large`. When the `detail` gives a split, re-run each such file with `--file <path> --split lines:400/40`. A file over 2 MB can't be read at all: report it as not screened. Never drop either silently. Large modules are where model calls tend to hide.
 - **Undecided items** are listed apart. Read them as you read survivors.
 
 ## 5. Read the survivors, and only those
@@ -70,7 +70,7 @@ For each real opportunity, prepare a candidate:
 | `benefit` | `cost`, `quality` or `latency`: what replacing it would mainly buy. A free regex replaced by a model is `quality`, not `cost` |
 | `evidence` | **a few distinctive lines copied verbatim** from the file. The id is derived from them, so don't paraphrase |
 | `questions` | a draft question set, written with the `ask` skill's `question-craft.md` |
-| `projected` | `volume` per `per` (a day, a PR, a run), `currentCostPerItemUsd`, `decisionCostPerItemUsd` (about 0.00003 per item for Jev), and a `note` saying where each figure came from. `decide` computes the saving; don't write one |
+| `projected` | `volume` per `per` (a day, a PR, a run), `currentCostPerItemUsd`, `decisionCostPerItemUsd`, and a `note` saying where each figure came from. Take the decision cost from this sweep: the measured `usage` cost divided by the items screened (it grows with item size, and is often $0.00005–$0.0001 for a source file). `decide` computes the saving; don't write one |
 | `risk` | `{level: low\|medium\|high, note}`: what goes wrong if the replacement errs |
 | `next` | usually "save the spec with the design skill, then adopt" |
 | `source` | `{sweep: "scout-<date>-<mode>", answers: live\|replay}`, the same sweep id for the whole run |

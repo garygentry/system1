@@ -62,7 +62,7 @@ export const MINIMUMS: Record<Skill, { positive: number; negative: number }> = {
   ask: { positive: 8, negative: 8 },
   design: { positive: 4, negative: 4 },
   setup: { positive: 0, negative: 4 },
-  scout: { positive: 0, negative: 4 },
+  scout: { positive: 0, negative: 2 },
 }
 
 export function loadCases(file: string = join(EVALS, "routing.yaml")): Case[] {

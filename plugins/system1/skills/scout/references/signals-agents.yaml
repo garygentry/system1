@@ -75,7 +75,7 @@ examples:
       For each open issue without a label, read the title and body and decide whether it is a bug,
       a feature request or a question. Apply the matching label. Do this for every issue returned
       by `gh issue list --label ""`.
-    expect: { read_each_decide: true }
+    expect: { read_each_decide: true, prompt_hook_verdict: false }
   - id: fanout-classifier-agents
     state: |
       ## Review
