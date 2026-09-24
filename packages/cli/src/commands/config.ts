@@ -18,9 +18,10 @@ import { emit } from "../run.js"
  * `decide config [show]` and `decide config egress allow|deny|status`.
  *
  * Granting egress consent is the user's decision, not the agent's. So `allow`
- * needs an interactive terminal (a human typed it, e.g. `! decide config
- * egress allow` in Claude Code) or an explicit `--confirm`. Skills must never
- * pass `--confirm` on the user's behalf.
+ * needs an interactive terminal (typing the command there is the decision; there
+ * is no further prompt) or an explicit `--confirm`. An agent's prompt escape,
+ * such as Claude Code's `!`, has no TTY, so a user there adds `--confirm`
+ * themselves. Skills must never pass `--confirm` on the user's behalf.
  */
 export function runConfigCommand(argv: string[], io: Io, format: Format): Promise<ExitCode> {
   return emit(
@@ -63,13 +64,21 @@ function body(argv: string[], io: Io): ConfigResult {
       if (!io.interactive && !values.confirm) {
         throw new DecisionsError(
           "egress-refused",
-          "Egress consent is the user's decision. Ask the user to run `decide config egress allow` themselves " +
-            "(in Claude Code: `! decide config egress allow`).",
+          "Egress consent is the user's decision. An agent must not grant it, with or without " +
+            "--confirm: show the user this message instead. The user grants it by typing " +
+            "`decide config egress allow` in a terminal at the repo root. If they run it through " +
+            "their agent prompt's shell escape instead (not as a chat message), there is no " +
+            "terminal, so they add --confirm to say the decision is theirs.",
         )
       }
       return {
         egress: {
-          consent: setConsent(config.repoRoot, true, values.by ?? "decide config"),
+          // Record which route granted it: a terminal, or --confirm without one.
+          consent: setConsent(
+            config.repoRoot,
+            true,
+            values.by ?? (io.interactive ? "decide config" : "decide config --confirm"),
+          ),
           file,
           changed: true,
         },
@@ -131,7 +140,7 @@ function brief(r: ConfigResult): string {
     `repo: ${r.repoRoot}`,
     `model: ${r.model} via ${r.endpoint}`,
     `key: ${r.apiKey}${r.replay ? " · SYSTEM1_REPLAY forces replay" : ""}`,
-    `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted — run `decide config egress allow`"}`,
+    `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted (the user grants it; see `decide doctor`)"}`,
     `excludes: ${r.egress.defaultExcludes} default${r.egress.exclude.length ? ` + ${r.egress.exclude.join(", ")}` : ""}`,
     `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency} · timeout ${r.timeoutMs} ms`,
     ...(r.profiles.length ? [`profiles: ${r.profiles.map((p) => p.id).join(", ")}`] : []),

@@ -54,7 +54,7 @@ Show the `fix:` line. Sandbox allowlists, proxies and firewalls are the user's s
 
 1. Tell the user where the key goes, in whichever form they prefer:
    - the `OPENROUTER_API_KEY` environment variable;
-   - `~/.config/system1/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. Any other format makes every `decide` command fail with a config error.
+   - `~/.config/system1/credentials`, a YAML file containing one line, `openrouter_api_key: <the key>`, and set to `chmod 600`. They may need to create `~/.config/system1` first. Any other format makes every `decide` command fail with a config error.
 2. **Never ask for the key in the conversation, and never print, echo or write it yourself.**
 3. Without a key, only replay of recorded answers works. That's a supported mode, not an error.
 
@@ -67,15 +67,24 @@ Egress consent is the user's decision, given once per repo.
    - files that look like secrets (`.env*`, keys, credentials) are excluded;
    - secret-shaped strings are scrubbed from everything sent;
    - oversized items are refused, never truncated.
-3. **Give them the command to run themselves,** in their own terminal at this repo's root. It asks them to confirm, so it needs a real terminal:
+3. **Give them the command to type themselves.** Show it; don't run it.
+   - **In a terminal at this repo's root,** if `decide` is on that shell's PATH. Typing it there is the decision:
 
-   ```sh
-   decide config egress allow
-   ```
+     ```text
+     decide config egress allow
+     ```
+
+   - **Through your prompt's shell escape,** if they have one (in Claude Code, a line starting with `!`). Use this when `decide` isn't on their own shell's PATH. The escape has no terminal, so `decide` needs `--confirm` to know the decision is theirs, and they type it themselves:
+
+     ```text
+     ! decide config egress allow --confirm
+     ```
+
+     `--confirm` is theirs to type, never yours to add.
 
    Consent is recorded in `.system1/config.yaml`. Committing that file shares the consent with everyone who clones the repo. That's the team's call, so point it out and don't decide it for them.
 
-4. **Never run `decide config egress allow` yourself, with or without `--confirm`.**
+4. **Never run `decide config egress allow` yourself, with or without `--confirm`.** Don't run the `!` line either: in a shell, a leading `!` only inverts the exit status, so it would grant consent and then report failure.
 
 ### `config`
 

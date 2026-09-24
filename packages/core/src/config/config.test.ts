@@ -1,7 +1,7 @@
 import { chmodSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { resolveProfile } from "../model/profiles.js"
+import { JEV_CALL_OVERHEAD_TOKENS, resolveProfile } from "../model/profiles.js"
 import { useTempDirs, writeTree } from "../testkit/tmp.js"
 import { assertConsent, setConsent } from "./consent.js"
 import { allProfiles, findRepoRoot, loadConfig } from "./load.js"
@@ -67,12 +67,38 @@ describe("loadConfig", () => {
     })
   })
 
+  it("defaults callOverheadTokens to Jev's, and refuses one that isn't a whole number", () => {
+    const base =
+      "{ id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2"
+    const ok = setup(`profiles:\n  - ${base} }\n`)
+    const [profile] = loadConfig({ cwd: ok.repo, env: {}, home: ok.home }).profiles
+    expect(profile?.callOverheadTokens).toBe(JEV_CALL_OVERHEAD_TOKENS)
+    const empty = setup(`profiles:\n  - ${base}, callOverheadTokens: }\n`)
+    expect(loadConfig({ cwd: empty.repo, env: {}, home: empty.home }).profiles[0]).toMatchObject({
+      callOverheadTokens: JEV_CALL_OVERHEAD_TOKENS,
+    })
+    const zero = setup(`profiles:\n  - ${base}, callOverheadTokens: 0 }\n`)
+    expect(loadConfig({ cwd: zero.repo, env: {}, home: zero.home }).profiles[0]).toMatchObject({
+      callOverheadTokens: 0,
+    })
+    for (const bad of ['"x"', "-1", "1.5"]) {
+      const b = setup(`profiles:\n  - ${base}, callOverheadTokens: ${bad} }\n`)
+      expect(() => loadConfig({ cwd: b.repo, env: {}, home: b.home }), bad).toThrow(
+        /callOverheadTokens/,
+      )
+    }
+  })
+
   it("defaults maxChoices, and refuses one that isn't a whole number of at least 2", () => {
     const base =
       "{ id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2"
     const ok = setup(`profiles:\n  - ${base} }\n`)
     expect(loadConfig({ cwd: ok.repo, env: {}, home: ok.home }).profiles[0]?.maxChoices).toBe(255)
-    for (const bad of ['"x"', "null", "0", "1.5"]) {
+    const empty = setup(`profiles:\n  - ${base}, maxChoices: }\n`)
+    expect(loadConfig({ cwd: empty.repo, env: {}, home: empty.home }).profiles[0]?.maxChoices).toBe(
+      255,
+    )
+    for (const bad of ['"x"', "0", "1.5"]) {
       const b = setup(`profiles:\n  - ${base}, maxChoices: ${bad} }\n`)
       expect(() => loadConfig({ cwd: b.repo, env: {}, home: b.home }), bad).toThrow(/maxChoices/)
     }
@@ -187,6 +213,15 @@ describe("loadConfig", () => {
     expect(JSON.stringify(config.warnings)).not.toContain("sk-secret")
   })
 
+  it("warns about an unknown profile field even when it has no value", () => {
+    const { repo, home } = setup(
+      "profiles:\n  - { id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2, maxChoice: }\n",
+    )
+    expect(loadConfig({ cwd: repo, env: {}, home }).warnings).toEqual([
+      expect.stringMatching(/unknown key profiles\[0\]\.maxChoice \(ignored\)$/),
+    ])
+  })
+
   it("lets a config profile replace a built-in of the same id, repo over user", () => {
     const profile = (floor: number) =>
       `profiles:\n  - { id: typesafe/jev-1.13, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: ${floor} }\n`
@@ -276,8 +311,19 @@ describe("consent", () => {
     )
   })
 
-  it("explains how to consent when refusing", () => {
-    expect(() => assertConsent({ granted: false }, "/r")).toThrow(/decide config egress allow/)
+  it("explains how the user consents, and that an agent must not", () => {
+    let message = ""
+    try {
+      assertConsent({ granted: false }, "/r")
+    } catch (error) {
+      message = (error as Error).message
+    }
+    expect(message).toContain("`decide config egress allow`")
+    expect(message).toContain("--confirm")
+    expect(message).toMatch(/an agent must not grant it/)
+    expect(message).toMatch(/shell escape \(not as a chat message\)/)
+    // Agents read this. In a shell, `! cmd` runs cmd, so never hand them that form.
+    expect(message).not.toContain("! decide")
   })
 
   it("leaves unrelated files alone", () => {

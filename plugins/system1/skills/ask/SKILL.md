@@ -5,7 +5,7 @@ description: Load this skill before you read through a file, diff or directory o
 
 # Ask the decision model
 
-`decide` sends text to a decision model. The model returns a typed answer in about 300 ms. Cost scales with what you send: roughly $0.00003 for a 700-token item. It never generates text. It answers **closed** questions over text you point it at:
+`decide` sends text to a decision model. The model returns a typed answer in about 300 ms. Cost scales with what you send: roughly $0.00004 for a 700-token item. It never generates text. It answers **closed** questions over text you point it at:
 
 - **noul:** the probability, from 0 to 1, that a statement is true.
 - **choice:** one of the options you name, with the full distribution.
@@ -78,7 +78,7 @@ If the same question will come up again, suggest saving it as a spec with the `d
 - **Run `decide` as its own command.** Don't pipe into it, and don't chain it after other commands. Some sandboxes give network access only to commands that start with `decide`. Save the content to a file first and pass `--file`, as the recipes do.
 - **Don't invent flags.** `decide schema ask` and `decide schema many` list the real ones, and `decide help` summarises them.
 - **Before a large fan-out,** run `decide many … --dry-run` to see the projected cost.
-  - A run above the spend guard exits 4, with the projection. Show the user the projection and let them decide. Don't add `--confirm` yourself.
+  - A run above the spend guard exits 4, with the projection. Show the user the projection and let them decide. Add `--confirm` only after they approve it; never on your own. (This `--confirm` is for spend. Consent's is never yours to add.)
 - **On a non-zero exit,** report the one-line error and stop. Retry once at most.
-  - Exit 3 means the repo has no egress consent. Tell the user they can run the `setup` skill. **Never run `decide config egress allow` yourself.**
+  - Exit 3 means the repo has no egress consent. Tell the user they can run the `setup` skill. **Never run `decide config egress allow` yourself, with or without `--confirm`.**
   - Exit 6 means there's no key and no recorded answer. Say that live decisions need a key.

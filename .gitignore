@@ -13,3 +13,6 @@ screenshots/
 .smoke/
 .system1/fixtures/adhoc/
 packages/pi/skills/
+
+# Eval fixture that a global "*.log" ignore would otherwise hide.
+!tools/evals/fixture-repo/test-output.log

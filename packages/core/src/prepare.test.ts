@@ -52,6 +52,12 @@ describe("prepare", () => {
 describe("budget", () => {
   const budget = { maxCalls: 200, maxUsd: 0.05 }
 
+  it("adds the profile's per-call overhead to every call", () => {
+    const projection = project(profile, [10, 20])
+    expect(projection.estimatedInputTokens).toBe(30 + 2 * profile.callOverheadTokens)
+    expect(projection.projectedUsd).toBe(projection.estimatedInputTokens * profile.usdPerInputToken)
+  })
+
   it("passes within limits", () => {
     expect(() => checkBudget(project(profile, Array(200).fill(700)), budget, false)).not.toThrow()
   })

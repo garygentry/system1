@@ -67,8 +67,9 @@ Never paste the key into the conversation.
 ### doctor: `consent`
 
 This repo hasn't agreed to send content to the provider, so live calls are refused. If you agree,
-run `decide config egress allow` yourself at the repo root. In Claude Code, that's
-`! decide config egress allow`. An agent can't grant it for you. See
+run `decide config egress allow` yourself in a terminal at the repo root. At the Claude Code
+prompt, which has no terminal, type `! decide config egress allow --confirm`.
+An agent can't grant it for you. See
 [getting-started.md](getting-started.md#4-consent-per-repo).
 
 ### doctor: `route`
@@ -115,8 +116,8 @@ There is no recorded answer for this request.
 ### `egress-refused` · exit 3
 
 The repo hasn't consented to sending content, or an agent tried to grant consent without a
-terminal. Consent is yours: run `decide config egress allow` yourself in that repo. Replay works
-without it.
+terminal. Consent is yours: run `decide config egress allow` yourself in that repo, or
+`! decide config egress allow --confirm` at the Claude Code prompt. Replay works without it.
 
 ### `no-key` · exit 2
 

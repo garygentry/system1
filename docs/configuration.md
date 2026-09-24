@@ -115,13 +115,14 @@ Optional fields, with the default a config profile gets:
 | Field | Default | Meaning |
 |---|---|---|
 | `maxChoices` | `255` | The most options one `choice` question may have. A whole number, at least 2 |
+| `callOverheadTokens` | `300` | Input tokens the provider bills on every call beyond the item and the questions, added to each call in a **projection**. Jev's measured value. A whole number, at least 0 |
 | `displayName` | the `id` | A name for display |
 | `transport` | `openrouter-decisions` | How the model is reached. It's the only one there is |
 | `usdPerOutputToken` | `0` | Listed output price |
 | `priceAsOf` | `unknown` | When the listed price was read |
 | `calibrated` | `true` | Whether the model's probabilities are calibrated |
 
-A missing required field, or a bad `maxChoices`, is a `config-error`. The other optional fields
+A missing required field, or a bad `maxChoices` or `callOverheadTokens`, is a `config-error`. The other optional fields
 aren't checked. Any other field is dropped with a warning.
 
 A config profile with the same `id` as a built-in one replaces it whole: fields it leaves out

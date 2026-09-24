@@ -25,7 +25,7 @@ The first hour was walked in a fresh repo on the published 0.1.0 CLI:
 
 1. **No key gives a misleading error.** `decide ask …` without a key fails with `replay-miss — No recorded answer for this request`, which is technically true but wrong as a first message. The actual cause is "no key, so only replay works", which is what `doctor` says. Fix: when there is no key and replay misses, lead with the key.
 2. **`doctor` says `healthy` when nothing live can work.** The line reads `healthy · replay only`, but with no key and no consent, a new user can't make a single decision. The headline should say what is missing, not "healthy".
-3. **Works as intended:** with a key but no consent, the refusal names the command and the repo. `config egress allow` from an agent shell tells the agent to ask the user (in Claude Code, `! decide config egress allow`). This is the consent rule working, not friction; it only needs to be clearly explained in the getting-started doc.
+3. **Works as intended:** with a key but no consent, the refusal names the command and the repo. `config egress allow` from an agent shell tells the agent to ask the user (in Claude Code, `! decide config egress allow`; *superseded 2026-09-24: `!` has no TTY, so the working form is `! decide config egress allow --confirm`, see the 0015 amendment*). This is the consent rule working, not friction; it only needs to be clearly explained in the getting-started doc.
 
 ## First-run walk per harness (§3, 2026-09-23)
 

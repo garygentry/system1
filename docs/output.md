@@ -62,7 +62,7 @@ These objects appear in several results.
 |---|---|
 | `basis` | always `"projected"` |
 | `calls` | number of calls the request would make |
-| `estimatedInputTokens` | number |
+| `estimatedInputTokens` | number: each item and the questions at about 3 characters a token, plus the profile's `callOverheadTokens` per call |
 | `projectedUsd` | US dollars |
 | `priceAsOf` | the date of the listed price |
 
@@ -162,8 +162,8 @@ fails with the same code, the whole run fails with that code instead.
   "projection": {
     "basis": "projected",
     "calls": 4,
-    "estimatedInputTokens": 1144,
-    "projectedUsd": 4.8048000000000005e-05,
+    "estimatedInputTokens": 2344,
+    "projectedUsd": 0.00009844800000000002,
     "priceAsOf": "2026-09-19"
   },
   "dryRun": false,
@@ -204,7 +204,7 @@ Dropped items get no line. A dry run prints only the summary line.
 ```json
 {"status":"kept","id":"src/forecast.ts","path":"src/forecast.ts","lines":{"start":1,"end":5},"answers":{"no_timeout":{"type":"noul","noul":0.97}}}
 {"status":"kept","id":"src/search.ts","path":"src/search.ts","lines":{"start":1,"end":4},"answers":{"no_timeout":{"type":"noul","noul":0.86}}}
-{"v":1,"status":"summary","spec":"no-timeout","model":"typesafe/jev-1.13","skipped":{"total":0,"byReason":{},"sample":[]},"redactions":{"total":0,"items":0},"projection":{"basis":"projected","calls":4,"estimatedInputTokens":1144,"projectedUsd":0.000048048000000000005,"priceAsOf":"2026-09-19"},"dryRun":false,"source":"replay","counts":{"items":4,"kept":2,"keptTotal":2,"undecided":0,"dropped":2,"failed":0,"skipped":0},"usage":{"input_tokens":0,"output_tokens":0,"cost":0},"wallClockMs":27}
+{"v":1,"status":"summary","spec":"no-timeout","model":"typesafe/jev-1.13","skipped":{"total":0,"byReason":{},"sample":[]},"redactions":{"total":0,"items":0},"projection":{"basis":"projected","calls":4,"estimatedInputTokens":2344,"projectedUsd":0.00009844800000000002,"priceAsOf":"2026-09-19"},"dryRun":false,"source":"replay","counts":{"items":4,"kept":2,"keptTotal":2,"undecided":0,"dropped":2,"failed":0,"skipped":0},"usage":{"input_tokens":0,"output_tokens":0,"cost":0},"wallClockMs":27}
 ```
 
 When the run fails as a whole, the output is a single error envelope line, the same as in `json`:

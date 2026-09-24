@@ -17,6 +17,11 @@ export interface ModelProfile {
   maxStateTokens: number
   /** Most options one choice question may have (the provider refuses more). */
   maxChoices: number
+  /**
+   * Input tokens the provider bills on every call on top of the state and the
+   * questions (its own prompt around them). Used only for *projected* costs.
+   */
+  callOverheadTokens: number
   /** Listed price, USD per input token. Used only for *projected* costs. */
   usdPerInputToken: number
   usdPerOutputToken: number
@@ -28,6 +33,16 @@ export interface ModelProfile {
   calibrated: boolean
 }
 
+/**
+ * Jev's per-call overhead. Measured 2026-09-24: a 1-character state with one
+ * noul question billed 273 input tokens where the estimate was 23 (250 more),
+ * and with a four-option choice 339 where it was 48 (291 more). 300 covers
+ * both, so a projection errs slightly high for these; much larger choice sets
+ * can still come in above it. Without any overhead, a dry run over 300 short
+ * tickets projected $0.0026 and the live run measured $0.0055.
+ */
+export const JEV_CALL_OVERHEAD_TOKENS = 300
+
 export const PROFILES: readonly ModelProfile[] = [
   {
     id: "typesafe/jev-1.13",
@@ -36,6 +51,7 @@ export const PROFILES: readonly ModelProfile[] = [
     maxStateTokens: 32_000,
     // Measured 2026-09-22: 400 options is refused upstream with "at most 255 choices".
     maxChoices: 255,
+    callOverheadTokens: JEV_CALL_OVERHEAD_TOKENS,
     usdPerInputToken: 0.042 / 1_000_000,
     usdPerOutputToken: 0,
     priceAsOf: "2026-09-19",
@@ -68,9 +84,13 @@ export function resolveProfile(
   )
 }
 
-/** Projected cost of `calls` decisions of about `tokensPerCall` input tokens. Never a measurement. */
+/**
+ * Projected cost of `calls` decisions whose state and questions come to about
+ * `tokensPerCall` input tokens, plus the profile's per-call overhead. Never a
+ * measurement.
+ */
 export function projectCost(profile: ModelProfile, calls: number, tokensPerCall: number): number {
-  return calls * tokensPerCall * profile.usdPerInputToken
+  return calls * (tokensPerCall + profile.callOverheadTokens) * profile.usdPerInputToken
 }
 
 function escapeRegExp(text: string): string {

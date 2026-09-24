@@ -39,9 +39,9 @@ decide doctor --format brief
 decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · session claude:…
   ok   cli: decide 0.3.1 on node v22.23.2 (…)
   warn key: no API key: only replay works
-       fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (chmod 600)
+       fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (create its directory first; chmod 600)
   warn consent: no egress consent for /path/to/repo: live calls are refused
-       fix: the user runs `decide config egress allow` in this repo, if they agree
+       fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, or through their agent prompt's shell escape (not as a chat message) with --confirm added
   ok   network: typesafe/jev-1.13 reachable in 175 ms
 ```
 
@@ -83,16 +83,25 @@ OpenRouter. With or without consent, these always apply:
 - content that resolves outside the repo is withheld unless you pass `--allow-outside`;
 - an item too large for the model is refused, never truncated.
 
-If you agree, run this **yourself** at the repo root:
+If you agree, run it **yourself**, in one of two ways:
 
-```sh
-decide config egress allow
-```
+- **In a terminal at the repo root,** if `decide` is on your shell's PATH (you installed the CLI
+  with npm, as Codex and Pi need). Typing it there is your decision; there's no further prompt:
 
-It asks you to confirm, so it needs a real terminal. In Claude Code, type
-`! decide config egress allow` at the prompt: the `!` runs it in the session as you. The skills
-tell agents never to grant consent. If an agent runs the command without a terminal, `decide`
-refuses and tells it to ask you.
+  ```sh
+  decide config egress allow
+  ```
+
+- **At the Claude Code prompt.** The plugin puts `decide` on Claude's PATH, not your shell's, so
+  with a plugin-only install this is the way. `!` runs a command in the session as you, but
+  without a terminal, so `decide` needs `--confirm` to know the decision is yours:
+
+  ```text
+  ! decide config egress allow --confirm
+  ```
+
+The skills tell agents never to grant consent, and never to add `--confirm` for you. If an agent
+runs the command itself, `decide` refuses and tells it to ask you.
 
 Consent is recorded in `.system1/config.yaml`. If you commit that file, everyone who clones the
 repo inherits the consent. That's a team decision, so make it on purpose.
