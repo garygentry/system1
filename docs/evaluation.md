@@ -8,7 +8,7 @@ between 2026-09-22 and 2026-09-23 on one author's machine.
 Two things frame all of it:
 
 - **Nobody outside this project has used System 1 yet.** Every result below comes from the author,
-  their two repos and purpose-built fixtures. Design partners (M9) are the next step, and they are
+  their two repos and purpose-built fixtures. Design partners (M12, after the `scout`, `guard` and `adopt` milestones) are the next outside step, and they are
   what would show whether any of this holds up for other people.
 - **One model, one date.** Every answer quality result is for `typesafe/jev-1.13` as it behaved
   on 2026-09-22 and 2026-09-23.
@@ -136,7 +136,7 @@ On the blind set, Claude's hit rate on positives went from 66% without the hook 
   blind set, so that set can no longer be called fully blind. A new blind set is the next honest
   measurement.
 - The hook only sees what the user types. It can't catch Claude deciding by itself to grade its own
-  work. A hook that fires when the agent stops (the deferred `guard` packs) is the planned fix.
+  work. A hook that fires when the agent stops (the `guard` `done-check` pack, planned for M10) is the planned fix.
 
 ## The first hour
 

@@ -15,7 +15,7 @@
     {
       "id": "agent-user",
       "name": "Agent user",
-      "description": "A developer who installs the plugin in Claude Code, Codex or Pi and lets their agent call `decide`. M9 design partners are the first outside readers.",
+      "description": "A developer who installs the plugin in Claude Code, Codex or Pi and lets their agent call `decide`. M12 design partners are the first outside readers.",
       "expertise": "intermediate"
     },
     {
@@ -513,7 +513,7 @@
           "sourceRefs": ["s-tools"]
         }
       ],
-      "verification": "Low priority. At about $0.00003 per item, spend is rarely a first-hour problem. Draft it only if M9 partners ask."
+      "verification": "Low priority. At about $0.00003 per item, spend is rarely a first-hour problem. Draft it only if M12 partners ask."
     },
     {
       "id": "cli",
@@ -1192,7 +1192,7 @@
       "sourceRefs": ["s-agents-md", "s-root-pkg", "s-ci"],
       "status": "planned",
       "priority": 4,
-      "verification": "Scheduled for M10 release hygiene. What it says depends on decisions M10 has not made (contribution policy, stability policy)."
+      "verification": "Scheduled for M13 release hygiene. What it says depends on decisions M13 has not made (contribution policy, stability policy)."
     },
     {
       "id": "adr-0001",
@@ -1266,7 +1266,7 @@
       "sourceRefs": ["s-adrs"],
       "status": "existing",
       "priority": 3,
-      "verification": "Record status: superseded by 0013. Pi uses the CLI plus skills; a Pi extension is deferred to the hooks work (M10)"
+      "verification": "Record status: superseded by 0013. Pi uses the CLI plus skills; a Pi extension is deferred past M13; M10's hooks work ships Claude (and Codex if verified) only (0019)"
     },
     {
       "id": "adr-0007",
@@ -1481,7 +1481,7 @@
   ],
   "gaps": [
     {
-      "note": "@garygentry/system1-core is published and the README calls it 'the engine as a library', but it has no documentation and no stability promise. Decided 2026-09-23: no library docs until M10's stability policy settles whether it is a supported API. Until then the README line may overstate it.",
+      "note": "@garygentry/system1-core is published and the README calls it 'the engine as a library', but it has no documentation and no stability promise. Decided 2026-09-23: no library docs until M13's stability policy settles whether it is a supported API; M11 adds a minimal stability promise for the decider surface that adopted TypeScript imports (0019). Until then the README line may overstate it.",
       "affects": ["arch-containers"]
     },
     {
@@ -1493,7 +1493,7 @@
       "affects": ["output-reference"]
     },
     {
-      "note": "No outside user has run decide in their own CI or git hooks. The how-to rests on what this repo's CI does. M9 partners should confirm it.",
+      "note": "No outside user has run decide in their own CI or git hooks. The how-to rests on what this repo's CI does. M12 partners should confirm it.",
       "affects": ["howto-ci"]
     },
     {

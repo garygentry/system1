@@ -1,6 +1,6 @@
 # `system1` — Roadmap
 
-**Status:** living document. Revision 3 (2026-09-23): 0.1.0 is published, and the line past it is a **readiness plan, not a feature plan**. The envisioning brief is archived and is not built from.
+**Status:** living document. Revision 4 (2026-09-24): after the readiness milestones (M7–M8), three feature milestones (M9–M11: `scout`, `guard`/`done-check`, `adopt`+`compare`) come before design partners ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Revision 3 (2026-09-23) made the line past 0.1.0 a readiness plan, not a feature plan. The envisioning brief is archived and is not built from.
 
 ## Context
 
@@ -45,7 +45,7 @@ Full records are in `plans/decisions/NNNN-*.md`. A superseded record is kept and
 | 0003 | Model layer is one transport plus model profiles that are only data. A new model with the same wire shape is a profile entry. `emulated` is a second transport in phase 3 | accepted |
 | 0004 | v1 is charter phase 1 on all three first-class harnesses | accepted |
 | 0005 | Monorepo: `packages/*` plus one authored plugin root at `plugins/system1/`. Per-harness manifests are generated | accepted |
-| 0006 | ~~Native Pi extension for the tools~~. Pi uses the CLI plus skills like the other harnesses. A Pi extension is deferred until hooks need it (M10) | **superseded by 0013** |
+| 0006 | ~~Native Pi extension for the tools~~. Pi uses the CLI plus skills like the other harnesses. A Pi extension is deferred until hooks need it; M10's hooks ship without one, so it is deferred past M13 (0019) | **superseded by 0013** |
 | 0007 | Cursor, Copilot and other Agent Skills hosts are best effort | accepted |
 | 0008 | GitHub `garygentry/system1`, npm `@garygentry` | accepted |
 | 0009 | Egress consent is given once per repo. Excludes and scrubbing are always on. Hooks are opted into per pack | accepted |
@@ -215,10 +215,10 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M7** | Evidence: measure what we claim | **done 2026-09-23**, see `milestones/M7-evidence.md`. 478 pairs labelled blind (by one labeller, disclosed); checkable curve published in `docs/calibration.md` (Brier 0.028, ECE 0.054); threshold guidance derived from it; judgement questions reported as unmeasured. M6's last box closed: a live `ask` in each harness. The routing retry held Codex/Pi at 8/8 but not Claude, so it was reverted (gap 1) |
 | **M8** | **Onboarding: the first hour works** | **done** 2026-09-23, **0.2.0 published**, see `milestones/M8-onboarding.md`. Six replay-tested cookbook recipes, `docs/` checked against the code by a test, six first-run stalls fixed across three harnesses, CI on Ubuntu and macOS (which found a real symlinked-path bug). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
 | **M9** | **`scout` → 0.4.0** | **next**, see `milestones/M9-M11-scout-guard-adopt.md` ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Screen a codebase or agent configuration for decisions worth handing over; typed backlog via `decide opportunities`; offline `decide spec lint` |
-| **M10** | **`guard` + `done-check` → 0.5.0** | planned, same plan. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 |
+| **M10** | **`guard` + `done-check` → 0.5.0** | planned, same plan. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 for repos that opt in with a criteria file |
 | **M11** | **`adopt` + `compare` → 0.6.0** | planned, same plan. TS/Python policy modules through the engine with fallback; shadow run against the current mechanism and an `emulated` baseline |
 | M12 | **Design partners: 3–5 real users** (was M9) | outline, after M11 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
-| M13 | **Release** (was M10) | outline. Hygiene informed by M9 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
+| M13 | **Release** (was M10) | outline. Hygiene informed by M12 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
 | — | *Post-release features:* `calibrate`, `sweep`, `pairs`, the `command-guard` and `loop-check` packs | Cut from the road to release (2026-09-23). `scout`, `adopt`, `compare` and `guard`/`done-check` were brought back as M9–M11 on 2026-09-24 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)) |
 | — | *Deferred:* MCP adapter over `core/tools` | Revisit if the sandbox/network friction or a shell-less host justifies it |
 
@@ -236,7 +236,7 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 **Why it is still open.** Five rounds of description tuning. Round 5 led with "before you report a task done, check it with this skill rather than grading your own work": Claude went to 7/8, but Codex and Pi `ask` **negatives fell 8/8 → 5/8** — they began triggering on "write a function", "rename this function", "add a .gitignore entry". Over-triggering is the worse failure, because it spends money and sends code for tasks that need no judgement. The wording was reverted and 6/8 accepted for the release. Full data: `milestones/M6-release.md` § Routing evals.
 
-**What would actually fix it.** Probably not a description. A description can only influence a model that is choosing, and this is a model choosing not to. The surface that does not depend on that choice is a **hook** — a Stop hook that fires regardless ("is done actually done"), which is what the deferred `guard` packs are for. This gap is now the first concrete justification for them.
+**What would actually fix it.** Probably not a description. A description can only influence a model that is choosing, and this is a model choosing not to. The surface that does not depend on that choice is a **hook** — a Stop hook that fires regardless ("is done actually done"), which is what the deferred `guard` packs are for. This gap is now the first concrete justification for them. *(2026-09-24: the `done-check` pack is planned as M10, [0019](decisions/0019-scout-guard-adopt-before-partners.md).)*
 
 **Do not re-litigate the wording without new evidence.** If it is retried, the guard rail that broke last time is the acceptance condition: **Codex and Pi negatives stay 8/8, or the change reverts.**
 
