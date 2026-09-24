@@ -41,7 +41,7 @@ decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · s
   warn key: no API key: only replay works
        fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (create its directory first; chmod 600)
   warn consent: no egress consent for /path/to/repo: live calls are refused
-       fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, adding --confirm if they type it at an agent's prompt instead
+       fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, or through their agent prompt's shell escape (not as a chat message) with --confirm added
   ok   network: typesafe/jev-1.13 reachable in 175 ms
 ```
 

@@ -280,6 +280,7 @@ describe("decide config egress", () => {
     await main(["config", "egress", "allow"], io)
     const message: string = json().error.message
     expect(message).toMatch(/An agent must not grant it, with or without --confirm/)
+    expect(message).toMatch(/shell escape instead \(not as a chat message\)/)
     // `!` prompts have no TTY, so the user needs --confirm there. But agents read
     // this, and in a shell `! cmd` runs cmd, so the envelope never carries that form.
     expect(message).toContain("--confirm")

@@ -213,6 +213,15 @@ describe("loadConfig", () => {
     expect(JSON.stringify(config.warnings)).not.toContain("sk-secret")
   })
 
+  it("warns about an unknown profile field even when it has no value", () => {
+    const { repo, home } = setup(
+      "profiles:\n  - { id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: 0.2, maxChoice: }\n",
+    )
+    expect(loadConfig({ cwd: repo, env: {}, home }).warnings).toEqual([
+      expect.stringMatching(/unknown key profiles\[0\]\.maxChoice \(ignored\)$/),
+    ])
+  })
+
   it("lets a config profile replace a built-in of the same id, repo over user", () => {
     const profile = (floor: number) =>
       `profiles:\n  - { id: typesafe/jev-1.13, maxStateTokens: 8000, usdPerInputToken: 0.0000001, undecidedFloor: ${floor} }\n`
@@ -312,6 +321,7 @@ describe("consent", () => {
     expect(message).toContain("`decide config egress allow`")
     expect(message).toContain("--confirm")
     expect(message).toMatch(/an agent must not grant it/)
+    expect(message).toMatch(/shell escape \(not as a chat message\)/)
     // Agents read this. In a shell, `! cmd` runs cmd, so never hand them that form.
     expect(message).not.toContain("! decide")
   })

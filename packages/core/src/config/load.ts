@@ -355,8 +355,11 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
     const profile = { ...(p as object) } as Partial<ModelProfile>
     // A field with no value (`priceAsOf:`) is unset, so the default applies. This
     // runs before the checks below, so an empty optional field is never an error.
+    // Unknown keys are left for the warning below, empty or not.
     for (const [key, v] of Object.entries(profile)) {
-      if (v === null) delete (profile as Record<string, unknown>)[key]
+      if (v === null && PROFILE_FIELDS.includes(key as keyof ModelProfile)) {
+        delete (profile as Record<string, unknown>)[key]
+      }
     }
     const ok =
       typeof profile.id === "string" &&

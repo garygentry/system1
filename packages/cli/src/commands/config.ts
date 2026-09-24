@@ -66,9 +66,9 @@ function body(argv: string[], io: Io): ConfigResult {
           "egress-refused",
           "Egress consent is the user's decision. An agent must not grant it, with or without " +
             "--confirm: show the user this message instead. The user grants it by typing " +
-            "`decide config egress allow` in a terminal at the repo root. If they type it at an " +
-            "agent's prompt instead, where there is no terminal, they add --confirm to say the " +
-            "decision is theirs.",
+            "`decide config egress allow` in a terminal at the repo root. If they run it through " +
+            "their agent prompt's shell escape instead (not as a chat message), there is no " +
+            "terminal, so they add --confirm to say the decision is theirs.",
         )
       }
       return {

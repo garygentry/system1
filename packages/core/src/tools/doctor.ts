@@ -161,8 +161,8 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
           detail: `no egress consent for ${config.repoRoot}: live calls are refused`,
           fix:
             "if the user agrees, they grant it themselves (an agent must not): " +
-            "`decide config egress allow` in a terminal in this repo, adding --confirm if they " +
-            "type it at an agent's prompt instead",
+            "`decide config egress allow` in a terminal in this repo, or through their agent " +
+            "prompt's shell escape (not as a chat message) with --confirm added",
         },
   )
 
