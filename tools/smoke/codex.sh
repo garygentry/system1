@@ -21,4 +21,7 @@ assert_marker codex:setup-skill "$DOCTOR_MARKER" "$SMOKE/codex/ping.txt" || stat
 fixture_repo "$SMOKE/codex-many"
 (replay_env; drive "$SMOKE/codex-many" "$MANY_PROMPT" "$SMOKE/codex-many.txt")
 assert_marker codex:many "$MANY_MARKER" "$SMOKE/codex-many.txt" || status=1
+fixture_repo "$SMOKE/codex-scout"
+drive "$SMOKE/codex-scout" "\$system1:scout $SCOUT_PROMPT" "$SMOKE/codex-scout.txt"
+assert_marker codex:scout "$SCOUT_MARKER" "$SMOKE/codex-scout.txt" || status=1
 exit $status

@@ -12,7 +12,7 @@ Arguments, all optional: a target (a path, `skills`, `plugins` or `agents`) and 
 
 ## Before you start
 
-- Run `decide doctor --format brief`. Scouting sends the content of the files it screens to the decision model, so it needs a key and **egress consent for this repo**. If consent is missing, tell the user and stop. Granting it is theirs to do; never run `decide config egress allow` yourself.
+- Run `decide doctor --format brief`. Screening sends the content of the files it screens to the decision model, so it needs a key and **egress consent for this repo**. Without them you can still prefilter and dry-run (steps 2 and 3 send nothing), so the user sees what would be sent before they decide; then stop and tell them what's missing. Granting consent is theirs to do; never run `decide config egress allow` yourself.
 - **Stay inside the repo.** Only screen content inside this repo. Content outside it, such as installed plugins or a home-directory agent config, is screened only if the user asks for that content by name in this conversation. Then say exactly what would leave the machine and suggest copying it into a scratch repo with its own consent. Add `--allow-outside` only if they confirm after that; never on your own.
 
 ## 1. Pick the mode and the table
