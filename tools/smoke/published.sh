@@ -34,6 +34,25 @@ for pkg in system1 system1-core system1-pi; do
     { echo "published: npm does not serve @garygentry/$pkg@$VERSION" >&2; exit 2; }
 done
 
+# Run from inside a Claude Code session, PATH carries that session's plugin
+# bin/ dirs, including any system1 already installed or linked (dev-link.sh),
+# and they come before the fresh profile's. The agent's `decide` would then be
+# the wrong one, and a pass would prove nothing about the published release.
+# Drop every Claude plugin dir and anything else holding a `decide`, except a
+# real npm install, which Codex and Pi get from npm_cli below anyway.
+clean_path=
+old_ifs=$IFS; IFS=:
+for dir in $PATH; do
+  case $dir in */.claude/*) continue ;; esac
+  if [ -x "$dir/decide" ] && grep -qs "system1-shim" "$dir/decide"; then continue; fi
+  clean_path=${clean_path:+$clean_path:}$dir
+done
+IFS=$old_ifs
+PATH=$clean_path; export PATH
+if command -v decide >/dev/null 2>&1; then
+  echo "published: note: \`decide\` on PATH is $(command -v decide); Claude's run may use it" >&2
+fi
+
 # A prompt that doesn't name the skill: routing has to find `ask` on its own.
 PROMPT="Go through every file under src/ and flag the ones that make outbound network requests. Print the first line of any decide output verbatim, then list the files."
 LIVE_MARKER="decide (many|ask): .* · live [^ ]+ · \\\$[0-9.]+ measured"
