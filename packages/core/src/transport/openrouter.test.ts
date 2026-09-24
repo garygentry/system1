@@ -50,6 +50,14 @@ describe("openrouter transport", () => {
     expect(sleep.mock.calls).toEqual([[100], [200]])
   })
 
+  it("retries the provider's 529 system_overloaded", async () => {
+    const { fetch, calls } = scripted(new Response("overloaded", { status: 529 }), ok())
+    const transport = createOpenRouterTransport({ apiKey: "k", fetch, sleep: noSleep })
+    const result = await transport.decide(request)
+    expect(result.attempts).toBe(2)
+    expect(calls).toHaveLength(2)
+  })
+
   it("does not retry a non-retryable status", async () => {
     const { fetch, calls } = scripted(new Response("bad key", { status: 401 }), ok())
     const transport = createOpenRouterTransport({ apiKey: "k", fetch, sleep: noSleep })

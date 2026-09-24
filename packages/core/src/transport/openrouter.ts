@@ -6,9 +6,12 @@ export const DEFAULT_ENDPOINT = "https://openrouter.ai/api/alpha/decisions"
 
 export const DEFAULT_TIMEOUT_MS = 5_000
 
-/** Statuses worth another attempt: timeouts, rate limits and upstream hiccups. */
+/**
+ * Statuses worth another attempt: timeouts, rate limits and upstream hiccups.
+ * 529 is the provider's `system_overloaded`, seen on 2.9% of a 385-item sweep.
+ */
 export const RETRY_STATUSES: ReadonlySet<number> = new Set([
-  408, 429, 500, 502, 503, 504, 520, 521, 522, 524,
+  408, 429, 500, 502, 503, 504, 520, 521, 522, 524, 529,
 ])
 
 export interface TransportOptions {
