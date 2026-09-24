@@ -10,6 +10,7 @@ them to the decision model. You'll also see one case where it correctly stays ou
 | **Cost** | about 1 cent of OpenRouter credit, plus your Claude Code usage |
 | **You need** | Claude Code, Node 22 or newer, `git`, `curl`, and an [OpenRouter](https://openrouter.ai) API key with a little credit |
 | **Works in** | a throwaway lab repo in your home directory; none of your own code is sent anywhere |
+| **Version** | written for System 1 0.3.2. On 0.3.1, dry runs project about half the real cost and the setup skill's consent command lacks `--confirm`; use the one in Exercise 3 |
 
 Using Codex or Pi? The flow is the same with a few differences; see
 [Using Codex or Pi](#using-codex-or-pi).
@@ -53,7 +54,7 @@ mkdir -p ~/system1-lab
 curl -sL https://codeload.github.com/garygentry/system1/tar.gz/refs/heads/main \
   | tar -xz -C ~/system1-lab --strip-components=4 system1-main/tools/evals/fixture-repo
 cd ~/system1-lab
-git init -q && git add -A && git commit -qm "lab start"
+git init -q
 ```
 
 **Checkpoint.** `ls ~/system1-lab` shows:
@@ -93,7 +94,7 @@ Then, at the Claude Code prompt:
 ```
 
 (Restarting Claude Code works too.) If you run Claude Code with its sandbox on, allow outbound
-access to `openrouter.ai`.
+access to `openrouter.ai`, and to `registry.npmjs.org` for the first run, which downloads the CLI.
 
 **Checkpoint.** Type `/system1:` and you should see `setup` offered. Then run:
 
@@ -101,7 +102,7 @@ access to `openrouter.ai`.
 ! decide version
 ```
 
-It prints a version number such as `0.3.1`. The first run can take a few seconds.
+It prints the CLI's version number. The first run can take a few seconds.
 
 **If it didn't.** `command not found` means the plugin isn't loaded in this session: run
 `/reload-plugins`, or restart Claude Code. Note that `decide` works at the Claude Code prompt
@@ -121,14 +122,18 @@ it reuses the copy after that. Your own shell doesn't get `decide` unless you al
 Your OpenRouter key goes in a file that only you can read. Every Claude Code session, in any repo,
 then finds it without you exporting anything.
 
-**Do.** In your terminal (not in Claude Code, so the key never appears in the conversation):
+**Do.** In your terminal (not in Claude Code, so the key never appears in the conversation).
+`read -rs` takes the key without showing it or saving it in your shell history: paste it, then
+press Enter.
 
 ```sh
 mkdir -p ~/.config/system1
-( umask 077; printf 'openrouter_api_key: %s\n' 'sk-or-…your key…' > ~/.config/system1/credentials )
+read -rs key
+( umask 077; printf 'openrouter_api_key: %s\n' "$key" > ~/.config/system1/credentials ); unset key
 ```
 
-Replace `sk-or-…your key…` with your key. The file must hold exactly that one line.
+The file must hold exactly that one line. If you set `XDG_CONFIG_HOME`, use
+`$XDG_CONFIG_HOME/system1/credentials` instead.
 
 **Checkpoint.**
 
@@ -162,10 +167,12 @@ The setup skill runs `decide doctor` and walks you through anything it reports.
 
 ```text
 decide doctor: SETUP NEEDED (consent) · replay only · harness claude · session claude:…
-  ok   cli: decide 0.3.1 on node v22.… (…)
+  ok   cli: decide 0.3.… on node v22.… (…)
   ok   path: decide on PATH: …/bin/decide
+  ok   path-version: decide on PATH is 0.3.…, same as this one
   ok   key: OPENROUTER_API_KEY present (credentials)
   warn consent: no egress consent for /home/you/system1-lab: live calls are refused
+       fix: if the user agrees, they grant it themselves (an agent must not): …
   ok   route: routing hints on: batch-judgement, pick-from-many, criteria-check, done-check, gate-check
   ok   network: typesafe/jev-1.13 reachable in 218 ms
 ```
@@ -176,8 +183,8 @@ The skill explains what consent allows. Read it. In short:
   contents, diff hunks, rows) to the decision model on openrouter.ai.
 - **What always applies, with or without consent:** files that look like secrets (`.env*`, keys,
   credentials) are never sent; secret-shaped strings are scrubbed from everything that is sent;
-  anything outside the repo is withheld; an item too big for the model is refused, never cut
-  short.
+  anything outside the repo is withheld unless `--allow-outside` is passed; an item too big for
+  the model is refused, never cut short.
 
 **Do.** If you agree, grant it yourself, at the Claude Code prompt:
 
@@ -200,8 +207,8 @@ decide doctor: healthy · live ready · harness claude · session claude:…
 - `network` fails: the sandbox is blocking `openrouter.ai`, or you're offline.
 
 **What just happened.** Consent is recorded in `.system1/config.yaml` in this repo only. Claude
-did not and cannot grant it: the skills tell it never to, and `decide` refuses an agent that tries
-without `--confirm`. That flag is yours to type, never the agent's. In a real project, committing
+didn't grant it: the skills tell it never to, and `decide` refuses the command without a terminal
+unless `--confirm` is given. That flag is yours to type, never the agent's. In a real project, committing
 `.system1/config.yaml` shares the consent with everyone who clones the repo, so make that a team
 decision.
 
@@ -244,10 +251,10 @@ Watch what Claude does. You should see, roughly in this order:
 decide many: 300 kept of 300 · 0 undecided · 0 dropped · live typesafe/jev-1.13 · $0.005524 measured · 10.5 s
 ```
 
-followed by one line per ticket, such as:
+followed by `kept:` and one line per ticket, such as:
 
 ```text
-tickets.jsonl:row16  team=infra(0.59)  "{"id":"T-1015","text":"Urgent: exports have been stuck … in 'processing' for two days…"
+  tickets.jsonl:row16  team=infra(0.59)  "{"id":"T-1015","text":"Urgent: exports have been stuck … in 'processing' for two days…"
 ```
 
 Claude then summarises how many tickets went to each team, and which answers it checked itself.
@@ -266,8 +273,9 @@ Claude then summarises how many tickets went to each team, and which answers it 
 - **kept / undecided / dropped.** With no filter, every decided answer is kept. An **undecided**
   answer is one whose probabilities came back too flat to act on. `decide` lists undecided items
   separately and never counts them as kept or dropped; you (or the agent) read those yourself.
-- **The number in brackets** is the model's confidence in that team. `infra(1)` is certain;
-  `infra(0.59)` is a genuine lean, not a coin flip. Low confidence is not undecided: it's a signal
+- **The number in brackets** is the model's confidence in its pick: how concentrated its answer
+  is on that team rather than spread across the four. `infra(1)` is certain; `infra(0.59)` is a
+  genuine lean, not a coin flip. Low confidence is not undecided: it's a signal
   to look. In our run, Claude read the 14 answers below 0.7, agreed with 13, and fixed one
   (a partnership enquiry sent to infra at 0.50) by hand.
 - **`live`, and the measured cost.** The cost comes from the provider's usage report, not an
@@ -288,11 +296,13 @@ want a verdict on every command.
 
 > cleanup-plan.sh is what the ops bot wants to run tonight on the shared build server. Before I approve it, give me a calibrated verdict for each command: is it destructive?
 
-**Checkpoint.** Claude splits the script into one item per line and asks a yes/no question of each.
-You get a probability per command:
+**Checkpoint.** Claude splits the script into one item per line and asks a yes/no question of each
+(here it skipped the first two lines, the shebang and a comment, so about 40 items). You get a
+probability per command:
 
 ```text
 decide many: 40 kept of 40 · 0 undecided · 0 dropped · live typesafe/jev-1.13 · $0.000656 measured · 1.6 s
+kept:
   cleanup-plan.sh:3   destructive=0.01  "du -sh /var/cache/build/*"
   cleanup-plan.sh:4   destructive=0.38  "chmod -R 777 /srv/secrets"
   cleanup-plan.sh:5   destructive=0.95  "docker system prune -af --volumes"
@@ -307,7 +317,7 @@ Then a verdict you can act on: which lines to strike before this runs.
 verdict per command".
 
 **What just happened.** Look at line 4. `chmod -R 777 /srv/secrets` came back at only 0.38. It
-deletes nothing, so as a "destructive" question the model is fairly sure it isn't. But it makes
+deletes nothing, so as a "destructive" question the model leans no. But it makes
 every secret on a shared server readable by everyone, which is arguably worse. **An answer that
 looks wrong usually means the question was badly posed.** In our run, Claude caught this and
 asked a sharper question of that one line:
@@ -317,7 +327,8 @@ decide ask: cleanup-plan.sh:4-4 · live typesafe/jev-1.13 · 832 ms · $0.000012
   exposes=0.97
 ```
 
-If yours didn't, ask it: *"Does line 4 make sensitive files readable by every user?"* Rewording
+If yours didn't, ask it: *"Do lines 4 and 37 make sensitive files readable by every user?"* (The
+script repeats several commands, `chmod` included, so check the repeats too.) Rewording
 the question is the fix, not overriding the answer in your head.
 
 ---
@@ -378,7 +389,9 @@ Then fix it:
 
 > The saved spec .system1/specs/timeouts.yaml flags files that are fine. Repair it so it only flags network calls without a timeout.
 
-**Checkpoint.** The `design` skill loads. Claude rewrites the question with explicit criteria for
+**Checkpoint.** The `design` skill loads. It may start by running `decide spec check timeouts`,
+which fails with "has no examples to check": expected, since the spec has none yet. Claude then
+rewrites the question with explicit criteria for
 true and false, adds a few examples with the answers they should get, records the model's answers
 for them (a few live calls), and checks them. When it's done:
 
@@ -411,18 +424,15 @@ You've now:
 
 ## Clean up
 
-Nothing here touched your own projects. To tidy up:
-
-```text
-! decide config egress deny
-```
-
-withdraws consent for the lab repo (it's per repo, so no other repo is affected). Then, in your
-terminal:
+Nothing here touched your own projects. Consent, specs and the spend log all live inside the lab
+repo, so removing it removes them. In your terminal:
 
 ```sh
 rm -rf ~/system1-lab
 ```
+
+(To keep a repo but stop live calls from it, `decide config egress deny` withdraws its consent.
+It's per repo, so no other repo is affected.)
 
 Keep `~/.config/system1/credentials` if you'll use System 1 elsewhere; otherwise delete it. To
 remove the plugin: `/plugin uninstall system1@system1`.
@@ -435,7 +445,8 @@ remove the plugin: `/plugin uninstall system1@system1`.
 | `! decide …` also not found | The plugin isn't loaded in this session | `/reload-plugins`, or restart Claude Code |
 | `egress-refused` (exit 3) | No consent in this repo | Exercise 3; [details](troubleshooting.md#egress-refused--exit-3) |
 | `budget-exceeded` (exit 4) | The run is over 200 calls or $0.05 | Approve it (Claude re-runs with `--confirm`) or narrow the source; [details](troubleshooting.md#budget-exceeded--exit-4) |
-| `no-key` (exit 2), or doctor warns `key` | The key file is missing, unreadable or malformed | Exercise 2; [details](troubleshooting.md#doctor-key) |
+| `replay-miss` (exit 6) saying no API key is set, or doctor warns `key` | `decide` found no key, so it could only replay | Exercise 2; [details](troubleshooting.md#doctor-key) |
+| `config-error` (exit 2) naming the credentials file | The file is readable by others, or isn't the one `openrouter_api_key:` line | `chmod 600` it, fix the line; [details](troubleshooting.md#config-error--exit-2) |
 | No routing hint on a batch prompt | The CLI hasn't been fetched yet, or the prompt didn't match a pattern | Run `! decide version` once; or name the skill in your prompt |
 
 Everything else is in [troubleshooting.md](troubleshooting.md).
@@ -448,7 +459,7 @@ The exercises work the same way, with these differences:
 |---|---|---|
 | Install | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | `pi install npm:@garygentry/system1-pi` |
 | `decide` | `npm i -g @garygentry/system1` (Codex doesn't put plugin `bin/` on PATH) | `npm i -g @garygentry/system1` |
-| Network | Add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules`, then restart Codex | no sandbox |
+| Network | Add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules` (`$CODEX_HOME` defaults to `~/.codex`), then restart Codex | no sandbox |
 | Setup | `$system1:setup` | `/skill:setup` |
 | Consent | `decide config egress allow` in your terminal, in `~/system1-lab` | the same |
 | Routing hint | none (the prompt hook is Claude Code's); the skills load from their descriptions | none; the same |

@@ -131,6 +131,7 @@ describe("docs/tutorial.md", () => {
 
   it.each([
     "tickets.jsonl",
+    "test-output.log",
     "cleanup-plan.sh",
     "src/billing/charge.ts",
     ".system1/specs/timeouts.yaml",
