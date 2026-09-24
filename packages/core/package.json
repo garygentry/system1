@@ -1,6 +1,6 @@
 {
   "name": "@garygentry/system1-core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Engine for decision-model calls: model profiles, transport, sources, fixtures, spend.",
   "type": "module",
   "sideEffects": false,
