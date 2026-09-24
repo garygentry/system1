@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decisions: scout"
+  short_description: "Find where a decision model would pay off in this code or agent config"
+  default_prompt: "Use $scout to find decision-model opportunities in this repo."
+policy:
+  allow_implicit_invocation: false

@@ -439,6 +439,36 @@
       "verification": "Replay-in-CI is what this repo's own CI does (cookbook test, release:check). No outside CI run exists yet, and there is no example workflow file for users. See gaps."
     },
     {
+      "id": "howto-scout",
+      "title": "Scout: find where a decision model would pay off",
+      "slug": "how-to/scout",
+      "path": "docs/scout.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["agent-user"],
+      "purpose": "Run the scout skill over code or agent configuration, understand what it sends and costs, and read the backlog it writes.",
+      "sourceRefs": ["s-cli-commands"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "What it does, and what it costs",
+          "intent": "Local prefilter, a dry-run projection the user approves, screening with decide many and keepAny, reading only survivors, projected savings.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "The backlog",
+          "intent": "decide opportunities list and check; content-derived ids, stale and rejected entries; commit it or ignore it.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "Next",
+          "intent": "Save the best entry as a spec with design; adopt and compare are planned.",
+          "sourceRefs": ["s-cli-commands"]
+        }
+      ]
+    },
+    {
       "id": "howto-routing",
       "title": "Tune or turn off routing hints",
       "slug": "how-to/routing-hints",
@@ -836,7 +866,7 @@
       ],
       "diagrams": [
         {
-          "description": "Containers: the plugin (skills ask, design, setup; bin/decide shim; hooks/claude-hooks.json) → the decide CLI bundle (packages/cli, dist/bundle/decide.mjs) → system1-core (tools, config, egress, sources, model, transport, fixtures, run) → OpenRouter. Side stores: user config dir and the repo .system1/ directory. The Pi package carries only the skills. CI and scripts call the CLI directly.",
+          "description": "Containers: the plugin (skills ask, design, setup, scout; bin/decide shim; hooks/claude-hooks.json) → the decide CLI bundle (packages/cli, dist/bundle/decide.mjs) → system1-core (tools, config, egress, sources, model, transport, fixtures, run) → OpenRouter. Side stores: user config dir and the repo .system1/ directory. The Pi package carries only the skills. CI and scripts call the CLI directly.",
           "sourceRefs": ["s-shim", "s-cli-main", "s-core-index", "s-config"]
         }
       ],

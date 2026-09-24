@@ -1,0 +1,127 @@
+description: Scout, code mode. Screen source files for places where a chat model, a keyword rule or a per-item model loop makes a closed judgement a decision model could make.
+questions:
+  llm_closed_answer:
+    type: noul
+    instructions: The code in this file sends a prompt to a language model and uses the reply as a fixed label, a yes or no, one of a fixed set of options, or a number.
+    criteria:
+      true: It calls a chat or completion API, an LLM SDK (OpenAI, Anthropic, Vercel AI, LangChain and similar) or an LLM provider endpoint, and constrains or parses the reply into an enum, boolean, category, verdict or score, for example a JSON schema with enum or boolean fields, a prompt demanding only yes or no, or code comparing the reply with fixed values.
+      false: It makes no language model call, or it uses the reply as prose, code, a summary or other generated text.
+  semantic_heuristic:
+    type: noul
+    instructions: This file decides a meaning-based property of text using hand-written keyword lists, regular expressions or string matching.
+    criteria:
+      true: The property is about meaning, such as intent, topic, urgency, sentiment, relevance, risk or whether two texts say the same thing, and it is decided by lists of words, regexes or substring checks.
+      false: The matching is about exact syntax or format (parsing flags, paths, versions, identifiers, JSON, secret or token shapes), or there is no such matching.
+  judge_over_many:
+    type: noul
+    instructions: This file asks a model to grade, rank, rerank, classify or filter many items, one call per item or in a loop.
+    criteria:
+      true: It loops or fans out over records, candidates, search results, files or messages and asks a model for a verdict, label or score on each.
+      false: It makes a single model call, generates text for each item, or makes no model calls.
+  already_decision_model:
+    type: noul
+    instructions: The judgement in this file is already sent to a decision model that returns typed probabilities, not to a chat model.
+    criteria:
+      true: It calls Jev, a typesafe/jev model, a /decisions endpoint, or the decide CLI or its engine to get noul, choice or score answers.
+      false: It calls a chat or completion model, uses hand-written rules, or calls no model.
+keepAny: ["llm_closed_answer>=0.3", "semantic_heuristic>=0.3", "judge_over_many>=0.3"]
+keep: ["already_decision_model<0.7"]
+policy:
+  thresholds:
+    llm_closed_answer:
+      value: 0.3
+      why: Recall first. A missed opportunity is invisible; a false keep costs the agent one read of the file. Unmeasured for this question (judgement over code, not a checkable proposition).
+    semantic_heuristic:
+      value: 0.3
+      why: Recall first, as above.
+    judge_over_many:
+      value: 0.3
+      why: Recall first, as above.
+    already_decision_model:
+      value: 0.7
+      why: Only drop a file the model is confident already uses a decision model. A wrong drop hides an opportunity; a wrong keep costs one read. It cannot see a call made through another file, so scout's local prefilter handles those.
+source: { split: file }
+meta:
+  threshold_basis: unmeasured
+  used_by: the scout skill (plugins/system1/skills/scout)
+  # Checked by tools/signals.test.ts: which examples the keepAny/keep policy keeps.
+  screen:
+    kept: [chat-model-parsed-to-enum, python-yes-no-moderation, keyword-urgency, rerank-loop]
+    dropped: [summariser-generates-text, flag-parser-is-syntax, already-decide]
+examples:
+  - id: chat-model-parsed-to-enum
+    state: |
+      import OpenAI from "openai"
+      const client = new OpenAI()
+      export async function routeTicket(text: string): Promise<"billing" | "bug" | "other"> {
+        const res = await client.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: `Classify this ticket as billing, bug or other. Reply with one word.\n\n${text}` }],
+        })
+        const label = res.choices[0]?.message.content?.trim().toLowerCase()
+        return label === "billing" || label === "bug" ? label : "other"
+      }
+    expect: { llm_closed_answer: true, already_decision_model: false }
+  - id: python-yes-no-moderation
+    state: |
+      from anthropic import Anthropic
+      client = Anthropic()
+
+      def is_abusive(message: str) -> bool:
+          reply = client.messages.create(
+              model="claude-sonnet-5",
+              max_tokens=5,
+              messages=[{"role": "user", "content": f"Is this message abusive? Answer only yes or no.\n\n{message}"}],
+          )
+          return reply.content[0].text.strip().lower().startswith("yes")
+    expect: { llm_closed_answer: true }
+  - id: keyword-urgency
+    state: |
+      const URGENT = ["outage", "down", "can't log in", "data loss", "asap", "urgent"]
+      export function isUrgent(ticket: { subject: string; body: string }): boolean {
+        const text = `${ticket.subject} ${ticket.body}`.toLowerCase()
+        return URGENT.some((word) => text.includes(word))
+      }
+    expect: { semantic_heuristic: true, llm_closed_answer: false }
+  - id: rerank-loop
+    state: |
+      export async function rerank(query: string, docs: string[]) {
+        const scored = []
+        for (const doc of docs) {
+          const r = await llm.complete(`Rate 0-10 how relevant this passage is to "${query}". Reply with the number only.\n\n${doc}`)
+          scored.push({ doc, score: Number(r.text) })
+        }
+        return scored.sort((a, b) => b.score - a.score)
+      }
+    expect: { judge_over_many: true }
+  - id: summariser-generates-text
+    state: |
+      export async function summarise(article: string): Promise<string> {
+        const res = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: `Summarise this article in three sentences:\n\n${article}` }],
+        })
+        return res.choices[0]?.message.content ?? ""
+      }
+    expect: { llm_closed_answer: false, judge_over_many: false }
+  - id: flag-parser-is-syntax
+    state: |
+      const FLAG = /^--([a-z][a-z0-9-]*)(?:=(.*))?$/
+      export function parseFlags(argv: string[]) {
+        const out: Record<string, string | true> = {}
+        for (const arg of argv) {
+          const m = FLAG.exec(arg)
+          if (m?.[1]) out[m[1]] = m[2] ?? true
+        }
+        return out
+      }
+    expect: { semantic_heuristic: false, llm_closed_answer: false, judge_over_many: false }
+  - id: already-decide
+    state: |
+      import { createDecider } from "@garygentry/system1-core"
+      const decider = createDecider({ egressConsent, profile, transport })
+      export async function isUrgent(text: string) {
+        const r = await decider.decide({ state: text, questions: { urgent: { type: "noul", instructions: "The ticket reports an outage." } } })
+        return r.answers.urgent.noul >= 0.7
+      }
+    expect: { already_decision_model: true }

@@ -33,6 +33,7 @@ lowercase letters, digits, `.`, `_` and `-`. The name is also the spec's fixture
 | `description` | yes | text | One sentence on what the spec decides and why. `decide spec list` shows it |
 | `questions` | yes | mapping | The question set: name → question. See [Questions](#questions) |
 | `keep` | no | list of text | The default filters for `many`, and the `verdict` for `ask`. ANDed |
+| `keepAny` | no | list of text | Filters of which at least one must match, as well as every `keep`. See [`keep` and `sort`](#keep-and-sort) |
 | `sort` | no | text | The default sort for `many` |
 | `policy` | no | mapping | `policy.thresholds`: each threshold and the reason for it. See [Thresholds](#thresholds) |
 | `source` | no | mapping | The default source and split. See [Source](#source) |
@@ -96,11 +97,16 @@ Both use the syntax of the `--keep` and `--sort` flags: see
 - `keep`: each entry is `<question>[.<field>]<op><value>`, for example `no_timeout>=0.3`,
   `cause in regression,unclear` or `cause.probabilities.flaky<0.5`. Without a field, the question's
   natural value is used: `noul`, `choice` or `score`.
+- `keepAny`: the same syntax. An item is kept when **any** of these matches (and every `keep`
+  does), which is how one sweep screens for several signals at once. A flat answer on a `keepAny`
+  question makes the item undecided only when it could change the outcome: if another `keepAny`
+  filter already matches with a decided answer, the item is kept.
 - `sort`: `<question>[.<field>][:asc|desc]`, descending by default. Without a field, a `choice`
   sorts by `confidence` and the others by their natural value.
 
 Each must name a question in the spec. A `--keep` or `--sort` flag on the command line
-**replaces** the spec's value; it isn't added to it. `keep` also decides `ask`'s `verdict`.
+**replaces** the spec's value; it isn't added to it, and `--keep-any` replaces `keepAny` the same
+way. `keep` and `keepAny` also decide `ask`'s `verdict`.
 
 ## Thresholds
 

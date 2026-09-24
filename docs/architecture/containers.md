@@ -39,8 +39,10 @@ flowchart TB
 | `@garygentry/system1-core` | `packages/core` | The engine as a library. Published beside the CLI (M6 D1), with `index.ts` as its surface and three deep exports (`./errors`, `./version`, `./route`) that keep the CLI's startup path off the barrel. Its stability as a public API is undecided. |
 | `@garygentry/system1-pi` | `packages/pi` | Skills only, for `pi install npm:`. Its `package.json` and `prepack.mjs` are generated, and `prepack` copies `plugins/system1/skills` in. |
 
-The three skills are `ask` (hand a closed judgement to `decide`), `design` (save a reusable spec)
-and `setup` (user-only: install, key, consent, network). None ships a spec. The lowest-priority
+The four skills are `ask` (hand a closed judgement to `decide`), `design` (save a reusable spec),
+`setup` (user-only: install, key, consent, network) and `scout` (user-only: screen code or agent
+configuration for decision-model opportunities into a backlog). None ships a spec to the lookup
+path: scout's two signal tables sit in its `references/` and are passed to `--spec` by path. The lowest-priority
 spec directory (origin `bundled`) is set only by `SYSTEM1_SPECS_PATH`; no package carries one.
 
 ## Per harness

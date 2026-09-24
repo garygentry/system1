@@ -34,7 +34,7 @@ Sources:    --glob <pattern>…  --file <path[:L1-L2]>…  --jsonl <path>
             --diff <range> [--staged]  --text <text>  --stdin
             --exclude <glob>…  (leave matching paths out; reported as filtered)
 Split:      --split file|hunk|row|join|lines:N[/overlap]      (default: file; join = one state)
-Project:    --keep 'relevant>=0.7'…  --sort relevant:desc  --limit N  --fields a,b
+Project:    --keep 'relevant>=0.7'… (all)  --keep-any 'a>=0.3'… (any)  --sort relevant:desc  --limit N  --fields a,b
             --allow-outside   (read files that resolve outside the repo)
 Run:        --dry-run  --confirm  --record | --replay | --live  --model <id>  --concurrency N
 

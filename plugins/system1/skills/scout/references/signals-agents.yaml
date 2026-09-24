@@ -1,0 +1,121 @@
+description: Scout, agents mode. Screen skills, agent definitions, hooks and workflow files for places where an agent spends turns making the same closed judgement a decision model could make.
+questions:
+  read_each_decide:
+    type: noul
+    instructions: This file tells an agent to go through many items one by one and make the same closed judgement about each.
+    criteria:
+      true: It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.
+      false: It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction.
+  classify_fanout:
+    type: noul
+    instructions: This file dispatches subagents or parallel agent runs whose job is to classify, check or grade items.
+    criteria:
+      true: It spawns, dispatches or fans out agents, one per item or partition, and each returns a verdict, label or score.
+      false: It dispatches no agents, or the agents it dispatches write, edit, research or generate rather than judge.
+  prompt_hook_verdict:
+    type: noul
+    instructions: This file configures a hook or gate that asks a language model for a yes or no, allow or deny, or pass or fail verdict.
+    criteria:
+      true: A hook, check or gate runs a prompt through a language model (a prompt-type hook, claude -p, codex exec or an API call) and acts on a closed verdict from it.
+      false: Its hooks run ordinary scripts, commands or pattern matching, or it has no hooks.
+  fixed_rubric:
+    type: noul
+    instructions: This file has a step that grades work against a fixed rubric or checklist and returns a verdict.
+    criteria:
+      true: A reviewer, critic, verifier or grading step checks output against listed criteria and returns pass or fail, a score or a label per criterion.
+      false: The review is open-ended (write feedback, suggest improvements), or there is no grading step.
+  iteration_cap:
+    type: noul
+    instructions: This file stops an agent loop after a fixed number of iterations or retries instead of checking whether it is making progress.
+    criteria:
+      true: A loop, retry or repair cycle ends on a hard count ("stop after 20 tries", "at most 5 rounds") with no check of progress.
+      false: The loop ends when a condition is met or progress stops, or there is no loop.
+keepAny:
+  - read_each_decide>=0.3
+  - classify_fanout>=0.3
+  - prompt_hook_verdict>=0.3
+  - fixed_rubric>=0.3
+  - iteration_cap>=0.3
+policy:
+  thresholds:
+    read_each_decide:
+      value: 0.3
+      why: Recall first. A missed opportunity is invisible; a false keep costs one read of the file. Unmeasured (judgement over prose).
+    classify_fanout:
+      value: 0.3
+      why: Recall first, as above.
+    prompt_hook_verdict:
+      value: 0.3
+      why: Recall first, as above.
+    fixed_rubric:
+      value: 0.3
+      why: Recall first, as above.
+    iteration_cap:
+      value: 0.3
+      why: Recall first, as above.
+source: { split: file }
+meta:
+  threshold_basis: unmeasured
+  used_by: the scout skill (plugins/system1/skills/scout)
+  # Checked by tools/signals.test.ts: which examples the keepAny/keep policy
+  # keeps. No "needs generation" exclusion: it read "fix the code, stop after
+  # 20 tries" as generation (0.91) and would have dropped the loop cap, whose
+  # replacement ("is it making progress?") is a closed judgement. Each signal's
+  # own false criteria already exclude write-something steps.
+  screen:
+    kept: [triage-skill, fanout-classifier-agents, prompt-hook, retry-cap]
+    dropped: [writing-skill, ordinary-hook]
+examples:
+  - id: triage-skill
+    state: |
+      ---
+      name: triage-issues
+      description: Triage new GitHub issues.
+      ---
+      For each open issue without a label, read the title and body and decide whether it is a bug,
+      a feature request or a question. Apply the matching label. Do this for every issue returned
+      by `gh issue list --label ""`.
+    expect: { read_each_decide: true, prompt_hook_verdict: false }
+  - id: fanout-classifier-agents
+    state: |
+      ## Review
+      Partition the changed files into groups of ten. Dispatch one reviewer subagent per group.
+      Each subagent reads its files and returns, for each file, PASS or FAIL against the security
+      checklist, with the rule that failed.
+    expect: { classify_fanout: true, fixed_rubric: true }
+  - id: prompt-hook
+    state: |
+      {
+        "hooks": {
+          "PreToolUse": [{ "matcher": "Bash", "hooks": [{
+            "type": "prompt",
+            "prompt": "Is this shell command destructive? Answer ALLOW or DENY: $ARGUMENTS"
+          }] }]
+        }
+      }
+    expect: { prompt_hook_verdict: true }
+  - id: retry-cap
+    state: |
+      Run the tests. If any fail, fix the code and run them again. Stop after 20 attempts even if
+      tests still fail, and report what is left.
+    expect: { iteration_cap: true }
+  - id: writing-skill
+    state: |
+      ---
+      name: release-notes
+      description: Draft release notes.
+      ---
+      Read the commits since the last tag and write release notes grouped by area, in the house
+      style, with one sentence per change.
+    expect: { read_each_decide: false, fixed_rubric: false }
+  - id: ordinary-hook
+    state: |
+      {
+        "hooks": {
+          "PostToolUse": [{ "matcher": "Edit", "hooks": [{
+            "type": "command",
+            "command": "npx biome format --write \"$CLAUDE_FILE_PATH\""
+          }] }]
+        }
+      }
+    expect: { prompt_hook_verdict: false, classify_fanout: false }

@@ -71,7 +71,7 @@ These objects appear in several results.
 | Field | |
 |---|---|
 | `total` | number withheld |
-| `byReason` | reason → count. Reasons: `binary`, `too-large`, `gitignored`, `excluded`, `outside-repo`, `filtered` (`--exclude`) |
+| `byReason` | reason → count. Reasons: `binary`, `too-large` (a file over 2 MB, or in `many` an item over the model's limit), `gitignored`, `excluded`, `outside-repo`, `filtered` (`--exclude`) |
 | `sample` | up to 5 of them, excluded ones first: `{path, reason, detail?}`. For `excluded` and `filtered`, `detail` is the pattern that matched |
 
 **`redactions`**: `{total, items}`, the number of secret-shaped strings removed before sending,
@@ -90,7 +90,7 @@ and how many items they were in.
 | `servedBy` | the model build that answered, e.g. `typesafe/jev-1.13-20260917` |
 | `answers` | see [Answers](#answers) |
 | `undecided` | names of the answers too flat to act on. Can be empty |
-| `verdict` | *optional*, only with `keep` (from `--keep` or the spec): `kept`, `dropped` or `undecided`. `undecided` when any question the filters name is undecided |
+| `verdict` | *optional*, only with `keep` or `keepAny` (from the flags or the spec): `kept`, `dropped` or `undecided`. `undecided` when a `keep` question is undecided, or when no decided `keepAny` filter matches and one of them is undecided |
 | `usage` | see [Shared fields](#shared-fields) |
 | `latencyMs` | measured time for the call |
 | `skipped` | see [Shared fields](#shared-fields) |
@@ -136,8 +136,11 @@ and how many items they were in.
 
 Dropped items are counted in `counts.dropped` and not listed.
 
-Only the questions that `keep` and `sort` act on decide whether a row is undecided. With neither,
-every question counts.
+Only the questions that `keep` and `sort` act on decide whether a row is undecided, and a
+`keepAny` question only when it could change the outcome (no decided `keepAny` filter matched).
+With no `keep`, `keepAny` or `sort`, every question counts. An item over the model's size limit is
+not an error in `many`: it's listed in `skipped` as `too-large`, with the split to re-run it in
+`detail`, and the rest of the run goes ahead.
 
 A **result row** has:
 
@@ -289,6 +292,7 @@ The envelope's `command` is `opportunities`. Each entry in the backlog:
 | `location` | `{path, lines?}` |
 | `mechanism` | what does the job today |
 | `shape` | `single`, `fanout`, `cascade` or `pairwise` |
+| `benefit` | what replacing it would mainly buy: `cost`, `quality` (better or steadier verdicts; a free regex replaced by a model has a negative `savingUsd`) or `latency`. Rank within a benefit, not across |
 | `evidence` | the text that triggered it, verbatim |
 | `questions` | a draft question set that would replace the mechanism |
 | `projected` | `{basis: "projected", volume, per, currentCostPerItemUsd, decisionCostPerItemUsd, savingUsd, note?}`. `savingUsd` is `volume × (current − decision)`, computed by `decide` |

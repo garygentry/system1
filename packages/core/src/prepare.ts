@@ -1,7 +1,7 @@
 import { applyExcludes } from "./egress/exclude.js"
 import { type ScrubCounts, scrubState, scrubText } from "./egress/scrub.js"
 import { assertStateFits } from "./egress/size.js"
-import { DecisionsError } from "./errors.js"
+import { DecisionsError, isDecisionsError } from "./errors.js"
 import type { ModelProfile } from "./model/profiles.js"
 import type { QuestionSet, State } from "./model/types.js"
 import { assertQuestionSet } from "./model/validate.js"
@@ -24,6 +24,12 @@ export interface PrepareInput {
   maxFileBytes?: number
   /** Allow content from outside the repo (off by default). */
   allowOutside?: boolean
+  /**
+   * `skip`: an item over the model's size limit is reported in `skipped` as
+   * `too-large`, with the fix in `detail`, and the rest go ahead. A fan-out
+   * wants this; `ask`, which has one item, keeps the error (`throw`, the default).
+   */
+  oversize?: "throw" | "skip"
 }
 
 export interface Prepared {
@@ -88,12 +94,24 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
   // Then each item again, so anything the split produced (a join, a row read
   // as a value) is covered too.
   const tokens: number[] = []
-  const items = kept.map((item) => {
+  const oversize: Skipped[] = []
+  const items = kept.flatMap((item) => {
     const counts: ScrubCounts = {}
     const state = scrubState(item.state, counts)
     if (count(counts) > 0) redactedSources += 1
-    tokens.push(assertStateFits(item.id, state, input.questions, input.profile))
-    return { ...item, state }
+    try {
+      tokens.push(assertStateFits(item.id, state, input.questions, input.profile))
+    } catch (error) {
+      if (input.oversize !== "skip" || !isDecisionsError(error)) throw error
+      const estimated = error.details.estimatedTokens
+      oversize.push({
+        path: item.path ?? item.id,
+        reason: "too-large",
+        detail: `about ${estimated} tokens with its questions (limit ${input.profile.maxStateTokens}); re-run it with --split lines:400/40`,
+      })
+      return []
+    }
+    return [{ ...item, state }]
   })
 
   return {
@@ -103,6 +121,7 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
       ...allowed.excluded,
       ...chosen.filtered,
       ...filtered.excluded,
+      ...oversize,
     ]),
     redactions: {
       total: Object.values(byKind).reduce((a, b) => a + b, 0),

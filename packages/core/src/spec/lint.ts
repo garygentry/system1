@@ -96,7 +96,9 @@ export function lintStatement(text: string, question?: string): LintFinding[] {
   return unsupported(text, question)
 }
 
-export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): LintFinding[] {
+export function lintSpec(
+  spec: Pick<Spec, "questions" | "keep" | "keepAny" | "policy">,
+): LintFinding[] {
   const out = lintQuestions(spec.questions)
   const thresholds = spec.policy?.thresholds ?? {}
   for (const name of Object.keys(thresholds)) {
@@ -112,7 +114,11 @@ export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): Lin
   }
   const justified = new Set(Object.keys(thresholds))
   const reported = new Set<string>()
-  for (const text of spec.keep ?? []) {
+  const filters = [
+    ...(spec.keep ?? []).map((text) => ({ text, list: "keep" })),
+    ...(spec.keepAny ?? []).map((text) => ({ text, list: "keepAny" })),
+  ]
+  for (const { text, list } of filters) {
     const { question, op } = parseFilter(text, spec.questions)
     // Only a numeric cut is a threshold; `kind=fix` has no value to justify.
     if (!NUMERIC.has(op)) continue
@@ -121,7 +127,7 @@ export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): Lin
     out.push(
       finding(
         "unjustified-threshold",
-        `keep "${text}" has no policy.thresholds.${question} saying why`,
+        `${list} "${text}" has no policy.thresholds.${question} saying why`,
         `Add policy.thresholds.${question}: {value, why}, with the cost of a wrong keep and a wrong drop (see thresholds.md).`,
         question,
       ),
@@ -161,7 +167,9 @@ function lintQuestion(name: string, q: Question): LintFinding[] {
     )
   }
   // All of a question's text at once: one finding per kind, not per phrase.
-  out.push(...unsupported(texts.join("\n"), name))
+  // Quoted text in criteria is an example of what to spot ("stop after 20
+  // tries"), not the ask; the instructions are linted as written.
+  out.push(...unsupported([q.instructions, ...criteriaTexts(q).map(unquoted)].join("\n"), name))
   if (merged(q.instructions)) {
     out.push(
       finding(
@@ -209,6 +217,10 @@ function merged(instructions: string): boolean {
 /** Sentences that frame the question rather than make a second claim. */
 const FRAMING =
   /^(consider|only|ignore|answer|note|treat|assume|look|focus|read|judge|use|do not|don't|exclude|include|given|for example|e\.g|if|when|here|this question|count only|disregard)\b/i
+
+function unquoted(text: string): string {
+  return text.replace(/"[^"\n]*"|“[^”\n]*”/g, '""')
+}
 
 function criteriaTexts(q: Question): string[] {
   if (q.type === "noul") return q.criteria ? Object.values(q.criteria) : []

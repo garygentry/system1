@@ -1,7 +1,7 @@
 import { DecisionsError } from "../errors.js"
 import type { Answers, Usage } from "../model/types.js"
 import { prepare } from "../prepare.js"
-import { matches } from "../project/project.js"
+import { verdictOf } from "../project/project.js"
 import type { AnswerSource } from "../run/spend.js"
 import type { LineRange } from "../sources/types.js"
 import { checkInput, deciderFor, resolveRequest, type ToolContext } from "./context.js"
@@ -67,15 +67,10 @@ export async function runAsk(ctx: ToolContext, rawInput: unknown): Promise<AskRe
     namespace: req.namespace,
   })
 
-  let verdict: AskResult["verdict"]
-  if (req.keep.length > 0) {
-    const referenced = new Set(req.keep.map((f) => f.question))
-    verdict = result.undecided.some((q) => referenced.has(q))
-      ? "undecided"
-      : req.keep.every((f) => matches(result.answers, f))
-        ? "kept"
-        : "dropped"
-  }
+  const verdict: AskResult["verdict"] =
+    req.keep.length > 0 || req.keepAny.length > 0
+      ? verdictOf(result.answers, result.undecided, req.keep, req.keepAny).verdict
+      : undefined
 
   return {
     ...(req.spec ? { spec: req.spec.name } : {}),

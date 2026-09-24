@@ -56,7 +56,7 @@
 
 ## M9 — `scout` (release 0.4.0)
 
-**Status:** in progress. The foundation (§1, §2, §3, §3a, §8) landed on 2026-09-24 in PR #10; next are the signal tables (§4) and the skill (§5).
+**Status:** in progress. The foundation (§1, §2, §3, §3a, §8) landed on 2026-09-24 in PR #10. The signal tables (§4), the skill (§5), `keepAny`, the typed `benefit` field and the docs (§10) landed in PR #11. Left: the harness runs (§9 smoke and routing evals), the dogfood on an unrelated repo (§11), and the 0.4.0 release.
 **Carries over** `later-scout-opportunities.md` §1–§6 and its D1–D4. The detail there is authoritative where this section is brief, except where this section differs: the lint is its own command (§2), and candidates go to `opportunities add --file <path>`, never stdin (the Codex `prefix_rule` doesn't cover a pipe into `decide`).
 
 ### Work
@@ -68,7 +68,7 @@
 2. **`decide spec lint`**, and `spec check` runs it first and prints its findings. Offline: no key, no consent, no egress. The checks are the failure-mode catalogue in `later-scout-opportunities.md` §2, with severity per X2. The "criteria a literal reader will take the wrong way" check can't be done offline: it stays in `design`'s reference, not in lint. The lint also exposes a single-question entry point, which M10 uses on criteria bullets.
 3. **Contract.** Amend [0015](../decisions/0015-cli-contract-v1.md) additively (same `v`): the new commands, their result shapes, error codes and exit codes, and the wider exit 7 (X2). `decide schema <tool>` for each new tool. Update `packages/cli/src/exit-codes.ts`, `docs/cli.md` and `AGENTS.md`. The docs-vs-code test covers them.
 3a. **`--exclude <glob>` on sources** (`many`, `ask`), repeatable, applied before anything is read. It is per call, unlike `egress.exclude`, which is persistent config. The pre-check sent every test, fixture and eval file to the model and asked `test_or_fixture`, which the model can't answer from content alone (it doesn't see the path). Path rules belong in the partition step, where they cost nothing.
-4. **The signal tables** (X3), shipped **as specs with examples** (true and false positives from the dogfood, recorded once) so that `spec check` replays them in `pnpm check`. A wording change that kills recall then fails CI. The anti-signal questions go in the same pass, so one call screens items both in and out.
+4. **The signal tables** (X3; built as two self-contained specs, since the spec format has no include, with the exclusion questions inside each), shipped **as specs with examples** (true and false positives from the dogfood, recorded once) so that `spec check` replays them in `pnpm check`. A wording change that kills recall then fails CI. The anti-signal questions go in the same pass, so one call screens items both in and out.
 5. **`scout` skill** (user-invocable: `disable-model-invocation`, and `allow_implicit_invocation: false` in `agents/openai.yaml`):
    1. Resolve the target and pick the mode.
    2. **Local prefilter, no egress:** exclude tests, fixtures, eval harnesses and generated code by path (`--exclude`). Grep the target for the repo's own decision-model call sites (imports of the engine, `decide`, `/decisions` endpoints) and exclude files that only reach the model through them. In the pre-check, the per-file `already_decision_model` question couldn't see an indirect call: 32 of 38 `jev-poc` survivors were demos that already use Jev through a shared runner.
@@ -96,8 +96,8 @@
 - [x] `check` reports a malformed backlog as a typed error, exit 2, and never repairs it.
 - [x] Re-running a sweep after moving a file keeps the candidate's id (X4) (tested).
 - [x] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
-- [ ] Signal tables replay in `pnpm check` through `spec check`.
-- [ ] A sweep over more than 200 items stops at the projection until the user approves; oversize files are windowed, not dropped.
+- [x] Signal tables replay in `pnpm check` through `spec check`, and the screen keeps and drops exactly the examples it should (`tools/signals.test.ts`).
+- [ ] A sweep over more than 200 items stops at the projection until the user approves (the guard and the skill text are in place; to be seen in a harness run). *Oversize files are windowed, not dropped: done in PR #11: `many` reports an oversize item as `too-large` with the split in `detail` rather than failing the run, and `--file <path> --split lines:400/40` screens it.*
 - [ ] Mode A finds at least one real, defensible candidate in this repo or `jev-poc` (the pre-check already found one: `route.ts`); measured cost recorded.
 - [ ] Mode A runs on at least one repo the signal questions were not written against (the pre-check's targets are both System 1 / Jev code, which skews them). Its precision and recall are written up.
 - [ ] With the local prefilter, `jev-poc`'s survivors no longer consist mostly of demos that already use Jev.
@@ -329,9 +329,27 @@
 - **Bias disclosed.** Both targets are System 1 / Jev code, the worst case for the decision-model anti-signal and the best case for finding baselines. The new M9 acceptance box requires an unrelated repo.
 - **A bug found along the way:** 11 of 385 calls (2.9%) failed on HTTP 529 `system_overloaded`, which the transport did not retry. Fixed alongside these results: 529 is added to `RETRY_STATUSES`, with a test.
 
-**Open question it raised, for §5 (found while dogfooding the backlog, 2026-09-24).** Some opportunities pay back in quality, not money. `route.ts` is one: regexes cost nothing, so a decision model projects −$0.00003 per prompt, and the real gain is recall (73/80 on the blind set) paid for with egress and latency. As built, the record carries money only, with `projected.note` for the rest. Before the skill ranks by `projected`, decide whether candidates need a typed `benefit` (`cost` | `quality` | `latency`) so a quality opportunity isn't ranked last. It is additive either way.
+**Settled 2026-09-24 (PR #11): candidates carry a typed `benefit` (`cost` | `quality` | `latency`), and the skill ranks within a benefit.** The question as it was raised: Some opportunities pay back in quality, not money. `route.ts` is one: regexes cost nothing, so a decision model projects −$0.00003 per prompt, and the real gain is recall (73/80 on the blind set) paid for with egress and latency. As built, the record carries money only, with `projected.note` for the rest. Before the skill ranks by `projected`, decide whether candidates need a typed `benefit` (`cost` | `quality` | `latency`) so a quality opportunity isn't ranked last. It is additive either way.
 
 **Verdict: go.** Scout finds the right things, and its noise has concrete, cheap fixes that are now in the M9 work list. `route.ts` is the first backlog entry, and a natural first dogfood for M11's `adopt`.
+
+### M9 skill dogfood: `/system1:scout packages tools` in Claude Code (2026-09-24, PR #11)
+
+A headless Claude Code session (Sonnet, the plugin from this checkout) ran the skill over this repo in code mode.
+
+- **What it did, following the skill:**
+  1. Checked `doctor`.
+  2. Left out 143 test, fixture, eval and generated files with `--exclude`.
+  3. Ran the dry run: 71 files, $0.0078 projected. That is under the guard, so it went ahead and said so.
+  4. Screened: 7 kept, 8 undecided, 56 dropped, **$0.0064 measured**.
+  5. Read the 15 survivors only.
+  6. Recorded `route.ts` and `spec/lint.ts` as `rejected` intentional heuristics, with reasons, through `opportunities add`.
+  7. Reported 13 false positives and no real opportunity.
+- **Cost:** the agent's own session was $0.91 of Sonnet tokens, 140 times the decision calls. That is a reminder that the screening is the cheap part.
+- **Honest reading:**
+  - This repo is the engine, so "no opportunity" is right, and the false positives are its own decision-model plumbing. The local "already uses a decision model" prefilter can't separate those here, because every file is part of that machinery.
+  - The agent judged `route.ts` intentional. The pre-check saw a quality opportunity there, and both readings are defensible. Deciding it is a person's call, which is why `rejected` carries a reason.
+- **Friction:** in `-p` mode, Claude Code asked for approval to redirect output to a file. The skill already writes only its candidates file, under `.system1/scout/`.
 
 <details><summary>The draft Mode A signal questions used (the starting point for M9 §4)</summary>
 

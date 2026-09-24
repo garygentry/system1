@@ -1,0 +1,71 @@
+{
+  "v": 1,
+  "key": "55e0645534713e378305e3066f902c651685717c2b4cfbf4fde782a3df85796d",
+  "recordedAt": "2026-09-24T21:13:57.958Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "import OpenAI from \"openai\"\nconst client = new OpenAI()\nexport async function routeTicket(text: string): Promise<\"billing\" | \"bug\" | \"other\"> {\n  const res = await client.chat.completions.create({\n    model: \"gpt-4o\",\n    messages: [{ role: \"user\", content: `Classify this ticket as billing, bug or other. Reply with one word.\\n\\n${text}` }],\n  })\n  const label = res.choices[0]?.message.content?.trim().toLowerCase()\n  return label === \"billing\" || label === \"bug\" ? label : \"other\"\n}\n",
+    "questions": {
+      "llm_closed_answer": {
+        "type": "noul",
+        "instructions": "The code in this file sends a prompt to a language model and uses the reply as a fixed label, a yes or no, one of a fixed set of options, or a number.",
+        "criteria": {
+          "true": "It calls a chat or completion API, an LLM SDK (OpenAI, Anthropic, Vercel AI, LangChain and similar) or an LLM provider endpoint, and constrains or parses the reply into an enum, boolean, category, verdict or score, for example a JSON schema with enum or boolean fields, a prompt demanding only yes or no, or code comparing the reply with fixed values.",
+          "false": "It makes no language model call, or it uses the reply as prose, code, a summary or other generated text."
+        }
+      },
+      "semantic_heuristic": {
+        "type": "noul",
+        "instructions": "This file decides a meaning-based property of text using hand-written keyword lists, regular expressions or string matching.",
+        "criteria": {
+          "true": "The property is about meaning, such as intent, topic, urgency, sentiment, relevance, risk or whether two texts say the same thing, and it is decided by lists of words, regexes or substring checks.",
+          "false": "The matching is about exact syntax or format (parsing flags, paths, versions, identifiers, JSON, secret or token shapes), or there is no such matching."
+        }
+      },
+      "judge_over_many": {
+        "type": "noul",
+        "instructions": "This file asks a model to grade, rank, rerank, classify or filter many items, one call per item or in a loop.",
+        "criteria": {
+          "true": "It loops or fans out over records, candidates, search results, files or messages and asks a model for a verdict, label or score on each.",
+          "false": "It makes a single model call, generates text for each item, or makes no model calls."
+        }
+      },
+      "already_decision_model": {
+        "type": "noul",
+        "instructions": "The judgement in this file is already sent to a decision model that returns typed probabilities, not to a chat model.",
+        "criteria": {
+          "true": "It calls Jev, a typesafe/jev model, a /decisions endpoint, or the decide CLI or its engine to get noul, choice or score answers.",
+          "false": "It calls a chat or completion model, uses hand-written rules, or calls no model."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "llm_closed_answer": {
+        "type": "noul",
+        "noul": 0.98
+      },
+      "semantic_heuristic": {
+        "type": "noul",
+        "noul": 0.13
+      },
+      "judge_over_many": {
+        "type": "noul",
+        "noul": 0.09
+      },
+      "already_decision_model": {
+        "type": "noul",
+        "noul": 0.02
+      }
+    },
+    "usage": {
+      "input_tokens": 896,
+      "output_tokens": 80,
+      "cost": 0.000037632
+    },
+    "id": "gen-dec-1790284437-apiVuvroJuUrsUbdv21C",
+    "provider": "TypeSafe"
+  }
+}

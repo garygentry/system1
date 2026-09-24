@@ -86,6 +86,7 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
     cwd: ctx.config.repoRoot,
     exclude: ctx.config.egress.exclude,
     filter: req.exclude,
+    oversize: "skip",
     ...(input.allowOutside ? { allowOutside: true } : {}),
   })
   const base = {
@@ -149,6 +150,7 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
   const projected = project({
     rows,
     keep: req.keep,
+    keepAny: req.keepAny,
     ...(req.sort ? { sort: req.sort } : {}),
     ...(input.limit !== undefined ? { limit: input.limit } : {}),
     ...(input.fields ? { fields: input.fields } : {}),

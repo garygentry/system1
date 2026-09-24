@@ -35,7 +35,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..")
 const EVALS = join(ROOT, "tools/evals")
 const WORK = workDir(process.env.SYSTEM1_EVAL_DIR)
 const TIMEOUT_MS = Number(process.env.EVAL_TIMEOUT_MS ?? 240_000)
-const SKILLS = ["ask", "design", "setup"] as const
+const SKILLS = ["ask", "design", "setup", "scout"] as const
 type Skill = (typeof SKILLS)[number]
 type Harness = "claude" | "codex" | "pi"
 
@@ -62,6 +62,7 @@ export const MINIMUMS: Record<Skill, { positive: number; negative: number }> = {
   ask: { positive: 8, negative: 8 },
   design: { positive: 4, negative: 4 },
   setup: { positive: 0, negative: 4 },
+  scout: { positive: 0, negative: 2 },
 }
 
 export function loadCases(file: string = join(EVALS, "routing.yaml")): Case[] {

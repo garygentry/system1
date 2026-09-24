@@ -62,11 +62,12 @@ Inline instruction text can't contain `:`. For anything richer, use `--questions
 **Split:** `--split file|hunk|row|join|lines:N[/overlap]`. The default is `file`. `join` makes
 all sources one item.
 
-**Projection** (`many`; `ask` uses `--keep` for its `verdict`):
+**Projection** (`many`; `ask` uses `--keep` and `--keep-any` for its `verdict`):
 
 | Flag | |
 |---|---|
 | `--keep '<question>[.<field>]<op><value>'` | repeatable, ANDed. Operators: `>= > <= < = !=` and `in a,b`. Fields: the natural value, `confidence`, `probabilities.<key>` |
+| `--keep-any '<question>[.<field>]<op><value>'` | repeatable: kept when **any** of these matches, as well as every `--keep`. A flat answer makes an item undecided only if it could change the outcome |
 | `--sort <question>[.<field>][:asc\|desc]` | descending by default |
 | `--limit <N>` | at most N kept items |
 | `--fields <a,b>` | only these questions in each result |
@@ -150,7 +151,8 @@ counts as an opportunity; `decide` validates, merges and stores it. Nothing is s
 - **`list`** filters and sorts on record fields with the `--keep` syntax: `status=new`,
   `risk in medium,high`, `projected>=0.01`, `location.path=src/a.ts`. A bare `risk`,
   `projected`, `location` or `source` means its `level`, `savingUsd`, `path` or `sweep`. The
-  default sort is `projected:desc`. Field and sub-field names are checked, so a typo is an error
+  default sort is `projected:desc`, which only ranks `benefit=cost` entries meaningfully: filter
+  by `benefit` first. Field and sub-field names are checked, so a typo is an error
   even on an empty backlog.
 - **`check`** validates the file. A malformed backlog is `invalid-request`, exit 2, listing every
   problem, and `add` and `list` refuse it the same way. `decide` never repairs or overwrites it.
@@ -222,7 +224,7 @@ branch on it, not on the message.
 |---|---|---|
 | 0 | ok, including a `many` run where only some items failed (listed in `failed`) | — |
 | 1 | a bug in `decide` | `error` |
-| 2 | usage, config or source problem | `invalid-request`, `state-too-large`, `unknown-model`, `config-error`, `source-error`, `no-key` |
+| 2 | usage, config or source problem (in `many`, an oversize item is skipped rather than `state-too-large`) | `invalid-request`, `state-too-large`, `unknown-model`, `config-error`, `source-error`, `no-key` |
 | 3 | egress refused | `egress-refused` |
 | 4 | spend guard; the projection is in `details` | `budget-exceeded` |
 | 5 | provider failure | `provider-unreachable`, `provider-http`, `malformed-response` |

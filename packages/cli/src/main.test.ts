@@ -716,6 +716,7 @@ describe("decide opportunities", () => {
     location: { path: "src/route.ts" },
     mechanism: "regex list classifying prompt intent",
     shape: "single",
+    benefit: "cost",
     evidence: "const TRIGGERS = [/classify/]",
     questions: { intent: { type: "noul", instructions: "The prompt asks for a verdict." } },
     projected: {

@@ -88,6 +88,28 @@ describe("prepare", () => {
     )
   })
 
+  it("skips an oversize item with the fix when asked, and throws by default", async () => {
+    const cwd = temp({ "big.ts": "x ".repeat(200_000), "small.ts": "y" })
+    const base = {
+      sources: [{ kind: "glob" as const, patterns: ["*.ts"] }],
+      split: { kind: "file" as const },
+      questions,
+      profile,
+      cwd,
+    }
+    await expect(prepare(base)).rejects.toMatchObject({ code: "state-too-large" })
+    const prepared = await prepare({ ...base, oversize: "skip" })
+    expect(prepared.items.map((i) => i.id)).toEqual(["small.ts"])
+    expect(prepared.skipped).toEqual([
+      {
+        path: "big.ts",
+        reason: "too-large",
+        detail: expect.stringMatching(/--split lines:400\/40$/),
+      },
+    ])
+    expect(prepared.projection.calls).toBe(1)
+  })
+
   it("validates the question set before reading anything", async () => {
     await expect(
       prepare({

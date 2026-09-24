@@ -131,6 +131,8 @@ export function matches(answers: Answers, filter: Filter): boolean {
 export interface ProjectInput<T extends { answers: Answers }> {
   rows: readonly T[]
   keep?: readonly Filter[]
+  /** Kept when any of these matches (and every `keep` does). */
+  keepAny?: readonly Filter[]
   sort?: SortKey
   limit?: number
   fields?: readonly string[]
@@ -147,6 +149,43 @@ export interface Projected<T> {
   dropped: number
 }
 
+export interface Verdict {
+  verdict: "kept" | "dropped" | "undecided"
+  /** For `undecided`: the questions whose flat answers could change the outcome. */
+  questions: string[]
+}
+
+/**
+ * One row's verdict under `keep` (all must match) and `keepAny` (at least one
+ * must match).
+ *
+ * A flat answer on a `keep` or `sort` question makes the row undecided, as
+ * before. A flat `keepAny` answer only does when it could change the outcome:
+ * if a decided `keepAny` filter already matches, the row is kept; if none
+ * matches and none is flat, it is dropped. With no filters and no sort, every
+ * question counts.
+ */
+export function verdictOf(
+  answers: Answers,
+  flat: readonly string[],
+  keep: readonly Filter[],
+  keepAny: readonly Filter[] = [],
+  sortQuestion?: string,
+): Verdict {
+  const acted = [...keep.map((f) => f.question), ...(sortQuestion ? [sortQuestion] : [])]
+  const all = acted.length === 0 && keepAny.length === 0
+  const blocking = flat.filter((q) => all || acted.includes(q))
+  if (blocking.length > 0) return { verdict: "undecided", questions: [...blocking] }
+  if (!keep.every((f) => matches(answers, f))) return { verdict: "dropped", questions: [] }
+  if (keepAny.length === 0) return { verdict: "kept", questions: [] }
+  const decided = keepAny.filter((f) => !flat.includes(f.question))
+  if (decided.some((f) => matches(answers, f))) return { verdict: "kept", questions: [] }
+  const open = [...new Set(keepAny.filter((f) => flat.includes(f.question)).map((f) => f.question))]
+  return open.length > 0
+    ? { verdict: "undecided", questions: open }
+    : { verdict: "dropped", questions: [] }
+}
+
 /**
  * Split rows into kept / undecided / dropped.
  *
@@ -161,15 +200,14 @@ export interface Projected<T> {
  */
 export function project<T extends { answers: Answers }>(input: ProjectInput<T>): Projected<T> {
   const keep = input.keep ?? []
-  const acted = [...keep.map((f) => f.question), ...(input.sort ? [input.sort.question] : [])]
-  const relevant = acted.length > 0 ? new Set(acted) : undefined
+  const keepAny = input.keepAny ?? []
   const kept: T[] = []
   const undecided: Array<{ row: T; questions: string[] }> = []
   let dropped = 0
   for (const row of input.rows) {
-    const flat = input.undecidedOf(row).filter((q) => !relevant || relevant.has(q))
-    if (flat.length > 0) undecided.push({ row, questions: [...flat] })
-    else if (keep.every((f) => matches(row.answers, f))) kept.push(row)
+    const v = verdictOf(row.answers, input.undecidedOf(row), keep, keepAny, input.sort?.question)
+    if (v.verdict === "undecided") undecided.push({ row, questions: v.questions })
+    else if (v.verdict === "kept") kept.push(row)
     else dropped += 1
   }
   if (input.sort) {

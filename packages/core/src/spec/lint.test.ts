@@ -117,6 +117,25 @@ describe("lint", () => {
     ).toEqual([])
   })
 
+  it("ignores quoted examples inside a question", () => {
+    const q = {
+      loop: {
+        type: "noul" as const,
+        instructions: "The file stops a loop on a hard count.",
+        criteria: {
+          true: 'It ends on a count ("stop after 20 tries", "at most 5 rounds").',
+          false: "It checks progress.",
+        },
+      },
+    }
+    expect(lintQuestions(q)).toEqual([])
+    // …but quotes in the instructions don't hide the ask.
+    const asked = {
+      n: { type: "noul" as const, instructions: '"How many callers does this function have?"' },
+    }
+    expect(lintQuestions(asked).map((f) => f.check)).toEqual(["unsupported-task"])
+  })
+
   it("catches counting, dates and exact facts phrased as criteria (review of #10)", () => {
     for (const text of [
       "All tests pass",
