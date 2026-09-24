@@ -1,6 +1,6 @@
 # 0009. Egress consent once per repo
 
-- **Status:** accepted
+- **Status:** accepted, **amended by [0016](0016-name-system1.md)** (consent lives in `.system1/config.yaml`, not `.decisions/config.yaml`; the rule is unchanged)
 - **Date:** 2026-09-22
 - **Source:** planning interview (session 0); see `plans/ROADMAP.md`
 
