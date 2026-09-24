@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Superseded 2026-09-24** by [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) §M9, which carries this plan's scope and D1–D4 forward, with one change: the lint is a separate `decide spec lint` that `spec check` runs first (D4 had it inside `spec check`). The title's "M7" is the numbering at the time of writing; this work is now M9. Kept as the detailed reference that section points to.
+
 # M7 — `scout`: find the decisions worth handing over
 
 **Status:** planned (2026-09-23). The decisions below came from interviewing the user.
@@ -5,7 +8,7 @@
 
 ## First principles
 
-- **Scout is its own best demo.** Finding opportunities *is* screening many items against the same closed question. If scout read every file itself, or spawned an agent per partition, it would be the anti-pattern it exists to find. It screens with `decide many` ([0017](../decisions/0017-fan-out-through-the-cli-not-subagents.md)).
+- **Scout is its own best demo.** Finding opportunities *is* screening many items against the same closed question. If scout read every file itself, or spawned an agent per partition, it would be the anti-pattern it exists to find. It screens with `decide many` ([0017](decisions/0017-fan-out-through-the-cli-not-subagents.md)).
 - **Recall first, precision second.** A missed opportunity is invisible; a false positive costs one read. Signal questions screen *in* generously, and the agent reads the survivors and writes them up. The model narrows the field; it does not file the report.
 - **Scout never measures anything.** Savings are arithmetic over volume and list prices, so every one is labelled projected. Measuring is `compare`'s job in M8 (charter §7.5).
 - **The backlog is an artifact, not a conversation.** `adopt` in M8 consumes it, so it is typed, validated and on disk — not prose in a transcript.
@@ -14,7 +17,7 @@
 
 | # | Question | Decision |
 |---|---|---|
-| D1 | How does scout fan out over a large target? | **Through `decide many`, not subagents.** Scout partitions the target and screens each partition against the signal tables in one call per partition. No harness subagents anywhere; `opportunity-scout` and the agent generator drop out of M7. Ratified as [0017](../decisions/0017-fan-out-through-the-cli-not-subagents.md). |
+| D1 | How does scout fan out over a large target? | **Through `decide many`, not subagents.** Scout partitions the target and screens each partition against the signal tables in one call per partition. No harness subagents anywhere; `opportunity-scout` and the agent generator drop out of M7. Ratified as [0017](decisions/0017-fan-out-through-the-cli-not-subagents.md). |
 | D2 | Which target modes ship? | **Both, one pipeline.** Mode A (a codebase) and Mode B (skills, plugins, hooks, agent configs) share partition → screen → rank → write; only the signal table and the anti-signal filter differ. |
 | D3 | Where does the backlog live? | **The CLI owns it.** A typed `opportunities` tool in `packages/core/src/tools/`, surfaced as `decide opportunities add|list|check`, writing a validated `.system1/opportunities.json`. The skill decides what counts as an opportunity; the CLI validates and persists. |
 | D4 | What happens to `question-critic`? | **A reference plus a static lint.** The failure-mode catalogue becomes a craft reference in `design`, and the mechanical checks become an offline lint pass in `decide spec check`. No agent. |
@@ -81,7 +84,7 @@ A new reference file under the `design` skill holding the catalogue from charter
 ## Out of scope
 
 - `adopt`, `compare`, `shadow-evaluator` and the `emulated` provider (M8).
-- Any subagent, and the agent generator ([0017](../decisions/0017-fan-out-through-the-cli-not-subagents.md)).
+- Any subagent, and the agent generator ([0017](decisions/0017-fan-out-through-the-cli-not-subagents.md)).
 - Measuring a real saving. Scout projects; `compare` measures.
 - Scouting a target outside the repo without `--allow-outside`, which keeps M6's repo boundary.
 
@@ -95,7 +98,7 @@ A new reference file under the `design` skill holding the catalogue from charter
 
 ## Acceptance
 
-- [ ] `decide opportunities add|list|check` ship as one typed tool, with schema, handler and tests; `--format brief` and the JSON envelope both behave per [0015](../decisions/0015-cli-contract-v1.md).
+- [ ] `decide opportunities add|list|check` ship as one typed tool, with schema, handler and tests; `--format brief` and the JSON envelope both behave per [0015](decisions/0015-cli-contract-v1.md).
 - [ ] `.system1/opportunities.json` has a validator, and `check` reports a malformed file as a typed error rather than repairing it.
 - [ ] `decide spec check` runs the static lint offline — no key, no consent, no egress — and its checks are documented as error or warning.
 - [ ] `scout` sweeps this repo in Mode A and finds at least one real, defensible candidate, with the run's measured cost recorded here.
@@ -104,4 +107,4 @@ A new reference file under the `design` skill holding the catalogue from charter
 - [ ] Undecided survivors are reported apart from kept and dropped.
 - [ ] Routing evals: `scout` loads on explicit invocation in Claude, Codex and Pi, and the `ask` set does not regress.
 - [ ] `pnpm check`, `pnpm smoke` and `pnpm eval:routing all` green.
-- [ ] The ROADMAP M7 row reflects [0017](../decisions/0017-fan-out-through-the-cli-not-subagents.md). The charter keeps its original §8 text, as it kept §4–§5 after [0013](../decisions/0013-cli-first-mcp-deferred.md); the decision record is what supersedes it.
+- [ ] The ROADMAP M7 row reflects [0017](decisions/0017-fan-out-through-the-cli-not-subagents.md). The charter keeps its original §8 text, as it kept §4–§5 after [0013](decisions/0013-cli-first-mcp-deferred.md); the decision record is what supersedes it.

@@ -167,4 +167,4 @@ sequenceDiagram
   and the tool context. `pnpm bench:startup` holds `decide route --hook` to the startup target.
 
 The hook sees only the user's prompt. It cannot catch Claude deciding by itself to grade its own
-work; that needs the deferred Stop-hook `guard` pack (known gap 1).
+work; that needs the Stop-hook `guard` `done-check` pack planned for M10 (known gap 1).

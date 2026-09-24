@@ -136,7 +136,7 @@ is an error rather than an invented answer, and costs say whether they are measu
 
 ## Where it's going
 
-The plan past 0.1.0 is about readiness, not features. [`plans/ROADMAP.md`](plans/ROADMAP.md) has the
+The plan past 0.1.0 was about readiness (M7–M8). The next three milestones add the developer-facing surfaces, before design partners try the whole chain ([decision 0019](plans/decisions/0019-scout-guard-adopt-before-partners.md)). [`plans/ROADMAP.md`](plans/ROADMAP.md) has the
 full plan and the reasoning.
 
 | | Milestone | State |
@@ -144,12 +144,15 @@ full plan and the reasoning.
 | M0–M6 | Engine, CLI, skills, three harnesses, first release | Done (0.1.0) |
 | M7 | Evidence: measure the calibration claim instead of repeating the vendor's | Done |
 | M8 | Onboarding: docs, a tested cookbook, the first-hour fixes, CI on macOS | Done (0.2.0). The routing hook followed in 0.3.x |
-| **M9** | **Design partners:** 3–5 outside users reach a first useful decision unaided, and what breaks gets fixed | **Next** |
-| M10 | Release: CHANGELOG, CONTRIBUTING, SECURITY, a stability and deprecation policy, the version decision | After M9 |
+| **M9** | **`scout`:** find the places in your code and agent configuration where a decision model would pay off | **Next** (0.4.0) |
+| M10 | **`guard` + `done-check`:** an opt-in stop-time check of acceptance criteria against the diff | Planned (0.5.0) |
+| M11 | **`adopt` + `compare`:** turn a found opportunity into code with a fallback, and measure it against what it replaces | Planned (0.6.0) |
+| M12 | **Design partners:** 3–5 outside users reach a first useful decision unaided, and what breaks gets fixed | After M11 |
+| M13 | Release: CHANGELOG, CONTRIBUTING, SECURITY, a stability and deprecation policy, the version decision | After M12 |
 
 **After release, not before.** These are designed but deliberately not being built until outside
-users have adopted the core: `guard` hook packs (including the stop-time check for Claude's own
-work), `scout`, `calibrate`, `compare`, `sweep` and `pairs`. An MCP server is deferred in favour
+users have adopted the core: `calibrate`, `sweep`, `pairs`, and the `command-guard` and
+`loop-check` hook packs. An MCP server is deferred in favour
 of the CLI ([decision 0013](plans/decisions/0013-cli-first-mcp-deferred.md)). The measurement gaps
 above (subjective questions, `choice` and `score`, other people's code, a second labeller) are
 most likely to close with design partners' data.
