@@ -55,12 +55,12 @@ describe("lint", () => {
         instructions: "The function has more than 3 callers.",
         criteria: { true: "more than 3 callers", false: "fewer than 4" },
       },
-      d: { type: "noul", instructions: "The ticket is older than a week." },
+      d: { type: "noul", instructions: "The ticket is older than 7 days." },
       i: { type: "noul", instructions: "The screenshot shows an error dialog." },
     })
     expect(findings.map((f) => [f.question, f.check, f.message])).toEqual([
       ["n", "unsupported-task", '"n" asks for counting or arithmetic ("more than 3")'],
-      ["d", "unsupported-task", '"d" asks for dates ("older than")'],
+      ["d", "unsupported-task", '"d" asks for dates ("older than 7 days")'],
       ["i", "unsupported-task", '"i" asks for images ("screenshot")'],
     ])
   })
@@ -94,8 +94,63 @@ describe("lint", () => {
     ])
   })
 
+  it("doesn't flag well-posed questions that merely name a date, image or number (review of #10)", () => {
+    for (const instructions of [
+      "The Dockerfile pins its base image to a digest.",
+      "The component renders an image without alt text.",
+      "The function validates the date format of its input.",
+      "The code checks token expiry before using the token.",
+      "The package supports Node versions older than 18.",
+      "The function accepts any number of arguments.",
+      "The tax is a percentage of the subtotal.",
+      "The loop counts the retries and gives up after the limit.",
+      "Consider only the added lines. The change alters error handling.",
+      "Is the error swallowed? Answer true if the catch block neither rethrows nor logs.",
+      "The letter is addressed to Mr. Smith as a customer.",
+      "The code calls https://api.example.com. without TLS pinning.",
+    ]) {
+      expect(lintQuestions({ q: { type: "noul", instructions } }), instructions).toEqual([])
+    }
+    const choice = { fix: "a fix", other_change: "Any other change" }
+    expect(
+      checks({ c: { type: "choice", instructions: "The kind of change.", criteria: choice } }),
+    ).toEqual([])
+  })
+
+  it("catches counting, dates and exact facts phrased as criteria (review of #10)", () => {
+    for (const text of [
+      "All tests pass",
+      "Merged before Friday",
+      "The file is longer than 300 lines",
+      "The commit was made before 2024",
+      "The function takes over 5 parameters",
+      "Changed within the last 30 days",
+      "Coverage is above 80 percent",
+      "Count TODO comments",
+    ]) {
+      expect(
+        lintStatement(text).map((f) => f.check),
+        text,
+      ).toEqual(["unsupported-task"])
+    }
+  })
+
+  it("asks only numeric keeps for a threshold", () => {
+    const findings = lintSpec({
+      questions: {
+        kind: {
+          type: "choice",
+          instructions: "The kind.",
+          criteria: { fix: "a fix", none: "None" },
+        },
+      },
+      keep: ["kind=fix", "kind in fix,none"],
+    })
+    expect(findings).toEqual([])
+  })
+
   it("lints a bare statement for unsupported tasks only", () => {
-    expect(lintStatement("All tests pass. The README is updated.")).toEqual([])
+    expect(lintStatement("The README explains how to install the CLI.")).toEqual([])
     expect(lintStatement("Ship it before Friday, dated today").map((f) => f.check)).toEqual([
       "unsupported-task",
     ])

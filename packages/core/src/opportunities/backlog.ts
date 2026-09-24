@@ -1,5 +1,15 @@
 import { createHash } from "node:crypto"
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs"
 import { dirname, join } from "node:path"
 import { type Static, Type } from "typebox"
 import { Value } from "typebox/value"
@@ -20,7 +30,8 @@ export const BACKLOG_FORMAT = 1
 
 const CLOSED = { additionalProperties: false } as const
 const Text = Type.String({ minLength: 1 })
-const Usd = Type.Number({ minimum: 0 })
+/** Bounded so the computed saving is always a finite number that survives JSON. */
+const Usd = Type.Number({ minimum: 0, maximum: 1e6 })
 
 const Status = Type.Union([
   Type.Literal("new"),
@@ -56,13 +67,13 @@ const candidateFields = {
    * The text that triggered it, taken verbatim from the screened item. The id is
    * derived from it, so it must be copied, not paraphrased.
    */
-  evidence: Text,
+  evidence: Type.String({ pattern: "\\S" }),
   /** A draft question set that would replace the mechanism. */
   questions: Type.Record(Type.String(), QuestionSchema, { minProperties: 1 }),
   /** The inputs of the projected saving. The saving itself is computed here. */
   projected: Type.Object(
     {
-      volume: Type.Number({ minimum: 0 }),
+      volume: Type.Number({ minimum: 0, maximum: 1e12 }),
       /** What `volume` counts per, e.g. "day", "PR", "run". */
       per: Text,
       currentCostPerItemUsd: Usd,
@@ -176,6 +187,9 @@ function candidateProblems(c: Candidate, at: string): string[] {
   if (c.status === "rejected" && !c.statusReason) {
     problems.push(`${at}/statusReason is required when status is rejected`)
   }
+  if (!Number.isFinite(projectedSaving(c.projected))) {
+    problems.push(`${at}/projected gives a saving that isn't a finite number`)
+  }
   if (c.location.lines && c.location.lines.end < c.location.lines.start) {
     problems.push(`${at}/location/lines end is before start`)
   }
@@ -193,9 +207,15 @@ function candidateProblems(c: Candidate, at: string): string[] {
  */
 export function readBacklog(file: string): Backlog {
   if (!existsSync(file)) return { version: BACKLOG_FORMAT, opportunities: [] }
+  let text: string
+  try {
+    text = readFileSync(file, "utf8")
+  } catch (error) {
+    throw malformed(file, [`cannot read it: ${(error as Error).message}`])
+  }
   let value: unknown
   try {
-    value = JSON.parse(readFileSync(file, "utf8"))
+    value = JSON.parse(text)
   } catch (error) {
     throw malformed(file, [`not JSON: ${(error as Error).message}`])
   }
@@ -210,6 +230,44 @@ function malformed(file: string, problems: string[]): DecisionsError {
     `${file} is not a valid backlog (it was left as it is):\n  ${problems.join("\n  ")}`,
     { file, problems },
   )
+}
+
+const LOCK_WAIT_MS = 5_000
+const LOCK_STALE_MS = 30_000
+
+/**
+ * Run `body` holding the backlog's lock, so concurrent `add`s (two sweeps, or
+ * a sweep run in parallel) serialise instead of losing each other's entries.
+ * A lock older than 30 s is from a crashed run and is taken over.
+ */
+export function withBacklogLock<T>(file: string, body: () => T): T {
+  mkdirSync(dirname(file), { recursive: true })
+  const lock = `${file}.lock`
+  const deadline = Date.now() + LOCK_WAIT_MS
+  for (;;) {
+    try {
+      closeSync(openSync(lock, "wx"))
+      break
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error
+      try {
+        if (Date.now() - statSync(lock).mtimeMs > LOCK_STALE_MS) rmSync(lock, { force: true })
+      } catch {}
+      if (Date.now() > deadline) {
+        throw new DecisionsError(
+          "invalid-request",
+          `${file} is locked by another \`decide opportunities add\` (${lock}). Retry, or delete the lock file if no add is running.`,
+          { file, lock },
+        )
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25)
+    }
+  }
+  try {
+    return body()
+  } finally {
+    rmSync(lock, { force: true })
+  }
 }
 
 /** Written whole, through a temp file, so a crash never leaves half a backlog. */
@@ -235,9 +293,10 @@ export interface MergeResult {
  *   `seenAt`), keeping `firstSeenAt`. Its status changes only when the
  *   candidate gives one, so a rejection survives a re-sweep.
  * - A new id is added with status `new` unless the candidate says otherwise.
- * - A `new` entry at a path this add covers, in the same mode, that the add
- *   didn't see again is marked `stale`: its evidence changed. It is never
- *   deleted.
+ * - A `new` entry that this add's sweep produced before, at a path the add
+ *   covers, in the same mode, and that the add didn't see again is marked
+ *   `stale`: its evidence changed. It is never deleted. A stale entry seen again
+ *   is `new` again.
  */
 export function mergeCandidates(
   backlog: Backlog,
@@ -262,7 +321,8 @@ export function mergeCandidates(
     byId.set(id, {
       id,
       ...c,
-      status: c.status ?? before?.status ?? "new",
+      // Seeing the evidence again disproves "stale"; any other status stands.
+      status: c.status ?? (before?.status === "stale" ? "new" : before?.status) ?? "new",
       ...(statusReason ? { statusReason } : {}),
       projected: { ...c.projected, basis: "projected", savingUsd: projectedSaving(c.projected) },
       firstSeenAt: before?.firstSeenAt ?? now,
@@ -271,10 +331,13 @@ export function mergeCandidates(
   }
   const added = [...seen].filter((id) => !existed.has(id))
   const updated = [...seen].filter((id) => existed.has(id))
-  const covered = new Set(candidates.map((c) => `${c.mode}\n${c.location.path}`))
+  // Coverage is per sweep: another sweep's entries at the same path (different
+  // questions, or an incremental add) are not disproved by this one.
+  const key = (o: Candidate) => `${o.mode}\n${o.location.path}\n${o.source.sweep}`
+  const covered = new Set(candidates.map(key))
   const staled: string[] = []
   for (const o of byId.values()) {
-    if (o.status === "new" && !seen.has(o.id) && covered.has(`${o.mode}\n${o.location.path}`)) {
+    if (o.status === "new" && !seen.has(o.id) && covered.has(key(o))) {
       byId.set(o.id, { ...o, status: "stale" })
       staled.push(o.id)
     }
@@ -287,21 +350,41 @@ export function mergeCandidates(
   }
 }
 
-/** Fields a record filter or sort may name, and the sub-field a bare name means. */
-const FIELDS: Record<string, string | undefined> = {
-  id: undefined,
-  mode: undefined,
-  status: undefined,
-  shape: undefined,
-  mechanism: undefined,
-  next: undefined,
-  firstSeenAt: undefined,
-  seenAt: undefined,
-  risk: "level",
-  projected: "savingUsd",
-  location: "path",
-  source: "sweep",
+/**
+ * Fields a record filter or sort may name: the sub-fields each object field
+ * has, and the one a bare name means. Checked statically, so a typo is an
+ * error even on an empty backlog.
+ */
+const FIELDS: Record<string, { default?: string; subs?: readonly string[] }> = {
+  id: {},
+  mode: {},
+  status: {},
+  statusReason: {},
+  shape: {},
+  mechanism: {},
+  evidence: {},
+  next: {},
+  firstSeenAt: {},
+  seenAt: {},
+  risk: { default: "level", subs: ["level", "note"] },
+  projected: {
+    default: "savingUsd",
+    subs: [
+      "savingUsd",
+      "volume",
+      "per",
+      "currentCostPerItemUsd",
+      "decisionCostPerItemUsd",
+      "basis",
+      "note",
+    ],
+  },
+  location: { default: "path", subs: ["path", "lines.start", "lines.end"] },
+  source: { default: "sweep", subs: ["sweep", "answers"] },
 }
+
+/** Top-level fields of an entry, for `--fields`. */
+export const ENTRY_FIELDS: readonly string[] = [...Object.keys(OpportunitySchema.properties)]
 
 export interface RecordFilter {
   field: string
@@ -341,13 +424,22 @@ export function parseRecordSort(text: string): { field: string; direction: "asc"
 }
 
 function recordField(name: string, path: string, text: string): string {
-  if (!(name in FIELDS)) {
+  const spec = Object.hasOwn(FIELDS, name) ? FIELDS[name] : undefined
+  if (!spec) {
     throw new DecisionsError(
       "invalid-request",
       `"${text}": no field "${name}". Fields: ${Object.keys(FIELDS).join(", ")}`,
     )
   }
-  const sub = path || FIELDS[name]
+  if (path && !spec.subs?.includes(path)) {
+    throw new DecisionsError(
+      "invalid-request",
+      spec.subs
+        ? `"${text}": ${name} has no "${path}". Use one of: ${spec.subs.join(", ")}`
+        : `"${text}": ${name} has no sub-fields`,
+    )
+  }
+  const sub = path || spec.default
   return sub ? `${name}.${sub}` : name
 }
 

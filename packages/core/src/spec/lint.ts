@@ -43,23 +43,39 @@ export interface LintFinding {
   fix: string
 }
 
-/** An option key or description that lets the model say "none of these". */
-const WAY_OUT =
-  /^(none|other|unclear|unknown|neither|n\/?a|no[-_ ]?match|not[-_ ]?applicable|unsure|mixed)$|\bnone of (these|the above)\b|\bnot (clear|applicable|enough)\b|\bno match\b|\bsomething else\b/i
+/** An option key token that lets the model say "none of these": `none`, `other_change`, `n/a`. */
+const WAY_OUT_KEY =
+  /^(none|other|others|unclear|unknown|neither|na|nomatch|unsure|mixed|else|nothing|irrelevant|unrelated)$/i
+/** …or a description that does. */
+const WAY_OUT_TEXT =
+  /\b(none of|any other|anything else|something else|neither|unclear|not (?:clear|sure|applicable|enough)|no match|does(?:n't| not) (?:fit|apply)|other than (?:these|the above))\b/i
 
-/** Things a decision model can't do (question-craft rule 8), by kind. */
+/**
+ * Things a decision model can't do (question-craft rule 8), by kind. Each is a
+ * phrase that asks for the thing, not a word that names it: "validates the date
+ * format" is a fine question, "is older than 30 days" is arithmetic on dates.
+ */
 const UNSUPPORTED: Array<{ kind: string; pattern: RegExp }> = [
   {
     kind: "counting or arithmetic",
     pattern:
-      /\b(how many|number of|count(?:s|ing)? (?:of|the)|more than \d|fewer than \d|less than \d|at least \d|at most \d|exactly \d|sum of|total of|average|percentage|\d+\s?%)/i,
+      /(^\s*count\b|\bhow many\b|\bthe number of\b|\bcount (?:all|every|each|how|the number)\b|\b(?:more|fewer|less|greater|longer|shorter|larger|smaller|higher|lower) than \d|\b(?:over|under|above|below|at least|at most|exactly|up to) \d|\b\d+(?:\.\d+)?\s?(?:%|percent)|\bsum of\b|\btotal of\b|\baverage of\b|\bon average\b)/i,
   },
   {
     kind: "dates",
     pattern:
-      /\b(dated?|days? (?:ago|old)|weeks? (?:ago|old)|months? (?:ago|old)|older than|newer than|expir(?:ed|es|y)|yesterday|tomorrow|this (?:week|month|year)|last (?:week|month|year))\b/i,
+      /(\b(?:older|newer|younger) than \d+ (?:days?|weeks?|months?|years?)\b|\b\d+ (?:days?|weeks?|months?|years?) (?:ago|old)\b|\b(?:within|in) the (?:last|past|next) \d+ (?:days?|weeks?|months?|years?)\b|\b(?:yesterday|tomorrow)\b|\b(?:this|last|next) (?:week|month|quarter|year)\b|\b(?:before|after|since|until|by) (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december|(?:19|20)\d\d)\b|\b(?:has|is|was) (?:expired|overdue)\b)/i,
   },
-  { kind: "images", pattern: /\b(image|screenshot|picture|photo(?:graph)?)s?\b/i },
+  {
+    kind: "images",
+    pattern:
+      /(\bscreenshot|\bphoto(?:graph)?s?\b|\b(?:the|this|an?) (?:image|picture) (?:shows?|contains?|depicts?)\b|\b(?:visible|shown|appears?|seen) in (?:the|this|an?) (?:image|picture)\b)/i,
+  },
+  {
+    kind: "an exact fact to read or run, not judge",
+    pattern:
+      /(\b(?:all|every|the) tests? (?:pass(?:es|ed)?|fail(?:s|ed)?|succeed(?:s|ed)?)\b|\btests? (?:pass(?:es|ed)?|are (?:passing|green))\b|\b(?:the )?(?:build|ci|pipeline) (?:passes|passed|succeeds|succeeded|is green)\b|\b(?:it )?compiles without errors\b)/i,
+  },
 ]
 
 /** Lint one question set. `lintSpec` adds the checks that need a policy. */
@@ -97,7 +113,9 @@ export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): Lin
   const justified = new Set(Object.keys(thresholds))
   const reported = new Set<string>()
   for (const text of spec.keep ?? []) {
-    const { question } = parseFilter(text, spec.questions)
+    const { question, op } = parseFilter(text, spec.questions)
+    // Only a numeric cut is a threshold; `kind=fix` has no value to justify.
+    if (!NUMERIC.has(op)) continue
     if (justified.has(question) || reported.has(question)) continue
     reported.add(question)
     out.push(
@@ -112,12 +130,16 @@ export function lintSpec(spec: Pick<Spec, "questions" | "keep" | "policy">): Lin
   return out
 }
 
+const NUMERIC = new Set([">=", ">", "<=", "<"])
+
 function lintQuestion(name: string, q: Question): LintFinding[] {
   const out: LintFinding[] = []
   const texts = [q.instructions, ...criteriaTexts(q)]
   if (q.type === "choice") {
     const options = Object.entries(q.criteria)
-    if (!options.some(([key, desc]) => WAY_OUT.test(key) || WAY_OUT.test(desc))) {
+    const wayOut = ([key, desc]: [string, string]) =>
+      key.split(/[_\-\s/]+/).some((t) => WAY_OUT_KEY.test(t)) || WAY_OUT_TEXT.test(desc)
+    if (!options.some(wayOut)) {
       out.push(
         finding(
           "no-way-out",
@@ -165,21 +187,28 @@ function unsupported(text: string, question?: string): LintFinding[] {
 }
 
 /**
- * Two sentences, an "and/or", or "either … or" in one instruction. A plain
- * "and" is too common in single ideas to flag.
+ * Two claims in one instruction: two statements or questions, an "and/or", or
+ * "either … or". A plain "and" is too common in single ideas to flag, and
+ * framing sentences ("Consider only the added lines.", "Answer true if …")
+ * are context, not a second claim.
  */
 function merged(instructions: string): boolean {
-  const sentences = instructions
-    .replace(/\b(e\.g|i\.e|etc|vs|cf)\./gi, "$1")
+  const claims = instructions
+    .replace(/\bhttps?:\/\/\S+/gi, "URL")
+    .replace(/\b(e\.g|i\.e|etc|vs|cf|mr|mrs|ms|dr|st|no|approx)\./gi, "$1")
     .split(/[.?!](?:\s+|$)/)
     .map((s) => s.trim())
-    .filter((s) => words(s) >= 3)
+    .filter((s) => words(s) >= 3 && !FRAMING.test(s))
   return (
-    sentences.length > 1 ||
+    claims.length > 1 ||
     /\band\/or\b/i.test(instructions) ||
     /\beither\b.+\bor\b/i.test(instructions)
   )
 }
+
+/** Sentences that frame the question rather than make a second claim. */
+const FRAMING =
+  /^(consider|only|ignore|answer|note|treat|assume|look|focus|read|judge|use|do not|don't|exclude|include|given|for example|e\.g|if|when|here|this question|count only|disregard)\b/i
 
 function criteriaTexts(q: Question): string[] {
   if (q.type === "noul") return q.criteria ? Object.values(q.criteria) : []

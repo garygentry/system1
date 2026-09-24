@@ -271,6 +271,18 @@ describe("decide many", () => {
     expect(out.at(-1)).not.toContain("withheld")
   })
 
+  it("--exclude refuses negation and a path outside the repo, and takes an absolute one inside", async () => {
+    const { io, json } = rig({ "src/a.ts": "a", "src/b.ts": "b" })
+    const run = (pattern: string) =>
+      main(["many", "--glob", "src/*", "--question", Q, "--exclude", pattern, "--dry-run"], io)
+    expect(await run("!src/a.ts")).toBe(2)
+    expect(json().error.message).toMatch(/negation/)
+    expect(await run("/etc/*")).toBe(2)
+    expect(json().error.message).toMatch(/outside the repo/)
+    expect(await run(join(io.cwd, "src/a.ts"))).toBe(0)
+    expect(json().result.counts.items).toBe(1)
+  })
+
   it("dry run: no calls, no consent needed", async () => {
     const { io, out } = rig(files, { consent: false })
     expect(
@@ -656,6 +668,22 @@ policy: { thresholds: { b: { value: 0.5, why: x } } }
     expect(out.at(-1)).toMatch(/^decide spec lint: PASSED · 1 spec\(s\)/)
   })
 
+  it("reports a named spec that doesn't parse as invalid, exit 7; a missing one is exit 2", async () => {
+    const { io, json } = rig(
+      { ".system1/specs/broken.yaml": "description: x\n" },
+      { consent: false, key: false },
+    )
+    expect(await main(["spec", "lint", "broken"], io)).toBe(7)
+    expect(json().result).toMatchObject({ passed: false, counts: { invalid: 1 } })
+    expect(await main(["spec", "lint", "nosuch"], io)).toBe(2)
+  })
+
+  it("reports each spec's own origin", async () => {
+    const { io, json } = rig({ ".system1/specs/clean.yaml": clean }, { consent: false, key: false })
+    expect(await main(["spec", "lint"], io)).toBe(0)
+    expect(json().result.specs[0].origin).toBe("repo")
+  })
+
   it("fails on an error-level finding, and reports an unparseable spec as invalid", async () => {
     const { io, json } = rig(
       { ".system1/specs/errs.yaml": errs, ".system1/specs/broken.yaml": "description: x\n" },
@@ -743,6 +771,13 @@ describe("decide opportunities", () => {
     writeFileSync(join(cwd, "extra.json"), JSON.stringify([candidate({ colour: "red" })]))
     expect(await main(["opportunities", "add", "--file", "extra.json"], io)).toBe(2)
     expect(await main(["opportunities", "add"], io)).toBe(2)
+    writeFileSync(join(cwd, "keys.json"), JSON.stringify({ candidates: [candidate()], junk: 1 }))
+    expect(await main(["opportunities", "add", "--file", "keys.json"], io)).toBe(2)
+    expect(json().error.message).toMatch(/unknown key\(s\) junk/)
+    writeFileSync(join(cwd, "blank.json"), JSON.stringify([candidate({ evidence: "   " })]))
+    expect(await main(["opportunities", "add", "--file", "blank.json"], io)).toBe(2)
+    expect(await main(["opportunities", "list", "--fields", "nosuch"], io)).toBe(2)
+    expect(await main(["opportunities", "list", "--fields", "toString"], io)).toBe(2)
     expect(await main(["opportunities", "list", "--file", "x"], io)).toBe(2)
 
     const backlog = join(cwd, ".system1/opportunities.json")

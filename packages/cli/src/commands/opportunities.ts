@@ -136,6 +136,13 @@ function readCandidates(path: string, ref: string): unknown {
   }
   if (Array.isArray(value)) return value
   if (value && typeof value === "object" && "candidates" in value) {
+    const extra = Object.keys(value).filter((k) => k !== "candidates")
+    if (extra.length) {
+      throw new DecisionsError(
+        "invalid-request",
+        `--file ${ref}: unknown key(s) ${extra.join(", ")}; only "candidates" is read`,
+      )
+    }
     return (value as { candidates: unknown }).candidates
   }
   throw new DecisionsError(

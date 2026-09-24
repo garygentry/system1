@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { useTempDirs } from "../testkit/tmp.js"
@@ -13,6 +13,7 @@ import {
   projectedSaving,
   readBacklog,
   recordMatches,
+  withBacklogLock,
   writeBacklog,
 } from "./backlog.js"
 
@@ -114,6 +115,37 @@ describe("mergeCandidates", () => {
     expect(staled).toHaveLength(1) // the `new` one, not the rejected one
   })
 
+  it("stales only this sweep's entries, and a stale entry seen again is new again", () => {
+    const a = candidate()
+    const b = candidate({ evidence: "second", source: { sweep: "sweep-2", answers: "live" } })
+    const first = mergeCandidates(EMPTY, [a, b], "t1").backlog
+    // sweep-1 re-runs over the same path with changed evidence: only its own entry goes stale.
+    const changed = candidate({ evidence: "changed" })
+    const second = mergeCandidates(first, [changed], "t2")
+    expect(second.staled).toEqual([opportunityId("code", a.evidence)])
+    // The original evidence shows up again: back to new.
+    const third = mergeCandidates(second.backlog, [a], "t3").backlog
+    const entry = third.opportunities.find((o) => o.id === opportunityId("code", a.evidence))
+    expect(entry?.status).toBe("new")
+  })
+
+  it("keeps the saving finite at the largest inputs the schema allows", () => {
+    expect(backlogProblems({ version: 1, opportunities: [] })).toEqual([])
+    const huge = candidate({
+      projected: {
+        volume: 1e12,
+        per: "day",
+        currentCostPerItemUsd: 1e6,
+        decisionCostPerItemUsd: 0,
+      },
+    })
+    expect(
+      Number.isFinite(
+        mergeCandidates(EMPTY, [huge], "t").backlog.opportunities[0]?.projected.savingUsd,
+      ),
+    ).toBe(true)
+  })
+
   it("keeps a rejection, and its reason, across a re-sweep that gives no status", () => {
     const rejected = candidate({
       status: "rejected",
@@ -175,6 +207,38 @@ describe("the backlog file", () => {
   })
 })
 
+describe("withBacklogLock", () => {
+  it("lets every add under the lock land, and releases it", async () => {
+    const file = join(temp({}), ".system1/opportunities.json")
+    const add = (i: number) =>
+      new Promise<void>((done) =>
+        setTimeout(() => {
+          withBacklogLock(file, () => {
+            const merged = mergeCandidates(
+              readBacklog(file),
+              [candidate({ evidence: `e${i}`, location: { path: `f${i}` } })],
+              "t",
+            )
+            writeBacklog(file, merged.backlog)
+          })
+          done()
+        }, 0),
+      )
+    await Promise.all([0, 1, 2, 3, 4, 5].map(add))
+    expect(readBacklog(file).opportunities).toHaveLength(6)
+    expect(existsSync(`${file}.lock`)).toBe(false)
+  })
+
+  it("times out on a held lock with a typed error, and takes over a stale one", () => {
+    const file = join(temp({}), ".system1/opportunities.json")
+    mkdirSync(join(file, ".."), { recursive: true })
+    writeFileSync(`${file}.lock`, "")
+    const old = new Date(Date.now() - 60_000)
+    utimesSync(`${file}.lock`, old, old)
+    expect(withBacklogLock(file, () => "ran")).toBe("ran")
+  })
+})
+
 describe("record filters", () => {
   const [o] = mergeCandidates(EMPTY, [candidate()], "t").backlog.opportunities
   if (!o) throw new Error("no entry")
@@ -192,5 +256,8 @@ describe("record filters", () => {
     expect(() => parseRecordFilter("colour=red")).toThrow(/no field "colour"/)
     expect(() => parseRecordFilter("status>=new")).toThrow(/needs a number/)
     expect(() => parseRecordFilter("status")).toThrow(/Cannot parse/)
+    expect(() => parseRecordFilter("location.nope=x")).toThrow(/location has no "nope"/)
+    expect(() => parseRecordFilter("status.x=y")).toThrow(/status has no sub-fields/)
+    expect(() => parseRecordFilter("toString=x")).toThrow(/no field "toString"/)
   })
 })

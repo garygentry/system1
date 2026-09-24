@@ -56,7 +56,9 @@ describe("doctor", () => {
     expect(r.healthy).toBe(true)
     expect(check(r, "backlog")).toMatchObject({
       status: "warn",
-      detail: expect.stringContaining("is not a valid backlog"),
+      detail: expect.stringMatching(
+        /^the backlog doesn't validate: \/opportunities\/0 must have required properties/,
+      ),
       fix: expect.stringContaining("decide opportunities check"),
     })
   })

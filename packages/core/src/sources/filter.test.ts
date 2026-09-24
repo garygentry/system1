@@ -16,6 +16,16 @@ describe("applyFilter", () => {
     ])
   })
 
+  it("matches a symlink's target too", () => {
+    const result = applyFilter(
+      [{ path: "src/link.ts", realPath: "src/a.test.ts" }],
+      ["**/*.test.ts"],
+    )
+    expect(result.filtered).toEqual([
+      { path: "src/link.ts", reason: "filtered", detail: "**/*.test.ts" },
+    ])
+  })
+
   it("matches dotfiles and dot-directories", () => {
     const result = applyFilter([{ path: ".github/x.yml" }], [".github/**"])
     expect(result.items).toEqual([])

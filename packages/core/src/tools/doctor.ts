@@ -10,6 +10,7 @@ import { accessSync, constants, existsSync, statSync } from "node:fs"
 import { delimiter, join } from "node:path"
 import { userConfigDir } from "../config/load.js"
 import { detectHarness, type Harness } from "../config/session.js"
+import { isDecisionsError } from "../errors.js"
 import { backlogPath, readBacklog } from "../opportunities/backlog.js"
 import { ping } from "../ping.js"
 import { activeTriggers, route } from "../route/route.js"
@@ -94,6 +95,14 @@ function routeCheck(config: ToolContext["config"]["route"]): DoctorCheck {
   }
 }
 
+function backlogProblem(error: unknown): string {
+  const problems = isDecisionsError(error) ? error.details?.problems : undefined
+  const first = Array.isArray(problems) ? problems[0] : undefined
+  const count =
+    Array.isArray(problems) && problems.length > 1 ? ` (+${problems.length - 1} more)` : ""
+  return `the backlog doesn't validate: ${first ?? (error instanceof Error ? error.message : String(error))}${count}`
+}
+
 /** The scout backlog is optional; a malformed one is worth knowing about before `list` fails on it. */
 function backlogCheck(repoRoot: string): DoctorCheck {
   const file = backlogPath(repoRoot)
@@ -109,7 +118,7 @@ function backlogCheck(repoRoot: string): DoctorCheck {
     return {
       name: "backlog",
       status: "warn",
-      detail: (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "",
+      detail: backlogProblem(error),
       fix: "`decide opportunities check` lists every problem; correct the file by hand or move it aside (decide never repairs it)",
     }
   }

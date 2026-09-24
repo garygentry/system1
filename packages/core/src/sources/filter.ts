@@ -11,10 +11,11 @@ export interface FilterResult<T> {
  *
  * Unlike egress excludes this is a per-call choice, not a safety rule, so it is
  * reported as `filtered` rather than `excluded`: withheld secrets stay easy to
- * spot in the skipped summary. Items with no path (text, stdin) are never
+ * spot in the skipped summary. Egress excludes run first, so a path both would
+ * drop is always reported as `excluded`. Items with no path (text, stdin) are never
  * filtered. Patterns are repo-relative, like `--glob`.
  */
-export function applyFilter<T extends { path?: string }>(
+export function applyFilter<T extends { path?: string; realPath?: string }>(
   items: readonly T[],
   patterns: readonly string[] = [],
 ): FilterResult<T> {
@@ -23,7 +24,10 @@ export function applyFilter<T extends { path?: string }>(
   const kept: T[] = []
   const filtered = new Map<string, Skipped>()
   for (const item of items) {
-    const hit = item.path === undefined ? undefined : matchers.find((m) => m.test(item.path ?? ""))
+    // Both spellings, as egress excludes do: a symlink's own name and its target.
+    const paths = [item.path, item.realPath].filter((p): p is string => p !== undefined)
+    const hit =
+      item.path === undefined ? undefined : matchers.find((m) => paths.some((p) => m.test(p)))
     if (hit && item.path !== undefined) {
       filtered.set(item.path, { path: item.path, reason: "filtered", detail: hit.p })
     } else {

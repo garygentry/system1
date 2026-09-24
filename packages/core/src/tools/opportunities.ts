@@ -3,6 +3,7 @@ import { DecisionsError } from "../errors.js"
 import {
   type Backlog,
   backlogPath,
+  ENTRY_FIELDS,
   mergeCandidates,
   type Opportunity,
   type OpportunityStatus,
@@ -11,6 +12,7 @@ import {
   readBacklog,
   readField,
   recordMatches,
+  withBacklogLock,
   writeBacklog,
 } from "../opportunities/backlog.js"
 import { checkInput, type ToolContext } from "./context.js"
@@ -33,8 +35,11 @@ export function runOpportunitiesAdd(
 ): OpportunitiesAddResult {
   const input = checkInput<OpportunitiesAddInput>("opportunities-add", rawInput)
   const file = backlogPath(ctx.config.repoRoot)
-  const merged = mergeCandidates(readBacklog(file), input.candidates, now().toISOString())
-  writeBacklog(file, merged.backlog)
+  const merged = withBacklogLock(file, () => {
+    const result = mergeCandidates(readBacklog(file), input.candidates, now().toISOString())
+    writeBacklog(file, result.backlog)
+    return result
+  })
   return {
     file,
     added: merged.added,
@@ -61,6 +66,7 @@ export function runOpportunitiesList(
   const input = checkInput<OpportunitiesListInput>("opportunities-list", rawInput)
   const filters = (input.keep ?? []).map(parseRecordFilter)
   const sort = parseRecordSort(input.sort ?? "projected:desc")
+  assertFields(input.fields)
   const file = backlogPath(ctx.config.repoRoot)
   const { opportunities } = readBacklog(file)
   const matched = opportunities
@@ -106,14 +112,18 @@ function compare(a: unknown, b: unknown, direction: "asc" | "desc"): number {
 
 function pick(o: Opportunity, fields?: readonly string[]): Partial<Opportunity> & { id: string } {
   if (!fields) return o
-  const unknown = fields.filter((f) => !(f in o) && f !== "statusReason")
+  const out: Record<string, unknown> = { id: o.id }
+  for (const f of fields) if (Object.hasOwn(o, f)) out[f] = o[f as keyof Opportunity]
+  return out as Partial<Opportunity> & { id: string }
+}
+
+/** Checked before reading, so a typo is an error even on an empty backlog. */
+function assertFields(fields: readonly string[] = []): void {
+  const unknown = fields.filter((f) => !ENTRY_FIELDS.includes(f))
   if (unknown.length) {
     throw new DecisionsError(
       "invalid-request",
-      `--fields: no field ${unknown.join(", ")}. Fields: ${Object.keys(o).join(", ")}`,
+      `--fields: no field ${unknown.join(", ")}. Fields: ${ENTRY_FIELDS.join(", ")}`,
     )
   }
-  const out: Record<string, unknown> = { id: o.id }
-  for (const f of fields) if (f in o) out[f] = o[f as keyof Opportunity]
-  return out as Partial<Opportunity> & { id: string }
 }

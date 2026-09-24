@@ -57,7 +57,7 @@ Inline instruction text can't contain `:`. For anything richer, use `--questions
 | `--text <text>` | the text itself |
 | `--stdin` | piped input |
 | `--allow-outside` | read files that resolve outside the repo (withheld otherwise) |
-| `--exclude <glob>` | repeatable: leave out paths that match, e.g. `'**/*.test.ts'`. Repo-relative, like `--glob`; glob matches are dropped before they are read. Reported as `filtered`, apart from egress `excluded` |
+| `--exclude <glob>` | repeatable: leave out paths that match, e.g. `'**/*.test.ts'`. Relative to where you run it, like `--glob`, except a pattern starting with `**/`, which matches anywhere; an absolute path inside the repo works, one outside it or a `!` negation is refused. A symlink is matched by its target too. Glob matches are dropped before they're read. Reported as `filtered`; a path the egress rules would withhold anyway is still reported as `excluded` |
 
 **Split:** `--split file|hunk|row|join|lines:N[/overlap]`. The default is `file`. `join` makes
 all sources one item.
@@ -109,14 +109,16 @@ no consent, nothing sent. With no name it lints every spec in reach. Each findin
 |---|---|---|
 | `no-way-out` | warning | a `choice` with no `none`/`other`/`unclear` option |
 | `abstract-levels` | warning | `score` levels of one or two words (`low`, `medium`, `high`) rather than situations |
-| `unsupported-task` | warning | counting or arithmetic, dates, or images, which a decision model can't do |
-| `merged-question` | warning | two sentences, `and/or`, or `either … or` in one instruction |
-| `unjustified-threshold` | warning | a `keep` filter with no `policy.thresholds` entry saying why |
+| `unsupported-task` | warning | counting or arithmetic ("longer than 300 lines"), date arithmetic ("within the last 30 days"), reading images, or an exact fact to read or run ("all tests pass"), which a decision model can't do |
+| `merged-question` | warning | two claims in one instruction: two statements, `and/or`, or `either … or`. Framing sentences ("Consider only …", "Answer true if …") don't count |
+| `unjustified-threshold` | warning | a numeric `keep` cut (`>=`, `>`, `<=`, `<`) with no `policy.thresholds` entry saying why |
 | `unknown-threshold` | error | a `policy.thresholds` entry naming no question in the spec |
 
 The heuristics warn, because a well-posed question can trip one; only a certain problem is an
 error. Findings are a result: exit 0 and `passed: true` with warnings only. The lint *fails*, exit
-7, on an error or a spec that doesn't parse, and with `--strict` on any warning too. Two failure
+7, on an error or a spec that doesn't parse (named or not), and with `--strict` on any warning
+too. With no specs in reach it passes, and says `0 spec(s)`. A named spec that doesn't exist is
+`invalid-request`, exit 2. Two failure
 modes can't be seen in the text alone and are left to the `design` skill: criteria a literal
 reader takes the wrong way, and questions written for different items mixed into one set.
 
@@ -137,16 +139,19 @@ counts as an opportunity; `decide` validates, merges and stores it. Nothing is s
 - **`add`** reads a JSON array of candidates, or `{"candidates": [...]}`, from a file (`decide
   schema opportunities-add` has the shape). The id comes from the mode and the evidence text, so
   re-running a sweep updates an entry instead of duplicating it, and a moved file keeps its id. A
-  `new` entry at a path the add covers, whose evidence wasn't seen again, becomes `stale`; nothing
-  is deleted. A `rejected` candidate needs a `statusReason`, and a status stays as it is when a
-  re-sweep doesn't give one.
+  `new` entry from the same sweep (`source.sweep`) at a path the add covers, whose evidence wasn't
+  seen again, becomes `stale`; a stale entry seen again is `new` again; nothing is deleted. A
+  `rejected` candidate needs a `statusReason`, and a status stays as it is when a re-sweep doesn't
+  give one. Concurrent adds take turns on a lock file (`opportunities.json.lock`), so none is
+  lost; a lock left by a crashed run is taken over after 30 s.
 - **Savings are projected.** Each entry carries the inputs (`volume` per `per`, the current and
   the decision cost per item) and `decide` computes `savingUsd` from them, so a reader can
   disagree with an input rather than trust a figure.
 - **`list`** filters and sorts on record fields with the `--keep` syntax: `status=new`,
   `risk in medium,high`, `projected>=0.01`, `location.path=src/a.ts`. A bare `risk`,
   `projected`, `location` or `source` means its `level`, `savingUsd`, `path` or `sweep`. The
-  default sort is `projected:desc`.
+  default sort is `projected:desc`. Field and sub-field names are checked, so a typo is an error
+  even on an empty backlog.
 - **`check`** validates the file. A malformed backlog is `invalid-request`, exit 2, listing every
   problem, and `add` and `list` refuse it the same way. `decide` never repairs or overwrites it.
 

@@ -134,10 +134,31 @@ export function resolveRequest(
   }
 }
 
-/** A command-line exclude pattern means what `--glob` would mean from the same directory. */
+/**
+ * A command-line exclude pattern means what `--glob` would mean from the same
+ * directory. A pattern that starts with a globstar already matches anywhere,
+ * so it isn't narrowed to the directory. An absolute pattern is made repo-relative; one outside the repo
+ * matches nothing, and a negation would invert the filter, so both are refused.
+ */
 function rebasePattern(pattern: string, cwd: string, repoRoot: string): string {
+  if (pattern.startsWith("!")) {
+    throw new DecisionsError(
+      "invalid-request",
+      `--exclude "${pattern}": negation isn't supported; name what to leave out`,
+    )
+  }
+  if (isAbsolute(pattern)) {
+    const rel = relative(repoRoot, pattern)
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      throw new DecisionsError(
+        "invalid-request",
+        `--exclude "${pattern}" is outside the repo (${repoRoot}), so it would match nothing`,
+      )
+    }
+    return rel
+  }
   const prefix = relative(repoRoot, cwd)
-  if (prefix === "" || prefix.startsWith("..") || isAbsolute(prefix) || isAbsolute(pattern))
+  if (prefix === "" || prefix.startsWith("..") || isAbsolute(prefix) || pattern.startsWith("**/"))
     return pattern
   return join(prefix, pattern)
 }

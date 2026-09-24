@@ -1,3 +1,5 @@
+import { basename, extname } from "node:path"
+import { isDecisionsError } from "../errors.js"
 import { type LintFinding, lintSpec } from "../spec/lint.js"
 import { listSpecs, loadSpec, type Spec } from "../spec/spec.js"
 import { checkInput, type ToolContext } from "./context.js"
@@ -29,13 +31,14 @@ export interface SpecLintResult {
 export function runSpecLint(ctx: ToolContext, rawInput: unknown = {}): SpecLintResult {
   const input = checkInput<SpecLintInput>("spec-lint", rawInput)
   const specs: SpecLintEntry[] = input.spec
-    ? [entry(loadSpec(input.spec, ctx.specDirs, ctx.cwd))]
+    ? [named(ctx, input.spec)]
     : listSpecs(ctx.specDirs)
         .filter((s) => !s.shadowed)
         .map((s) =>
           s.error
             ? { name: s.name, file: s.file, origin: s.origin, findings: [], invalid: s.error }
-            : entry(loadSpec(s.file, ctx.specDirs, ctx.cwd)),
+            : // Loaded by path, so keep the layer it was listed from.
+              { ...entry(loadSpec(s.file, ctx.specDirs, ctx.cwd)), origin: s.origin },
         )
   const all = specs.flatMap((s) => s.findings)
   const counts = {
@@ -45,6 +48,26 @@ export function runSpecLint(ctx: ToolContext, rawInput: unknown = {}): SpecLintR
     invalid: specs.filter((s) => s.invalid).length,
   }
   return { specs, counts, passed: counts.errors === 0 && counts.invalid === 0 }
+}
+
+/**
+ * A named spec that exists but doesn't parse is an `invalid` entry (exit 7),
+ * as it is when linting every spec. One that can't be found is still an error.
+ */
+function named(ctx: ToolContext, ref: string): SpecLintEntry {
+  try {
+    return entry(loadSpec(ref, ctx.specDirs, ctx.cwd))
+  } catch (error) {
+    const file = isDecisionsError(error) ? error.details?.file : undefined
+    if (typeof file !== "string") throw error
+    return {
+      name: basename(file, extname(file)),
+      file,
+      origin: "path",
+      findings: [],
+      invalid: (error as Error).message,
+    }
+  }
 }
 
 function entry(spec: Spec): SpecLintEntry {

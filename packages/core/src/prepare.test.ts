@@ -65,6 +65,29 @@ describe("prepare", () => {
     expect(prepared.projection.calls).toBe(1)
   })
 
+  it("labels a path both rules drop as excluded, and reports each path once (review of #10)", async () => {
+    const cwd = temp({ "secrets/k.txt": "key", "src/a.test.ts": "t", "src/a.ts": "a" })
+    const prepared = await prepare({
+      sources: [
+        { kind: "glob", patterns: ["**/*"] },
+        { kind: "file", path: "src/a.test.ts" },
+      ],
+      split: { kind: "file" },
+      questions,
+      profile,
+      cwd,
+      filter: ["secrets/**", "src/a.test.ts"],
+    })
+    expect(prepared.items.map((i) => i.id)).toEqual(["src/a.ts"])
+    expect(prepared.skipped).toHaveLength(2)
+    expect(prepared.skipped).toEqual(
+      expect.arrayContaining([
+        { path: "secrets/k.txt", reason: "excluded", detail: "**/secrets/**" },
+        { path: "src/a.test.ts", reason: "filtered", detail: "src/a.test.ts" },
+      ]),
+    )
+  })
+
   it("validates the question set before reading anything", async () => {
     await expect(
       prepare({
