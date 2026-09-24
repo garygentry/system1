@@ -101,7 +101,8 @@ Two things are yours to do: set an [OpenRouter](https://openrouter.ai) key (`OPE
 or `~/.config/system1/credentials`), and agree, once per repo, to content being sent
 (`decide config egress allow`, run by you, never by the agent). Without a key, `decide` still
 replays answers recorded earlier, which is how the test suites here run.
-[Getting started](docs/getting-started.md) walks through all of it.
+[Getting started](docs/getting-started.md) walks through all of it, and the
+[tutorial](docs/tutorial.md) is a hands-on lab that does it end to end.
 
 In Claude Code the plugin also adds a prompt hook that hints the `ask` skill when a prompt asks for
 a closed judgement. It is local pattern matching and sends nothing.
@@ -157,6 +158,7 @@ most likely to close with design partners' data.
 
 | Page | For |
 |---|---|
+| [Tutorial: zero to first decisions](docs/tutorial.md) | a 20-minute hands-on lab in Claude Code: install, set up, then route 300 tickets and gate a risky script |
 | [Getting started](docs/getting-started.md) | install, key, consent and a first decision |
 | [Specs](docs/specs.md) | save a question as a spec, adopt a cookbook recipe, test it offline |
 | [CI and scripts](docs/ci-and-scripts.md) | run `decide` without an agent |

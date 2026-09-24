@@ -118,6 +118,28 @@ describe("docs/spec-format.md", () => {
   })
 })
 
+describe("docs/tutorial.md", () => {
+  const tutorial = read("docs/tutorial.md")
+  // The lab downloads tools/evals/fixture-repo from main. Moving or renaming it,
+  // or the files the exercises use, would break the lab for every reader.
+  const lab = "tools/evals/fixture-repo"
+
+  it("downloads the lab from where it lives", () => {
+    expect(tutorial).toContain(`--strip-components=4 system1-main/${lab}`)
+    expect(lab.split("/").length + 1).toBe(4)
+  })
+
+  it.each([
+    "tickets.jsonl",
+    "cleanup-plan.sh",
+    "src/billing/charge.ts",
+    ".system1/specs/timeouts.yaml",
+  ])("uses %s, which the lab repo has", (file) => {
+    expect(tutorial).toContain(file.replace(/^.*\//, ""))
+    expect(existsSync(join(ROOT, lab, file)), file).toBe(true)
+  })
+})
+
 /** Every markdown file under `dir`, relative to the repo root. */
 function markdownUnder(dir: string): string[] {
   return readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) => {

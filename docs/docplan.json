@@ -251,6 +251,67 @@
   ],
   "documents": [
     {
+      "id": "tutorial",
+      "title": "Lab: from zero to your first decisions",
+      "slug": "tutorial",
+      "path": "docs/tutorial.md",
+      "family": "diataxis",
+      "type": "tutorial",
+      "audience": ["agent-user"],
+      "purpose": "A hands-on lab in Claude Code, in a throwaway repo: install, key, consent, then batch routing, a gated script, a negative case, spend, and repairing a bad spec, with a checkpoint per step.",
+      "sourceRefs": ["s-skills", "s-shim", "s-consent", "s-many-flow", "s-evals"],
+      "status": "drafted",
+      "priority": 1,
+      "outline": [
+        {
+          "heading": "Exercise 0: Make the lab repo",
+          "intent": "Download tools/evals/fixture-repo from main and git init it, so consent and specs stay per repo.",
+          "sourceRefs": ["s-evals", "s-config"]
+        },
+        {
+          "heading": "Exercise 1: Install the plugin",
+          "intent": "Marketplace install, /reload-plugins, `! decide version`; decide is on Claude's PATH, not the shell's.",
+          "sourceRefs": ["s-shim"]
+        },
+        {
+          "heading": "Exercise 2: Add your key",
+          "intent": "Credentials file, mkdir and umask; never in the conversation.",
+          "sourceRefs": ["s-config"]
+        },
+        {
+          "heading": "Exercise 3: Run setup and grant consent",
+          "intent": "Doctor via the setup skill; `! decide config egress allow --confirm`; what is and is never sent.",
+          "sourceRefs": ["s-consent", "s-egress"]
+        },
+        {
+          "heading": "Exercise 4: Route 300 tickets",
+          "intent": "Routing hint, ask skill, dry run, spend guard and approval; reading kept, undecided and confidence.",
+          "sourceRefs": ["s-many-flow", "s-route"]
+        },
+        {
+          "heading": "Exercise 5: Gate a risky script",
+          "intent": "Per-command verdicts; a badly posed question fixed by rewording, not overriding.",
+          "sourceRefs": ["s-skills"]
+        },
+        {
+          "heading": "Exercise 6: When not to use it",
+          "intent": "An explain request stays with the agent.",
+          "sourceRefs": ["s-skills"]
+        },
+        {
+          "heading": "Exercise 7: See what you spent",
+          "intent": "decide usage --session current, measured not estimated.",
+          "sourceRefs": ["s-tools"]
+        },
+        {
+          "heading": "Exercise 8 (optional): Repair a bad question",
+          "intent": "The planted broken timeouts spec, repaired by the design skill, then spec check offline.",
+          "sourceRefs": ["s-spec"]
+        }
+      ],
+      "verification": "Walked end to end in Claude Code 2.1.281 on 2026-09-24 (plugin linked from a checkout); outputs are from those runs. tools/docs.test.ts checks the lab files it uses still exist."
+    },
+    {
       "id": "getting-started",
       "title": "Getting started",
       "path": "docs/getting-started.md",
@@ -1356,7 +1417,7 @@
   "grouping": [
     {
       "title": "Getting started",
-      "documents": ["getting-started"]
+      "documents": ["tutorial", "getting-started"]
     },
     {
       "title": "How-to guides",
