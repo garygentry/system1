@@ -38,33 +38,56 @@ check_bundle() {
   if [ -f "$BUNDLE" ]; then
     echo "cli:    built ($BUNDLE)"
   else
-    echo "cli:    NOT BUILT. Run 'pnpm build'; until then bin/decide falls back to the published CLI"
+    echo "cli:    NOT BUILT. Run 'pnpm build'; until then bin/decide runs an installed or published CLI instead"
   fi
 }
 
-# What Claude Code itself loads under the name system1. A marketplace install
-# of the same name takes precedence over the link, even when disabled.
+# What Claude Code itself loads under the name system1, as seen from the
+# current directory (a project-scope install elsewhere isn't visible here).
+# An installed plugin of the same name takes precedence over the link, even
+# when disabled. Returns 3 when Claude reports the link as not loaded.
 report_claude() {
   if ! command -v claude >/dev/null 2>&1; then
     echo "claude: not on PATH, can't ask what it loads"
-    return
+    return 0
   fi
-  claude plugin list --json 2>/dev/null | node -e '
+  if ! command -v node >/dev/null 2>&1; then
+    echo "claude: node not on PATH, can't read what it loads"
+    return 0
+  fi
+  out=$(claude plugin list --json 2>/dev/null) || out=""
+  printf '%s' "$out" | node -e '
     let raw = ""
     process.stdin.on("data", (d) => (raw += d)).on("end", () => {
       let list
-      try { list = JSON.parse(raw) } catch { return console.log("claude: could not read `claude plugin list --json`") }
-      const ours = list.filter((p) => p.id.split("@")[0] === "system1")
+      try {
+        list = JSON.parse(raw)
+      } catch {}
+      if (!Array.isArray(list)) {
+        console.log("claude: unexpected output from `claude plugin list --json`")
+        return
+      }
+      const idOf = (p) => String(p?.id ?? "")
+      const ours = list.filter((p) => idOf(p).split("@")[0] === "system1")
       if (ours.length === 0) return console.log("claude: no system1 plugin installed or linked")
       for (const p of ours) {
-        const why = p.errors?.[0]?.replace(/^Not loaded\W+/, "")
+        // Claude appends advice to rename the plugin; its plugin.json is
+        // generated, so keep only the first sentence.
+        const first = Array.isArray(p.errors) ? p.errors.find((e) => typeof e === "string") : undefined
+        const why = first?.replace(/^Not loaded\W+/, "").split(". ")[0]
+        const scope = p.scope && p.scope !== "user" ? ` (${p.scope} scope)` : ""
         const state = why ? `not loaded: ${why}` : p.enabled ? "enabled" : "disabled"
-        console.log(`claude: ${p.id} ${state}`)
+        console.log(`claude: ${idOf(p)}${scope} ${state}`)
       }
-      const installed = ours.find((p) => p.id !== "system1@skills-dir")
-      if (installed) console.log(`        To use the link instead: claude plugin uninstall ${installed.id}`)
+      const linked = ours.find((p) => idOf(p) === "system1@skills-dir")
+      if (!linked || !Array.isArray(linked.errors) || linked.errors.length === 0) return
+      for (const p of ours.filter((p) => p !== linked)) {
+        const scope = p.scope ? ` --scope ${p.scope}` : ""
+        console.log(`        To use the link instead: claude plugin uninstall ${idOf(p)}${scope}`)
+      }
+      process.exitCode = 3
     })
-  ' || echo "claude: could not run \`claude plugin list --json\`"
+  '
 }
 
 do_link() {
@@ -80,11 +103,23 @@ do_link() {
   else
     mkdir -p "$SKILLS"
     ln -s "$PLUGIN" "$LINK"
+    # If a directory appeared at $LINK since the check, ln put the link inside
+    # it. Take that back out and stop.
+    if ! ours; then
+      [ -L "$LINK/system1" ] && rm -f "$LINK/system1"
+      echo "dev-link: $LINK changed while linking. Leaving it alone." >&2
+      exit 1
+    fi
     echo "link:   $LINK -> $PLUGIN"
   fi
   check_bundle
-  report_claude
-  echo "Start a new Claude Code session to pick it up."
+  rc=0
+  report_claude || rc=$?
+  if [ "$rc" -eq 3 ]; then
+    echo "Linked, but Claude Code won't load it until the plugin above is uninstalled."
+  else
+    echo "Start a new Claude Code session to pick it up."
+  fi
 }
 
 do_unlink() {
@@ -113,7 +148,7 @@ do_status() {
     echo "link:   not linked"
   fi
   check_bundle
-  report_claude
+  report_claude || true
 }
 
 [ $# -eq 1 ] || usage

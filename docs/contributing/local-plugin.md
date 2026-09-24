@@ -41,7 +41,9 @@ To load the plugin for a single session instead, start Claude Code with
 The plugin's `bin/decide` shim follows the symlink back to this checkout and runs
 `packages/cli/dist/bundle/decide.mjs`
 ([how the shim resolves decide](../architecture/deployment.md#how-the-shim-resolves-decide)).
-If you haven't built yet, it falls back to the published CLI, pinned to the plugin's version.
+If you haven't built yet, it runs a `@garygentry/system1` installed on your PATH, or else the
+published CLI pinned to the plugin's version, and the routing hook (which never downloads) stays
+silent until one of those is there.
 `dev:status` warns when the build is missing.
 
 `decide` is on PATH only inside Claude Code sessions. In your own shell, run
@@ -51,7 +53,10 @@ If you haven't built yet, it falls back to the published CLI, pinned to the plug
 
 An installed plugin named `system1` takes precedence over the link, even when it is disabled. With
 both present, Claude Code loads the installed one, and `dev:status` shows the link as not loaded
-and tells you which plugin is in the way.
+and prints the `claude plugin uninstall … --scope …` command that removes the one in the way.
+`dev:status` asks Claude Code from the repo root, so it sees user-scope installs and ones made for
+this repo. A project-scope install in another project shadows the link only there; run
+`claude plugin list` in that project to see it.
 
 To go from the checkout to the marketplace:
 

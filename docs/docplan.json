@@ -42,7 +42,7 @@
       "id": "s-root-pkg",
       "path": "package.json",
       "type": "manifest",
-      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, release:check. No publish script."
+      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, dev:link/unlink/status, release:check, release:publish."
     },
     {
       "id": "s-cli-main",
@@ -193,6 +193,12 @@
       "path": "tools/generate.ts",
       "type": "entrypoint",
       "note": "Emits plugin manifests, marketplaces, the bin/decide shim and hooks/claude-hooks.json; stamps versions."
+    },
+    {
+      "id": "s-dev-link",
+      "path": "tools/dev-link.sh",
+      "type": "entrypoint",
+      "note": "pnpm dev:link | dev:unlink | dev:status: symlinks <claude config>/skills/system1 to plugins/system1 (system1@skills-dir); refuses anything it didn't make; reports what `claude plugin list --json` loads."
     },
     {
       "id": "s-shim",
@@ -1092,14 +1098,14 @@
       "type": "how-to",
       "audience": ["maintainer"],
       "purpose": "Load plugins/system1 into Claude Code from a clone with one symlink, and switch back to the marketplace install.",
-      "sourceRefs": ["s-root-pkg", "s-shim"],
+      "sourceRefs": ["s-dev-link", "s-root-pkg", "s-shim"],
       "status": "drafted",
       "priority": 3,
       "outline": [
         {
           "heading": "Link and unlink",
           "intent": "pnpm dev:link / dev:status / dev:unlink; the skills-dir symlink and what it leaves alone.",
-          "sourceRefs": ["s-root-pkg"]
+          "sourceRefs": ["s-dev-link"]
         },
         {
           "heading": "What updates when",
@@ -1109,7 +1115,7 @@
         {
           "heading": "Switch to the marketplace version",
           "intent": "An installed system1 shadows the link; the commands to go each way.",
-          "sourceRefs": ["s-root-pkg"]
+          "sourceRefs": ["s-dev-link"]
         }
       ],
       "verification": "Checked against Claude Code 2.1.281 in throwaway CLAUDE_CONFIG_DIRs: skills-dir loading, bin/ on PATH, and the name-clash precedence."

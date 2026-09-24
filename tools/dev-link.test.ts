@@ -23,13 +23,21 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
 
-function setup(plugins: object[] = []) {
+function setup(plugins: unknown = [], { claude = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "system1-dev-link-"))
   dirs.push(root)
   const bin = join(root, "bin")
   mkdirSync(bin)
-  writeFileSync(join(root, "plugins.json"), JSON.stringify(plugins))
-  writeFileSync(join(bin, "claude"), `#!/bin/sh\ncat '${join(root, "plugins.json")}'\n`)
+  writeFileSync(
+    join(root, "plugins.json"),
+    typeof plugins === "string" ? plugins : JSON.stringify(plugins),
+  )
+  // A `claude` that prints the canned list, or, with claude: false, one that
+  // doesn't exist (a PATH entry of our own shadows any real one either way).
+  const claudeBin = claude
+    ? `#!/bin/sh\ncat '${join(root, "plugins.json")}'\n`
+    : "#!/bin/sh\nexit 127\n"
+  writeFileSync(join(bin, "claude"), claudeBin)
   chmodSync(join(bin, "claude"), 0o755)
   const config = join(root, "claude")
   const link = join(config, "skills/system1")
@@ -69,19 +77,65 @@ describe("dev-link.sh", () => {
     expect(run("status").stdout).toContain("(not this checkout)")
   })
 
-  it("says when a marketplace install shadows the link", () => {
+  it("says when an installed plugin shadows the link, and how to remove it", () => {
     const { run } = setup([
-      { id: "system1@system1", enabled: false },
+      { id: "system1@system1", scope: "user", enabled: false },
       {
         id: "system1@skills-dir",
         enabled: false,
-        errors: ['Not loaded — the name "system1" is already taken'],
+        errors: [
+          'Not loaded — the name "system1" is already taken by an installed plugin. Give the plugin a different "name" (in plugin.json) to load this copy.',
+        ],
       },
     ])
+    const r = run("link")
+    expect(r.status).toBe(0)
+    expect(r.stdout).toContain("claude: system1@system1 disabled")
+    expect(r.stdout).toContain(
+      'system1@skills-dir not loaded: the name "system1" is already taken by an installed plugin\n',
+    )
+    // plugin.json is generated: never pass on advice to edit it.
+    expect(r.stdout).not.toContain("plugin.json")
+    expect(r.stdout).toContain("claude plugin uninstall system1@system1 --scope user")
+    expect(r.stdout).toContain("won't load it until")
+    expect(r.stdout).not.toContain("Start a new Claude Code session")
+  })
+
+  it("gives no uninstall advice while the link is the one loaded", () => {
+    const { run } = setup([
+      { id: "system1@system1", scope: "project", enabled: false },
+      { id: "system1@skills-dir", enabled: true },
+    ])
     const out = run("link").stdout
-    expect(out).toContain("claude: system1@system1 disabled")
-    expect(out).toContain('system1@skills-dir not loaded: the name "system1" is already taken')
-    expect(out).toContain("claude plugin uninstall system1@system1")
+    expect(out).toContain("claude: system1@system1 (project scope) disabled")
+    expect(out).not.toContain("uninstall")
+    expect(out).toContain("Start a new Claude Code session")
+  })
+
+  it.each([
+    ["not JSON", "warning: something\n"],
+    ["not a list", '{"plugins":[]}'],
+    ["odd entries", '[{"enabled":true},{"id":"system1@skills-dir","errors":[{"x":1}]}]'],
+  ])("copes with `claude plugin list` output that is %s", (_, output) => {
+    const { run } = setup(output)
+    const r = run("status")
+    expect(r.status).toBe(0)
+    expect(r.stderr).toBe("")
+  })
+
+  it("still links when claude isn't available", () => {
+    const { link, run } = setup([], { claude: false })
+    expect(run("link").status).toBe(0)
+    expect(realpathSync(link)).toBe(PLUGIN)
+  })
+
+  it("treats a dangling link as someone else's", () => {
+    const { root, link, run } = setup()
+    mkdirSync(join(root, "claude/skills"), { recursive: true })
+    symlinkSync(join(root, "gone"), link)
+    expect(run("link").status).toBe(1)
+    expect(run("unlink").status).toBe(1)
+    expect(lstatSync(link).isSymbolicLink()).toBe(true)
   })
 
   it("rejects anything but link, unlink or status", () => {
