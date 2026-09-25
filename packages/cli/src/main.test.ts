@@ -838,6 +838,15 @@ describe("decide doctor", () => {
     expect(json()).toMatchObject({ ok: true, result: { healthy: true, live: false } })
   })
 
+  it("doesn't count a quoted key that works as missing setup", async () => {
+    const { io, out } = rig({}, { consent: false })
+    io.env = { OPENROUTER_API_KEY: `'${SECRET}'` }
+    expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/^decide doctor: SETUP NEEDED \((path, )?consent\)/)
+    expect(out.at(-1)).toMatch(/warn key: .*wrapped in quotes/)
+    expect(out.join("\n")).not.toContain("TESTSECRET")
+  })
+
   it("stays exit 0 when a check fails, and says so", async () => {
     const { io, out } = rig()
     const env = { ...io.env, SYSTEM1_ENDPOINT: "notaurl" }

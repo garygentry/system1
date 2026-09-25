@@ -119,6 +119,18 @@ describe("doctor", () => {
     expect(r.checks.find((c) => c.name === "key")?.fix).toContain("/xdg/system1/credentials")
   })
 
+  it("warns, without failing, that a quoted key had its quotes removed", async () => {
+    const env = { PATH: binDir(), OPENROUTER_API_KEY: `"${SECRET}"` }
+    const r = await doctor(env, reachable, CONSENT)
+    expect(r).toMatchObject({ healthy: true, live: true })
+    const key = check(r, "key")
+    expect(key).toMatchObject({ status: "warn" })
+    expect(key?.detail).toMatch(/quotes/)
+    expect(key?.fix).toContain("OPENROUTER_API_KEY")
+    expect(JSON.stringify(r)).not.toContain(SECRET)
+    expect(JSON.stringify(r)).not.toContain("TESTSECRET")
+  })
+
   it("gives a sandboxed Codex shell the exact rule", async () => {
     const env = {
       PATH: "",

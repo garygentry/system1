@@ -166,9 +166,11 @@ must be pushed) and CLI, and that `decide doctor` runs through them. With `--liv
 egress consent **in the throwaway fixture repo only**, and gives each agent the prompt above.
 The pass marker is a `decide many` or `decide ask` line showing `live` with a measured cost.
 `--live` needs `OPENROUTER_API_KEY` in the environment (for example
-`set -a; . ./.env; set +a`). If you take it from `~/.config/system1/credentials`, strip the YAML
-quotes, or the provider answers 401 "Missing Authentication header" (0.4.0 hit this):
-`OPENROUTER_API_KEY=$(sed -n 's/^openrouter_api_key: *//p' ~/.config/system1/credentials | tr -d "\"'")`. It spends each harness's tokens as well.
+`set -a; . ./.env; set +a`), or taken from the credentials file:
+`OPENROUTER_API_KEY=$(sed -n 's/^openrouter_api_key: *//p' ~/.config/system1/credentials)`.
+From 0.4.1, `decide` removes the YAML quotes that leaves on; to smoke 0.4.0 or earlier, append
+`| tr -d "\"'"` inside the `$(…)`, or the provider answers 401 "Missing Authentication header".
+It spends each harness's tokens as well.
 
 The Claude hook's silent-then-hinting behaviour isn't asserted by the script. Check it by hand in
 the Claude profile the script leaves behind (`CLAUDE_CONFIG_DIR=~/.cache/system1-smoke/published-X.Y.Z/claude`).

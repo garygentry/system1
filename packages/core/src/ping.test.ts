@@ -28,6 +28,12 @@ describe("resolveConnection", () => {
     expect(resolved.model).toBe(DEFAULT_MODEL)
     expect(resolved.apiKey).toBe("sk-test")
   })
+
+  it("reads the key as loadConfig does: quotes removed, an unusable key absent", () => {
+    expect(resolveConnection({ OPENROUTER_API_KEY: '"sk-test"' }).apiKey).toBe("sk-test")
+    expect(resolveConnection({ OPENROUTER_API_KEY: '""' }).apiKey).toBeUndefined()
+    expect(resolveConnection({ OPENROUTER_API_KEY: "sk-a\nb" }).apiKey).toBeUndefined()
+  })
 })
 
 describe("ping", () => {
