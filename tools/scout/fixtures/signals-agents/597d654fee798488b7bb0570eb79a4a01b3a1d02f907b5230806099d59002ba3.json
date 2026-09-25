@@ -1,10 +1,10 @@
 {
   "v": 1,
-  "key": "f9d8f814d8e85fcf123d6267d04fc3233839219a62c11ce46a6b125875d6ed06",
-  "recordedAt": "2026-09-24T21:14:20.496Z",
+  "key": "597d654fee798488b7bb0570eb79a4a01b3a1d02f907b5230806099d59002ba3",
+  "recordedAt": "2026-09-25T00:57:44.109Z",
   "request": {
     "model": "typesafe/jev-1.13",
-    "state": "---\nname: release-notes\ndescription: Draft release notes.\n---\nRead the commits since the last tag and write release notes grouped by area, in the house\nstyle, with one sentence per change.\n",
+    "state": "export const incidentTriage: ContentUnit = {\n  id: \"incident-triage\",\n  kind: \"subagent\",\n  frontmatter: {\n    name: \"Incident triage\",\n    description: \"Classify an incoming incident as sev1, sev2 or sev3 and say who it pages.\",\n  },\n  render(slots) {\n    return [\n      { heading: \"Role\", text: \"Given one incident report, decide its severity and state where it routes. Do not change anything.\" },\n      { heading: \"Severities\", text: slots.severities.map((s) => `- ${s.name}: ${s.meaning}`).join(\"\\n\") },\n    ]\n  },\n}\n",
     "questions": {
       "read_each_decide": {
         "type": "noul",
@@ -12,6 +12,14 @@
         "criteria": {
           "true": "It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.",
           "false": "It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction."
+        }
+      },
+      "classify_input": {
+        "type": "noul",
+        "instructions": "This file defines an agent, subagent, skill or prompt whose main job is to give its input one label from a fixed set, or a yes or no verdict.",
+        "criteria": {
+          "true": "The role it gives the agent is to classify, triage, grade or route one input (an alert, a ticket, a message, a change, a request) into named categories, severities, routes or pass and fail, even if it also explains its choice. The definition may be Markdown, YAML, JSON or source code that builds the prompt.",
+          "false": "The agent's job is to write, edit, plan, research or carry out work, or the categories it answers with are open-ended."
         }
       },
       "classify_fanout": {
@@ -53,31 +61,35 @@
     "answers": {
       "read_each_decide": {
         "type": "noul",
-        "noul": 0.07
+        "noul": 0.06
+      },
+      "classify_input": {
+        "type": "noul",
+        "noul": 0.97
       },
       "classify_fanout": {
         "type": "noul",
-        "noul": 0.05
+        "noul": 0.22
       },
       "prompt_hook_verdict": {
         "type": "noul",
-        "noul": 0.04
+        "noul": 0.15
       },
       "fixed_rubric": {
         "type": "noul",
-        "noul": 0.04
+        "noul": 0.07
       },
       "iteration_cap": {
         "type": "noul",
-        "noul": 0.04
+        "noul": 0.03
       }
     },
     "usage": {
-      "input_tokens": 826,
-      "output_tokens": 98,
-      "cost": 0.000034692
+      "input_tokens": 1095,
+      "output_tokens": 116,
+      "cost": 0.00004599
     },
-    "id": "gen-dec-1790284460-xlLA03RKVdnG8mpBvRlP",
+    "id": "gen-dec-1790297863-MGXnbu2pz9i6CKnZqRGm",
     "provider": "TypeSafe"
   }
 }

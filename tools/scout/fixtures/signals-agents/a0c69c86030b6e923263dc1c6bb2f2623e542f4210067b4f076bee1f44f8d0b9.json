@@ -1,10 +1,10 @@
 {
   "v": 1,
-  "key": "a15775641954ee7c3dd8f8834fa4a0701a3504d9e60077e0b31937aaa432fc9c",
-  "recordedAt": "2026-09-24T21:14:19.705Z",
+  "key": "a0c69c86030b6e923263dc1c6bb2f2623e542f4210067b4f076bee1f44f8d0b9",
+  "recordedAt": "2026-09-25T00:57:43.312Z",
   "request": {
     "model": "typesafe/jev-1.13",
-    "state": "---\nname: triage-issues\ndescription: Triage new GitHub issues.\n---\nFor each open issue without a label, read the title and body and decide whether it is a bug,\na feature request or a question. Apply the matching label. Do this for every issue returned\nby `gh issue list --label \"\"`.\n",
+    "state": "{\n  \"hooks\": {\n    \"PreToolUse\": [{ \"matcher\": \"Bash\", \"hooks\": [{\n      \"type\": \"prompt\",\n      \"prompt\": \"Is this shell command destructive? Answer ALLOW or DENY: $ARGUMENTS\"\n    }] }]\n  }\n}\n",
     "questions": {
       "read_each_decide": {
         "type": "noul",
@@ -12,6 +12,14 @@
         "criteria": {
           "true": "It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.",
           "false": "It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction."
+        }
+      },
+      "classify_input": {
+        "type": "noul",
+        "instructions": "This file defines an agent, subagent, skill or prompt whose main job is to give its input one label from a fixed set, or a yes or no verdict.",
+        "criteria": {
+          "true": "The role it gives the agent is to classify, triage, grade or route one input (an alert, a ticket, a message, a change, a request) into named categories, severities, routes or pass and fail, even if it also explains its choice. The definition may be Markdown, YAML, JSON or source code that builds the prompt.",
+          "false": "The agent's job is to write, edit, plan, research or carry out work, or the categories it answers with are open-ended."
         }
       },
       "classify_fanout": {
@@ -53,31 +61,35 @@
     "answers": {
       "read_each_decide": {
         "type": "noul",
-        "noul": 0.91
+        "noul": 0.18
+      },
+      "classify_input": {
+        "type": "noul",
+        "noul": 0.95
       },
       "classify_fanout": {
         "type": "noul",
-        "noul": 0.12
+        "noul": 0.07
       },
       "prompt_hook_verdict": {
         "type": "noul",
-        "noul": 0.15
+        "noul": 0.96
       },
       "fixed_rubric": {
         "type": "noul",
-        "noul": 0.24
+        "noul": 0.12
       },
       "iteration_cap": {
         "type": "noul",
-        "noul": 0.06
+        "noul": 0.03
       }
     },
     "usage": {
-      "input_tokens": 853,
-      "output_tokens": 98,
-      "cost": 0.000035826
+      "input_tokens": 1003,
+      "output_tokens": 116,
+      "cost": 0.000042126
     },
-    "id": "gen-dec-1790284459-6PvFx5fPAkE1Kg1TMbww",
+    "id": "gen-dec-1790297863-DdrnoZDM4rNQOTbtg6P6",
     "provider": "TypeSafe"
   }
 }

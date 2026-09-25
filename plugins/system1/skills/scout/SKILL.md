@@ -24,6 +24,8 @@ Arguments, all optional: a target (a path, `skills`, `plugins` or `agents`) and 
 
 Pass the table's **full path** to `--spec`. Each table screens for several signals in one pass (`keepAny`) and drops what it is confident is not an opportunity (`keep`).
 
+**Agent configuration isn't only Markdown.** Many projects build their skills, subagents and prompts in source code, for example a TypeScript module that renders a subagent's instructions, or a Python string holding a system prompt. Search the source for those definitions (names such as `subagent`, `SKILL`, `system prompt`, `frontmatter`, `role:`) and screen those files with the agents table too. The code table asks whether code *calls* a model; it doesn't ask what an agent defined in that code is told to do.
+
 ## 2. Prefilter locally (sends nothing)
 
 Everything you leave out here costs nothing and can't become a false positive.
@@ -59,6 +61,8 @@ For each kept or undecided file, read the lines that triggered it and decide whi
 - **Correct but intentional.** For example a chat-model or keyword *baseline* kept on purpose for comparison. Record it as `rejected`, with the reason.
 - **A false positive.** Don't record it. Count it for the report.
 
+Several survivors are often facets of **one mechanism**: the checklist files of a single verify step, say. Record the mechanism once, citing its main file, rather than one candidate per facet.
+
 For each real opportunity, prepare a candidate:
 
 | Field | What to put |
@@ -69,7 +73,7 @@ For each real opportunity, prepare a candidate:
 | `shape` | `single` (one verdict), `fanout` (one per item), `cascade` (a cheap gate in front of an expensive call) or `pairwise` (same or different) |
 | `benefit` | `cost`, `quality` or `latency`: what replacing it would mainly buy. A free regex replaced by a model is `quality`, not `cost` |
 | `evidence` | **a few distinctive lines copied verbatim** from the file. The id is derived from them, so don't paraphrase |
-| `questions` | a draft question set, written with the `ask` skill's `question-craft.md` |
+| `questions` | a draft question set, written with the `ask` skill's `question-craft.md`. `add` validates it: a `choice` needs at least two options (one of them a way out), a `score` a list of levels |
 | `projected` | `volume` per `per` (a day, a PR, a run), `currentCostPerItemUsd`, `decisionCostPerItemUsd`, and a `note` saying where each figure came from. Take the decision cost from this sweep: the measured `usage` cost divided by the items screened (it grows with item size, and is often $0.00005–$0.0001 for a source file). `decide` computes the saving; don't write one |
 | `risk` | `{level: low\|medium\|high, note}`: what goes wrong if the replacement errs |
 | `next` | usually "save the spec with the design skill, then adopt" |

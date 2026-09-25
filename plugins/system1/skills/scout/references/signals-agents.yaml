@@ -6,6 +6,12 @@ questions:
     criteria:
       true: It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.
       false: It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction.
+  classify_input:
+    type: noul
+    instructions: This file defines an agent, subagent, skill or prompt whose main job is to give its input one label from a fixed set, or a yes or no verdict.
+    criteria:
+      true: The role it gives the agent is to classify, triage, grade or route one input (an alert, a ticket, a message, a change, a request) into named categories, severities, routes or pass and fail, even if it also explains its choice. The definition may be Markdown, YAML, JSON or source code that builds the prompt.
+      false: The agent's job is to write, edit, plan, research or carry out work, or the categories it answers with are open-ended.
   classify_fanout:
     type: noul
     instructions: This file dispatches subagents or parallel agent runs whose job is to classify, check or grade items.
@@ -32,6 +38,7 @@ questions:
       false: The loop ends when a condition is met or progress stops, or there is no loop.
 keepAny:
   - read_each_decide>=0.3
+  - classify_input>=0.3
   - classify_fanout>=0.3
   - prompt_hook_verdict>=0.3
   - fixed_rubric>=0.3
@@ -41,6 +48,9 @@ policy:
     read_each_decide:
       value: 0.3
       why: Recall first. A missed opportunity is invisible; a false keep costs one read of the file. Unmeasured (judgement over prose).
+    classify_input:
+      value: 0.3
+      why: Recall first, as above. Added after the M9 dogfood missed an alert-triage subagent (one alert per call, three severities) that read_each_decide, being about many items, did not cover.
     classify_fanout:
       value: 0.3
       why: Recall first, as above.
@@ -63,8 +73,8 @@ meta:
   # replacement ("is it making progress?") is a closed judgement. Each signal's
   # own false criteria already exclude write-something steps.
   screen:
-    kept: [triage-skill, fanout-classifier-agents, prompt-hook, retry-cap]
-    dropped: [writing-skill, ordinary-hook]
+    kept: [triage-skill, fanout-classifier-agents, prompt-hook, retry-cap, triage-subagent-in-code]
+    dropped: [writing-skill, ordinary-hook, planning-agent]
 examples:
   - id: triage-skill
     state: |
@@ -119,3 +129,29 @@ examples:
         }
       }
     expect: { prompt_hook_verdict: false, classify_fanout: false }
+  - id: triage-subagent-in-code
+    state: |
+      export const incidentTriage: ContentUnit = {
+        id: "incident-triage",
+        kind: "subagent",
+        frontmatter: {
+          name: "Incident triage",
+          description: "Classify an incoming incident as sev1, sev2 or sev3 and say who it pages.",
+        },
+        render(slots) {
+          return [
+            { heading: "Role", text: "Given one incident report, decide its severity and state where it routes. Do not change anything." },
+            { heading: "Severities", text: slots.severities.map((s) => `- ${s.name}: ${s.meaning}`).join("\n") },
+          ]
+        },
+      }
+    expect: { classify_input: true }
+  - id: planning-agent
+    state: |
+      ---
+      name: planner
+      description: Break a feature request into an implementation plan.
+      ---
+      Read the feature request and the relevant code, then write a step-by-step implementation
+      plan with the files to change, the order of the changes and the tests to add.
+    expect: { classify_input: false, read_each_decide: false }

@@ -98,10 +98,10 @@
 - [x] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
 - [x] Signal tables replay in `pnpm check` through `spec check`, and the screen keeps and drops exactly the examples it should (`tools/signals.test.ts`).
 - [ ] A sweep over more than 200 items stops at the projection until the user approves (the guard and the skill text are in place; to be seen in a harness run). *Oversize files are windowed, not dropped: done in PR #11: `many` reports an oversize item as `too-large` with the split in `detail` rather than failing the run, and `--file <path> --split lines:400/40` screens it.*
-- [ ] Mode A finds at least one real, defensible candidate in this repo or `jev-poc` (the pre-check already found one: `route.ts`); measured cost recorded.
-- [ ] Mode A runs on at least one repo the signal questions were not written against (the pre-check's targets are both System 1 / Jev code, which skews them). Its precision and recall are written up.
-- [ ] With the local prefilter, `jev-poc`'s survivors no longer consist mostly of demos that already use Jev.
-- [ ] Mode B over this plugin plus one cloned third-party plugin, with the false positives written up; the settings-file scrub test passes.
+- [x] Mode A finds at least one real, defensible candidate: `route.ts` here (pre-check), and in feature-forge the failure-clustering heuristic in `scripts/forge_session/topology.py`; measured costs recorded below.
+- [x] Mode A and Mode B run on two repos the signal questions were not written against (feature-forge, pulse), with precision and recall written up below (2026-09-25).
+- [ ] ~~With the local prefilter, `jev-poc`'s survivors no longer consist mostly of demos that already use Jev.~~ **Not met; recorded as a limitation (2026-09-25).** The one-hop prefilter excluded 21 files and left 17 demos among 22 survivors. Following imports transitively (19 files) changed nothing, because the demos don't import the model: a generic runner imports them. Widening the exclusion question to "defines questions for a decision model" moved 22 kept to 20 and wasn't shipped. The reading step is what dismisses them, as the dogfood runs did. jev-poc, whose whole product is decision-model demos, is the worst case for a per-file screen.
+- [x] Mode B over this plugin's own repo and over feature-forge, an agent plugin these questions were not written against, with the false positives written up below. *The settings-file scrub test is still to write (§11).*
 - [ ] Every projected saving shows its inputs and says projected. No output claims a measured saving.
 - [ ] Undecided and skipped items are reported apart.
 - [x] Routing: `scout` loads on explicit invocation in Claude, Codex and Pi (smoke), and never on its own (6/6 negatives per harness); the `ask` set does not regress on `--repeat 3` (2026-09-25, below).
@@ -366,6 +366,43 @@ A headless Claude Code session (Sonnet, the plugin from this checkout) ran the s
 | scout negative | 6/6 | 6/6 | 6/6 |
 
 A fourth skill in the plugin moved nothing: the `ask` numbers match the 0.3.x runs.
+
+### M9 unbiased dogfood: feature-forge and pulse (2026-09-25)
+
+Scout ran unattended in a headless Claude Code session (Sonnet) in each repo, in both modes, with egress consent granted by the user and the spend approved up front. I then audited each report against a checklist I built from local searches, before reading its answers.
+
+| | feature-forge (an agent plugin: skills, agents, hooks, Python and TS tooling) | pulse (monitoring: TS services, a web app, an agent-kit that generates agent content) |
+|---|---|---|
+| Screened | agents 68 files, code 41 (plus 8 windows of one oversize file) | code 340, agents 6 (Markdown only) |
+| Kept / undecided | agents 40 / 10, code 2 / 3 | code 1 / 3, agents 3 / 1 |
+| Measured decision cost | **$0.024** | **$0.035** |
+| Agent session cost | $2.81 (96 turns) | $1.12 (55 turns) |
+| Recorded | 4 opportunities, 1 rejected baseline | 1 opportunity |
+
+**feature-forge.**
+- **Opportunities:**
+  - the deep-verify pass that runs a full opus subagent per finding for one CONFIRMED or REFUTED bit (fanout, cost);
+  - fix-sweep dispositions (cascade);
+  - the backlog task-quality checks (quality);
+  - failure-clustering by token overlap, a documented weak proxy for "same root cause" (quality).
+- **Rejected with a reason:** a classifier the project had deliberately made deterministic.
+- **Recall:** both entries on my checklist were found, the verifier agent and the rubric checklists. So were two I hadn't anticipated. My third lead, iteration caps, turned out to be the loop runner's budget, which lives in another repo, so leaving it out was correct.
+- **Precision:** low at the screen, high after reading. The `fixed_rubric` signal kept about 30 checklist files that are facets of one verify mechanism, and the agent consolidated them. It also dismissed five false positives with sound reasons.
+- **Caveat:** the top opportunity asks whether a finding holds against spec artifacts. That may need more than one state's worth of cross-document reasoning. Whether a decision model can do it is for `compare` to measure.
+
+**pulse.**
+- **Opportunity:** the post-loop review in `.rauf/REVIEW.md`, a fixed six-point rubric applied per completed item, as a cascade in front of the full review.
+- **Code mode:** it kept a sensitive-key denylist, a secret lint and two search filters. The agent dismissed all four correctly: syntax and security rules, not meaning.
+- **A miss: the `alert-triage` subagent.** It classifies each firing alert into three severities, a textbook decision. There were two causes:
+  1. Agents mode was scoped to Markdown, and pulse builds its agent content in TypeScript.
+  2. No signal covered "an agent whose job is one classification of its input": `read_each_decide` is about many items.
+- **Fixed in PR #13:**
+  - a `classify_input` signal, with an in-code triage subagent and a planning agent as examples (8/8 recorded, replayed in CI);
+  - skill text telling agents mode to find agent definitions in source.
+
+  Re-screening pulse's `agent-kit/src/content` now keeps `alert-triage.ts` at 0.93.
+
+**What it says.** Scout finds real, defensible opportunities in repos it wasn't tuned on, for about three cents of decision calls per repo. Most of the cost is the agent reading survivors, $1–3 of Sonnet per repo, which is the next thing to make cheaper. Its blind spots were structural: agent content defined in code, and single-input classifiers. Both are now covered and tested.
 
 <details><summary>The draft Mode A signal questions used (the starting point for M9 §4)</summary>
 
