@@ -1,6 +1,6 @@
 # Plan: publish from CI with trusted publishing and staged approval
 
-- **Status:** A–C done (C: 0.4.1, 2026-09-25); D pending (see [`baseline-0.4.1.md`](baseline-0.4.1.md))
+- **Status:** complete, 2026-09-25 (C: the 0.4.1 release; D: the lock-down, done by the maintainer)
 - **Decision:** [`decisions/0022-ci-publish-trusted-staged.md`](decisions/0022-ci-publish-trusted-staged.md)
 - **Replaces:** `docs/contributing/release.md` §4 (publishing from the maintainer's machine) as the documented path. `pnpm release:publish` stays as a break-glass option.
 - **Inputs:** `.handoff/npm.md` (agent research), checked against the primary sources listed at the end.
@@ -134,6 +134,8 @@ If CI fails *before* anything is staged, fix the problem and either re-run the j
 - **Live smoke:** `smoke:published 0.4.1 --live` passed 9 of 9 with the key taken from the credentials file, quotes still on.
 
 ### D. Lock-down, after C succeeds
+
+Done 2026-09-25, by the maintainer on npmjs.com. The npm 12 CLI can't read the publishing-access setting (`npm access` only sets `mfa`), and `npm token list` and `npm trust list` ask for web 2FA, so this was checked in the browser rather than by an agent.
 
 1. On npmjs.com, set each of the three packages to Settings → Publishing access → **Require two-factor authentication and disallow tokens**.
 2. Revoke every npm granular token that can publish (`npm token list`, then `npm token revoke`), including the short-lived one from 0.4.0.
