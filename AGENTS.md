@@ -29,6 +29,7 @@ Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — th
 - **Config layering:** defaults → `$XDG_CONFIG_HOME/system1/config.yaml` → `<repo>/.system1/config.yaml` → env (`OPENROUTER_API_KEY`, `SYSTEM1_MODEL`, `SYSTEM1_ENDPOINT`, `SYSTEM1_REPLAY`, `SYSTEM1_SESSION`, `SYSTEM1_ROUTE`). Tests that load config must pass a temp `home` so they never read the real user config.
 - **Honest numbers:** label projected costs as projected. Every answer carries its `source` (`live` or `replay`). A replay miss is an error, never a synthesized answer.
 - **Secrets:** never print or log `OPENROUTER_API_KEY`; report only whether it is present. The engine and CLI never read a `.env` file (a project's `.env` belongs to that project); only `vitest.live.config.ts` loads this repo's.
+- **Publishing** ([0022](plans/decisions/0022-ci-publish-trusted-staged.md)): a signed `vX.Y.Z` tag makes `.github/workflows/release.yml` stage the packages through npm trusted publishing, and the maintainer approves them with npm 2FA (`pnpm release:approve`). Never add an npm token, a `NODE_AUTH_TOKEN` or a direct `npm publish` to CI, and never rename `release.yml` (npm trusts it by name). Steps: `docs/contributing/release.md`.
 - **Live tests** are named `*.live.test.ts`, are excluded from `pnpm test`, and must `skipIf` there is no key.
 
 ## Commands

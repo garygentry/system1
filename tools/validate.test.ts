@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { drift, loadCatalog, render } from "./generate.js"
-import { checkSkill } from "./validate.js"
+import { checkRepository, checkSkill } from "./validate.js"
 
 const skill = (front: string) => `---\n${front}\n---\n\n# Body\n`
 
@@ -37,5 +37,19 @@ describe("generate", () => {
     const catalog = loadCatalog()
     const shim = render(catalog).find((o) => o.path.endsWith("bin/decide"))
     expect(shim?.content).toContain(`@garygentry/system1@${catalog.version}`)
+  })
+})
+
+describe("checkRepository", () => {
+  const url = "git+https://github.com/garygentry/system1.git"
+
+  it("accepts the exact url", () => {
+    expect(checkRepository("p", { repository: { type: "git", url } }, url)).toEqual([])
+  })
+
+  it("rejects a url npm would only normalise", () => {
+    const bare = { repository: { url: "https://github.com/garygentry/system1" } }
+    expect(checkRepository("p", bare, url)).toHaveLength(1)
+    expect(checkRepository("p", {}, url)).toHaveLength(1)
   })
 })

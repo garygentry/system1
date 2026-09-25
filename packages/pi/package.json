@@ -10,7 +10,7 @@
   "homepage": "https://github.com/garygentry/system1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/garygentry/system1",
+    "url": "git+https://github.com/garygentry/system1.git",
     "directory": "packages/pi"
   },
   "license": "MIT",

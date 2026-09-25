@@ -53,7 +53,8 @@ flowchart LR
   `tools/validate.test.ts` also checks that generation is deterministic and that the shim pins the
   catalog's version.
 - **`pnpm validate`** (`tools/validate.ts`) checks skill frontmatter, version lockstep across every
-  manifest, the Agent Plugins required fields, and runs `claude plugin validate --strict` when
+  manifest, that each package's `repository.url` is the exact form npm trusted publishing matches
+  on (the generator stamps it), the Agent Plugins required fields, and runs `claude plugin validate --strict` when
   `claude` is on PATH. CI has no `claude`, so run it locally before a release.
 - **The Pi package's `skills/`** is not committed. Its generated `prepack.mjs` copies
   `plugins/system1/skills` in when the package is packed.
@@ -140,6 +141,21 @@ tarball into a scratch prefix, and then checks that the installed CLI:
 It also checks that the CLI tarball carries `THIRD-PARTY-NOTICES.md` and that the Pi tarball holds
 at least three `SKILL.md` files. On failure it keeps the scratch directory and prints its path.
 
-What CI does not cover: publishing (there is no release workflow; M6 left it manual), the harnesses
+### Release workflow
+
+`.github/workflows/release.yml` runs on a pushed `vX.Y.Z` tag and stages the release on npm; a
+maintainer approves it with npm 2FA ([0022](../../plans/decisions/0022-ci-publish-trusted-staged.md),
+steps in [release.md](../contributing/release.md#4-ci-stages-the-release)).
+
+| Job | Permissions | Runs |
+|---|---|---|
+| `verify` | `contents: read` | `tools/release-verify.mjs` (tag = version, signed by `.github/allowed_signers` on `main`, builds on `main`, not yet on npm), `pnpm check`, `pnpm release:check` |
+| `stage` | `contents: read`, `id-token: write`; environment `npm-publish` | `tools/release-publish.mjs --stage --skip-check`: `npm stage publish` per package through npm trusted publishing (OIDC), Node 24, pinned npm 11 |
+
+npm trusts the workflow by its file name, the repository and the environment, and only to stage.
+No npm token is stored anywhere. Every action in both workflows is pinned to a commit SHA;
+`.github/dependabot.yml` proposes updates weekly.
+
+What CI does not cover: approving a release (that is the maintainer's npm 2FA), the harnesses
 themselves (smoke and the routing evals are local only, and smoke needs GNU `timeout`), and live
 calls.
