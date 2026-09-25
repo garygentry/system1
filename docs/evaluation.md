@@ -183,8 +183,15 @@ two repos, one call per file, with no local prefilter:
 - **Precision:** poor without a prefilter, for two reasons that scout now handles locally. A
   per-file question can't see a decision-model call made through another file, and the model
   doesn't see file paths, so it can't tell a fixture from product code.
-- **Bias:** both repos are System 1 or Jev code. A repo the questions weren't written against is
-  still to come.
+- **Bias:** both repos are System 1 or Jev code.
+
+Then `scout` itself ran unattended over two repos the questions weren't written against
+(2026-09-25). It recorded 4 opportunities and 1 intentional baseline in feature-forge, an agent
+plugin, and 1 opportunity in pulse, a monitoring tool. It found everything on a checklist built
+beforehand except pulse's alert-triage subagent. That miss (agent content defined in TypeScript,
+and one-input classifiers) led to a new signal, `classify_input`, which now keeps it. Decision
+calls cost $0.024 and $0.035. The agent's own reading cost $2.81 and $1.12, so reading the
+survivors, not screening, is most of the price. Full write-up: the M9 plan's Results.
 
 The signal tables scout ships are replay-tested in CI: every example passes, and the screen keeps
 and drops exactly the examples it should (`tools/signals.test.ts`).

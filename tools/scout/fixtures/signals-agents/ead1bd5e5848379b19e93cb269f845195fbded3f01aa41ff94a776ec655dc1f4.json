@@ -1,10 +1,10 @@
 {
   "v": 1,
-  "key": "7d0f55832e18e47ff3c7f34377fd4d92a8dd6504894cfec738495606a42cb91c",
-  "recordedAt": "2026-09-24T21:14:20.283Z",
+  "key": "ead1bd5e5848379b19e93cb269f845195fbded3f01aa41ff94a776ec655dc1f4",
+  "recordedAt": "2026-09-25T00:57:42.932Z",
   "request": {
     "model": "typesafe/jev-1.13",
-    "state": "Run the tests. If any fail, fix the code and run them again. Stop after 20 attempts even if\ntests still fail, and report what is left.\n",
+    "state": "---\nname: triage-issues\ndescription: Triage new GitHub issues.\n---\nFor each open issue without a label, read the title and body and decide whether it is a bug,\na feature request or a question. Apply the matching label. Do this for every issue returned\nby `gh issue list --label \"\"`.\n",
     "questions": {
       "read_each_decide": {
         "type": "noul",
@@ -12,6 +12,14 @@
         "criteria": {
           "true": "It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.",
           "false": "It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction."
+        }
+      },
+      "classify_input": {
+        "type": "noul",
+        "instructions": "This file defines an agent, subagent, skill or prompt whose main job is to give its input one label from a fixed set, or a yes or no verdict.",
+        "criteria": {
+          "true": "The role it gives the agent is to classify, triage, grade or route one input (an alert, a ticket, a message, a change, a request) into named categories, severities, routes or pass and fail, even if it also explains its choice. The definition may be Markdown, YAML, JSON or source code that builds the prompt.",
+          "false": "The agent's job is to write, edit, plan, research or carry out work, or the categories it answers with are open-ended."
         }
       },
       "classify_fanout": {
@@ -53,11 +61,15 @@
     "answers": {
       "read_each_decide": {
         "type": "noul",
-        "noul": 0.04
+        "noul": 0.92
+      },
+      "classify_input": {
+        "type": "noul",
+        "noul": 0.92
       },
       "classify_fanout": {
         "type": "noul",
-        "noul": 0.08
+        "noul": 0.12
       },
       "prompt_hook_verdict": {
         "type": "noul",
@@ -65,19 +77,19 @@
       },
       "fixed_rubric": {
         "type": "noul",
-        "noul": 0.49
+        "noul": 0.23
       },
       "iteration_cap": {
         "type": "noul",
-        "noul": 0.92
+        "noul": 0.05
       }
     },
     "usage": {
-      "input_tokens": 820,
-      "output_tokens": 98,
-      "cost": 0.00003444
+      "input_tokens": 1011,
+      "output_tokens": 116,
+      "cost": 0.000042462
     },
-    "id": "gen-dec-1790284460-JB5NK5LotFa7NLMKerTS",
+    "id": "gen-dec-1790297862-CseQcyMVfvbyO0HbEAdc",
     "provider": "TypeSafe"
   }
 }

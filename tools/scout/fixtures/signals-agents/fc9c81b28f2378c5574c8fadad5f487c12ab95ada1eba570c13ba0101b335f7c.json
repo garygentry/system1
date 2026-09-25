@@ -1,10 +1,10 @@
 {
   "v": 1,
-  "key": "64a869deebf3cff717988012d9bfbe3099a3b47dd3dfefdf752e65179fa46b39",
-  "recordedAt": "2026-09-24T21:14:19.884Z",
+  "key": "fc9c81b28f2378c5574c8fadad5f487c12ab95ada1eba570c13ba0101b335f7c",
+  "recordedAt": "2026-09-25T00:57:44.311Z",
   "request": {
     "model": "typesafe/jev-1.13",
-    "state": "## Review\nPartition the changed files into groups of ten. Dispatch one reviewer subagent per group.\nEach subagent reads its files and returns, for each file, PASS or FAIL against the security\nchecklist, with the rule that failed.\n",
+    "state": "---\nname: planner\ndescription: Break a feature request into an implementation plan.\n---\nRead the feature request and the relevant code, then write a step-by-step implementation\nplan with the files to change, the order of the changes and the tests to add.\n",
     "questions": {
       "read_each_decide": {
         "type": "noul",
@@ -12,6 +12,14 @@
         "criteria": {
           "true": "It instructs the agent to read each of a set of items (files, tickets, commits, failures, reviews, rows) and give each a label, a yes or no, a pick from fixed options or a score.",
           "false": "It asks the agent to do or write something for each item (fix, edit, summarise, generate), or it judges one thing only, or it gives no per-item instruction."
+        }
+      },
+      "classify_input": {
+        "type": "noul",
+        "instructions": "This file defines an agent, subagent, skill or prompt whose main job is to give its input one label from a fixed set, or a yes or no verdict.",
+        "criteria": {
+          "true": "The role it gives the agent is to classify, triage, grade or route one input (an alert, a ticket, a message, a change, a request) into named categories, severities, routes or pass and fail, even if it also explains its choice. The definition may be Markdown, YAML, JSON or source code that builds the prompt.",
+          "false": "The agent's job is to write, edit, plan, research or carry out work, or the categories it answers with are open-ended."
         }
       },
       "classify_fanout": {
@@ -53,31 +61,35 @@
     "answers": {
       "read_each_decide": {
         "type": "noul",
-        "noul": 0.93
+        "noul": 0.04
+      },
+      "classify_input": {
+        "type": "noul",
+        "noul": 0.02
       },
       "classify_fanout": {
         "type": "noul",
-        "noul": 0.96
+        "noul": 0.06
       },
       "prompt_hook_verdict": {
         "type": "noul",
-        "noul": 0.75
+        "noul": 0.07
       },
       "fixed_rubric": {
         "type": "noul",
-        "noul": 0.97
+        "noul": 0.07
       },
       "iteration_cap": {
         "type": "noul",
-        "noul": 0.13
+        "noul": 0.12
       }
     },
     "usage": {
-      "input_tokens": 835,
-      "output_tokens": 98,
-      "cost": 0.00003507
+      "input_tokens": 995,
+      "output_tokens": 116,
+      "cost": 0.00004179
     },
-    "id": "gen-dec-1790284459-hxMil2Xi3oIkHPxKj8TO",
+    "id": "gen-dec-1790297864-kmDklwFtgl6SlLjdyudt",
     "provider": "TypeSafe"
   }
 }

@@ -22,7 +22,7 @@ Each of these could be handed to a decision model. Scout records the ones it fin
    default) it waits for your approval; below it, it says what it will cost and goes ahead unless
    you object.
 3. **It screens with `decide many`**, one call per file, against a signal table shipped with the
-   skill. The code table asks three signal questions and one exclusion, the agents table five
+   skill. The code table asks three signal questions and one exclusion, the agents table six
    signals. Recall comes first: a file is kept if any signal reaches 0.3. A file too big for one
    call is reported and re-screened in line windows, and one over 2 MB is reported as not screened.
 4. **It reads only the files the screen kept**, and writes up the real opportunities. For each it
