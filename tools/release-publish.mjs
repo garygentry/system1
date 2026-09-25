@@ -75,9 +75,21 @@ for (const pkg of PACKAGES) {
 if (dryRun) {
   console.log(`\nrelease:publish: dry run done; nothing was published`)
 } else {
-  const missing = PACKAGES.map((pkg) => manifest(pkg).name).filter((name) => !published(name))
+  // The registry lags a publish by a few seconds to a minute (0.4.0: ~40 s),
+  // so wait for it rather than report a publish that worked as a failure.
+  const WAIT_MS = 180_000
+  const STEP_MS = 10_000
+  const names = PACKAGES.map((pkg) => manifest(pkg).name)
+  let missing = names.filter((name) => !published(name))
+  for (let waited = 0; missing.length > 0 && waited < WAIT_MS; waited += STEP_MS) {
+    console.log(`waiting for npm to serve ${missing.join(", ")} at ${version}…`)
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, STEP_MS)
+    missing = missing.filter((name) => !published(name))
+  }
   if (missing.length > 0) {
-    fail(`npm does not serve ${missing.join(", ")} at ${version} yet; check again in a minute`)
+    fail(
+      `npm still does not serve ${missing.join(", ")} at ${version} after ${WAIT_MS / 1000} s. The publish may still land: check with \`npm view <name>@${version} version\` before tagging, and don't push until all three are served.`,
+    )
   }
   console.log(
     `\nrelease:publish: npm serves all three at ${version}. Next: tag and push (release.md § 5).`,

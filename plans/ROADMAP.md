@@ -10,7 +10,26 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-24 (0.3.2).** Evidence (M7) and onboarding (M8) are done: calibration is measured for checkable questions, the docs are checked against the code, and 0.3.x added the Claude routing hook. What is still missing is **outside users**: nobody but the author has used it. M9 (`scout`) is next; design partners moved to M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). `docs/evaluation.md` summarises every measurement.
+**Updated 2026-09-25 (0.4.0).** M9 is done: `scout` finds decision-model opportunities in code and agent configuration, and 0.4.0 ships it. M10 (`guard` and `done-check`) is next. Design partners moved to M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+
+**0.4.0, released and verified 2026-09-25** (tag `v0.4.0` on `45ebd4c`). The plan and its results are in [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md).
+
+- **What it adds (#10–#14):**
+  - the `scout` skill with two signal tables that are replay-tested in CI;
+  - `decide opportunities` (the backlog), `decide spec lint`, `--exclude` and `--keep-any`;
+  - in `many`, an oversize item is skipped with the split to re-run it;
+  - scrubbing of service tokens and environment-style credentials;
+  - a retry on the provider's HTTP 529.
+- **Evidence:**
+  - scout ran unattended over two repos its questions weren't written against. It recorded 5 opportunities for $0.024 and $0.035 of decision calls, and the one miss became a new signal;
+  - smoke passed 12/12;
+  - `eval:routing all --repeat 3` was ok in every category, with scout never loading on its own.
+- **Gates:** `pnpm check` (578 tests), `release:check` 12/12, `bench:startup` at most +78 ms (the route hook +16 ms, which settles the 0.3.2 "watch").
+- **Published artifacts, fresh profiles:** Claude (plugin only), Codex and Pi each installed 0.4.0 and ran a live `decide many`: 3 kept of 5, for $0.000076, $0.000070 and $0.000085 measured.
+- **Found while releasing:**
+  - The registry served the packages about 40 s after publishing, and `release:publish` reported that lag as a failure. It now waits up to 3 minutes.
+  - A key taken from the credentials file with its YAML quotes gave a provider 401, "Missing Authentication header". Follow-up: `decide` should strip or flag a quoted `OPENROUTER_API_KEY`.
+
 
 **0.3.2, released and verified 2026-09-24** (tag `v0.3.2` on `ab29a02`). It came out of walking setup and a first run end to end in Claude Code.
 
@@ -214,8 +233,8 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M6** | Release 0.1.0 | **done 2026-09-22**, see `milestones/M6-release.md`. `@garygentry/system1`, `-core` and `-pi` published at 0.1.0 and tagged `v0.1.0`; `main` pushed to GitHub; five `gpt-6-astra` review passes ran on the release candidate and their fixes landed first. Renamed to System 1 ([0016](decisions/0016-name-system1.md)). Installs verified from the published artifacts in all three harnesses. The last box, a live decision *through the `ask` skill* in each harness, was blocked by a provider usage limit and closed in M7 (2026-09-23) |
 | **M7** | Evidence: measure what we claim | **done 2026-09-23**, see `milestones/M7-evidence.md`. 478 pairs labelled blind (by one labeller, disclosed); checkable curve published in `docs/calibration.md` (Brier 0.028, ECE 0.054); threshold guidance derived from it; judgement questions reported as unmeasured. M6's last box closed: a live `ask` in each harness. The routing retry held Codex/Pi at 8/8 but not Claude, so it was reverted (gap 1) |
 | **M8** | **Onboarding: the first hour works** | **done** 2026-09-23, **0.2.0 published**, see `milestones/M8-onboarding.md`. Six replay-tested cookbook recipes, `docs/` checked against the code by a test, six first-run stalls fixed across three harnesses, CI on Ubuntu and macOS (which found a real symlinked-path bug). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
-| **M9** | **`scout` → 0.4.0** | **next**, see `milestones/M9-M11-scout-guard-adopt.md` ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Screen a codebase or agent configuration for decisions worth handing over; typed backlog via `decide opportunities`; offline `decide spec lint` |
-| **M10** | **`guard` + `done-check` → 0.5.0** | planned, same plan. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 for repos that opt in with a criteria file |
+| **M9** | **`scout` → 0.4.0** | **done 2026-09-25, 0.4.0 released and verified**; see `milestones/M9-M11-scout-guard-adopt.md` ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Screen a codebase or agent configuration for decisions worth handing over; typed backlog via `decide opportunities`; offline `decide spec lint` |
+| **M10** | **`guard` + `done-check` → 0.5.0** | **next**, same plan. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 for repos that opt in with a criteria file |
 | **M11** | **`adopt` + `compare` → 0.6.0** | planned, same plan. TS/Python policy modules through the engine with fallback; shadow run against the current mechanism and an `emulated` baseline |
 | M12 | **Design partners: 3–5 real users** (was M9) | outline, after M11 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
 | M13 | **Release** (was M10) | outline. Hygiene informed by M12 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |

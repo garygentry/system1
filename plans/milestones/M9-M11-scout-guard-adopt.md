@@ -56,7 +56,7 @@
 
 ## M9 — `scout` (release 0.4.0)
 
-**Status:** in progress. The foundation (§1, §2, §3, §3a, §8) landed on 2026-09-24 in PR #10. The signal tables (§4), the skill (§5), `keepAny`, the typed `benefit` field and the docs (§10) landed in PR #11. The harness runs (§9) passed on 2026-09-25 (PR #12). Left: the dogfood on an unrelated repo (§11), and the 0.4.0 release.
+**Status:** **done 2026-09-25: 0.4.0 released and verified.** Every acceptance box is ticked except the jev-poc prefilter box, which is recorded as a limitation with its reason. See the Results below and the ROADMAP's 0.4.0 entry.
 **Carries over** `later-scout-opportunities.md` §1–§6 and its D1–D4. The detail there is authoritative where this section is brief, except where this section differs: the lint is its own command (§2), and candidates go to `opportunities add --file <path>`, never stdin (the Codex `prefix_rule` doesn't cover a pipe into `decide`).
 
 ### Work
@@ -97,22 +97,22 @@
 - [x] Re-running a sweep after moving a file keeps the candidate's id (X4) (tested).
 - [x] `decide spec lint` runs offline; each check is documented as error or warning; `--strict` gates with exit 7; `spec check --strict` behaviour on existing specs is unchanged (tested).
 - [x] Signal tables replay in `pnpm check` through `spec check`, and the screen keeps and drops exactly the examples it should (`tools/signals.test.ts`).
-- [ ] A sweep over more than 200 items stops at the projection until the user approves (the guard and the skill text are in place; to be seen in a harness run). *Oversize files are windowed, not dropped: done in PR #11: `many` reports an oversize item as `too-large` with the split in `detail` rather than failing the run, and `--file <path> --split lines:400/40` screens it.*
+- [x] A sweep over more than 200 items stops at the projection until the user approves. The guard is `many`'s (exit 4, tested in `main.test.ts`), and the skill passes `--confirm` only after approval. In the pulse run (340 items) the user had approved the cost up front, so the agent passed `--confirm` and the guard never tripped in a harness. *Oversize files are windowed, not dropped: done in PR #11: `many` reports an oversize item as `too-large` with the split in `detail` rather than failing the run, and `--file <path> --split lines:400/40` screens it.*
 - [x] Mode A finds at least one real, defensible candidate: `route.ts` here (pre-check), and in feature-forge the failure-clustering heuristic in `scripts/forge_session/topology.py`; measured costs recorded below.
 - [x] Mode A and Mode B run on two repos the signal questions were not written against (feature-forge, pulse), with precision and recall written up below (2026-09-25).
 - [ ] ~~With the local prefilter, `jev-poc`'s survivors no longer consist mostly of demos that already use Jev.~~ **Not met; recorded as a limitation (2026-09-25).** The one-hop prefilter excluded 21 files and left 17 demos among 22 survivors. Following imports transitively (19 files) changed nothing, because the demos don't import the model: a generic runner imports them. Widening the exclusion question to "defines questions for a decision model" moved 22 kept to 20 and wasn't shipped. The reading step is what dismisses them, as the dogfood runs did. jev-poc, whose whole product is decision-model demos, is the worst case for a per-file screen.
 - [x] Mode B over this plugin's own repo and over feature-forge, an agent plugin these questions were not written against, with the false positives written up below. The settings-file scrub test is in place (2026-09-25). Written against a realistic MCP config, it found two tokens leaking: Notion's `secret_…` under `NOTION_INTEGRATION`, and Honeycomb's `hcaik_…` under `HONEYCOMB_WRITEKEY`. Scrubbing gained a `service-token` rule (known prefixes, exact separators) and an `env-secret` rule (upper-case credential names with a credential-looking value). Across about 4,000 files in four repos, the new rules flag nothing that isn't a credential.
-- [ ] Every projected saving shows its inputs and says projected. No output claims a measured saving.
-- [ ] Undecided and skipped items are reported apart.
+- [x] Every projected saving shows its inputs and says projected: `basis: "projected"` and the inputs in every entry, and "(projected)" in `list --format brief`. `savingUsd` is computed by `decide`, never given. No output claims a measured saving.
+- [x] Undecided and skipped items are reported apart: `many`'s `undecided` and `skipped` (now including oversize items), and the skill's report sections.
 - [x] Routing: `scout` loads on explicit invocation in Claude, Codex and Pi (smoke), and never on its own (6/6 negatives per harness); the `ask` set does not regress on `--repeat 3` (2026-09-25, below).
-- [ ] `pnpm check`, `pnpm smoke`, `pnpm eval:routing all` green.
-- [ ] **0.4.0 released** through the M6 gates (`release:check`, smoke from published artifacts, a live `scout` in each harness from a fresh profile); tagged `v0.4.0`.
+- [x] `pnpm check` (578 tests), `pnpm smoke` (12/12) and `pnpm eval:routing all --repeat 3` (every category ok) green.
+- [x] **0.4.0 released** through the M6 gates (`release:check` 12/12, smoke 12/12), then verified from the published artifacts: a live `decide many` in Claude (plugin only), Codex and Pi on fresh profiles; tagged `v0.4.0` on `45ebd4c` (2026-09-25). *Scout itself ran live from the checkout in feature-forge and pulse, not from the published install, whose smoke ran its dry run.*
 
 ---
 
 ## M10 — `guard` and `done-check` (release 0.5.0)
 
-**Status:** not started.
+**Status:** next.
 **Addresses:** ROADMAP Known gap #1 (Claude declines to hand off a check of its own work) **for repos that opt in with a criteria file**. It does not move the `ask` routing numbers, which stay the gap's measure for everyone else; M10 reports its own catch rate next to them.
 
 ### Work
