@@ -46,10 +46,17 @@ detail lists each one with its file. Correct or remove them;
 
 `decide` isn't on PATH in this shell, so an agent can't run it.
 
-- **Claude Code:** the plugin's `bin/` puts it there. Install the plugin from its marketplace, or
-  start Claude Code with `--plugin-dir <checkout>/plugins/system1`, or link a checkout with
-  `pnpm dev:link` ([contributing/local-plugin.md](contributing/local-plugin.md)).
-- **Codex and Pi** don't put plugin `bin/` on PATH: `npm i -g @garygentry/system1`.
+- **Anywhere:** `npm i -g @garygentry/system1`. This is the recommended install in every harness,
+  and the only one that also puts `decide` in your own terminal, CI and scripts.
+- **Claude Code, without the global install:** the plugin's `bin/` puts `decide` on Claude's PATH.
+  Install the plugin from its marketplace, or start Claude Code with
+  `--plugin-dir <checkout>/plugins/system1`, or link a checkout with `pnpm dev:link`
+  ([contributing/local-plugin.md](contributing/local-plugin.md)).
+- **Codex and Pi** don't put plugin `bin/` on PATH, so they need the global install.
+
+**`decide` works in Claude Code but not in your terminal.** Expected with a plugin-only install:
+the plugin adds `decide` to Claude's PATH, not your shell's. Install it globally
+(`npm i -g @garygentry/system1`), or run it at the Claude Code prompt with `!`.
 
 ### doctor: `path-version`
 

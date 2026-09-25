@@ -78,6 +78,7 @@ Full records are in `plans/decisions/NNNN-*.md`. A superseded record is kept and
 | 0017 | Fan-out goes through `decide many`, not harness subagents. No skill dispatches a subagent | accepted |
 | 0018 | A Claude-only `UserPromptSubmit` hook (`decide route`, configurable `route:`) hints the `ask` skill; the shared `ask` description is scoped precisely | accepted |
 | 0019 | `scout`, `guard`/`done-check` and `adopt`+`compare` ship as M9–M11 (0.4.0–0.6.0) before design partners (now M12) | accepted |
+| 0021 | `decide` is a product in its own right: one repo, two layers (the tool; the agent plugin with core skills and use-case packs). A global CLI install is the default in every harness | accepted |
 
 Carried over from the archived brief and still in force:
 - the vocabulary (state, question set, primitives, policy, shape, undecided);

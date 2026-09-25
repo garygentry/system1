@@ -254,8 +254,8 @@ function pathCheck(harness: Harness | null, env: NodeJS.ProcessEnv): DoctorCheck
     return {
       name: "path",
       status: "warn",
-      detail: "decide is not on PATH, so the decisions plugin's bin/ is not loaded",
-      fix: "install the decisions plugin from its marketplace, or start Claude Code with `--plugin-dir <checkout>/plugins/system1`",
+      detail: "decide is not on PATH, so the System 1 plugin's bin/ is not loaded",
+      fix: `npm i -g ${CLI_PACKAGE}@${VERSION} (also puts decide in your own terminal), or install the System 1 plugin from its marketplace`,
     }
   }
   return {

@@ -8,15 +8,27 @@ For a guided, hands-on version in a throwaway repo, with checkpoints at each ste
 
 ## 1. Install
 
-You need Node 22 or newer.
+You need Node 22 or newer. Install the CLI first, in every harness:
 
-| Harness | Plugin | `decide` on PATH | Network |
-|---|---|---|---|
-| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | automatic: the plugin's `bin/` is on the Bash PATH | allow `openrouter.ai` if the sandbox is on |
-| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | `npm i -g @garygentry/system1` (Codex does not put plugin `bin/` on PATH) | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules`, then restart Codex |
-| **Pi** | `pi install npm:@garygentry/system1-pi` | `npm i -g @garygentry/system1` | no sandbox |
+```sh
+npm i -g @garygentry/system1
+```
 
-Scripts, hooks and CI only need the CLI: `npm i -g @garygentry/system1`.
+That puts `decide` in your own terminal, which is where you grant consent (step 4), and where CI,
+scripts and other repos run it. Scripts, hooks and CI need nothing else.
+
+Then add the plugin, so your agent knows when to use `decide`:
+
+| Harness | Plugin | Network |
+|---|---|---|
+| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | allow `openrouter.ai` if the sandbox is on |
+| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules`, then restart Codex |
+| **Pi** | `pi install npm:@garygentry/system1-pi` | no sandbox |
+
+Codex and Pi don't put a plugin's `bin/` on PATH, so the agent there uses the global install. The
+Claude Code plugin brings its own `decide` launcher on Claude's PATH, so the agent works even
+without the global install; your terminal just won't have `decide` (see step 4 for consent in that
+case).
 
 In Claude Code the plugin also installs one prompt hook. When a prompt asks for a closed
 judgement (a batch to triage, a checklist to tick off, "is this done?"), it adds a hint to use the
@@ -40,12 +52,16 @@ decide doctor --format brief
 
 ```
 decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · session claude:…
-  ok   cli: decide 0.3.1 on node v22.23.2 (…)
+  ok   cli: decide 0.4.0 on node v22.23.2 (…)
+  ok   path: decide on PATH: …/bin/decide
+  ok   path-version: decide on PATH is 0.4.0, same as this one
   warn key: no API key: only replay works
        fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (create its directory first; chmod 600)
   warn consent: no egress consent for /path/to/repo: live calls are refused
        fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, or through their agent prompt's shell escape (not as a chat message) with --confirm added
-  ok   network: typesafe/jev-1.13 reachable in 175 ms
+  ok   route: routing hints on: batch-judgement, pick-from-many, criteria-check, done-check, gate-check
+  ok   backlog: no scout backlog yet
+  ok   network: typesafe/jev-1.13 reachable in 440 ms
 ```
 
 The first line says what's missing. `healthy · live ready` means you're done.
@@ -88,15 +104,15 @@ OpenRouter. With or without consent, these always apply:
 
 If you agree, run it **yourself**, in one of two ways:
 
-- **In a terminal at the repo root,** if `decide` is on your shell's PATH (you installed the CLI
-  with npm, as Codex and Pi need). Typing it there is your decision; there's no further prompt:
+- **In a terminal at the repo root,** with the global install from step 1. Typing it there is
+  your decision; there's no further prompt:
 
   ```sh
   decide config egress allow
   ```
 
-- **At the Claude Code prompt.** The plugin puts `decide` on Claude's PATH, not your shell's, so
-  with a plugin-only install this is the way. `!` runs a command in the session as you, but
+- **At the Claude Code prompt,** if you skipped the global install. The plugin puts `decide` on
+  Claude's PATH, not your shell's, so with a plugin-only install this is the way. `!` runs a command in the session as you, but
   without a terminal, so `decide` needs `--confirm` to know the decision is yours:
 
   ```text

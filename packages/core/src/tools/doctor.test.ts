@@ -163,7 +163,7 @@ describe("doctor", () => {
     expect(status(replay).network).toBe("warn")
     const claude = await doctor({ CLAUDECODE: "1" }, noDns)
     expect(check(claude, "network")?.fix).toMatch(/Claude Code's sandbox/)
-    expect(check(claude, "path")?.fix).toMatch(/--plugin-dir/)
+    expect(check(claude, "path")?.fix).toMatch(/npm i -g @garygentry\/system1@.* System 1 plugin/)
     const bare = await doctor({}, noDns)
     expect(bare.harness).toBeNull()
     expect(check(bare, "network")?.fix).toMatch(/proxy, firewall, DNS/)
