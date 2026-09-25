@@ -111,7 +111,9 @@ that exists:
 [runtime.md](runtime.md#the-claude-prompt-hook). `tools/shim.test.ts` covers the cache lookup.
 
 Codex and Pi don't put plugin `bin/` on PATH, so their users install the CLI globally and the
-shim is not involved ([containers.md](containers.md#per-harness)).
+shim is not involved ([containers.md](containers.md#per-harness)). In Claude Code the recommended
+install is also global plus plugin ([0021](../../plans/decisions/0021-decide-is-the-product-one-repo-two-layers.md)):
+the shim then resolves at step 3, and steps 4–5 are the fallback for a plugin-only install.
 
 ## CI
 

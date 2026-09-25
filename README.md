@@ -1,27 +1,103 @@
 # System 1
 
-**`system1`** lets a coding agent hand a **closed judgement** (yes/no, pick one, rate this) to a
-decision model, and get back a typed probability instead of reading everything itself.
+**`decide`** is a command-line tool that sends a **closed judgement** (yes/no, pick one, rate this)
+to a decision model and gets back a typed probability, in about 300 ms for a fraction of a cent.
+The **System 1 plugin** teaches Claude Code, Codex and Pi when to reach for it instead of reading
+everything themselves.
 
 - which of these 300 grep hits actually break the rule;
 - which CI failures are flaky, real or infrastructure;
 - is this command destructive;
 - is "done" actually done.
 
-It ships as one plugin for **Claude Code, Codex and Pi**, plus the `decide` CLI that the plugin's
-skills, and your own hooks, CI and scripts, all call.
+> **Status: 0.4.0, pre-1.0.** It installs and works in all three harnesses, and the claims below
+> are measured, but so far only its author has used it. Expect the details to change before 1.0.
+> [Where it stands](#where-it-stands) has the evidence.
 
-> **Status: 0.3.1, early and pre-1.0.** It installs and works in all three harnesses, and the
-> claims below are measured. But so far only its author has used it. The next milestone is putting
-> it in front of 3–5 outside users. Expect rough edges, and expect the details to change before
-> 1.0. [Where it stands](#where-it-stands) and [where it's going](#where-its-going) say more.
+## How it works
 
-## What it does
+```text
+  question set  +  items (files, a diff, log lines, rows, piped text)
+        │
+        ▼
+  decide ─ reads and splits the items itself; nothing large goes through the agent's context
+        │  leaves out secret-shaped files, scrubs secret-shaped strings, refuses oversize items
+        ▼
+  decision model (Jev, via OpenRouter) ─ one call per item, a probability for every answer
+        │
+        ▼
+  thresholds ─ kept · undecided (too close to call) · dropped
+        │
+        ▼
+  a short result: what to act on, what to read yourself, what it cost, live or replayed
+```
 
-A skill teaches the agent *when* a judgement is closed enough to hand over, and *how* to ask it.
-The agent runs `decide`, which reads and splits the content itself, so nothing large is pasted
-into the conversation. `decide` returns only what the agent will act on: what passed the
-threshold, and what was too uncertain to call.
+A question has a name, a type and an instruction. Inline, that's `--question name:type:text`:
+
+| Type | Asks | Answer |
+|---|---|---|
+| `noul` | Is this statement true of the item? | a probability, 0 to 1 |
+| `choice` | Which of these keys fits? | a probability for each key |
+| `score` | Which level on this scale? | a probability for each level |
+
+An answer too flat to call is **undecided**. It is listed apart and never counted as kept or
+dropped. [Concepts](docs/concepts.md) covers types, thresholds, sources and splits.
+
+## Try it
+
+From a terminal, no agent needed. You need Node 22 or newer and an [OpenRouter](https://openrouter.ai)
+API key.
+
+**1. Install the CLI and check it.**
+
+```sh
+npm i -g @garygentry/system1
+decide doctor --format brief
+```
+
+`doctor` names each thing that's missing, with the fix. At this point it says
+`SETUP NEEDED (key, consent)`.
+
+**2. Give it your key.** Either export it, or put it in a file only you can read:
+
+```sh
+export OPENROUTER_API_KEY=sk-or-…
+# or, once, for every shell:
+mkdir -p ~/.config/system1
+printf 'openrouter_api_key: %s\n' 'sk-or-…' > ~/.config/system1/credentials
+chmod 600 ~/.config/system1/credentials
+```
+
+`decide` never prints the key and never reads your project's `.env`.
+
+**3. Let this repo send content.** Once per repo, at its root:
+
+```sh
+decide config egress allow
+```
+
+That lets `decide` send the items it judges to the model, and nothing else. Secret-shaped files and
+strings are still kept back ([what gets sent](#what-gets-sent-and-when)). Consent is recorded in
+`.system1/config.yaml`. Only you grant it: an agent that runs this command is refused.
+
+**4. Ask one question.**
+
+```sh
+decide ask --text 'rm -rf "$BUILD_DIR/"*' \
+  --question 'destructive:noul:The command deletes or overwrites data.' \
+  --keep 'destructive>=0.8' --format brief
+```
+
+```text
+decide ask: text · live typesafe/jev-1.13-20260917 · 411 ms · $0.000012 measured
+  destructive=0.98
+verdict: kept
+```
+
+The same question about `ls -la "$BUILD_DIR"` gives `destructive=0.01`. Drop `--format brief` and
+you get one JSON envelope (`{"v":1,"ok":true,"command":"ask","result":{…}}`) for scripts.
+
+**5. Ask it of many items.** Point `decide` at files and keep only what matters:
 
 ```sh
 decide many --glob 'packages/core/src/**/*.ts' \
@@ -43,70 +119,95 @@ undecided (too flat to judge; read these yourself):
 redacted: 17 secret(s) in 5 item(s) before sending
 ```
 
-Undecided items are listed apart and never counted as kept or dropped. The last line is the
-scrubber reporting what it removed before anything was sent.
+`--keep` is the threshold, and `--format brief` is the readable form. The last line is the scrubber
+reporting what it removed before anything was sent. Other sources are `--file`, `--diff <range>`,
+`--staged`, `--jsonl` and `--stdin` ([CLI reference](docs/cli.md)).
 
-The model is [Jev](https://openrouter.ai/typesafe/jev-1.13) (`typesafe/jev-1.13`) on OpenRouter.
-It never writes text, and its output tokens are free, so cost scales with what you send: about
-$0.00004 for a 700-token item, counting the ~300 tokens the provider adds to every call. That run
-cost about $0.00006 an item.
+Without a key, `decide` only replays answers recorded earlier, which is how the test suites here
+run. `decide ping` checks the model is reachable, for free. [Getting started](docs/getting-started.md)
+walks through all of this in more detail.
 
-Three skills ship with it:
+## Add it to your agent
+
+The plugin teaches the agent when a judgement is closed enough to hand over, and how to phrase it
+for `decide`. Install the CLI first (step 1 above), then the plugin:
+
+| Harness | Plugin | Network |
+|---|---|---|
+| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | allow `openrouter.ai` if the sandbox is on |
+| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules` |
+| **Pi** | `pi install npm:@garygentry/system1-pi` | no sandbox |
+
+Then run the **setup** skill (`/system1:setup` in Claude Code, `$system1:setup` in Codex,
+`/skill:setup` in Pi). It runs `decide doctor` and walks you through each fix, asking before it
+changes anything.
+
+In Claude Code, the plugin also brings its own `decide` launcher, so the agent works even without
+the global install. But that `decide` is on Claude's PATH only: your terminal, CI and scripts need
+`npm i -g @garygentry/system1`. Without it, grant consent from the Claude Code prompt with
+`! decide config egress allow --confirm`.
+
+### What's in the plugin
+
+**Core skills** teach the agent to use `decide`:
 
 | Skill | For |
 |---|---|
-| `ask` | The everyday call: screen many items, judge a long log or diff, check criteria against evidence, pick among candidates |
+| `ask` | The everyday call: screen many items, judge a long log or diff, check criteria against evidence, pick among candidates. Loads on its own when a task fits |
 | `design` | Save a question that proved useful as a spec in your repo, with examples, and repair one that misbehaves |
-| `setup` | Get from installed to live-ready, and diagnose what's missing |
+| `setup` | Get from installed to live-ready, and diagnose what's missing. Runs only when you ask |
 
-The [cookbook](docs/cookbook.md) has six tested specs to copy: network calls with no timeout,
-swallowed errors, secrets in logs, destructive commands, CI failure triage, and a pre-"done" check.
+In Claude Code, a prompt hook also hints the `ask` skill when a prompt asks for a closed judgement.
+It is local pattern matching and sends nothing ([routing hints](docs/routing-hints.md)).
 
-## Where it stands
+**Packs** are workflows built on `decide` that run only when you ask for them:
 
-What is built, and what backs each claim. [Evaluation](docs/evaluation.md) has every number with
-its method and caveats.
-
-| Area | State | Evidence |
+| Pack | For | |
 |---|---|---|
-| CLI and engine | Built: `ask`, `many`, specs, replay, spend guard, egress checks, `doctor` | Offline test suite with a docs-against-code check, in CI on Ubuntu and macOS, Node 22 and 24 |
-| Answer calibration | Close, on yes/no questions that reading the text settles: Brier 0.028, calibration error 0.054 | Blind-labelled sample from two TypeScript repos by one author, **one AI labeller** ([calibration](docs/calibration.md)) |
-| Calibration elsewhere | **Unknown** for subjective questions, `choice`, `score`, other languages and other people's code | Not measured. Treat those numbers as rankings |
-| Harnesses | Live decisions verified from the published packages in Claude Code, Codex and Pi | One live run per release per harness, same files kept in each |
-| Agent uses it when it should | Codex and Pi: every positive, no false triggers. Claude with the routing hook: 91% of positives on a blind set, no false triggers | Repeated eval runs. Claude still misses some checks of its own work |
-| First hour | A new user reaches a live decision. Six first-run stalls were found and fixed | Walked by the author in each harness, on Linux |
-| macOS | CLI verified in CI. Harnesses unverified | — |
-| Outside users | **None yet** | Next milestone |
+| `scout` | Find the places in your code and agent configuration where a decision model would pay off, and record them as a backlog | 0.4.0 ([scout](docs/scout.md)) |
+| `guard` + `done-check` | An opt-in stop-time check of acceptance criteria against the diff | planned, 0.5.0 |
+| `adopt` + `compare` | Turn a found opportunity into code with a fallback, and measure it against what it replaces | planned, 0.6.0 |
 
-The honest short version: the machinery works and is tested, and on one kind of question the
-probabilities are measurably trustworthy. Beyond that kind of question, we haven't measured, and
-nobody but the author has used it on their own code.
+## Use it in your own project
 
-## Install
+Everything a repo needs lives in its `.system1/` directory, and none of it depends on the plugin.
 
-The CLI needs Node 22 or newer.
+- **Consent:** `.system1/config.yaml`, from `decide config egress allow`. Committing it shares the
+  consent with everyone who clones the repo, so decide that as a team.
+- **Specs:** a question that proved useful, saved as `.system1/specs/<name>.yaml` with its
+  threshold and examples. Run it with `decide many --spec <name>`.
+- **Fixtures:** recorded answers in `.system1/fixtures/<spec>/`. `decide spec check <name>` replays
+  them offline, with no key and no network, so a spec can be tested in CI like any other code.
 
-| Harness | Plugin | `decide` on PATH | Network |
-|---|---|---|---|
-| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | comes with the plugin | allow `openrouter.ai` if the sandbox is on |
-| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | `npm i -g @garygentry/system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules` |
-| **Pi** | `pi install npm:@garygentry/system1-pi` | `npm i -g @garygentry/system1` | no sandbox |
+A spec, trimmed from the [cookbook](docs/cookbook.md)'s `destructive-command`:
 
-Scripts, hooks and CI need only the CLI: `npm i -g @garygentry/system1`.
+```yaml
+description: Gate a shell command before an agent runs it.
+questions:
+  destructive:
+    type: noul
+    instructions: Running this shell command deletes, overwrites or irreversibly changes data, version-control history or infrastructure that is not a disposable build artifact.
+keep: ["destructive>=0.3"]
+policy:
+  thresholds:
+    destructive:
+      value: 0.3
+      why: Only escalates to asking the user. A missed destructive command costs more than a needless question.
+examples:
+  - id: force-push
+    state: git push --force origin main
+    expect: { destructive: true }
+  - id: near-miss-plain-push
+    state: git push origin feature/login
+    expect: { destructive: false }
+```
 
-Then, in the agent, run the **setup** skill (`/system1:setup` in Claude Code, `$system1:setup` in
-Codex, `/skill:setup` in Pi), or check it yourself with `decide doctor --format brief`.
-
-Two things are yours to do: set an [OpenRouter](https://openrouter.ai) key (`OPENROUTER_API_KEY`,
-or `~/.config/system1/credentials`), and agree, once per repo, to content being sent
-(`decide config egress allow`, run by you, never by the agent). Without a key, `decide` still
-replays answers recorded earlier, which is how the test suites here run.
-[Getting started](docs/getting-started.md) walks through all of it, and the
-[tutorial](docs/tutorial.md) is a hands-on lab that does it end to end.
-
-In Claude Code the plugin also adds a prompt hook that hints the `ask` skill when a prompt asks for
-a closed judgement. It is local pattern matching and sends nothing.
-[Routing hints](docs/routing-hints.md) shows how to tune it or turn it off.
+For scripts, hooks and CI, every command prints one JSON envelope and has a stable exit code
+(0 ok, 1 bug, 2 usage, 3 egress refused, 4 budget guard, 5 provider, 6 replay miss, 7 a check
+that did not pass).
+Branch on the exit code and `error.code`, never on the message.
+[CI and scripts](docs/ci-and-scripts.md) has the patterns, and [specs](docs/specs.md) shows how to
+write, record and check a spec.
 
 ## What gets sent, and when
 
@@ -117,17 +218,37 @@ refused rather than truncated. Every answer says whether it is `live` or `replay
 is an error rather than an invented answer, and costs say whether they are measured or projected.
 [Concepts](docs/concepts.md#what-gets-sent) has the details.
 
+## Cost
+
+The model is [Jev](https://openrouter.ai/typesafe/jev-1.13) (`typesafe/jev-1.13`) on OpenRouter.
+It never writes text, and its output tokens are free, so cost scales with what you send: about
+$0.00004 for a 700-token item, counting the ~300 tokens the provider adds to every call. The run
+above cost about $0.00006 an item. A run above 200 calls or $0.05 stops at a projection until you
+add `--confirm` ([spend](docs/spend.md)).
+
+## Where it stands
+
+[Evaluation](docs/evaluation.md) has every number with its method and caveats.
+
+| Area | State |
+|---|---|
+| CLI and engine | Built and tested offline in CI on Ubuntu and macOS, Node 22 and 24 |
+| Answer calibration | Close on yes/no questions that reading the text settles: Brier 0.028, calibration error 0.054, on two TypeScript repos with one AI labeller ([calibration](docs/calibration.md)) |
+| Calibration elsewhere | **Not measured** for subjective questions, `choice`, `score`, other languages and other people's code. Treat those probabilities as rankings |
+| Harnesses | Live decisions verified from the published packages in Claude Code, Codex and Pi, each release |
+| The agent uses it when it should | Codex and Pi: every positive, no false triggers. Claude with the routing hook: 91% of positives on a blind set, no false triggers |
+| Outside users | **None yet** |
+
 ## Known limits
 
 - **One model, one provider.** Jev is the only model we know of that returns typed, calibrated
   answers to closed questions. If it were withdrawn or changed its API, live decisions would fail
   with a provider error. `decide` would not quietly switch to a general-purpose model, because the
   thresholds depend on calibration that a different model wouldn't share. Replay keeps working,
-  so saved specs still run as offline tests. The engine uses model profiles, so a second model
-  can be added, and re-measured, once one exists.
+  so saved specs still run as offline tests.
 - **Claude grades its own small diffs.** Asked to check a change it just wrote against criteria,
-  Claude sometimes does it by reading instead of handing it off, even with the hint. A hook that
-  fires when the agent stops is the planned fix ([details](docs/evaluation.md#routing-does-the-agent-reach-for-it)).
+  Claude sometimes does it by reading instead of handing it off, even with the hint. The planned
+  fix is the `done-check` hook ([details](docs/evaluation.md#routing-does-the-agent-reach-for-it)).
 - **Not for everything.** Counting, arithmetic, dates, exact matching and anything that needs
   several documents reasoned together are jobs for code, not a decision model.
 - **Pre-1.0.** The CLI's JSON envelope is versioned ([decision 0015](plans/decisions/0015-cli-contract-v1.md)),
@@ -136,62 +257,55 @@ is an error rather than an invented answer, and costs say whether they are measu
 
 ## Where it's going
 
-The plan past 0.1.0 was about readiness (M7–M8). The next three milestones add the developer-facing surfaces, before design partners try the whole chain ([decision 0019](plans/decisions/0019-scout-guard-adopt-before-partners.md)). [`plans/ROADMAP.md`](plans/ROADMAP.md) has the
-full plan and the reasoning.
-
-| | Milestone | State |
-|---|---|---|
-| M0–M6 | Engine, CLI, skills, three harnesses, first release | Done (0.1.0) |
-| M7 | Evidence: measure the calibration claim instead of repeating the vendor's | Done |
-| M8 | Onboarding: docs, a tested cookbook, the first-hour fixes, CI on macOS | Done (0.2.0). The routing hook followed in 0.3.x |
-| M9 | `scout`: find the places in your code and agent configuration where a decision model would pay off | Done (0.4.0) |
-| **M10** | **`guard` + `done-check`:** an opt-in stop-time check of acceptance criteria against the diff | **Next** (0.5.0) |
-| M11 | **`adopt` + `compare`:** turn a found opportunity into code with a fallback, and measure it against what it replaces | Planned (0.6.0) |
-| M12 | **Design partners:** 3–5 outside users reach a first useful decision unaided, and what breaks gets fixed | After M11 |
-| M13 | Release: CHANGELOG, CONTRIBUTING, SECURITY, a stability and deprecation policy, the version decision | After M12 |
-
-**After release, not before.** These are designed but deliberately not being built until outside
-users have adopted the core: `calibrate`, `sweep`, `pairs`, and the `command-guard` and
-`loop-check` hook packs. An MCP server is deferred in favour
-of the CLI ([decision 0013](plans/decisions/0013-cli-first-mcp-deferred.md)). The measurement gaps
-above (subjective questions, `choice` and `score`, other people's code, a second labeller) are
-most likely to close with design partners' data.
+Next is **M10**, `guard` + `done-check` (0.5.0), then **M11**, `adopt` + `compare` (0.6.0). After
+those, 3–5 design partners try the whole chain on their own code (M12). The full plan and its
+reasoning are in [`plans/ROADMAP.md`](plans/ROADMAP.md).
 
 ## Documentation
 
-| Page | For |
+| Using `decide` | |
 |---|---|
-| [Tutorial: zero to first decisions](docs/tutorial.md) | a 20-minute hands-on lab in Claude Code: install, set up, then route 300 tickets and gate a risky script |
 | [Getting started](docs/getting-started.md) | install, key, consent and a first decision |
 | [Specs](docs/specs.md) | save a question as a spec, adopt a cookbook recipe, test it offline |
-| [Scout](docs/scout.md) | find where a decision model would pay off in your code or agent config |
+| [Cookbook](docs/cookbook.md) | tested specs to copy into your repo |
 | [CI and scripts](docs/ci-and-scripts.md) | run `decide` without an agent |
-| [Routing hints](docs/routing-hints.md) | tune or turn off the Claude Code hint |
 | [Spend](docs/spend.md) | keep a large run within budget |
+| [Troubleshooting](docs/troubleshooting.md) | every `doctor` check and error code, with the fix |
+
+| Using the plugin | |
+|---|---|
+| [Tutorial: zero to first decisions](docs/tutorial.md) | a 20-minute hands-on lab in Claude Code: install, set up, then route 300 tickets and gate a risky script |
+| [Scout](docs/scout.md) | find where a decision model would pay off in your code or agent config |
+| [Routing hints](docs/routing-hints.md) | tune or turn off the Claude Code hint |
+
+| Reference and evidence | |
+|---|---|
 | [CLI reference](docs/cli.md) | every command and flag, the output envelope and the exit codes |
 | [Output](docs/output.md), [Configuration](docs/configuration.md), [Spec format](docs/spec-format.md) | the rest of the reference |
-| [Cookbook](docs/cookbook.md) | tested specs to copy into your repo |
-| [Troubleshooting](docs/troubleshooting.md) | every `doctor` check and error code, with the fix |
 | [Concepts](docs/concepts.md) | question types, thresholds and undecided, live and replay, what gets sent |
 | [Calibration](docs/calibration.md) | what the probabilities mean, and which threshold to use |
 | [Evaluation](docs/evaluation.md) | everything we measured, including what didn't work |
 
-For maintainers: [architecture](docs/architecture/README.md),
-[running the plugin from a checkout](docs/contributing/local-plugin.md),
-[cutting a release](docs/contributing/release.md), [`AGENTS.md`](AGENTS.md) (layout, rules, commands) and [decision records](plans/decisions/).
-
 ## Packages
 
-| Package | What |
-|---|---|
-| [`@garygentry/system1`](https://www.npmjs.com/package/@garygentry/system1) | the `decide` CLI |
-| [`@garygentry/system1-core`](https://www.npmjs.com/package/@garygentry/system1-core) | the engine the CLI runs on; published, but not yet a documented or stable API |
-| [`@garygentry/system1-pi`](https://www.npmjs.com/package/@garygentry/system1-pi) | the skills, packaged for Pi |
+The repo ships two layers ([decision 0021](plans/decisions/0021-decide-is-the-product-one-repo-two-layers.md)):
+the `decide` tool, and the plugin that teaches agents to use it. They are released together, at
+one version.
+
+| Layer | Package | What |
+|---|---|---|
+| Tool | [`@garygentry/system1`](https://www.npmjs.com/package/@garygentry/system1) | the `decide` CLI |
+| Tool | [`@garygentry/system1-core`](https://www.npmjs.com/package/@garygentry/system1-core) | the engine the CLI runs on; published, but not yet a documented or stable API |
+| Plugin | `plugins/system1/` | the skills and hook, installed through the Claude Code and Codex marketplaces |
+| Plugin | [`@garygentry/system1-pi`](https://www.npmjs.com/package/@garygentry/system1-pi) | the same skills, packaged for Pi |
 
 ## Development
 
-`pnpm install && pnpm check`. See [`AGENTS.md`](AGENTS.md) for the rules (generated files, egress,
-consent) and [`plans/`](plans/) for the roadmap, milestones and decision records.
+`pnpm install && pnpm check`. [`AGENTS.md`](AGENTS.md) has the layout, the rules (generated files,
+egress, consent) and the commands. Also: [architecture](docs/architecture/README.md),
+[running the plugin from a checkout](docs/contributing/local-plugin.md),
+[cutting a release](docs/contributing/release.md), and [`plans/`](plans/) for the roadmap,
+milestones and decision records.
 
 ## License
 

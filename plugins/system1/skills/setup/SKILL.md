@@ -15,8 +15,7 @@ decide doctor --format brief
 ```
 
 - **`decide: command not found`:** the CLI isn't on PATH. Tell the user the System 1 CLI isn't installed for this shell.
-  - A plugin install puts `decide` on PATH in some hosts, but not all.
-  - Where the plugin doesn't, the user installs it globally: `npm i -g @garygentry/system1`. If the package isn't published yet, the user puts `plugins/system1/bin` from a checkout of the decisions repo on PATH instead.
+  - The fix in every host is a global install: `npm i -g @garygentry/system1`. It also puts `decide` in the user's own terminal, CI and scripts.
   - Offer to run that install. Run it only after a yes, then run `doctor` again.
 - **Otherwise:** the first line gives the overall state, then `live ready` or `replay only`. The state is `healthy`, `SETUP NEEDED (…)` naming the checks that stand between this shell and a live decision, or `PROBLEMS FOUND` when a check failed. Each check follows as `ok`, `warn` or `fail`, with a `fix:` line for each problem.
   - Show the user the output as printed.
@@ -68,7 +67,7 @@ Egress consent is the user's decision, given once per repo.
    - secret-shaped strings are scrubbed from everything sent;
    - oversized items are refused, never truncated.
 3. **Give them the command to type themselves.** Show it; don't run it.
-   - **In a terminal at this repo's root,** if `decide` is on that shell's PATH. Typing it there is the decision:
+   - **In a terminal at this repo's root,** if `decide` is on that shell's PATH. Typing it there is the decision. If it isn't (in Claude Code, the plugin's `decide` is on the agent's PATH only), offer the global install, `npm i -g @garygentry/system1`, and run it only after a yes:
 
      ```text
      decide config egress allow

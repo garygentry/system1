@@ -121,7 +121,8 @@ below.
 command on Claude's PATH, and one prompt hook. The `decide` it adds is a small launcher, pinned to
 the plugin's version. The first time it runs, it fetches that version of the CLI with `npx`, and
 it reuses the copy after that. Your own shell doesn't get `decide` unless you also install it with
-`npm i -g @garygentry/system1`, which you don't need for this lab.
+`npm i -g @garygentry/system1`. This lab works without it, but outside the lab it's the
+recommended install: it's what puts `decide` in your terminal, CI and scripts.
 
 ---
 
