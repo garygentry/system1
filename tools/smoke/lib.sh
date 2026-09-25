@@ -4,6 +4,8 @@
 #   setup `decide ping` via the user-only setup skill, invoked by name the way
 #         each harness does it: live network from the agent's shell
 #   many  `decide many --spec smoke` via the ask skill, in replay (no key, no spend)
+#   scout `decide many --dry-run` via the user-only scout skill, invoked by name
+#         (nothing sent: a dry run needs no key or consent)
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 # Outside this repo: Codex and Pi read AGENTS.md from parent directories, and
@@ -22,6 +24,9 @@ PING_MARKER="decide ping: ok — [^ ]+ reachable in [0-9]+ ms"
 SETUP_PROMPT="Check only: make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
 DOCTOR_MARKER="decide doctor: (healthy|SETUP NEEDED \\([a-z, -]+\\)|PROBLEMS FOUND) · "
 MANY_MARKER="decide many: 1 kept of 3 · 0 undecided · 2 dropped · replay "
+# scout is user-only too; its dry run sends nothing and needs no key or consent.
+SCOUT_PROMPT="src --depth full. Dry run only: stop after the projection, make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
+SCOUT_MARKER="decide many \\(dry run\\): would send [0-9]+ item\\(s\\)"
 MANY_PROMPT="Use the ask skill from the system1 plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 
 # No run needs the key: ping is keyless and many replays. Keep it out of every

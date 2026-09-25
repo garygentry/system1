@@ -15,4 +15,7 @@ assert_marker pi:setup-skill "$DOCTOR_MARKER" "$SMOKE/pi/ping.txt" || status=1
 fixture_repo "$SMOKE/pi-many"
 (replay_env; drive "$SMOKE/pi-many" "$MANY_PROMPT" "$SMOKE/pi-many.txt")
 assert_marker pi:many "$MANY_MARKER" "$SMOKE/pi-many.txt" || status=1
+fixture_repo "$SMOKE/pi-scout"
+drive "$SMOKE/pi-scout" "/skill:scout $SCOUT_PROMPT" "$SMOKE/pi-scout.txt"
+assert_marker pi:scout "$SCOUT_MARKER" "$SMOKE/pi-scout.txt" || status=1
 exit $status

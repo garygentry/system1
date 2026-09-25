@@ -56,7 +56,7 @@
 
 ## M9 — `scout` (release 0.4.0)
 
-**Status:** in progress. The foundation (§1, §2, §3, §3a, §8) landed on 2026-09-24 in PR #10. The signal tables (§4), the skill (§5), `keepAny`, the typed `benefit` field and the docs (§10) landed in PR #11. Left: the harness runs (§9 smoke and routing evals), the dogfood on an unrelated repo (§11), and the 0.4.0 release.
+**Status:** in progress. The foundation (§1, §2, §3, §3a, §8) landed on 2026-09-24 in PR #10. The signal tables (§4), the skill (§5), `keepAny`, the typed `benefit` field and the docs (§10) landed in PR #11. The harness runs (§9) passed on 2026-09-25 (PR #12). Left: the dogfood on an unrelated repo (§11), and the 0.4.0 release.
 **Carries over** `later-scout-opportunities.md` §1–§6 and its D1–D4. The detail there is authoritative where this section is brief, except where this section differs: the lint is its own command (§2), and candidates go to `opportunities add --file <path>`, never stdin (the Codex `prefix_rule` doesn't cover a pipe into `decide`).
 
 ### Work
@@ -104,7 +104,7 @@
 - [ ] Mode B over this plugin plus one cloned third-party plugin, with the false positives written up; the settings-file scrub test passes.
 - [ ] Every projected saving shows its inputs and says projected. No output claims a measured saving.
 - [ ] Undecided and skipped items are reported apart.
-- [ ] Routing: `scout` loads on explicit invocation in Claude, Codex and Pi; the `ask` set does not regress on `--repeat 3`.
+- [x] Routing: `scout` loads on explicit invocation in Claude, Codex and Pi (smoke), and never on its own (6/6 negatives per harness); the `ask` set does not regress on `--repeat 3` (2026-09-25, below).
 - [ ] `pnpm check`, `pnpm smoke`, `pnpm eval:routing all` green.
 - [ ] **0.4.0 released** through the M6 gates (`release:check`, smoke from published artifacts, a live `scout` in each harness from a fresh profile); tagged `v0.4.0`.
 
@@ -350,6 +350,22 @@ A headless Claude Code session (Sonnet, the plugin from this checkout) ran the s
   - This repo is the engine, so "no opportunity" is right, and the false positives are its own decision-model plumbing. The local "already uses a decision model" prefilter can't separate those here, because every file is part of that machinery.
   - The agent judged `route.ts` intentional. The pre-check saw a quality opportunity there, and both readings are defensible. Deciding it is a person's call, which is why `rejected` carries a reason.
 - **Friction:** in `-p` mode, Claude Code asked for approval to redirect output to a file. The skill already writes only its candidates file, under `.system1/scout/`.
+
+### M9 harness runs (2026-09-25, PR #12)
+
+**Smoke, 12/12.** For each of Claude, Codex and Pi: `setup` (ping plus doctor), `many` through `ask` in replay, and the new `scout` case. The scout case is the skill invoked by name (`/system1:scout`, `$system1:scout`, `/skill:scout`) running its dry run, which sends nothing. Codex and Pi printed the dry-run line as asked. In Claude, Haiku ran it correctly but paraphrased the output, so the Claude case asserts on the stream-json transcript instead. The skill now dry-runs even without consent, so a user sees what would be sent before deciding.
+
+**Routing evals, `all --repeat 3`, every category ok.**
+
+| | Claude | Codex | Pi |
+|---|---|---|---|
+| ask positive | 23/24 (the 300-commit triage: 2/3, with one session error) | 24/24 | 24/24 |
+| ask negative | 24/24 | 24/24 | 24/24 |
+| design positive / negative | 12/12 / 12/12 | 12/12 / 12/12 | 12/12 / 12/12 |
+| setup negative | 12/12 | 12/12 | 12/12 |
+| scout negative | 6/6 | 6/6 | 6/6 |
+
+A fourth skill in the plugin moved nothing: the `ask` numbers match the 0.3.x runs.
 
 <details><summary>The draft Mode A signal questions used (the starting point for M9 §4)</summary>
 
