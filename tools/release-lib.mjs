@@ -52,9 +52,22 @@ export function stagedFor(items, name, version) {
   return items.filter((item) => item.packageName === name && item.version === version)
 }
 
+/**
+ * Settings pnpm passes to scripts as `npm_config_*` that npm doesn't know: npm
+ * warns about each ("will error in a future major version"). Run npm without them.
+ */
+const PNPM_ONLY = /^npm_config_(verify_deps_before_run|npm_globalconfig|_jsr_registry)$/i
+
+export function npmEnv(env = process.env) {
+  return Object.fromEntries(Object.entries(env).filter(([key]) => !PNPM_ONLY.test(key)))
+}
+
 /** True when npm already serves `name@version`. */
 export function isPublished(name, version) {
-  const r = spawnSync("npm", ["view", `${name}@${version}`, "version"], { encoding: "utf8" })
+  const r = spawnSync("npm", ["view", `${name}@${version}`, "version"], {
+    encoding: "utf8",
+    env: npmEnv(),
+  })
   return r.status === 0 && r.stdout.trim() === version
 }
 

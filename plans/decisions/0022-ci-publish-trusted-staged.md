@@ -1,6 +1,6 @@
 # 0022. Publish from CI: trusted publishing, staged, approved with npm 2FA
 
-- **Status:** accepted (phase A in the repo; setup and first CI release pending, see the plan)
+- **Status:** accepted; the first CI release was 0.4.1 (2026-09-25). Locking npm down (plan, phase D) is pending
 - **Date:** 2026-09-25
 - **Amends:** the M6 release procedure (publishing from the maintainer's machine). **Plan:** [`../ci-publish.md`](../ci-publish.md). **How-to:** [`docs/contributing/release.md`](../../docs/contributing/release.md).
 
@@ -46,7 +46,10 @@ npm now offers:
 - **Checked in npm 11.20.0's source rather than its docs:**
   - A staged publish goes through the same OIDC exchange as `npm publish` and turns provenance on automatically. It prints `+ name@x.y.z (staged with id <uuid>)`.
   - `npm stage list <name> --json` returns items with `id`, `packageName`, `version`, `tag`, `actor` and `shasum`.
-- **Still to confirm on the first CI release** (plan, phase C):
-  - that staged versions carry provenance once approved;
-  - how long a stage lives;
-  - what staging an already-staged version does.
+- **Confirmed on the first CI release, 0.4.1** (plan, phase C):
+  - The OIDC exchange worked first time with the pinned npm and no `registry-url` or token.
+  - Staging signs provenance and logs it to sigstore, and the approved versions carry it (`dist.attestations` shows an SLSA v1 provenance for all three). `publishConfig.provenance` isn't needed.
+  - Approved stages leave the list: `npm stage list` returned `[]` after approval, so `release:approve` needs no status filter.
+  - `npm stage list` needs a valid npm login. The 0.4.0 token had expired and it answered E401, so the maintainer's first approval included an `npm login`.
+  - A release took one web 2FA prompt per approval (three) plus one for the login.
+- **Still open:** how long a stage lives before it expires, and what staging an already-staged version does. Neither came up on 0.4.1.

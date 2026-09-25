@@ -10,7 +10,16 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-25 (0.4.0).** M9 is done: `scout` finds decision-model opportunities in code and agent configuration, and 0.4.0 ships it. M10 (`guard` and `done-check`) is next. Design partners moved to M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+**Updated 2026-09-25 (0.4.1).** M9 is done: `scout` finds decision-model opportunities in code and agent configuration, and 0.4.0 ships it. 0.4.1 fixes a quoted API key and is the first release published through CI. M10 (`guard` and `done-check`) is next. Design partners moved to M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+
+**0.4.1, released and verified 2026-09-25** (tag `v0.4.1` on `a61ca37`). The first release staged from CI ([0022](decisions/0022-ci-publish-trusted-staged.md)); the plan is [`baseline-0.4.1.md`](baseline-0.4.1.md).
+
+- **What it fixes (#20):**
+  - A quoted `OPENROUTER_API_KEY`, from the env or the credentials file, now works: one matching pair of quotes is removed, and `decide doctor` warns where to fix it.
+  - A key is never echoed in an error: a key with a space or control character is refused without it, and a malformed credentials file no longer passes on the YAML parser's message.
+- **Gates:** `pnpm check` (609 tests), `validate`, `release:check` 12/12, smoke 12/12, one `eval:routing all` run at 100% in every category on all three harnesses, `release:verify`, and a stage dry run.
+- **CI release:** the tag push staged all three packages in about 80 s, through OIDC, with provenance. The maintainer approved with 2FA (plus an `npm login`, since the old token had expired), and npm served all three about 8 minutes after the tag push. Details are in `ci-publish.md` phase C.
+- **Published artifacts, fresh profiles, with the key's quotes still on:** Claude (plugin only), Codex and Pi each installed 0.4.1 and ran a live `decide many`, for $0.000074, $0.000075 and $0.000083 measured.
 
 **0.4.0, released and verified 2026-09-25** (tag `v0.4.0` on `45ebd4c`). The plan and its results are in [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md).
 

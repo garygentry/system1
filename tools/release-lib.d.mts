@@ -14,6 +14,7 @@ export interface StageItem {
   [key: string]: unknown
 }
 export function stagedFor(items: StageItem[], name: string, version: string): StageItem[]
+export function npmEnv(env?: NodeJS.ProcessEnv): NodeJS.ProcessEnv
 export function isPublished(name: string, version: string): boolean
 export function waitUntilServed(
   names: string[],
