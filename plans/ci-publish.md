@@ -1,6 +1,6 @@
 # Plan: publish from CI with trusted publishing and staged approval
 
-- **Status:** A–B done; C–D pending (see [`baseline-0.4.1.md`](baseline-0.4.1.md))
+- **Status:** A–C done (C: 0.4.1, 2026-09-25); D pending (see [`baseline-0.4.1.md`](baseline-0.4.1.md))
 - **Decision:** [`decisions/0022-ci-publish-trusted-staged.md`](decisions/0022-ci-publish-trusted-staged.md)
 - **Replaces:** `docs/contributing/release.md` §4 (publishing from the maintainer's machine) as the documented path. `pnpm release:publish` stays as a break-glass option.
 - **Inputs:** `.handoff/npm.md` (agent research), checked against the primary sources listed at the end.
@@ -123,6 +123,15 @@ If CI fails *before* anything is staged, fix the problem and either re-run the j
    - What happens when a stage is re-run for a version that is already staged, and whether `npm stage list` needs anything more than a normal login. Adjust `release-approve.mjs` and the re-run guidance to match.
    - How long a stage lives before it expires.
 3. Record the run in `ROADMAP.md` as usual (§7).
+
+### Phase C record (0.4.1, 2026-09-25)
+
+- **Timing:** the tag was pushed at 21:39:29 UTC. `verify` and `stage` passed by 21:40:48 (run 36192731176). npm served all three packages at about 21:47, after the maintainer's login and three approvals.
+- **OIDC and provenance:** both worked first time; see 0022 "Consequences" for the details.
+- **Stage list:** empty after approval.
+- **Warnings:** the approvals printed `Unknown env config "verify-deps-before-run"` (and `npm-globalconfig`, `_jsr-registry`). These are pnpm settings passed to scripts as `npm_config_*`, which npm 12 warns will become errors. The release scripts now run npm without them (`npmEnv` in `tools/release-lib.mjs`).
+- **Annotations:** the pinned checkout, setup-node and pnpm/action-setup actions target Node 20 and are forced onto Node 24. The Dependabot bump (baseline step 5) addresses this.
+- **Live smoke:** `smoke:published 0.4.1 --live` passed 9 of 9 with the key taken from the credentials file, quotes still on.
 
 ### D. Lock-down, after C succeeds
 

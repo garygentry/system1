@@ -20,6 +20,7 @@ import { parseArgs } from "node:util"
 import {
   isPublished,
   manifest,
+  npmEnv,
   PACKAGES,
   ROOT,
   releaseVersion,
@@ -78,6 +79,7 @@ for (const pkg of PACKAGES) {
   // stdout is captured for the stage id, then echoed; stderr stays live.
   const r = spawnSync("npm", args, {
     cwd: join(ROOT, "packages", pkg),
+    env: npmEnv(),
     stdio: ["inherit", "pipe", "inherit"],
     encoding: "utf8",
   })

@@ -17,6 +17,7 @@ import {
   atLeast,
   isPublished,
   manifest,
+  npmEnv,
   PACKAGES,
   releaseVersion,
   STAGE_NPM,
@@ -33,7 +34,8 @@ const fail = (message) => {
   console.error(`release:approve: ${message}`)
   process.exit(1)
 }
-const npm = (args, opts = {}) => spawnSync("npm", args, { encoding: "utf8", ...opts })
+const npm = (args, opts = {}) =>
+  spawnSync("npm", args, { encoding: "utf8", env: npmEnv(), ...opts })
 
 const npmVersion = npm(["--version"]).stdout?.trim() ?? ""
 if (!atLeast(npmVersion, STAGE_NPM))

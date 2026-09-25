@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { atLeast, checkTag, releaseVersion, stagedFor, stageIdFrom } from "./release-lib.mjs"
+import {
+  atLeast,
+  checkTag,
+  npmEnv,
+  releaseVersion,
+  stagedFor,
+  stageIdFrom,
+} from "./release-lib.mjs"
 
 describe("checkTag", () => {
   it("accepts the tag of the packages' version", () => {
@@ -51,5 +58,24 @@ describe("stagedFor", () => {
 describe("releaseVersion", () => {
   it("finds the three packages in lockstep", () => {
     expect(releaseVersion()).toEqual({ version: expect.stringMatching(/^\d+\.\d+\.\d+$/) })
+  })
+})
+
+describe("npmEnv", () => {
+  it("drops the pnpm-only settings npm warns about, and keeps the rest", () => {
+    expect(
+      npmEnv({
+        PATH: "/bin",
+        npm_config_verify_deps_before_run: "false",
+        npm_config_npm_globalconfig: "/etc/npmrc",
+        npm_config__jsr_registry: "https://npm.jsr.io/",
+        npm_config_registry: "https://registry.npmjs.org/",
+        npm_config_user_agent: "pnpm/10",
+      }),
+    ).toEqual({
+      PATH: "/bin",
+      npm_config_registry: "https://registry.npmjs.org/",
+      npm_config_user_agent: "pnpm/10",
+    })
   })
 })
