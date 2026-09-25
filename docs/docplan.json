@@ -42,7 +42,7 @@
       "id": "s-root-pkg",
       "path": "package.json",
       "type": "manifest",
-      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, dev:link/unlink/status, release:check, release:publish."
+      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, dev:link/unlink/status, release:check, release:verify, release:publish, release:approve."
     },
     {
       "id": "s-cli-main",
@@ -1168,8 +1168,8 @@
           "sourceRefs": ["s-root-pkg", "s-evals"]
         },
         {
-          "heading": "Publish and tag",
-          "intent": "Publish the three packages and push the tag.",
+          "heading": "Tag, stage and approve",
+          "intent": "Push the signed tag only; CI stages the three packages; approve with npm 2FA, then push main.",
           "sourceRefs": ["s-milestones"]
         },
         {
@@ -1178,7 +1178,7 @@
           "sourceRefs": ["s-milestones", "s-roadmap"]
         }
       ],
-      "verification": "There is no publish script. The publish step exists only in M6's milestone record and git history. Confirm the exact commands with the maintainer before drafting."
+      "verification": "Rewritten for 0022: a signed tag, the release workflow stages, and release:approve takes it live with npm 2FA. The first CI release (plans/ci-publish.md phase C) is what confirms the staged steps."
     },
     {
       "id": "howto-local-plugin",

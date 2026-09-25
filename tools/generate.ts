@@ -52,6 +52,15 @@ export function piPackageName(catalog: Catalog): string {
   return `${catalog.npm.scope}/${catalog.npm.pi}`
 }
 
+/**
+ * The `repository` of a published package. npm trusted publishing requires its
+ * url to match the GitHub repo exactly (decision 0022), so every package gets
+ * the one canonical `git+https://….git` form.
+ */
+export function npmRepository(catalog: Catalog, dir: string) {
+  return { type: "git", url: `git+${catalog.repository}.git`, directory: dir }
+}
+
 export function render(catalog: Catalog, root = ROOT): Output[] {
   const { plugin, version, owner, repository, license } = catalog
   const author = { name: owner.name, email: owner.email }
@@ -150,7 +159,7 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
         type: "module",
         author,
         homepage: repository,
-        repository: { type: "git", url: repository, directory: "packages/pi" },
+        repository: npmRepository(catalog, "packages/pi"),
         license,
         keywords: [...plugin.keywords, "pi-package"],
         engines: { node: ">=22" },
@@ -194,11 +203,15 @@ if (existsSync(from)) {
     },
   ]
 
-  // Stamp the one version into every package manifest, keeping everything else.
+  // Stamp the one version into every package manifest, and the canonical
+  // repository into the published ones, keeping everything else.
   for (const pkg of ["package.json", "packages/core/package.json", "packages/cli/package.json"]) {
     if (!existsSync(join(root, pkg))) continue
     const current = JSON.parse(readFileSync(join(root, pkg), "utf8")) as Record<string, unknown>
-    outputs.push({ path: pkg, content: json({ ...current, version }) })
+    const published = pkg.startsWith("packages/")
+      ? { repository: npmRepository(catalog, dirname(pkg)) }
+      : {}
+    outputs.push({ path: pkg, content: json({ ...current, version, ...published }) })
   }
   return outputs
 }

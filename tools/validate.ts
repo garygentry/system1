@@ -4,7 +4,7 @@
  *   pnpm validate
  *
  * Covers: Agent Skills frontmatter, version lockstep across every manifest, the
- * Agent Plugins required fields, and `claude plugin validate --strict` when the
+ * repository url npm trusted publishing matches on, the Agent Plugins required fields, and `claude plugin validate --strict` when the
  * `claude` CLI is on PATH.
  */
 import { spawnSync } from "node:child_process"
@@ -12,7 +12,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
-import { loadCatalog, ROOT } from "./generate.js"
+import { loadCatalog, npmRepository, ROOT } from "./generate.js"
 
 const PLUGIN_DIR = join(ROOT, "plugins/system1")
 const SKILL_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -82,6 +82,20 @@ function versions(): string[] {
   return problems
 }
 
+/** Trusted publishing refuses a package whose repository.url is not the repo's exact url (0022). */
+export function checkRepository(path: string, manifest: { repository?: unknown }, url: string) {
+  const found = (manifest.repository as { url?: unknown } | undefined)?.url
+  return found === url ? [] : [`${path}: repository.url ${String(found)} ≠ ${url}`]
+}
+
+function repositories(): string[] {
+  const { url } = npmRepository(loadCatalog(), "")
+  return ["core", "cli", "pi"].flatMap((pkg) => {
+    const path = `packages/${pkg}/package.json`
+    return checkRepository(path, JSON.parse(readFileSync(join(ROOT, path), "utf8")), url)
+  })
+}
+
 function agentPlugin(): string[] {
   const manifest = JSON.parse(readFileSync(join(PLUGIN_DIR, "plugin.json"), "utf8")) as Record<
     string,
@@ -117,7 +131,13 @@ function claudeValidate(): string[] {
 }
 
 if (process.argv[1] && relative(process.argv[1], fileURLToPath(import.meta.url)) === "") {
-  const problems = [...skills(), ...versions(), ...agentPlugin(), ...claudeValidate()]
+  const problems = [
+    ...skills(),
+    ...versions(),
+    ...repositories(),
+    ...agentPlugin(),
+    ...claudeValidate(),
+  ]
   if (problems.length > 0) {
     console.error(`validate: ${problems.length} problem(s)\n  ${problems.join("\n  ")}`)
     process.exit(1)

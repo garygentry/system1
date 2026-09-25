@@ -9,12 +9,15 @@ const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"))
 const problems = []
 
 // Build rather than guess whether the output is current: `tsc -b` skips
-// rewriting files it would emit identically, so timestamps lie.
-if (pkg.scripts?.build) {
+// rewriting files it would emit identically, so timestamps lie. npm runs
+// prepublishOnly before prepack, so run prepack too: on a fresh checkout (the
+// release workflow) Pi's skills exist only once its prepack has copied them.
+for (const script of ["build", "prepack"]) {
+  if (!pkg.scripts?.[script]) continue
   try {
-    execFileSync("npm", ["run", "--silent", "build"], { cwd: pkgDir, stdio: "inherit" })
+    execFileSync("npm", ["run", "--silent", script], { cwd: pkgDir, stdio: "inherit" })
   } catch {
-    problems.push("build failed")
+    problems.push(`${script} failed`)
   }
 }
 
