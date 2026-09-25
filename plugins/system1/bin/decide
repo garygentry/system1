@@ -53,12 +53,12 @@ cache=${npm_config_cache:-${NPM_CONFIG_CACHE:-$HOME/.npm}}
 for manifest in "$cache"/_npx/*/node_modules/@garygentry/system1/package.json; do
   bundle="${manifest%/package.json}/dist/bundle/decide.mjs"
   [ -f "$bundle" ] || continue
-  grep -Eqs '"version": *"0\.3\.2"' "$manifest" || continue
+  grep -Eqs '"version": *"0\.4\.0"' "$manifest" || continue
   exec node "$bundle" "$@"
 done
 # SYSTEM1_NO_NPX: never download (doctor's version probe and the hook set it).
 if [ -z "${SYSTEM1_NO_NPX:-}" ] && command -v npx >/dev/null 2>&1; then
-  exec npx --yes "@garygentry/system1@0.3.2" "$@"
+  exec npx --yes "@garygentry/system1@0.4.0" "$@"
 fi
-echo "decide: the System 1 CLI is not installed. Install it with: npm i -g @garygentry/system1@0.3.2" >&2
+echo "decide: the System 1 CLI is not installed. Install it with: npm i -g @garygentry/system1@0.4.0" >&2
 exit 127
