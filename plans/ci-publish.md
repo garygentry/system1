@@ -1,6 +1,6 @@
 # Plan: publish from CI with trusted publishing and staged approval
 
-- **Status:** phase A implemented 2026-09-25 (branch `ci/trusted-publishing`); phases B–D pending
+- **Status:** A–B done; C–D pending (see [`baseline-0.4.1.md`](baseline-0.4.1.md))
 - **Decision:** [`decisions/0022-ci-publish-trusted-staged.md`](decisions/0022-ci-publish-trusted-staged.md)
 - **Replaces:** `docs/contributing/release.md` §4 (publishing from the maintainer's machine) as the documented path. `pnpm release:publish` stays as a break-glass option.
 - **Inputs:** `.handoff/npm.md` (agent research), checked against the primary sources listed at the end.
@@ -106,6 +106,13 @@ If CI fails *before* anything is staged, fix the problem and either re-run the j
 4. **Rulesets.**
    - `v*` tags: block update and deletion, with the admin on the bypass list.
    - `main`: block force-push and deletion, and require the `ci` checks on pull requests, with the admin on the bypass list for the direct release push.
+
+### Phase B record (done 2026-09-25)
+
+- **Trusted publishers** on `@garygentry/system1-core`, `@garygentry/system1` and `@garygentry/system1-pi`: github, `garygentry/system1`, `release.yml`, environment `npm-publish`, permission `stage publish`. npm trust ids: core `ca4de797-…`, cli `30212865-…`, pi `9d073b74-…`.
+- **Environment `npm-publish`** deploys only from tags matching `v*`, with no required reviewers.
+- **Rulesets:** 23977750 "release tags" blocks updating or deleting `refs/tags/v*`. 23977751 "main" blocks deleting or force-pushing `main` and requires the six `ci.yml` checks. The admin can bypass both.
+- **Gotcha:** the maintainer's npm 12.1.0 is at `~/.local/bin/npm`, but `/usr/bin/npm` 10.9.8 is still installed. After the upgrade, zsh kept the old path until `hash -r`.
 
 ### C. First CI release (the next real version)
 
