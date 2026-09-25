@@ -126,3 +126,84 @@ describe("size", () => {
     expect(assertStateFits("ok", "x".repeat(30), questions, profile)).toBeGreaterThan(10)
   })
 })
+
+describe("scrubbing agent configuration (M9 §11)", () => {
+  // A harness settings file of the kind scout's agents mode screens: MCP
+  // servers carry tokens in env blocks under names that don't all sound secret.
+  const token = (prefix: string, body: string) => `${prefix}${body}`
+  const settings = JSON.stringify(
+    {
+      mcpServers: {
+        github: {
+          command: "npx",
+          args: ["-y", "@modelcontextprotocol/server-github"],
+          env: {
+            GITHUB_PERSONAL_ACCESS_TOKEN: token("ghp_", "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8"),
+          },
+        },
+        notion: {
+          command: "npx",
+          args: ["notion-mcp"],
+          env: { NOTION_INTEGRATION: token("secret_", "Xy7Zq9Wv2Ut4Sr6Pq8On0Ml1Kj3Ih5Gf7Ed9") },
+        },
+        linear: {
+          command: "npx",
+          args: ["linear-mcp"],
+          env: { LINEAR_API_KEY: token("lin_api_", "9f8e7d6c5b4a3928171615141312111009") },
+        },
+        honeycomb: {
+          command: "node",
+          args: ["hc.js"],
+          env: { HONEYCOMB_WRITEKEY: token("hcaik_", "01j9zx8y7w6v5u4t3s2r1q0p9o8n7m6l5k4") },
+        },
+        datadog: {
+          command: "node",
+          args: ["dd.js"],
+          env: { DATADOG_APPKEY: "a1b2c3d4e5f6a7b8c9d0e1f2" },
+        },
+        postgres: {
+          command: "npx",
+          args: ["pg-mcp", "postgres://app:S3cretPassw0rd@db.internal:5432/prod"],
+        },
+        slack: {
+          command: "npx",
+          args: ["slack"],
+          env: { SLACK_BOT_TOKEN: "xoxb-1234567890-abcdefghijkl", SLACK_TEAM_ID: "T01ABCDEF" },
+        },
+      },
+    },
+    null,
+    2,
+  )
+  const secrets = [
+    "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8",
+    "Xy7Zq9Wv2Ut4Sr6Pq8On0Ml1Kj3Ih5Gf7Ed9",
+    "9f8e7d6c5b4a3928171615141312111009",
+    "01j9zx8y7w6v5u4t3s2r1q0p9o8n7m6l5k4",
+    "a1b2c3d4e5f6a7b8c9d0e1f2",
+    "S3cretPassw0rd",
+    "xoxb-1234567890",
+  ]
+
+  it("redacts every token in MCP env blocks and URLs, and keeps the rest", () => {
+    const counts: Record<string, number> = {}
+    const out = scrubText(settings, counts)
+    for (const secret of secrets) expect(out, secret).not.toContain(secret)
+    expect(out).toContain('"SLACK_TEAM_ID": "T01ABCDEF"')
+    expect(out).toContain("@modelcontextprotocol/server-github")
+    expect(out).toContain("db.internal:5432/prod")
+    expect(counts).toMatchObject({ "service-token": 3, "env-secret": 1 })
+  })
+
+  it("leaves upper-case constants that aren't credentials alone", () => {
+    for (const line of [
+      'const PROBE_KEY = "pulse:overview:probe"',
+      'export const DEFAULT_COLLAPSE_KEY: CollapseKey = "ctrl+]"',
+      'const CHUNK_RELOAD_SESSION_KEY = "chunk-reload-session"',
+      'export const API_KEY = (process.env.API_KEY ?? "").trim()',
+      "plans/decisions/0002-distributed-as-npm-packages-run-via-npx-with-the-v.md",
+    ]) {
+      expect(scrubText(line), line).toBe(line)
+    }
+  })
+})
