@@ -144,8 +144,8 @@ full plan and the reasoning.
 | M0–M6 | Engine, CLI, skills, three harnesses, first release | Done (0.1.0) |
 | M7 | Evidence: measure the calibration claim instead of repeating the vendor's | Done |
 | M8 | Onboarding: docs, a tested cookbook, the first-hour fixes, CI on macOS | Done (0.2.0). The routing hook followed in 0.3.x |
-| **M9** | **`scout`:** find the places in your code and agent configuration where a decision model would pay off | **Next** (0.4.0) |
-| M10 | **`guard` + `done-check`:** an opt-in stop-time check of acceptance criteria against the diff | Planned (0.5.0) |
+| M9 | `scout`: find the places in your code and agent configuration where a decision model would pay off | Done (0.4.0) |
+| **M10** | **`guard` + `done-check`:** an opt-in stop-time check of acceptance criteria against the diff | **Next** (0.5.0) |
 | M11 | **`adopt` + `compare`:** turn a found opportunity into code with a fallback, and measure it against what it replaces | Planned (0.6.0) |
 | M12 | **Design partners:** 3–5 outside users reach a first useful decision unaided, and what breaks gets fixed | After M11 |
 | M13 | Release: CHANGELOG, CONTRIBUTING, SECURITY, a stability and deprecation policy, the version decision | After M12 |

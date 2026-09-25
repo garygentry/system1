@@ -42,7 +42,7 @@ CI covers `pnpm check` and `pnpm release:check`. The rest run only here.
 ```sh
 pnpm validate           # with claude on PATH: adds `claude plugin validate --strict`
 pnpm release:check      # packs all three, installs the CLI tarball, replays offline
-pnpm smoke              # bar: 9 of 9
+pnpm smoke              # bar: 12 of 12 (setup, doctor, many, scout × 3 harnesses)
 pnpm eval:routing all   # see the bar below
 ```
 
@@ -74,8 +74,8 @@ pnpm release:publish                  # add --otp <code> if npm asks for one
 
 It refuses to start unless the working tree is clean, every package is at the same version, and
 `release:check` passes. Then it publishes `@garygentry/system1-core`, `@garygentry/system1` and
-`@garygentry/system1-pi`, in that order, with `npm publish`. Last, it checks that npm serves all
-three. It uses `npm publish` rather than `pnpm publish`, as every release has: the CLI's published
+`@garygentry/system1-pi`, in that order, with `npm publish`. Last, it waits (up to 3 minutes)
+until npm serves all three: the registry lags a publish, by about 40 s for 0.4.0. It uses `npm publish` rather than `pnpm publish`, as every release has: the CLI's published
 `devDependencies` still read `workspace:*`, which pnpm would rewrite. That is harmless, because
 consumers never install devDependencies.
 
@@ -136,7 +136,9 @@ must be pushed) and CLI, and that `decide doctor` runs through them. With `--liv
 egress consent **in the throwaway fixture repo only**, and gives each agent the prompt above.
 The pass marker is a `decide many` or `decide ask` line showing `live` with a measured cost.
 `--live` needs `OPENROUTER_API_KEY` in the environment (for example
-`set -a; . ./.env; set +a`). It spends each harness's tokens as well.
+`set -a; . ./.env; set +a`). If you take it from `~/.config/system1/credentials`, strip the YAML
+quotes, or the provider answers 401 "Missing Authentication header" (0.4.0 hit this):
+`OPENROUTER_API_KEY=$(sed -n 's/^openrouter_api_key: *//p' ~/.config/system1/credentials | tr -d "\"'")`. It spends each harness's tokens as well.
 
 The Claude hook's silent-then-hinting behaviour isn't asserted by the script. Check it by hand in
 the Claude profile the script leaves behind (`CLAUDE_CONFIG_DIR=~/.cache/system1-smoke/published-X.Y.Z/claude`).
