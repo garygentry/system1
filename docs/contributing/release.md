@@ -15,8 +15,10 @@ version can't go live without your 2FA. The design and its threat model are in
 ## Before you start
 
 - You are on an up-to-date `main` with a clean working tree, and CI is green on it.
-- npm is 11.15 or newer (`npm --version`; `npm i -g npm@latest`), for `npm stage`. `npm whoami`
-  shows an account that can publish to the `@garygentry` scope, and it has 2FA.
+- npm is 11.15 or newer (`npm --version`; `npm i -g npm@latest`), for `npm stage`. After
+  upgrading, run `hash -r` (zsh) and check `npm --version` again: an older system npm can still
+  win on the cached path. `npm whoami` shows an account that can publish to the `@garygentry`
+  scope, and it has 2FA.
 - Git signs tags with your SSH key (`gpg.format ssh`, `tag.gpgsign true`, and a
   `user.signingkey`), and that key is in `.github/allowed_signers`. The workflow checks tags
   against that file as it is on `main`. Tags from `v0.2.0` on are SSH-signed; `v0.1.0` is annotated
