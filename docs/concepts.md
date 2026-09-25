@@ -94,10 +94,13 @@ Only when the repo has consented, and only after these checks, in order:
    Add patterns with `egress.exclude` in config. A symlink is matched by where it points, too.
 2. **The repo boundary.** Content that resolves outside the repo is withheld, unless you pass
    `--allow-outside` for a file you wrote yourself, such as a log tail in `/tmp`.
-3. **Scrubbing.** Secret-shaped strings (API keys, tokens, private keys, credentials in URLs) are
-   redacted from everything sent, including the questions. The output says how many were removed.
-4. **Size.** An item too large for the model is refused (`state-too-large`), never truncated. A
-   decision made on half an input is a wrong decision.
+3. **Scrubbing.** Secret-shaped strings (API keys, service tokens with a known prefix, private keys,
+   credentials in URLs, and credential-looking values under names like `DATADOG_APPKEY`, as in an
+   MCP server's `env` block) are redacted from everything sent, including the questions. The output
+   says how many were removed.
+4. **Size.** An item too large for the model is never truncated: a decision made on half an input
+   is a wrong decision. `ask` refuses it (`state-too-large`). `many` skips it, reports it as
+   `too-large` with the split to re-run it, and goes on with the rest.
 
 Withheld items are listed in the output with the reason, never silently dropped.
 

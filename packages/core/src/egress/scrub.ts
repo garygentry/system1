@@ -34,6 +34,14 @@ const RULES: readonly Rule[] = [
   { kind: "slack-token", pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
   { kind: "stripe-key", pattern: /\b[rs]k_(?:live|test)_[A-Za-z0-9]{16,}\b/g },
   { kind: "google-api-key", pattern: /\bAIza[0-9A-Za-z_-]{35}\b/g },
+  // Service tokens with a known prefix and separator, whatever they are
+  // assigned to (MCP server env blocks name them freely: NOTION_INTEGRATION,
+  // HONEYCOMB_WRITEKEY).
+  {
+    kind: "service-token",
+    pattern:
+      /\b(?:secret_|ntn_|glpat-|npm_|pypi-|shpat_|shpss_|dop_v1_|hcaik_|hcxik_|sntrys_|lin_api_|figd_|xapp-)[A-Za-z0-9_]{20,}\b/g,
+  },
   { kind: "jwt", pattern: /\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g },
   { kind: "url-credentials", pattern: /(?<=\b[a-z][a-z0-9+.-]*:\/\/[^\s:/@]+:)[^\s@/]{3,}(?=@)/gi },
   // NAME = "literal": a quoted value of 8+ chars assigned to a secret-sounding name.
@@ -53,6 +61,16 @@ const RULES: readonly Rule[] = [
       `(?<=\\b${SECRET_NAME}\\s*[:=]\\s*)(?!\\$\\{|<|\\[REDACTED)(?=[A-Za-z_\\-+/=~]*\\d)[A-Za-z0-9_\\-+/=~]{8,}(?![\\w(.])`,
       "gi",
     ),
+  },
+  // ENV_NAME: "value" in upper-case environment style, ending in a credential
+  // word (API_WRITEKEY, SERVICE_PAT). Case-sensitive, and the value must look
+  // like a credential (12+ characters, letters and digits, no dots or colons),
+  // so UI constants (`PROBE_KEY = "pulse:probe"`) and code are left alone.
+  // Last, so a value an earlier rule already caught keeps that rule's name.
+  {
+    kind: "env-secret",
+    pattern:
+      /(?<=\b[A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASS|PAT|CREDENTIALS?)["']?\s*[:=]\s*["']?)(?!\$\{|<|\[REDACTED)(?=[A-Za-z0-9_\-+/=~]*\d)(?=[A-Za-z0-9_\-+/=~]*[A-Za-z])[A-Za-z0-9_\-+/=~]{12,}(?=["'\s,}]|$)/gm,
   },
 ]
 
