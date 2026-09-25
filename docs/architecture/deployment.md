@@ -125,6 +125,10 @@ the shim then resolves at step 3, and steps 4–5 are the fallback for a plugin-
 | `check` | `ubuntu-latest`, `macos-latest` × Node 22, 24 | `pnpm install --frozen-lockfile`, then `pnpm check` |
 | `packed` | `ubuntu-latest`, `macos-latest`, Node from `.nvmrc` (22) | `pnpm release:check` |
 
+Ruleset 23977751 requires these six checks by name (`check (ubuntu-latest, 22)` and so on) before a
+pull request can merge. Changing the `ci.yml` matrix? Update the ruleset's required checks too, or
+merges stall.
+
 `pnpm check` is build, typecheck, lint, test, `generate:check`, `validate` and the notices check;
 [quality.md](quality.md#always-offline) lists what each covers.
 

@@ -1,6 +1,6 @@
 # 0022. Publish from CI: trusted publishing, staged, approved with npm 2FA
 
-- **Status:** accepted; the first CI release was 0.4.1 (2026-09-25). Locking npm down (plan, phase D) is pending
+- **Status:** accepted, in force since 0.4.1 (2026-09-25): the first CI release, then all three packages set to "Require two-factor authentication and disallow tokens", and the publish tokens revoked
 - **Date:** 2026-09-25
 - **Amends:** the M6 release procedure (publishing from the maintainer's machine). **Plan:** [`../ci-publish.md`](../ci-publish.md). **How-to:** [`docs/contributing/release.md`](../../docs/contributing/release.md).
 
