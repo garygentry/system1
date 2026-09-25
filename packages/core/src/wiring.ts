@@ -5,7 +5,7 @@
  * project, not to us.
  */
 
-import { allProfiles } from "./config/load.js"
+import { allProfiles, unquoteKey } from "./config/load.js"
 import type { DecideMode, Decider } from "./decide.js"
 import { DEFAULT_MODEL_ID, resolveProfile } from "./model/profiles.js"
 import { createContext, deciderFor } from "./tools/context.js"
@@ -29,8 +29,17 @@ export function resolveConnection(env: NodeJS.ProcessEnv = process.env): Connect
   return {
     endpoint: nonEmpty(env.SYSTEM1_ENDPOINT) ?? DEFAULT_ENDPOINT,
     model: nonEmpty(env.SYSTEM1_MODEL) ?? DEFAULT_MODEL,
-    apiKey: nonEmpty(env.OPENROUTER_API_KEY),
+    apiKey: envKey(env),
     replay: /^(1|true|yes)$/i.test(env.SYSTEM1_REPLAY ?? ""),
+  }
+}
+
+/** As `loadConfig` reads it; a key it would refuse counts as absent here (the config error is reported). */
+function envKey(env: NodeJS.ProcessEnv): string | undefined {
+  try {
+    return unquoteKey(env.OPENROUTER_API_KEY)?.value
+  } catch {
+    return undefined
   }
 }
 

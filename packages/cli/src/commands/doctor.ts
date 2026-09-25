@@ -46,7 +46,7 @@ function brief(r: DoctorResult): string {
  */
 function headline(r: DoctorResult): string {
   if (!r.healthy) return "PROBLEMS FOUND"
-  const missing = r.checks.filter((c) => c.status === "warn").map((c) => c.name)
+  const missing = r.checks.filter((c) => c.status === "warn" && !c.advisory).map((c) => c.name)
   return !r.live && missing.length > 0 ? `SETUP NEEDED (${missing.join(", ")})` : "healthy"
 }
 

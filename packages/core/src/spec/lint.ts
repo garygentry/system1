@@ -140,7 +140,6 @@ const NUMERIC = new Set([">=", ">", "<=", "<"])
 
 function lintQuestion(name: string, q: Question): LintFinding[] {
   const out: LintFinding[] = []
-  const texts = [q.instructions, ...criteriaTexts(q)]
   if (q.type === "choice") {
     const options = Object.entries(q.criteria)
     const wayOut = ([key, desc]: [string, string]) =>

@@ -63,6 +63,8 @@ export interface ResolvedConfig extends DecisionsConfig {
   /** Absent when no key is configured. Never printed. */
   apiKey: string | undefined
   apiKeySource: "env" | "credentials" | undefined
+  /** The key came wrapped in one pair of quotes, which were removed. */
+  apiKeyQuoted: boolean
   replay: boolean
   /** `SYSTEM1_SESSION`, else the harness session id (`claude:…`, `codex:…`, `pi:…`). */
   session: string | undefined
@@ -165,6 +167,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
     repoRoot,
     apiKey: key?.value,
     apiKeySource: key?.source,
+    apiKeyQuoted: key?.quoted ?? false,
     replay: /^(1|true|yes)$/i.test(env.SYSTEM1_REPLAY ?? ""),
     session: session?.id,
     sessionOrigin: session?.origin,
@@ -503,13 +506,16 @@ function triggerList(value: unknown, file: string): Trigger[] {
  *
  * The credentials file holds `openrouter_api_key: sk-…` and must not be
  * readable by group or others, the same rule ssh applies to private keys.
+ * One matching pair of surrounding quotes is removed from either source
+ * (a key pasted from a YAML or shell line keeps them, and the provider then
+ * answers 401), and `quoted` says so, for `decide doctor`.
  */
 function resolveApiKey(
   env: NodeJS.ProcessEnv,
   userDir: string,
-): { value: string; source: "env" | "credentials"; file?: string } | undefined {
-  const fromEnv = nonEmpty(env.OPENROUTER_API_KEY)
-  if (fromEnv) return { value: fromEnv, source: "env" }
+): { value: string; source: "env" | "credentials"; quoted: boolean; file?: string } | undefined {
+  const fromEnv = unquoteKey(env.OPENROUTER_API_KEY)
+  if (fromEnv) return { ...fromEnv, source: "env" }
   const file = join(userDir, "credentials")
   if (!existsSync(file)) return undefined
   if (process.platform !== "win32" && (statSync(file).mode & 0o077) !== 0) {
@@ -519,11 +525,45 @@ function resolveApiKey(
       { file },
     )
   }
-  const parsed = readLayer(file)
-  const value = nonEmpty(
+  let parsed: Layer
+  try {
+    parsed = readLayer(file)
+  } catch {
+    // The parser's message quotes the offending line, which holds the key.
+    throw new DecisionsError(
+      "config-error",
+      `${file} is not a valid YAML mapping; it should hold one line, \`openrouter_api_key: <key>\``,
+      { file },
+    )
+  }
+  const key = unquoteKey(
     typeof parsed?.openrouter_api_key === "string" ? parsed.openrouter_api_key : undefined,
+    `openrouter_api_key in ${file}`,
   )
-  return value ? { value, source: "credentials", file } : undefined
+  return key ? { ...key, source: "credentials", file } : undefined
+}
+
+/**
+ * Trim, then remove one matching pair of `"` or `'`; a lone quote is left alone.
+ * A key with a space or control character inside is refused without echoing it:
+ * `fetch` would reject the header and quote the whole value in its error.
+ */
+export function unquoteKey(
+  raw: string | undefined,
+  source = "OPENROUTER_API_KEY",
+): { value: string; quoted: boolean } | undefined {
+  const value = nonEmpty(raw)
+  if (!value) return undefined
+  const quoted = /^(["']).*\1$/s.test(value)
+  const key = quoted ? nonEmpty(value.slice(1, -1)) : value
+  if (!key) return undefined
+  if (/[^\x21-\x7e]/.test(key)) {
+    throw new DecisionsError(
+      "config-error",
+      `${source} contains a space, line break or other character an API key can't have; set it again`,
+    )
+  }
+  return { value: key, quoted }
 }
 
 function nonEmpty(value: string | undefined): string | undefined {

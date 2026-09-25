@@ -260,6 +260,96 @@ describe("loadConfig", () => {
       })
     })
 
+    describe("strips one matching pair of quotes", () => {
+      const fromEnv = (value: string) => {
+        const { repo, home } = setup()
+        return loadConfig({ cwd: repo, env: { OPENROUTER_API_KEY: value }, home })
+      }
+
+      it.each([
+        ['"sk-env"', "double quotes"],
+        ["'sk-env'", "single quotes"],
+        ['  "sk-env" ', "quotes inside whitespace"],
+        ['" sk-env "', "whitespace inside quotes"],
+      ])("%s (%s)", (value) => {
+        expect(fromEnv(value)).toMatchObject({
+          apiKey: "sk-env",
+          apiKeySource: "env",
+          apiKeyQuoted: true,
+        })
+      })
+
+      it("leaves an unquoted key alone and says so", () => {
+        expect(fromEnv("sk-env")).toMatchObject({ apiKey: "sk-env", apiKeyQuoted: false })
+      })
+
+      it.each([
+        ['"sk-env', "a lone leading quote"],
+        ["sk-env'", "a lone trailing quote"],
+        ["\"sk-env'", "mismatched quotes"],
+      ])("leaves %s unchanged (%s)", (value) => {
+        expect(fromEnv(value)).toMatchObject({ apiKey: value, apiKeyQuoted: false })
+      })
+
+      it("strips only the outer pair", () => {
+        expect(fromEnv(`"'sk-env'"`)).toMatchObject({ apiKey: "'sk-env'", apiKeyQuoted: true })
+      })
+
+      it.each(['""', "''", '" "', "'  '"])(
+        "counts %s as no key, falling through to the credentials file",
+        (value) => {
+          const { repo, home } = setup()
+          writeTree(home, { ".config/system1/credentials": "openrouter_api_key: sk-file\n" })
+          chmodSync(join(home, ".config/system1/credentials"), 0o600)
+          expect(loadConfig({ cwd: repo, env: { OPENROUTER_API_KEY: value }, home })).toMatchObject(
+            { apiKey: "sk-file", apiKeySource: "credentials", apiKeyQuoted: false },
+          )
+          const bare = setup()
+          expect(
+            loadConfig({ cwd: bare.repo, env: { OPENROUTER_API_KEY: value }, home: bare.home }),
+          ).toMatchObject({ apiKey: undefined, apiKeySource: undefined, apiKeyQuoted: false })
+        },
+      )
+
+      it.each(["sk-a b", "sk-a\nb", '"sk-a\tb"', "sk-é"])(
+        "refuses %j without echoing it",
+        (value) => {
+          const { repo, home } = setup()
+          const load = () => loadConfig({ cwd: repo, env: { OPENROUTER_API_KEY: value }, home })
+          expect(load).toThrow(/OPENROUTER_API_KEY contains a space, line break/)
+          try {
+            load()
+          } catch (error) {
+            expect(String(error)).not.toContain("sk-a")
+            expect(String(error)).not.toContain("sk-é")
+          }
+        },
+      )
+
+      it("in the credentials file", () => {
+        const { repo, home } = setup()
+        const file = join(home, ".config/system1/credentials")
+        // YAML removes one layer; the inner quotes are part of the string it reads.
+        writeTree(home, { ".config/system1/credentials": `openrouter_api_key: "'sk-file'"\n` })
+        chmodSync(file, 0o600)
+        expect(loadConfig({ cwd: repo, env: {}, home })).toMatchObject({
+          apiKey: "sk-file",
+          apiKeySource: "credentials",
+          apiKeyQuoted: true,
+        })
+      })
+    })
+
+    it("refuses a malformed credentials file without quoting the key", () => {
+      const { repo, home } = setup()
+      const file = join(home, ".config/system1/credentials")
+      writeTree(home, { ".config/system1/credentials": 'openrouter_api_key: "sk-SECRET\n' })
+      chmodSync(file, 0o600)
+      const load = () => loadConfig({ cwd: repo, env: {}, home })
+      expect(load).toThrow(/is not a valid YAML mapping/)
+      expect(() => load()).not.toThrow(/SECRET/)
+    })
+
     it.skipIf(process.platform === "win32")("refuses a credentials file others can read", () => {
       const { repo, home } = setup()
       writeTree(home, { ".config/system1/credentials": "openrouter_api_key: sk-file\n" })

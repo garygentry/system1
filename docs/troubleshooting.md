@@ -71,6 +71,11 @@ No API key, so only replay works. Set `OPENROUTER_API_KEY`, or write the credent
 line names (it follows `XDG_CONFIG_HOME`). See [getting-started.md](getting-started.md#3-the-key).
 Never paste the key into the conversation.
 
+A `warn` that says the key was wrapped in quotes means one pair of surrounding `"` or `'` was
+removed before use (for example from `OPENROUTER_API_KEY='"sk-or-…"'`, or from
+`openrouter_api_key: "'sk-or-…'"` in the credentials file). The key works; remove the extra quotes
+where the fix line says. Versions up to 0.4.0 sent the quotes, and the provider answered 401.
+
 ### doctor: `consent`
 
 This repo hasn't agreed to send content to the provider, so live calls are refused. If you agree,
@@ -183,7 +188,7 @@ its `network` fix.
 ### `provider-http` · exit 5
 
 The provider answered with an error status that isn't worth retrying. A 401 means the key is
-wrong or revoked. A 402 means the OpenRouter account is out of credit. A 404 means the model id
+wrong or revoked (from 0.4.1, surrounding quotes are removed, and `decide doctor` says so). A 402 means the OpenRouter account is out of credit. A 404 means the model id
 or endpoint is wrong. A 429 (rate limit) or 5xx is retried with backoff first, and ends up
 here only if it persists, so wait and retry. The message carries the status.
 

@@ -39,6 +39,8 @@ export interface DoctorCheck {
   detail: string
   /** What the user (not the agent) can do about a warn or fail. */
   fix?: string
+  /** A warn that doesn't stand between this shell and a live decision. */
+  advisory?: boolean
 }
 
 export interface DoctorResult {
@@ -173,16 +175,32 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
       fix: "correct or remove these keys (docs/configuration.md lists every key)",
     })
   }
+  const credentials = join(userConfigDir(env, options.home), "credentials")
   checks.push(
-    config.apiKey
-      ? { name: "key", status: "ok", detail: `OPENROUTER_API_KEY present (${config.apiKeySource})` }
-      : {
+    config.apiKey && config.apiKeyQuoted
+      ? {
           name: "key",
           status: "warn",
-          detail: "no API key: only replay works",
-          // The file this shell would read: XDG_CONFIG_HOME moves it.
-          fix: `set OPENROUTER_API_KEY, or write \`openrouter_api_key: <key>\` to ${join(userConfigDir(env, options.home), "credentials")} (create its directory first; chmod 600)`,
-        },
+          detail: `OPENROUTER_API_KEY present (${config.apiKeySource}), but wrapped in quotes; they were removed`,
+          fix:
+            config.apiKeySource === "env"
+              ? "set OPENROUTER_API_KEY without the surrounding quotes"
+              : `remove the extra quotes around openrouter_api_key in ${credentials}`,
+          advisory: true,
+        }
+      : config.apiKey
+        ? {
+            name: "key",
+            status: "ok",
+            detail: `OPENROUTER_API_KEY present (${config.apiKeySource})`,
+          }
+        : {
+            name: "key",
+            status: "warn",
+            detail: "no API key: only replay works",
+            // The file this shell would read: XDG_CONFIG_HOME moves it.
+            fix: `set OPENROUTER_API_KEY, or write \`openrouter_api_key: <key>\` to ${credentials} (create its directory first; chmod 600)`,
+          },
   )
   checks.push(
     config.egress.consent.granted
