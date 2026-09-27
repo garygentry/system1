@@ -13,6 +13,7 @@
  *   and fine" from "not checked".
  */
 import { type LoadOptions, loadConfig } from "../config/load.js"
+import type { DecideMode } from "../decide.js"
 import { isDecisionsError } from "../errors.js"
 import type { HookEvent, HookOutput, PackContext } from "../guard/done-check.js"
 import { isPackName, type PackName } from "../guard/packs.js"
@@ -30,6 +31,8 @@ export interface HookOptions extends LoadOptions {
   /** For tests: replaces a pack's module. */
   packs?: Partial<Record<PackName, PackModule>>
   now?: Date
+  /** For evals: `record` keeps each live answer as a replay fixture. Default `auto`. */
+  mode?: DecideMode
 }
 
 export interface PackModule {
@@ -128,6 +131,7 @@ export async function runHook(
       event,
       signal: controller.signal,
       now,
+      ...(options.mode ? { mode: options.mode } : {}),
     }
     if (event.hook_event_name === "SessionStart") return mod.sessionStart(ctx)
     if (event.hook_event_name === "Stop") return mod.stop(ctx)

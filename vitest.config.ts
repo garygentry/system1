@@ -10,6 +10,7 @@ export default defineConfig({
       "**/dist/**",
       // Files agents act on in evals, not tests of this repo.
       "tools/evals/fixture-*/**",
+      "tools/done-check-eval/base/**",
     ],
   },
 })

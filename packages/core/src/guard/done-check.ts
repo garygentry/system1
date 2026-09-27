@@ -9,6 +9,7 @@
 import { createHash } from "node:crypto"
 import { closeSync, constants, fstatSync, openSync, readSync, realpathSync } from "node:fs"
 import { dirname, isAbsolute, relative, resolve } from "node:path"
+import type { DecideMode } from "../decide.js"
 import type { ContextOptions } from "../tools/context.js"
 import { decideDone } from "./check.js"
 import { gather } from "./gather.js"
@@ -37,6 +38,8 @@ export interface PackContext {
   event: HookEvent
   signal: AbortSignal
   now: Date
+  /** How the pack's decider answers; `auto` unless an eval records fixtures. */
+  mode?: DecideMode
 }
 
 /** The fields of a harness hook event the runner reads. Harnesses add others. */
