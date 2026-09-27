@@ -112,7 +112,7 @@
 
 ## M10 — `guard` and `done-check` (release 0.5.0)
 
-**Status:** next.
+**Status:** in progress; §1 spike done 2026-09-27 (Claude and Codex both support a blocking Stop hook; see Results).
 **Addresses:** ROADMAP Known gap #1 (Claude declines to hand off a check of its own work) **for repos that opt in with a criteria file**. It does not move the `ask` routing numbers, which stay the gap's measure for everyone else; M10 reports its own catch rate next to them.
 
 ### Work
@@ -301,6 +301,21 @@
 ## Results
 
 *(Filled in per milestone as each closes.)*
+
+### M10 §1 spike: Stop hooks from a plugin (2026-09-27)
+
+- **Claude:** yes, as planned.
+- **Codex 0.155.1: yes.** A throwaway plugin (`~/.cache/system1-spike`) shipped `hooks.json` with `SessionStart` and `Stop`. In an interactive session, the Stop hook blocked the first stop, the agent acted on `reason`, and the second stop (`stop_hook_active: true`) was allowed with its `systemMessage` shown.
+  - The wire format is Claude's, with `last_assistant_message` added. That means a completion-claim check needs no transcript read on Codex.
+  - Details are in AGENTS.md, "Harness notes (verified in M10)".
+- **Pi:** out, as planned.
+- **Consequences for M10:**
+  - `done-check` ships for Claude and Codex, from one generated hooks file.
+  - Codex runs a plugin hook only after the user trusts it, and an untrusted hook is skipped silently. So:
+    - `decide doctor` should read `$CODEX_HOME/config.toml` `hooks.state` and warn when guard is enabled but the system1 hooks aren't trusted;
+    - the guard docs should say trust is a second opt-in on Codex;
+    - smoke can't run the Codex hook headless without the bypass flag.
+- **Still to check in §4:** whether a Codex hook command has network. The spike's hook needed none, and the model's shell has none in the default sandbox.
 
 ### M9 pre-check: does scout find anything? (2026-09-24, before any M9 code)
 
