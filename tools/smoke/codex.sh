@@ -24,4 +24,9 @@ assert_marker codex:many "$MANY_MARKER" "$SMOKE/codex-many.txt" || status=1
 fixture_repo "$SMOKE/codex-scout"
 drive "$SMOKE/codex-scout" "\$system1:scout $SCOUT_PROMPT" "$SMOKE/codex-scout.txt"
 assert_marker codex:scout "$SCOUT_MARKER" "$SMOKE/codex-scout.txt" || status=1
+consent_repo "$SMOKE/codex-guard"
+(log_decide "$SMOKE/codex-guard-log"; drive "$SMOKE/codex-guard" "\$system1:guard $GUARD_PROMPT" "$SMOKE/codex-guard.txt")
+assert_marker codex:guard "$GUARD_MARKER" "$SMOKE/codex-guard.txt" || status=1
+assert_dormant codex:guard-dormant "$SMOKE/codex-guard" "$SMOKE/codex-guard-log/calls.txt" \
+  '^guard enable' || status=1
 exit $status

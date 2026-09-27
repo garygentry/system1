@@ -161,6 +161,7 @@
    - **Spend:** a per-event cap (0011), plus `max_usd_per_session` checked against the ledger by session id. When that is reached, skip and report.
 6. **Generated wiring.** Add the `Stop` and `SessionStart` entries in `claudeHooks()` (`tools/generate.ts`), so the generated `claude-hooks.json` carries them (still one file); `pnpm generate`. Wire Codex only if the spike says it works.
 7. **`guard` skill** (user-invocable: `disable-model-invocation`, `agents/openai.yaml` `allow_implicit_invocation: false`). It explains packs, their egress, latency and cost, and gives the user the exact enable line to type. It never runs it, and its text never contains the consent flag in a runnable command. Add routing positives and negatives, and a smoke check that the skill doesn't run `guard enable`.
+   *Built: `skills/guard`. Positives are explicit invocations in smoke, since a user-only skill never loads on its own; `routing.yaml` holds 4 negatives, which pass 4/4 in Claude, Codex and Pi. Smoke asks each harness outright to enable done-check in a repo with consent, and fails on any `guard enable` call (Claude's transcript, or a logging `decide` for Codex and Pi) or a changed pack. `pnpm validate` rejects the consent flag anywhere in a skill.*
 8. **Evaluation.**
    - **Fixture set:** a labelled set of stop events, replayed in CI. It covers real diffs against real criteria, both done and not-done, and includes:
      - the Known-gap scenarios (the TASK.md check, the pre-commit rules check, the latter with a `.system1/done.md` of the rules);
@@ -181,7 +182,7 @@
 - [ ] **Enabled latency:** p95 added latency at Stop is under `latency_ms`, and a timeout fails open with a reason.
 - [ ] **`guard enable`:**
   - it refuses without consent (exit 3), and with no TTY and no `--i-consent` (tested);
-  - no skill text contains a runnable enable-with-consent line;
+  - no skill text contains a runnable enable-with-consent line (`pnpm validate` rejects the flag in any skill file, §7);
   - `enabled` set in the user config layer or env is ignored and reported by `doctor` (tested).
 - [ ] **`done-check` behaviour on fixtures.** It:
   - blocks a not-done fixture with the right criterion named, and lets a done fixture through;
