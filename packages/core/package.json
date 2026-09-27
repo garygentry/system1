@@ -43,6 +43,10 @@
     "./route": {
       "types": "./dist/tools/route.d.ts",
       "default": "./dist/tools/route.js"
+    },
+    "./hook": {
+      "types": "./dist/tools/hook.d.ts",
+      "default": "./dist/tools/hook.js"
     }
   },
   "files": [

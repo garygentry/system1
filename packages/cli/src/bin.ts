@@ -12,4 +12,5 @@ process.exitCode = await main(process.argv.slice(2), {
   cwd: process.cwd(),
   readStdin: () => readFileSync(0, "utf8"),
   interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+  exitWhenFlushed: () => process.stdout.write("", () => process.exit(0)),
 })

@@ -9,4 +9,10 @@ export interface Io extends ContextOptions {
   readStdin?: () => string
   /** Whether a human is at the terminal (consent needs one, or --confirm). */
   interactive?: boolean
+  /**
+   * End the process once stdout is flushed, even if work is still pending.
+   * `decide hook` uses it: after the harness has its answer, a check that ran
+   * past its deadline must not keep the Stop waiting.
+   */
+  exitWhenFlushed?: () => void
 }

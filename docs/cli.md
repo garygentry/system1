@@ -25,8 +25,9 @@ decide <command> [options] [--format json|jsonl|brief]
 | `decide usage` | Measured spend from the ledger |
 | `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent |
 | `decide guard` | Opt-in hook checks: `list`, `status`, `enable <pack>`, `disable <pack>`. The user enables a pack |
+| `decide hook` | A guard pack on a harness hook event. Run by the plugin's hooks, not by hand |
 | `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
-| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route` |
+| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route`, `hook` |
 | `decide ping` | Check the endpoint is reachable. No key needed, no spend |
 | `decide doctor` | Check `decide` works from this shell, with the fix for each problem |
 | `decide version` | Print the version |
@@ -218,6 +219,24 @@ regular expressions locally and never sends the prompt anywhere. With `--format 
 only the hint, or nothing: that is what the Claude Code plugin's `UserPromptSubmit` hook adds to
 the agent's context. Use `--text` to test your own `route:` config. See
 [routing-hints.md](routing-hints.md).
+
+### `hook`
+
+```sh
+decide hook <pack> [--harness claude|codex] < event.json
+```
+
+The plugin's hooks run this at `SessionStart` and `Stop`. It reads the harness's event on stdin
+and prints the harness's hook JSON, not the envelope:
+- `{}` allows;
+- `{"decision":"block","reason":…}` blocks once;
+- `{"systemMessage":…}` shows you a line.
+
+It **always exits 0**, because Claude Code treats exit 2 as a blocking error. A pack that isn't
+enabled with consent in this repo prints `{}` and sends nothing. An enabled pack that can't check
+(no network, a timeout, the spend cap) allows the stop and says why. `--harness` names the
+session (`claude:<id>` or `codex:<id>`) in the guard state and in the ledger, unless
+`SYSTEM1_SESSION` is set; without it, a Codex `turn_id` in the event means Codex. `decide schema hook` prints the event's schema.
 
 ### `schema`, `ping`, `doctor`, `version`
 

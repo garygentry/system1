@@ -154,3 +154,19 @@ Same envelope `v`: every addition is a new command, a new field or a new enum va
   - A malformed backlog is `invalid-request`, exit 2, listing every problem, and is never repaired or overwritten. `add` and `list` refuse it the same way.
 - **`doctor` gains a `backlog` check**: ok when the file is absent or valid, and a warning when it is malformed.
 - **`--keep-any` / `keepAny`** (added with the scout signal tables): filters of which at least one must match, as well as every `keep`. Undecided stays first and is never thresholded, narrowed to what can change the outcome: a flat `keepAny` answer holds an item only when no decided `keepAny` filter already matches. `keep` and `sort` keep their rule. Spec field `keepAny`, input field `keepAny`; `ask`'s `verdict` uses both.
+
+## M10: `guard` and `decide hook` (added 2026-09-27)
+
+Plan: `milestones/M9-M11-scout-guard-adopt.md` §M10 and `m10-hooks.md`.
+
+- **`decide guard list|status|enable <pack>|disable <pack>`** uses the envelope as usual, so it is additive. The result is `{file, consent, packs: [{name, summary, enabled, active, …options}], changed?}`.
+  - `enable` without repo egress consent is `egress-refused`, exit 3.
+  - `enable` with no terminal and no `--i-consent` is also `egress-refused`, exit 3.
+  - Enabling is the user's decision (X6), and `--confirm` does not count for it.
+- **`decide hook <pack> [--harness claude|codex]`** is the one command outside this contract. It is a harness hook, so the harness defines its input and output:
+  - **Output:** stdout is the harness's hook JSON, not the `{v, ok, …}` envelope. That is `{}` to allow, `{"decision":"block","reason":…}` to block once, or `{"systemMessage":…}`, a line for the user.
+  - **Exit status:** always 0, even for a usage mistake, because Claude Code treats exit 2 as a blocking error. Problems come back as a `systemMessage`.
+  - **Input:** stdin is the harness event, and fields beyond those the runner reads are allowed. `decide schema hook` prints the schema.
+  - **Dormant:** unless the pack is enabled in the repo and the repo has consent, it prints `{}`, sends nothing and writes nothing.
+  - **Fail open:** once active, every failure allows the stop with the reason in a `systemMessage`.
+- **`doctor` gains a `guard` check.** It gives an advisory warning when a pack is enabled without consent.

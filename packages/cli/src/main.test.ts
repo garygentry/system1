@@ -329,6 +329,36 @@ describe("decide ask", () => {
   })
 })
 
+describe("decide hook", () => {
+  it("prints the harness's JSON, never the envelope, and always exits 0", async () => {
+    const { io, out, cwd } = rig()
+    const stop = JSON.stringify({ hook_event_name: "Stop", session_id: "s1", cwd })
+    expect(
+      await main(["hook", "done-check", "--harness", "claude"], { ...io, readStdin: () => stop }),
+    ).toBe(0)
+    expect(out.at(-1)).toBe("{}")
+    expect(await main(["hook"], io)).toBe(0)
+    expect(JSON.parse(out.at(-1) ?? "")).toEqual({
+      systemMessage: expect.stringMatching(/name a guard pack/),
+    })
+    expect(await main(["hook", "done-check", "--harness", "pi"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/--harness must be claude or codex/)
+    expect(await main(["hook", "done-check", "--nope"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/systemMessage/)
+    expect(await main(["hook", "done-check"], { ...io, readStdin: () => "not json" })).toBe(0)
+    expect(out.at(-1)).toBe("{}")
+  })
+
+  it("speaks up for an enabled pack given an unreadable event", async () => {
+    const { io, out } = rig({
+      ".system1/config.yaml":
+        "egress:\n  consent: { granted: true }\nguard:\n  packs:\n    done-check:\n      enabled: true\n",
+    })
+    expect(await main(["hook", "done-check"], { ...io, readStdin: () => "not json" })).toBe(0)
+    expect(out.at(-1)).toMatch(/not checked: the harness sent an unexpected event/)
+  })
+})
+
 describe("decide guard", () => {
   const read = (cwd: string) => readFileSync(join(cwd, ".system1/config.yaml"), "utf8")
 

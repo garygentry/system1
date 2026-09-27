@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest"
 import { DECIDE_OPTIONS } from "../packages/cli/src/args.js"
 import { CONFIG_OPTIONS } from "../packages/cli/src/commands/config.js"
 import { GUARD_OPTIONS } from "../packages/cli/src/commands/guard.js"
+import { HOOK_OPTIONS } from "../packages/cli/src/commands/hook.js"
 import { USAGE_OPTIONS } from "../packages/cli/src/commands/misc.js"
 import { OPPORTUNITIES_OPTIONS } from "../packages/cli/src/commands/opportunities.js"
 import { ROUTE_OPTIONS } from "../packages/cli/src/commands/route.js"
@@ -67,6 +68,7 @@ describe("docs/cli.md", () => {
       ...Object.keys(SPEC_OPTIONS),
       ...Object.keys(CONFIG_OPTIONS),
       ...Object.keys(GUARD_OPTIONS),
+      ...Object.keys(HOOK_OPTIONS),
       ...Object.keys(USAGE_OPTIONS),
       ...Object.keys(ROUTE_OPTIONS),
       ...Object.keys(OPPORTUNITIES_OPTIONS),
