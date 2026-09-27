@@ -30,6 +30,8 @@ export interface PrepareInput {
    * wants this; `ask`, which has one item, keeps the error (`throw`, the default).
    */
   oversize?: "throw" | "skip"
+  /** Aborts reading in progress (a guard hook's deadline). */
+  signal?: AbortSignal
 }
 
 export interface Prepared {
@@ -55,6 +57,7 @@ export async function prepare(input: PrepareInput): Promise<Prepared> {
     cwd: input.cwd,
     ...(input.maxFileBytes ? { maxFileBytes: input.maxFileBytes } : {}),
     ...(input.allowOutside ? { allowOutside: true } : {}),
+    ...(input.signal ? { signal: input.signal } : {}),
     ...(input.filter?.length ? { filter: input.filter, withhold: input.exclude ?? [] } : {}),
   })
 

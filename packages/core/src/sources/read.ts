@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process"
+import { execFile, execFileSync } from "node:child_process"
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs"
 import { isAbsolute, relative, resolve } from "node:path"
 import { glob } from "tinyglobby"
@@ -22,6 +22,8 @@ export interface ReadOptions {
    * paths to `prepare()`, so they are reported as `excluded`, never `filtered`.
    */
   withhold?: readonly string[]
+  /** Aborts a git read in progress: a guard hook's deadline. */
+  signal?: AbortSignal
   /**
    * Allow content from outside `cwd`. Off by default: consent is given per
    * repo, so a path (or a symlink) that resolves elsewhere is withheld.
@@ -97,7 +99,7 @@ async function readSource(spec: SourceSpec, options: ReadOptions): Promise<ReadR
     case "stdin":
       return { documents: [{ id: "stdin", kind: "text", text: spec.text }], skipped: [] }
     case "file":
-      return readFiles([spec.path], options, spec.range)
+      return readFiles([spec.path], options, spec.range, spec.optional)
     case "glob":
       return readGlob(spec.patterns, options)
     case "jsonl":
@@ -125,13 +127,19 @@ export function parseFileRef(ref: string): { path: string; range?: LineRange } {
   return { path: match[1], range: { start, end } }
 }
 
-function readFiles(paths: readonly string[], options: ReadOptions, range?: LineRange): ReadResult {
+function readFiles(
+  paths: readonly string[],
+  options: ReadOptions,
+  range?: LineRange,
+  optional = false,
+): ReadResult {
   const documents: Document[] = []
   const skipped: Skipped[] = []
   const limit = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES
   for (const path of paths) {
     const { absolute, display: rel, real, outside } = resolvePath(options.cwd, path)
     if (!existsSync(absolute) || !statSync(absolute).isFile()) {
+      if (optional) continue
       throw new DecisionsError("source-error", `No such file: ${rel}`, { path: rel })
     }
     if (outside && !options.allowOutside) {
@@ -280,27 +288,35 @@ function readJsonl(path: string, options: ReadOptions): ReadResult {
 }
 
 /** One document per file in the diff, text starting at its `diff --git` header. */
-function readDiff(
+async function readDiff(
   spec: Extract<SourceSpec, { kind: "diff" }>,
   options: ReadOptions,
-): { documents: Document[]; skipped: Skipped[] } {
+): Promise<{ documents: Document[]; skipped: Skipped[] }> {
   if (spec.range?.startsWith("-")) {
     throw new DecisionsError("invalid-request", `Invalid diff range "${spec.range}"`)
   }
   const args = ["-C", options.cwd, "diff", "--no-color", "--no-ext-diff", "--unified=3"]
   if (spec.staged) args.push("--cached")
   args.push(spec.range ?? "HEAD", "--", ...(spec.paths ?? []))
-  let out: string
-  try {
-    out = execFileSync("git", args, {
-      encoding: "utf8",
-      maxBuffer: 64 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "pipe"],
-    })
-  } catch (error) {
-    const stderr = String((error as { stderr?: unknown }).stderr ?? error).trim()
-    throw new DecisionsError("source-error", `git diff failed: ${stderr}`)
-  }
+  // Asynchronous, so a caller's deadline (a guard hook's `signal`) can stop it.
+  const out = await new Promise<string>((resolve, reject) => {
+    execFile(
+      "git",
+      args,
+      {
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        ...(options.signal ? { signal: options.signal } : {}),
+      },
+      (error, stdout, stderr) => {
+        if (!error) return resolve(stdout)
+        if (error.name === "AbortError") return reject(error)
+        reject(
+          new DecisionsError("source-error", `git diff failed: ${String(stderr || error).trim()}`),
+        )
+      },
+    )
+  })
   return splitDiffByFile(out)
 }
 

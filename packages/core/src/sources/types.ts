@@ -12,7 +12,8 @@ export type SourceSpec =
   | { kind: "text"; text: string; id?: string }
   /** Content the caller already read from stdin. */
   | { kind: "stdin"; text: string }
-  | { kind: "file"; path: string; range?: LineRange }
+  /** `optional`: a file that no longer exists is left out rather than an error. */
+  | { kind: "file"; path: string; range?: LineRange; optional?: boolean }
   | { kind: "glob"; patterns: string[] }
   | { kind: "jsonl"; path: string }
   /**
