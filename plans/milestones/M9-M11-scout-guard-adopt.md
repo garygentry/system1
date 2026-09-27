@@ -317,6 +317,19 @@
     - smoke can't run the Codex hook headless without the bypass flag.
 - **Still to check in §4:** whether a Codex hook command has network. The spike's hook needed none, and the model's shell has none in the default sandbox.
 
+### M10 live proof: done-check in a real Claude session (2026-09-27)
+
+This used a throwaway fixture under `~/.cache/system1-e2e`, running headless `claude -p` with the plugin from the checkout and a live key. The `TASK.md` had two judgement criteria: `greet` returns the greeting, and the README documents `greet` with an example.
+
+- **First run:** Claude implemented `greet` only, as told. done-check allowed the stop with "1 of 2 met, 1 not settled", which was a miss.
+  - Cause 1: the README wasn't in the diff, so the model couldn't see it. **Fix:** files a criterion names are now sent whole, as they are now.
+  - Cause 2: the judgeable question ("…from the change shown alone, without … knowing what happened outside it") made the model hedge (0.44).
+  - Seven criteria were probed live to compare wordings. "Could a reviewer decide whether this criterion holds just by reading the text shown?" scored judgeable criteria 0.66–0.95 and unjudgeable ones 0.03–0.11. **Fix:** that wording, with a provisional judgeable bar of 0.7 (review raised it from 0.6 for margin). The met bar stays at ≤ 0.2. §8 fits both.
+- **After the fix, work not done:** the Stop was **blocked once**, naming the README criterion. Claude replied that the user's "only edit src/greet.ts" overrode it and offered to add the docs, and the second stop was allowed.
+- **After the fix, work done:** "2 of 2 criteria met", allowed.
+- **After the review fixes:** named files are context, not change, capped at three per criterion, ranked path > name > stem, left out when too large, and matched in one pass. The not-done run still blocked at the 0.7 bar.
+- **Cost:** one call per check, about $0.00003; the fully done session cost $0.000035 in total. Every call was ledgered as `guard:done-check` under Claude's session id.
+
 ### M9 pre-check: does scout find anything? (2026-09-24, before any M9 code)
 
 **How it ran.** Draft Mode A signal questions ran as an ad-hoc `--questions` file through the shipped 0.3.2 `decide many`, one item per file, with no prefilter.

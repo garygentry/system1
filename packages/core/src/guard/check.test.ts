@@ -332,6 +332,44 @@ describe("done-check decisions", () => {
     })
   })
 
+  it("never judges a session that changed nothing, even when a criterion names a file", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n", { "README.md": "# x\n" })
+    execFileSync("git", ["-C", dir, "add", "-A"])
+    execFileSync("git", [
+      "-C",
+      dir,
+      "-c",
+      "user.name=t",
+      "-c",
+      "user.email=t@t",
+      "commit",
+      "-qm",
+      "task",
+    ])
+    expect(await stop(dir, fetch, {}, () => {})).toEqual({})
+    expect(calls).toHaveLength(0)
+  })
+
+  it("shows a named file whole, so work not done can be judged", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n", { "README.md": "# greeter\n" })
+    const out = await stop(dir, fetch)
+    expect(out).toMatchObject({ decision: "block" })
+    expect(calls[0]?.state).toContain("# greeter")
+  })
+
+  it("leaves out a named file too large to show, and still blocks on the rest", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- CHANGELOG.md has an entry [met]\n- Errors are logged [unmet]\n", {
+      "CHANGELOG.md": `${"- an old entry\n".repeat(60_000)}`,
+    })
+    const out = await stop(dir, fetch)
+    expect(out).toMatchObject({ decision: "block" })
+    expect((out as { reason: string }).reason).toContain("too large to show whole: CHANGELOG.md")
+    expect(calls[0]?.state).not.toContain("an old entry")
+  })
+
   it("fails open without a key", async () => {
     const { fetch } = provider()
     const dir = repo("- Errors are logged [met]\n")

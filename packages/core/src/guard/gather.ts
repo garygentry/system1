@@ -34,6 +34,55 @@ function listed(out: string): string[] {
     .filter((p) => p && !p.startsWith(".system1/") && !/(^|\/)node_modules(\/|$)/.test(p))
 }
 
+/** The most whole files the criteria can pull in by naming them. */
+export const MAX_NAMED_FILES = 10
+/** …and at most this many for any one criterion. */
+export const MAX_NAMED_PER_CRITERION = 3
+
+/**
+ * Tracked files a criterion names: by path (`src/greet.ts`), by file name
+ * (`greet.ts`, `README.md`), or by a distinctive stem (`README`, `CHANGELOG`,
+ * five characters or more, as a whole word). Case-insensitive; in the order
+ * the criteria name them.
+ */
+export function namedFiles(criteria: readonly Criterion[], tracked: readonly string[]): string[] {
+  // Each path's name and stem once, and each criterion's tokens once: this runs
+  // inside the hook's latency budget, over every tracked file.
+  const byName = new Map<string, string[]>()
+  const byStem = new Map<string, string[]>()
+  const add = (map: Map<string, string[]>, key: string, path: string) =>
+    map.set(key, [...(map.get(key) ?? []), path])
+  for (const path of tracked) {
+    const lower = path.toLowerCase()
+    const name = lower.slice(lower.lastIndexOf("/") + 1)
+    add(byName, name, path)
+    const stem = name.includes(".") ? name.slice(0, name.lastIndexOf(".")) : name
+    if (stem.length >= 5 && stem !== name) add(byStem, stem, path)
+  }
+  const out: string[] = []
+  for (const c of criteria) {
+    const text = c.text.toLowerCase()
+    const tokens = new Set(
+      text.split(/[^a-z0-9_./-]+/).flatMap((t) => [t, t.replace(/[./-]+$/, "")]),
+    )
+    const words = new Set(text.split(/[^a-z0-9_-]+/))
+    // Ranked: a path named in full, then a file name, then a distinctive stem;
+    // a few per criterion, so one common word can't crowd out the rest.
+    const byPath = [...tokens]
+      .filter((t) => t.includes("/"))
+      .flatMap((t) => tracked.filter((p) => p.toLowerCase() === t))
+    const byFile = [...tokens].flatMap((t) => byName.get(t) ?? [])
+    const stems = [...words].flatMap((w) => {
+      const hits = byStem.get(w) ?? []
+      return hits.length <= 2 ? hits : [] // a stem many files share names none of them
+    })
+    const picked = [...new Set([...byPath, ...byFile, ...stems])].filter((p) => !out.includes(p))
+    out.push(...picked.slice(0, MAX_NAMED_PER_CRITERION))
+    if (out.length >= MAX_NAMED_FILES) return out.slice(0, MAX_NAMED_FILES)
+  }
+  return out
+}
+
 /**
  * Ignored files (not whole ignored directories, such as build output) changed
  * since the session started. They are never read: an ignore rule is the
@@ -72,6 +121,11 @@ export interface Gathered {
   notes: string[]
   /** The change, for `prepare()`. */
   sources: SourceSpec[]
+  /**
+   * Files the criteria name, whole, for context. Not part of the change: a
+   * session that changed nothing is never judged just because a file was named.
+   */
+  context: SourceSpec[]
 }
 
 /**
@@ -204,6 +258,7 @@ export async function gather(ctx: PackContext, session: GuardSession): Promise<G
   }
 
   const sources: SourceSpec[] = []
+  const context: SourceSpec[] = []
   if (criteria.length > 0) {
     const git_ = (args: string[]) => git(ctx.repoRoot, args, { signal: ctx.signal })
     let range: string
@@ -254,6 +309,16 @@ export async function gather(ctx: PackContext, session: GuardSession): Promise<G
         `ignored files changed during the session and weren't checked: ${shown}${hidden.length > 5 ? ` and ${hidden.length - 5} more` : ""}`,
       )
     }
+    // Files a criterion names ("README documents…", "src/greet.ts returns…"),
+    // whole and as they are now: "not done" leaves no diff, so without them
+    // the model couldn't judge a criterion about work that wasn't done.
+    const included = new Set(untracked.slice(0, MAX_UNTRACKED))
+    const tracked = listed(await git_(["ls-files", "-z"]))
+    for (const path of namedFiles(criteria, tracked)) {
+      if (included.has(path) || !isRegularFile(ctx.repoRoot, path)) continue
+      included.add(path)
+      context.push({ kind: "file", path, optional: true })
+    }
     for (const configured of ctx.pack.evidence) {
       const path = repoPath(ctx.repoRoot, configured)
       if (path && existsSync(resolve(ctx.repoRoot, path)) && isRegularFile(ctx.repoRoot, path)) {
@@ -263,5 +328,5 @@ export async function gather(ctx: PackContext, session: GuardSession): Promise<G
       }
     }
   }
-  return { criteria, checkYourself, notes, sources }
+  return { criteria, checkYourself, notes, sources, context }
 }

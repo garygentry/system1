@@ -5,7 +5,14 @@ import { describe, expect, it } from "vitest"
 import { readSources } from "../sources/read.js"
 import { useTempDirs } from "../testkit/tmp.js"
 import { type PackContext, snapshotCriteria } from "./done-check.js"
-import { EMPTY_TREE, gather, MAX_CRITERIA, parseBullets } from "./gather.js"
+import {
+  EMPTY_TREE,
+  gather,
+  MAX_CRITERIA,
+  MAX_NAMED_FILES,
+  namedFiles,
+  parseBullets,
+} from "./gather.js"
 import { PACKS } from "./packs.js"
 import type { GuardSession } from "./state.js"
 
@@ -261,6 +268,7 @@ describe("gather", () => {
       checkYourself: [],
       notes: [],
       sources: [],
+      context: [],
     })
   })
 
@@ -278,5 +286,71 @@ describe("gather", () => {
     expect(got.checkYourself.filter((c) => /limit/.test(c.why))).toHaveLength(2)
     expect(got.sources).toContainEqual({ kind: "file", path: "test.log", optional: true })
     expect(got.notes).toContain("evidence file missing.log was not found")
+  })
+})
+
+describe("namedFiles", () => {
+  const c = (text: string) => ({ text, file: "TASK.md", line: 1 })
+  const tracked = ["README.md", "src/greet.ts", "src/index.ts", "docs/CHANGELOG.md", "src/util.ts"]
+
+  it("finds files by path, by name, or by a distinctive stem", () => {
+    expect(
+      namedFiles(
+        [
+          c("`greet` in src/greet.ts returns the greeting"),
+          c("The README documents it"),
+          c("changelog.md has an entry"),
+        ],
+        tracked,
+      ),
+    ).toEqual(["src/greet.ts", "README.md", "docs/CHANGELOG.md"])
+  })
+
+  it("ignores short stems and words inside other words", () => {
+    expect(
+      namedFiles([c("The util helpers are indexed and the readmes updated")], tracked),
+    ).toEqual([])
+  })
+
+  it("takes a few per criterion, and stops at the overall limit", () => {
+    const many = Array.from({ length: 40 }, (_, i) => `docs/page${i}.md`)
+    expect(namedFiles([c(many.join(" "))], many)).toHaveLength(3)
+    const criteria = Array.from({ length: 10 }, (_, i) => c(many.slice(i * 4, i * 4 + 4).join(" ")))
+    expect(namedFiles(criteria, many)).toHaveLength(MAX_NAMED_FILES)
+  })
+
+  it("ranks a path over a common stem, and ignores a stem many files share", () => {
+    const pkgs = Array.from({ length: 12 }, (_, i) => `pkg${i}/types.ts`)
+    expect(
+      namedFiles(
+        [c("Types are exported"), c("src/greet.ts returns the greeting")],
+        [...pkgs, "src/greet.ts"],
+      ),
+    ).toEqual(["src/greet.ts"])
+  })
+
+  it("is fast on a large repo", () => {
+    const tracked = Array.from({ length: 100_000 }, (_, i) => `src/dir${i % 500}/file${i}.ts`)
+    const criteria = Array.from({ length: 30 }, (_, i) =>
+      c(`Criterion ${i} about src/dir1/file${i}.ts and errors`),
+    )
+    const started = performance.now()
+    namedFiles(criteria, tracked)
+    expect(performance.now() - started).toBeLessThan(1000)
+  })
+})
+
+describe("gather: named files", () => {
+  it("shows a file a criterion names even when the session didn't change it", async () => {
+    const dir = repo({
+      "README.md": "# x\n",
+      "TASK.md": "- The README documents greet\n",
+      "src/a.ts": "x",
+    })
+    const base = commit(dir)
+    writeFileSync(join(dir, "src/a.ts"), "y")
+    const got = await gather(ctx(dir), session(dir, base))
+    expect(got.context).toEqual([{ kind: "file", path: "README.md", optional: true }])
+    expect(got.sources).not.toContainEqual(expect.objectContaining({ path: "README.md" }))
   })
 })
