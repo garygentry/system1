@@ -1,16 +1,6 @@
 import { createHash } from "node:crypto"
-import {
-  closeSync,
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs"
-import { dirname, join } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { join } from "node:path"
 import { type Static, Type } from "typebox"
 import { Value } from "typebox/value"
 import { stateDir } from "../config/load.js"
@@ -18,6 +8,7 @@ import { DecisionsError } from "../errors.js"
 import { QuestionSchema } from "../model/schema.js"
 import { assertQuestionSet } from "../model/validate.js"
 import { type Op, tokenizeFilter, tokenizeSort } from "../project/project.js"
+import { withFileLock, writeJsonAtomic } from "../store/file.js"
 
 /**
  * The scout backlog: places where an LLM call, a hand-written heuristic or an
@@ -248,41 +239,25 @@ const LOCK_STALE_MS = 30_000
  * A lock older than 30 s is from a crashed run and is taken over.
  */
 export function withBacklogLock<T>(file: string, body: () => T): T {
-  mkdirSync(dirname(file), { recursive: true })
-  const lock = `${file}.lock`
-  const deadline = Date.now() + LOCK_WAIT_MS
-  for (;;) {
-    try {
-      closeSync(openSync(lock, "wx"))
-      break
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error
-      try {
-        if (Date.now() - statSync(lock).mtimeMs > LOCK_STALE_MS) rmSync(lock, { force: true })
-      } catch {}
-      if (Date.now() > deadline) {
-        throw new DecisionsError(
+  return withFileLock(
+    file,
+    {
+      waitMs: LOCK_WAIT_MS,
+      staleMs: LOCK_STALE_MS,
+      busy: (lock) =>
+        new DecisionsError(
           "invalid-request",
           `${file} is locked by another \`decide opportunities add\` (${lock}). Retry, or delete the lock file if no add is running.`,
           { file, lock },
-        )
-      }
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25)
-    }
-  }
-  try {
-    return body()
-  } finally {
-    rmSync(lock, { force: true })
-  }
+        ),
+    },
+    body,
+  )
 }
 
 /** Written whole, through a temp file, so a crash never leaves half a backlog. */
 export function writeBacklog(file: string, backlog: Backlog): void {
-  mkdirSync(dirname(file), { recursive: true })
-  const tmp = `${file}.${process.pid}.tmp`
-  writeFileSync(tmp, `${JSON.stringify(backlog, null, 2)}\n`)
-  renameSync(tmp, file)
+  writeJsonAtomic(file, backlog)
 }
 
 export interface MergeResult {

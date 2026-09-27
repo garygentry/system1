@@ -28,6 +28,14 @@ export type { FixtureRecord } from "./fixtures/store.js"
 export { canonicalJson, FIXTURE_VERSION, FixtureStore, fixtureKey } from "./fixtures/store.js"
 export type { GuardConfig, GuardPackConfig, PackName } from "./guard/packs.js"
 export { isPackName, PACK_NAMES, PACKS } from "./guard/packs.js"
+export type { GuardSession, GuardState } from "./guard/state.js"
+export {
+  GUARD_STATE_FORMAT,
+  guardStatePath,
+  guardStateProblems,
+  readGuardState,
+  updateGuardState,
+} from "./guard/state.js"
 export {
   confidenceOf,
   DEFAULT_UNDECIDED_FLOOR,
