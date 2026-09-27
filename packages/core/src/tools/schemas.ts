@@ -147,6 +147,26 @@ export const RouteInput = Type.Object(
   strict,
 )
 
+/**
+ * A harness hook event, as Claude Code and Codex send it to `decide hook`.
+ * Only the fields the runner reads are described; harnesses add others.
+ */
+export const HookEvent = Type.Object(
+  {
+    hook_event_name: Type.String({ minLength: 1, description: "SessionStart or Stop" }),
+    session_id: Type.String({ minLength: 1 }),
+    cwd: Type.String({ minLength: 1 }),
+    source: Type.Optional(
+      Type.String({ description: "SessionStart: startup, resume, clear, compact" }),
+    ),
+    stop_hook_active: Type.Optional(Type.Boolean()),
+    transcript_path: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    turn_id: Type.Optional(Type.String({ description: "Codex only" })),
+    last_assistant_message: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  },
+  { additionalProperties: true },
+)
+
 export type AskInput = Static<typeof AskInput>
 export type ManyInput = Static<typeof ManyInput>
 export type UsageInput = Static<typeof UsageInput>
@@ -166,5 +186,6 @@ export const TOOL_SCHEMAS = {
   "opportunities-list": OpportunitiesListInput,
   "opportunities-check": OpportunitiesCheckInput,
   route: RouteInput,
+  hook: HookEvent,
 } as const
 export type ToolName = keyof typeof TOOL_SCHEMAS

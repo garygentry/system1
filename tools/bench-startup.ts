@@ -39,6 +39,13 @@ const cases: { name: string; args: string[]; gated: boolean; input?: string }[] 
     gated: true,
     input: JSON.stringify({ prompt: "Is every item in TASK.md done? Check it against the diff." }),
   },
+  // The guard hooks run this at every Stop and SessionStart; dormant, it must stay cheap.
+  {
+    name: "decide hook (dormant)",
+    args: [BUNDLE, "hook", "done-check", "--harness", "claude"],
+    gated: true,
+    input: JSON.stringify({ hook_event_name: "Stop", session_id: "bench", cwd: ROOT }),
+  },
   {
     name: "decide many --dry-run",
     args: [
