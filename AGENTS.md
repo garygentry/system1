@@ -65,3 +65,15 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
 - **The Codex `prefix_rule` covers only commands that start with `decide`:** `a && decide …` is covered, but `… | decide …` stays offline. So skills pass content with `--file`, not pipes.
 - **Inside the Codex Linux sandbox,** a child process spawned by node exits 0 with empty stdout (even `node -e "console.log(1)"`).
 - **Agents read `AGENTS.md` from parent directories.** Pi does so even from inside a nested git repo. Codex did from a workdir that wasn't a git repo. Smoke and eval workdirs therefore live outside this repo, under `~/.cache/system1-{smoke,evals}`.
+
+## Harness notes (verified in M10, 2026-09-27, Codex 0.155.1)
+
+- **Codex plugins can ship hooks,** and a Stop hook can block. The manifest names the file with `"hooks": "./hooks.json"`, and the format is Claude's: `{"hooks":{"Stop":[{"hooks":[{"type":"command","command":…,"timeout":…}]}]}}`.
+  - **Stop input:** `session_id`, `turn_id`, `cwd`, `transcript_path`, `stop_hook_active` and `last_assistant_message`.
+  - **Output:** `{"decision":"block","reason":…}` makes the agent continue with `reason` as its instruction. On the next stop, `stop_hook_active` is `true`. A `systemMessage` is shown to the user as "↳ Hook · …".
+  - `SessionStart` also fires, with `source: "startup"`.
+  - Hook commands get `PLUGIN_ROOT`/`PLUGIN_DATA` and `CLAUDE_PLUGIN_ROOT`/`CLAUDE_PLUGIN_DATA`, and `${PLUGIN_ROOT}` is substituted. So one hooks file can serve both harnesses.
+- **Plugin hooks need the user's trust.** It is stored per hook in `$CODEX_HOME/config.toml`, as `[hooks.state."<plugin>@<marketplace>:<file>:<event>:<i>:<j>"] trusted_hash = "sha256:…"`. Changing a hook's entry presumably asks for trust again.
+  - An untrusted hook is skipped **silently**, and headless `codex exec` never asks for trust.
+  - Interactive Codex recorded trust on first use.
+  - `--dangerously-bypass-hook-trust` exists; don't use it in smoke or tests.
