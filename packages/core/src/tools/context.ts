@@ -207,6 +207,7 @@ export function deciderFor(
   ctx: ToolContext,
   profile: ModelProfile,
   mode: DecideMode = "auto",
+  extra: { tag?: string } = {},
 ): Decider {
   const { config } = ctx
   const dir = stateDir(config.repoRoot)
@@ -228,6 +229,7 @@ export function deciderFor(
     ledger: new SpendLedger(join(dir, "usage.jsonl")),
     mode: config.replay ? "replay" : mode,
     ...(config.session ? { session: config.session } : {}),
+    ...(extra.tag ? { tag: extra.tag } : {}),
   })
 }
 

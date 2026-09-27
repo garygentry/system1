@@ -325,11 +325,22 @@ export function splitDiffByFile(diff: string): { documents: Document[]; skipped:
   const documents: Document[] = []
   const skipped: Skipped[] = []
   for (const text of sections) {
-    const raw =
-      /^\+\+\+ (?:b\/)?(.+)$/m.exec(text)?.[1] ?? /^diff --git a\/.+ b\/(.+)$/m.exec(text)?.[1]
-    // Git quotes the whole side, including its `b/` prefix: "b/secrets/é.txt".
-    const decoded = raw === undefined ? undefined : unquoteGitPath(raw.trim())
-    const path = decoded?.replace(/^b\//, "")
+    // The new side names the file, except for a deletion (`+++ /dev/null`),
+    // where the old side does. Git quotes a whole side, prefix included:
+    // "b/secrets/é.txt". The first `+++`/`---` is the header: hunks come after.
+    const side = (marker: "+++" | "---", prefix: "a" | "b") => {
+      const found = new RegExp(`^\\${marker[0]}\\${marker[1]}\\${marker[2]} (.+)$`, "m").exec(
+        text,
+      )?.[1]
+      if (found === undefined || found.trim() === "/dev/null") return undefined
+      return unquoteGitPath(found.trim())?.replace(new RegExp(`^${prefix}/`), "")
+    }
+    const header = /^diff --git a\/.+ b\/(.+)$/m.exec(text)?.[1]
+    const raw = header ?? /^\+\+\+ (.+)$/m.exec(text)?.[1]
+    const path =
+      side("+++", "b") ??
+      side("---", "a") ??
+      (header === undefined ? undefined : unquoteGitPath(header.trim())?.replace(/^b\//, ""))
     if (path === undefined || path === "/dev/null") {
       // Without a path, excludes cannot be applied, so it is never sent.
       skipped.push({

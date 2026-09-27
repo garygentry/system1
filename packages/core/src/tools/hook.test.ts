@@ -196,6 +196,7 @@ describe("decide hook: sessions and deadlines", () => {
       repoRoot: dir,
       sessionKey: "claude:s1",
       ledgerSession: "claude:s1",
+      tool: { cwd: dir, env: {} },
       harness: "claude" as const,
       pack: { enabled: true, latencyMs: 5000, maxUsdPerSession: 0.01, criteria: [], evidence: [] },
       event: { hook_event_name: "Stop", session_id: "s1", cwd: dir },
@@ -214,7 +215,7 @@ describe("failOpenReason", () => {
     ["provider-unreachable", /provider failed/],
     ["malformed-response", /provider failed/],
     ["replay-miss", /no recorded answer/],
-    ["budget-exceeded", /spend cap/],
+    ["budget-exceeded", /^detail$/],
     ["state-too-large", /too large to send/],
     ["source-error", /git failed/],
   ] as const)("%s", (code, message) => {

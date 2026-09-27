@@ -9,6 +9,9 @@
 import { createHash } from "node:crypto"
 import { closeSync, constants, fstatSync, openSync, readSync, realpathSync } from "node:fs"
 import { dirname, isAbsolute, relative, resolve } from "node:path"
+import type { ContextOptions } from "../tools/context.js"
+import { decideDone } from "./check.js"
+import { gather } from "./gather.js"
 import { headCommit } from "./git.js"
 import type { GuardPackConfig } from "./packs.js"
 import {
@@ -27,6 +30,8 @@ export interface PackContext {
   sessionKey: string
   /** The ledger's session for this pack's calls (`SYSTEM1_SESSION`, else `sessionKey`). */
   ledgerSession: string
+  /** Builds the full tool context (profiles, transport) when a pack needs to decide. */
+  tool: ContextOptions
   harness: "claude" | "codex"
   pack: GuardPackConfig
   event: HookEvent
@@ -176,8 +181,42 @@ export async function ensureSession(ctx: PackContext): Promise<GuardSession> {
   )
 }
 
-/** Stop. The check itself arrives with M10 PR 3–4; until then this allows. */
+/**
+ * Stop: gather the criteria and the change, ask the model, and block once if
+ * a criterion is confidently unmet. No criteria means silence and no egress;
+ * an unchanged re-stop sends nothing.
+ */
 export async function stop(ctx: PackContext): Promise<HookOutput> {
-  await ensureSession(ctx)
-  return {}
+  const session = await ensureSession(ctx)
+  const gathered = await gather(ctx, session)
+  if (gathered.criteria.length === 0) return {}
+  const result = await decideDone(ctx, gathered, session.last?.hash)
+  assertLive(ctx)
+  if (result.hash && result.outcome !== "skipped") {
+    const hash = result.hash
+    updateGuardState(
+      guardStatePath(ctx.repoRoot),
+      (state) => {
+        const current = state.sessions[ctx.sessionKey]
+        if (!current) return { result: undefined }
+        const at = ctx.now.toISOString()
+        return {
+          state: {
+            ...state,
+            sessions: {
+              ...state.sessions,
+              [ctx.sessionKey]: {
+                ...current,
+                updatedAt: at,
+                last: { hash, at, outcome: result.outcome },
+              },
+            },
+          },
+          result: undefined,
+        }
+      },
+      { now: ctx.now },
+    )
+  }
+  return result.output
 }

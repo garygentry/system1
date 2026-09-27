@@ -2,7 +2,7 @@ import { symlinkSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { gitRepo, useTempDirs, writeTree } from "../testkit/tmp.js"
-import { parseFileRef, readSources } from "./read.js"
+import { parseFileRef, readSources, splitDiffByFile } from "./read.js"
 
 const temp = useTempDirs()
 
@@ -171,5 +171,36 @@ describe("readSources", () => {
       expect(r.skipped).toEqual([])
       expect(r.documents.map((d) => d.path)).toEqual(["src/a.ts"])
     })
+  })
+})
+
+describe("splitDiffByFile: deletions", () => {
+  it("names a deleted file from its old side, not /dev/null", () => {
+    const diff = [
+      "diff --git a/src/legacy.ts b/src/legacy.ts",
+      "deleted file mode 100644",
+      "index 1234567..0000000",
+      "--- a/src/legacy.ts",
+      "+++ /dev/null",
+      "@@ -1 +0,0 @@",
+      "-export const legacy = 1",
+      "",
+    ].join("\n")
+    const { documents, skipped } = splitDiffByFile(diff)
+    expect(skipped).toEqual([])
+    expect(documents.map((d) => d.path)).toEqual(["src/legacy.ts"])
+  })
+
+  it("handles a quoted deleted path, and a removed line that starts with --", () => {
+    const diff = [
+      'diff --git "a/sp ace/\\303\\251.ts" "b/sp ace/\\303\\251.ts"',
+      "deleted file mode 100644",
+      '--- "a/sp ace/\\303\\251.ts"',
+      "+++ /dev/null",
+      "@@ -1 +0,0 @@",
+      "--- a comment line",
+      "",
+    ].join("\n")
+    expect(splitDiffByFile(diff).documents.map((d) => d.path)).toEqual(["sp ace/é.ts"])
   })
 })
