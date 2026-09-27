@@ -22,13 +22,23 @@ import type { HookOutput, PackContext } from "./done-check.js"
 import type { Criterion, Gathered, SelfCheck } from "./gather.js"
 
 /**
- * Provisional, fitted on the labelled stop-event set in M10 §8. A stop blocks
- * only when judgeable >= 0.7 and met <= 0.2. The judgeable bar is lower than
- * the met one because the model hedges on "could this be decided?": in a live
- * probe (2026-09-27, n = 7) judgeable criteria scored 0.66–0.95 and
- * unjudgeable ones ("deployed", "users happy", "all tests pass") 0.03–0.11.
+ * Fitted on the labelled stop events in `tools/done-check-eval` (M10 §8,
+ * 2026-09-27): a stop blocks only when judgeable >= 0.5 and met <= 0.25.
+ * - Judgeable: the undecided floor already holds back answers in 0.425–0.575,
+ *   so the working bar is about 0.575. Unjudgeable criteria scored 0.05–0.08
+ *   (0.40 for "users find it clear", with met 0.67). In-sample, any bar from
+ *   0.3 to 0.7 fits alike. 0.5 was fixed before the holdout ran, and there it
+ *   caught a subtle unmet criterion (judgeable 0.575–0.7) that 0.7 misses.
+ * - Met: unmet criteria scored <= 0.23 and met ones >= 0.30. That margin is
+ *   thin, and its edge is one debatable `met` label.
  */
-export const DONE_CHECK_THRESHOLDS = { judgeable: 0.7, unmet: 0.8 } as const
+export const DONE_CHECK_THRESHOLDS: Thresholds = { judgeable: 0.5, unmet: 0.75 }
+
+/** A criterion blocks only when `judgeable >= judgeable` and `met <= 1 - unmet`. */
+export interface Thresholds {
+  readonly judgeable: number
+  readonly unmet: number
+}
 
 /** The ledger tag on every call this pack makes. */
 export const DONE_CHECK_TAG = "guard:done-check"
@@ -47,7 +57,9 @@ function questionsFor(c: Criterion, i: number): QuestionSet {
     [`j${i}`]: {
       type: "noul",
       instructions:
-        `Could a reviewer decide whether this criterion holds just by reading the text shown? ` +
+        `Is this criterion a claim about this repository's code, docs, tests or files, which ` +
+        `a reviewer could check by reading them, rather than about events or opinions outside ` +
+        `the repository? ` +
         `Criterion: ${JSON.stringify(c.text)}`,
     },
     [`m${i}`]: {
@@ -252,7 +264,7 @@ export async function decideDone(
     )
   }
 
-  const decider = deciderFor(tool, profile, "auto", { tag: DONE_CHECK_TAG })
+  const decider = deciderFor(tool, profile, ctx.mode ?? "auto", { tag: DONE_CHECK_TAG })
   const settled = await mapWithConcurrency(plan, config.concurrency, async (part) => {
     if (part.tooLarge)
       return part.criteria.map(({ c }) => ({ ...c, verdict: "not-checked" as const }))
@@ -290,7 +302,14 @@ function questionsOf(part: Part): QuestionSet {
   return Object.assign({}, ...part.criteria.map(({ c, i }) => questionsFor(c, i)))
 }
 
-function judge(c: Criterion, i: number, answers: Answers, undecided: string[]): CriterionResult {
+/** One criterion's verdict from its two answers. Exported for the §8 threshold fit. */
+export function judge(
+  c: Criterion,
+  i: number,
+  answers: Answers,
+  undecided: string[],
+  t: Thresholds = DONE_CHECK_THRESHOLDS,
+): CriterionResult {
   const p = (name: string) => {
     const a = answers[name]
     return a?.type === "noul" ? a.noul : undefined
@@ -303,15 +322,12 @@ function judge(c: Criterion, i: number, answers: Answers, undecided: string[]): 
     ...(met !== undefined ? { met } : {}),
   }
   if (judgeable === undefined || met === undefined) return { ...base, verdict: "undecided" }
-  if (undecided.includes(`j${i}`) || judgeable < DONE_CHECK_THRESHOLDS.judgeable) {
-    return {
-      ...base,
-      verdict: judgeable <= 1 - DONE_CHECK_THRESHOLDS.judgeable ? "unjudgeable" : "undecided",
-    }
+  if (undecided.includes(`j${i}`) || judgeable < t.judgeable) {
+    return { ...base, verdict: judgeable <= 1 - t.judgeable ? "unjudgeable" : "undecided" }
   }
   if (undecided.includes(`m${i}`)) return { ...base, verdict: "undecided" }
-  if (met <= 1 - DONE_CHECK_THRESHOLDS.unmet) return { ...base, verdict: "unmet" }
-  if (met >= DONE_CHECK_THRESHOLDS.unmet) return { ...base, verdict: "met" }
+  if (met <= 1 - t.unmet) return { ...base, verdict: "unmet" }
+  if (met >= t.unmet) return { ...base, verdict: "met" }
   return { ...base, verdict: "undecided" }
 }
 

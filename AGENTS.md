@@ -15,7 +15,7 @@ Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — th
 | `plugins/system1/{plugin.json,.claude-plugin,.codex-plugin,bin/decide,hooks/}` | **Generated**. `hooks/claude-hooks.json` is the Claude-only routing hook ([0018](plans/decisions/0018-claude-routing-hook.md)); tune it with `route:` in config |
 | `.claude-plugin/`, `.agents/plugins/` | **Generated** marketplaces (Claude Code, Codex) |
 | `catalog.yaml` | Source of truth for names, version, descriptions and npm scope |
-| `tools/generate.ts`, `tools/validate.ts`, `tools/smoke/`, `tools/evals/` | Generator, structural validator, headless harness smoke tests, skill routing evals |
+| `tools/generate.ts`, `tools/validate.ts`, `tools/smoke/`, `tools/evals/`, `tools/done-check-eval/` | Generator, structural validator, headless harness smoke tests, skill routing evals, done-check's labelled stop events |
 
 ## Rules
 
@@ -41,6 +41,7 @@ pnpm generate   # after editing catalog.yaml or the generator
 pnpm test:live  # one real decision call (~$0.00003); loads this repo's .env, skipped without a key
 pnpm smoke      # local only: drives real Claude/Codex/Pi sessions (spends their tokens)
 pnpm eval:routing [claude|codex|pi|all] [--repeat N]   # local only: does each skill load for the right prompts? (judge changes on --repeat 3+)
+pnpm eval:done-check [--holdout] [--record | --latency N | --fit]   # done-check's labelled stop events: replay (CI), re-record, live repeats, threshold sweep
 pnpm bench:startup   # decide startup overhead over bare node (target < 150 ms)
 pnpm dev:link | dev:unlink | dev:status   # Claude Code loads plugins/system1 from this checkout (docs/contributing/local-plugin.md)
 node packages/cli/dist/bundle/decide.mjs ping --format brief

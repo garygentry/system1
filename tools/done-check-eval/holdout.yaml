@@ -1,0 +1,273 @@
+# Holdout stop events for done-check (M10 §8). Written after the thresholds and
+# the judgeable wording were fitted on scenarios.yaml, and before these were
+# ever run, so their score is out of sample. Same format as scenarios.yaml.
+# Don't tune on them: when a change is fitted against these, write a new holdout.
+
+files:
+  store-clicks-done: &store-clicks-done |
+    import { makeSlug } from "./slug.js"
+
+    /** Links in memory, by slug, with how often each was followed. */
+    export class LinkStore {
+      private links = new Map<string, string>()
+      private counts = new Map<string, number>()
+
+      /** Store a URL and return its slug. */
+      put(url: string): string {
+        const slug = makeSlug(url)
+        this.links.set(slug, url)
+        return slug
+      }
+
+      /** The URL for a slug, or undefined. A hit counts as a click. */
+      get(slug: string): string | undefined {
+        const url = this.links.get(slug)
+        if (url !== undefined) this.counts.set(slug, (this.counts.get(slug) ?? 0) + 1)
+        return url
+      }
+
+      /** How many times a slug has been followed. */
+      clicks(slug: string): number {
+        return this.counts.get(slug) ?? 0
+      }
+    }
+  store-clicks-never-counted: &store-clicks-never-counted |
+    import { makeSlug } from "./slug.js"
+
+    /** Links in memory, by slug, with how often each was followed. */
+    export class LinkStore {
+      private links = new Map<string, string>()
+      private counts = new Map<string, number>()
+
+      /** Store a URL and return its slug. */
+      put(url: string): string {
+        const slug = makeSlug(url)
+        this.links.set(slug, url)
+        this.counts.set(slug, 0)
+        return slug
+      }
+
+      /** The URL for a slug, or undefined. */
+      get(slug: string): string | undefined {
+        return this.links.get(slug)
+      }
+
+      /** How many times a slug has been followed. */
+      clicks(slug: string): number {
+        return this.counts.get(slug) ?? 0
+      }
+    }
+  store-clicks-counts-misses: &store-clicks-counts-misses |
+    import { makeSlug } from "./slug.js"
+
+    /** Links in memory, by slug, with how often each was followed. */
+    export class LinkStore {
+      private links = new Map<string, string>()
+      private counts = new Map<string, number>()
+
+      /** Store a URL and return its slug. */
+      put(url: string): string {
+        const slug = makeSlug(url)
+        this.links.set(slug, url)
+        return slug
+      }
+
+      /** The URL for a slug, or undefined. Every lookup counts as a click. */
+      get(slug: string): string | undefined {
+        this.counts.set(slug, (this.counts.get(slug) ?? 0) + 1)
+        return this.links.get(slug)
+      }
+
+      /** How many times a slug has been followed. */
+      clicks(slug: string): number {
+        return this.counts.get(slug) ?? 0
+      }
+    }
+  readme-clicks: &readme-clicks |
+    # linkr
+
+    A tiny URL shortener: `POST /` with a URL returns a short slug, and `GET /<slug>`
+    redirects to it.
+
+    ## Usage
+
+    ```ts
+    import { LinkStore } from "./src/store.js"
+
+    const store = new LinkStore()
+    const slug = store.put("https://example.com/a/long/path")
+    store.get(slug) // "https://example.com/a/long/path"
+    ```
+
+    ## Click counts
+
+    Every successful `get` counts as a click. `store.clicks(slug)` returns the count so far.
+  server-no-store: &server-no-store |
+    import { createServer } from "node:http"
+    import { LinkStore } from "./store.js"
+
+    const store = new LinkStore()
+
+    export const server = createServer(async (req, res) => {
+      if (req.method === "POST" && req.url === "/") {
+        let body = ""
+        for await (const chunk of req) body += chunk
+        const slug = store.put(body.trim())
+        res.writeHead(201, { "content-type": "text/plain" }).end(slug)
+        return
+      }
+      const url = store.get((req.url ?? "/").slice(1))
+      if (!url) {
+        res.writeHead(404).end()
+        return
+      }
+      // Never cached: a cached redirect would skip the click count.
+      res.writeHead(302, { location: url, "cache-control": "no-store" }).end()
+    })
+  server-301: &server-301 |
+    import { createServer } from "node:http"
+    import { LinkStore } from "./store.js"
+
+    const store = new LinkStore()
+
+    export const server = createServer(async (req, res) => {
+      if (req.method === "POST" && req.url === "/") {
+        let body = ""
+        for await (const chunk of req) body += chunk
+        const slug = store.put(body.trim())
+        res.writeHead(201, { "content-type": "text/plain" }).end(slug)
+        return
+      }
+      const url = store.get((req.url ?? "/").slice(1))
+      if (!url) {
+        res.writeHead(404).end()
+        return
+      }
+      res.writeHead(301, { location: url, "cache-control": "no-store" }).end()
+    })
+
+scenarios:
+  - id: h-clicks-done
+    kind: completion
+    criteria:
+      intro: "# Task: count clicks"
+      items:
+        - { text: "Each successful `LinkStore.get` adds one to that slug's click count.", label: met }
+        - { text: "`LinkStore.clicks(slug)` returns the count, and 0 for a slug never followed.", label: met }
+        - { text: "The README explains click counts.", label: met }
+    change:
+      src/store.ts: *store-clicks-done
+      README.md: *readme-clicks
+
+  - id: h-clicks-no-readme
+    kind: completion
+    criteria:
+      intro: "# Task: count clicks"
+      items:
+        - { text: "Each successful `LinkStore.get` adds one to that slug's click count.", label: met }
+        - { text: "The README explains click counts.", label: unmet }
+    change:
+      src/store.ts: *store-clicks-done
+
+  - id: h-clicks-never-counted
+    kind: completion
+    criteria:
+      intro: "# Task: count clicks"
+      items:
+        - { text: "Each successful `LinkStore.get` adds one to that slug's click count.", label: unmet }
+        - { text: "`LinkStore.clicks(slug)` returns the count, and 0 for a slug never followed.", label: met }
+        - { text: "The README explains click counts.", label: met }
+    change:
+      src/store.ts: *store-clicks-never-counted
+      README.md: *readme-clicks
+
+  - id: h-clicks-counts-misses
+    about: subtle; a lookup of an unknown slug creates a count
+    kind: completion
+    criteria:
+      intro: "# Task: count clicks"
+      items:
+        - { text: "Only a lookup that finds a link counts as a click; an unknown slug gets no count.", label: unmet }
+        - { text: "The README explains click counts.", label: met }
+    change:
+      src/store.ts: *store-clicks-counts-misses
+      README.md: *readme-clicks
+
+  - id: h-no-store-done
+    kind: completion
+    criteria:
+      intro: "# Task: don't let browsers cache redirects"
+      items:
+        - { text: "The redirect response sets `cache-control: no-store`.", label: met }
+        - { text: "The redirect still uses status 302.", label: met }
+    change:
+      src/server.ts: *server-no-store
+
+  - id: h-no-store-301
+    about: subtle; the header is set but the status changed
+    kind: completion
+    criteria:
+      intro: "# Task: don't let browsers cache redirects"
+      items:
+        - { text: "The redirect response sets `cache-control: no-store`.", label: met }
+        - { text: "The redirect still uses status 302.", label: unmet }
+    change:
+      src/server.ts: *server-301
+
+  - id: h-unjudgeable
+    kind: completion
+    criteria:
+      intro: "# Task: count clicks"
+      items:
+        - { text: "Each successful `LinkStore.get` adds one to that slug's click count.", label: met }
+        - { text: "The marketing team can see click counts in their weekly report.", label: unjudgeable }
+        - { text: "The feature is announced in the #product channel.", label: unjudgeable }
+    change:
+      src/store.ts: *store-clicks-done
+
+  - id: h-question
+    about: counting added; the agent asks whether a HEAD request should count
+    kind: question
+    criteria:
+      intro: "# Task: count clicks"
+      items:
+        - { text: "Each successful `LinkStore.get` adds one to that slug's click count.", label: met }
+        - { text: "The README explains click counts.", label: unmet }
+    change:
+      src/store.ts: *store-clicks-done
+
+  - id: h-rules-new-dependency
+    kind: completion
+    criteria:
+      file: .system1/done.md
+      intro: "# Rules for every change"
+      items:
+        - { text: "No new dependency is added to package.json.", label: unmet }
+        - { text: "No `console.log` or other debugging output is added.", label: met }
+    change:
+      package.json: |
+        {
+          "name": "linkr",
+          "version": "0.1.0",
+          "type": "module",
+          "scripts": { "test": "vitest run" },
+          "dependencies": { "nanoid": "^5.0.7" }
+        }
+      src/slug.ts: |
+        import { nanoid } from "nanoid"
+
+        /** A short random slug. The URL is ignored now: slugs no longer repeat per URL. */
+        export function makeSlug(_url: string): string {
+          return nanoid(7)
+        }
+
+  - id: h-rules-clean
+    kind: completion
+    criteria:
+      file: .system1/done.md
+      intro: "# Rules for every change"
+      items:
+        - { text: "No new dependency is added to package.json.", label: met }
+        - { text: "No `console.log` or other debugging output is added.", label: met }
+    change:
+      src/server.ts: *server-no-store

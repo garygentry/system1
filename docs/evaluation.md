@@ -24,6 +24,7 @@ Two things frame all of it:
 | Does a live decision work through the `ask` skill in each harness? | Yes, in Claude Code, Codex and Pi, with the same files kept in each | One prompt per release, on toy repos |
 | Does the agent use System 1 when it should, and not when it shouldn't? | Codex and Pi: every time. Claude with the hook: 91% of positives on the blind set, no false triggers | Five runs per set. Claude misses some checks of its own work |
 | Does a new user reach a first live decision? | Yes, after six first-run stalls were fixed | The author walked it in each harness on Linux; no outside user yet |
+| Does `done-check` block the stops it should, and only those? | Live: no false block in 39 done stops; 0 missed in 57 not-done stops (2 in an earlier run); both Known-gap checks caught | 38 labelled stop events by the author, 10 of them held out; 3 live runs each |
 | Does it work on macOS? | The CLI does (CI). The harnesses are unverified | See [known gaps](../plans/ROADMAP.md#5-macos-is-unverified) |
 
 ## Answer quality: calibration
@@ -196,6 +197,58 @@ survivors, not screening, is most of the price. Full write-up: the M9 plan's Res
 The signal tables scout ships are replay-tested in CI: every example passes, and the screen keeps
 and drops exactly the examples it should (`tools/signals.test.ts`).
 
+## Done-check: does the Stop hook block the right stops?
+
+`done-check` ([guard packs](configuration.md#guard-packs)) judges an agent's change against the
+repo's criteria when the agent stops. It blocks once, and only when a criterion is confidently
+judgeable and confidently unmet. It was measured on 2026-09-27 on labelled stop events in
+`tools/done-check-eval`. Each event is a real git repo: the session start, a criteria file and the
+agent's change, run through the real hook.
+
+- **The events:**
+  - Done and not-done tasks.
+  - Both Known-gap prompts over the routing fixture: the TASK.md check and a pre-commit rules
+    file.
+  - Commits made before the stop, and new untracked files.
+  - Stops where the agent asks the user a question.
+  - Unjudgeable criteria ("deployed to staging", "legal has signed off"), and exact facts that
+    lint keeps from the model.
+  - A prompt-injection comment, an oversize diff, a ticked or deleted criterion, and a large
+    untracked log.
+- **The sets:** 28 events (69 criteria) were used to fit the thresholds and the question wording.
+  A 10-event holdout on a different task was written after the fit and before it was run.
+- **The runs:** each event was replayed once in CI from recorded answers. It was then run 3 times
+  live through `decide hook`.
+
+| Set | False blocks (done stops) | Missed blocks (not-done stops) | Question stops blocked | Oversize stops blocked |
+|---|---|---|---|---|
+| Fitted on, live ×3 | 0/27 | 0/42 | 6/9 | 0/6 |
+| Holdout, live ×3 | 0/12 | 0/15 | 3/3 | – |
+
+- **Known gap #1:** both of the routing prompts Claude wouldn't hand off are caught, in replay and
+  in 6 of 6 live runs, with the unmet criteria named.
+- **Variance:** an earlier live run missed a half-done criterion ("returns `undefined` and
+  removes it") in 2 of 3 runs. Its met score sits near the bar, so expect occasional misses like
+  it.
+- **Question stops** are blocked most of the time. The check doesn't read the agent's message,
+  and the work it names as unfinished really is unfinished. A local check for a completion claim
+  would stop this, and is the next change these numbers argue for.
+- **Oversize changes never block, by design.** That includes a change beside a large untracked
+  file such as a test log. A check of part of a change could miss the file that holds the work.
+- **Latency,** Stop through the CLI when it calls the model: p50 about 460 ms, p95 about 615 ms,
+  max 661 ms, against a 5 s `latencyMs`.
+- **Cost:** one call per stop, $0.00004–0.00005.
+- **What the eval changed:**
+  - The judgeable question now asks whether the criterion is a claim about the repository at
+    all. The earlier wording let the model hedge whenever the code a criterion asks for was
+    simply missing, and missed 6 of 14 not-done stops.
+  - The thresholds: judgeable ≥ 0.5 and met ≤ 0.25, from 0.7 and 0.2.
+- **Limits:**
+  - One author wrote every event and label.
+  - Only the holdout is out of sample, and it is small.
+  - The met bar has a thin margin: unmet criteria scored met ≤ 0.23, and the lowest met
+    criterion 0.30, on a label that could be read either way.
+
 ## Not measured
 
 - Calibration on subjective questions, on `choice` and `score`, on languages other than
@@ -214,6 +267,7 @@ and drops exactly the examples it should (`tools/signals.test.ts`).
 | One live decision | `pnpm test:live` | a key and this repo's consent |
 | Calibration scoring | `pnpm exec tsx tools/calibration.ts --run <run> --labels <labels>` | nothing; the runs and labels are in [`evidence/`](../evidence/README.md) |
 | Routing | `pnpm eval:routing all --repeat 3` (`EVAL_ROUTING=tools/evals/routing-holdout-2.yaml` for the blind set) | the three harnesses installed; spends their tokens |
+| Done-check stop events | `pnpm eval:done-check` (replay); `--latency 3` and `--holdout` live; `--fit` for the threshold sweep | nothing to replay; a key for live |
 | Harness smoke tests | `pnpm smoke` | the three harnesses installed |
 | Startup | `pnpm bench:startup` | nothing |
 

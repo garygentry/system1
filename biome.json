@@ -17,6 +17,9 @@
       "!tools/smoke/published-repo",
       "!tools/evals/fixture-repo",
       "!tools/evals/fixture-changes",
+      "!tools/done-check-eval/base",
+      "!tools/done-check-eval/fixtures",
+      "!tools/done-check-eval/*results.json",
       "!.remember",
       "!.claude",
       "!evidence"

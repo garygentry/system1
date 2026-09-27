@@ -13,5 +13,10 @@
     "packages/*/src/**/*.test.ts",
     "packages/*/src/testdata/**/*.ts"
   ],
-  "exclude": ["tools/smoke/fixture-repo", "tools/evals/fixture-repo", "tools/evals/fixture-changes"]
+  "exclude": [
+    "tools/smoke/fixture-repo",
+    "tools/evals/fixture-repo",
+    "tools/evals/fixture-changes",
+    "tools/done-check-eval/base"
+  ]
 }

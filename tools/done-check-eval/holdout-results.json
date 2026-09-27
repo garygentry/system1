@@ -1,0 +1,74 @@
+[
+  {
+    "id": "h-clicks-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "h-clicks-no-readme",
+    "outcome": "block",
+    "named": [
+      "The README explains click counts."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "h-clicks-never-counted",
+    "outcome": "block",
+    "named": [
+      "Each successful `LinkStore.get` adds one to that slug's click count."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "h-clicks-counts-misses",
+    "outcome": "block",
+    "named": [
+      "Only a lookup that finds a link counts as a click; an unknown slug gets no count."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "h-no-store-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "h-no-store-301",
+    "outcome": "block",
+    "named": [
+      "The redirect still uses status 302."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "h-unjudgeable",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "h-question",
+    "outcome": "block",
+    "named": [
+      "The README explains click counts."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "h-rules-new-dependency",
+    "outcome": "block",
+    "named": [
+      "No new dependency is added to package.json."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "h-rules-clean",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  }
+]
