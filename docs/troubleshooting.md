@@ -97,6 +97,11 @@ Which guard packs are active. A warning means a pack is enabled in this repo's c
 has no egress consent, so the pack stays dormant and sends nothing. Grant consent (see `consent`),
 or turn the pack off with `decide guard disable <pack>`. See [cli.md § guard](cli.md#guard).
 
+In Codex, a warning can also mean Codex hasn't trusted the plugin's hooks. Codex runs a plugin's
+hooks only after you trust them, and skips untrusted ones without a word, so `done-check` never
+runs there. Open Codex interactively in the repo once and trust the system1 hooks when it asks.
+It may ask again after a plugin update changes a hook.
+
 ### doctor: `backlog`
 
 Whether the scout backlog, `.system1/opportunities.json`, is valid. It's fine for it not to

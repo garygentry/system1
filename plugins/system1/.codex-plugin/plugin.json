@@ -18,6 +18,7 @@
     "agents"
   ],
   "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "System 1",
     "shortDescription": "Cheap, typed decisions for coding agents",

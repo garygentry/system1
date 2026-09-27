@@ -93,6 +93,7 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
       content: json({
         ...common,
         skills: "./skills/",
+        hooks: "./hooks/codex-hooks.json",
         interface: {
           displayName: plugin.displayName,
           shortDescription: plugin.shortDescription,
@@ -147,6 +148,7 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
     },
     { path: `${PLUGIN_DIR}/bin/decide`, content: shim(catalog), executable: true },
     { path: `${PLUGIN_DIR}/hooks/claude-hooks.json`, content: json(claudeHooks()) },
+    { path: `${PLUGIN_DIR}/hooks/codex-hooks.json`, content: json(codexHooks()) },
     // Pi reads skills through a package's `pi` key. This package is only that
     // key plus a copy of the skills, so `pi install npm:…` pulls no
     // devDependencies. The copy is made at pack time (prepack), not committed.
@@ -230,11 +232,44 @@ function claudeHooks() {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: a shell variable that Claude Code expands
     'out=$(SYSTEM1_NO_NPX=1 "${CLAUDE_PLUGIN_ROOT}/bin/decide" route --hook --format brief 2>/dev/null) && printf \'%s\' "$out"; exit 0'
   return {
-    description: "System 1: hint the ask skill for prompts that ask for closed judgements",
+    description:
+      "System 1: hint the ask skill for prompts that ask for closed judgements; guard packs (dormant unless enabled)",
     hooks: {
       UserPromptSubmit: [{ hooks: [{ type: "command", command, timeout: 10 }] }],
+      ...guardHooks("CLAUDE_PLUGIN_ROOT", "claude"),
     },
   }
+}
+
+/**
+ * Codex hooks (M10 spike): the guard packs only. The routing hint stays
+ * Claude-only (0018). Codex runs a plugin's hooks once the user trusts them,
+ * and asks again when an entry changes, so the commands carry no version.
+ */
+function codexHooks() {
+  return {
+    description: "System 1 guard packs (dormant unless enabled in the repo)",
+    hooks: guardHooks("PLUGIN_ROOT", "codex"),
+  }
+}
+
+/**
+ * \`decide hook\` at SessionStart and Stop (M10). Dormant unless a pack is
+ * enabled in the repo with consent: then it prints \`{}\` and sends nothing.
+ * The harness always gets one JSON object and exit 0, even when \`decide\`
+ * can't be found or is too old to know \`hook\` (it would print an error
+ * envelope and exit 2; \`decide hook\` itself always exits 0), and the shim
+ * never downloads the CLI mid-session.
+ */
+function guardHooks(root: "CLAUDE_PLUGIN_ROOT" | "PLUGIN_ROOT", harness: "claude" | "codex") {
+  const command = (pack: string) =>
+    `out=$(SYSTEM1_NO_NPX=1 "\${${root}}/bin/decide" hook ${pack} --harness ${harness} 2>/dev/null) && [ -n "$out" ] || out='{}'; printf '%s' "$out"; exit 0`
+  const entry = (timeout: number) => [
+    { hooks: [{ type: "command", command: command("done-check"), timeout }] },
+  ]
+  // Stop's timeout is above done-check's latencyMs ceiling (55 s), so the hook
+  // always answers for itself; SessionStart only records the base commit.
+  return { SessionStart: entry(10), Stop: entry(60) }
 }
 
 /**
