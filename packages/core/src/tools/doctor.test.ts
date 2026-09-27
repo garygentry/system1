@@ -242,3 +242,37 @@ describe("which", () => {
     expect(check(none, "path-version")).toBeUndefined()
   })
 })
+
+describe("doctor: Codex hook trust", () => {
+  const ACTIVE = {
+    ".system1/config.yaml":
+      "egress:\n  consent: { granted: true }\nguard:\n  packs:\n    done-check:\n      enabled: true\n",
+  }
+  const codexHome = (toml: string) => temp({ "config.toml": toml })
+  const PLUGIN = '[plugins."system1@system1"]\nenabled = true\n'
+  const TRUST =
+    '[hooks.state."system1@system1:hooks/codex-hooks.json:stop:0:0"]\ntrusted_hash = "sha256:ab"\n'
+
+  it.each([
+    ["the plugin isn't installed in Codex", "", "ok"],
+    ["the hooks are trusted", PLUGIN + TRUST, "ok"],
+    ["the hooks aren't trusted", PLUGIN, "warn"],
+    ["the plugin is disabled", '[plugins."system1@system1"]\nenabled = false\n', "ok"],
+    [
+      "trusted, with another key first, CRLF and a ./ path",
+      `${PLUGIN}[hooks.state]\r\n[hooks.state."system1@system1:./hooks/codex-hooks.json:stop:0:0"]\r\nnote = "x"\r\ntrusted_hash = "sha256:ab"\r\n`,
+      "ok",
+    ],
+  ])("%s: %s", async (_, toml, expected) => {
+    const env = { PATH: binDir(), OPENROUTER_API_KEY: SECRET, CODEX_HOME: codexHome(toml) }
+    const r = await doctor(env, reachable, ACTIVE)
+    expect(check(r, "guard")?.status).toBe(expected)
+    expect(r.healthy).toBe(true)
+    if (expected === "warn") {
+      expect(check(r, "guard")).toMatchObject({
+        detail: expect.stringMatching(/Codex hasn't trusted the system1 hooks/),
+        advisory: true,
+      })
+    }
+  })
+})

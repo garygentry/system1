@@ -6,7 +6,8 @@
  * Unlike the other tools it builds its own context: a broken config is one of
  * the things it diagnoses, so it must not fail before it can report it.
  */
-import { accessSync, constants, existsSync, statSync } from "node:fs"
+import { accessSync, constants, existsSync, readFileSync, statSync } from "node:fs"
+import { homedir } from "node:os"
 import { delimiter, join } from "node:path"
 import { userConfigDir } from "../config/load.js"
 import { detectHarness, type Harness } from "../config/session.js"
@@ -70,7 +71,11 @@ export interface DoctorOptions extends ContextOptions {
 }
 
 /** Guard packs (M10): which are active, and any enabled without consent (dormant). */
-function guardCheck(config: ToolContext["config"]): DoctorCheck {
+function guardCheck(
+  config: ToolContext["config"],
+  env: NodeJS.ProcessEnv,
+  home?: string,
+): DoctorCheck {
   const enabled = PACK_NAMES.filter((name) => config.guard.packs[name].enabled)
   if (enabled.length === 0)
     return { name: "guard", status: "ok", detail: "no guard pack enabled (all dormant)" }
@@ -84,7 +89,59 @@ function guardCheck(config: ToolContext["config"]): DoctorCheck {
       advisory: true,
     }
   }
+  const codex = codexHookTrust(env, home)
+  if (codex === "untrusted") {
+    return {
+      name: "guard",
+      status: "warn",
+      detail: `active: ${enabled.join(", ")}; but Codex hasn't trusted the system1 hooks, so it skips them without a word`,
+      fix: "open Codex interactively in this repo once and trust the system1 hooks when it asks (after a plugin update it may ask again)",
+      advisory: true,
+    }
+  }
   return { name: "guard", status: "ok", detail: `active: ${enabled.join(", ")}` }
+}
+
+/**
+ * Codex runs a plugin's hooks only after the user trusts them, recorded per
+ * hook in `$CODEX_HOME/config.toml` (M10 spike). `absent`: the system1 plugin
+ * isn't installed in Codex, so there's nothing to trust. The hash itself
+ * isn't checked: only that a trust entry exists for the Stop hook.
+ */
+export function codexHookTrust(
+  env: NodeJS.ProcessEnv,
+  home: string = homedir(),
+): "absent" | "trusted" | "untrusted" {
+  const file = join(env.CODEX_HOME?.trim() || join(home, ".codex"), "config.toml")
+  let text: string
+  try {
+    text = readFileSync(file, "utf8")
+  } catch {
+    return "absent"
+  }
+  const section = (header: RegExp): string[] => {
+    const out: string[] = []
+    const lines = text.split(/\r?\n/)
+    lines.forEach((line, n) => {
+      if (!header.test(line)) return
+      const body: string[] = []
+      for (const next of lines.slice(n + 1)) {
+        if (/^\s*\[/.test(next)) break
+        body.push(next)
+      }
+      out.push(body.join("\n"))
+    })
+    return out
+  }
+  const plugin = section(/^\s*\[plugins\."system1@[^"]+"\]\s*$/)
+  if (plugin.length === 0 || plugin.every((b) => /^\s*enabled\s*=\s*false\b/m.test(b))) {
+    return "absent"
+  }
+  // The key names the hooks file as Codex resolved it; match any form of it.
+  const trust = section(
+    /^\s*\[hooks\.state\."system1@[^"]+:[^"]*codex-hooks\.json:stop:[^"]*"\]\s*$/,
+  )
+  return trust.some((b) => /^\s*trusted_hash\s*=/m.test(b)) ? "trusted" : "untrusted"
 }
 
 /**
@@ -237,7 +294,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
   )
 
   checks.push(routeCheck(config.route))
-  checks.push(guardCheck(config))
+  checks.push(guardCheck(config, env, options.home))
   checks.push(backlogCheck(config.repoRoot))
 
   let reach: Awaited<ReturnType<typeof ping>>

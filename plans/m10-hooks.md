@@ -1,6 +1,6 @@
 # Plan: M10 §3–§6 — guard state, `decide hook`, `done-check`, wiring
 
-- **Status:** in progress, 2026-09-27. §1 (the spike, #23) and §2 (`guard` config and command, #24) are merged.
+- **Status:** in progress, 2026-09-27. Merged: §1 spike (#23), §2 `guard` (#24), PR 1 state (#25), PR 2 hook runner (#26), PR 3 gathering (#27), PR 4 decisions (#28). PR 5 (wiring) in review; then §7–§9 and 0.5.0.
 - **Spec:** [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) §M10. This file is the implementation plan for work items 3–6; the spec wins where they differ, except for the decisions below.
 
 ## Decisions (maintainer, 2026-09-27)
@@ -63,4 +63,6 @@ Then the spec's §7 (the `guard` skill), §8 (evaluation, which fits the thresho
 
 - Does the Codex Stop `session_id` equal `CODEX_THREAD_ID`, and does the Claude one equal `CLAUDE_CODE_SESSION_ID`? The ledger's session ids depend on it.
 - Does a Codex hook command have network (decision 3)?
+- Does Codex key hook trust as `system1@<mkt>:hooks/codex-hooks.json:stop:0:0` for a hooks file in a subdirectory? The doctor match accepts any `…codex-hooks.json:stop:` form. Confirm it in the 0.5.0 Codex smoke.
+- Doctor's warning about npx-route latency (§6) is not built yet. It goes with §9's docs on install latency.
 - Is the 0.5.0 release the first real run of `release.yml` after #18? Check its `verify` and `stage` jobs before approving.

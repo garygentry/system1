@@ -1,0 +1,27 @@
+{
+  "description": "System 1 guard packs (dormant unless enabled in the repo)",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(SYSTEM1_NO_NPX=1 \"${PLUGIN_ROOT}/bin/decide\" hook done-check --harness codex 2>/dev/null) && [ -n \"$out\" ] || out='{}'; printf '%s' \"$out\"; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(SYSTEM1_NO_NPX=1 \"${PLUGIN_ROOT}/bin/decide\" hook done-check --harness codex 2>/dev/null) && [ -n \"$out\" ] || out='{}'; printf '%s' \"$out\"; exit 0",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
