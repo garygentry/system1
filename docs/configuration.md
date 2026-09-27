@@ -66,6 +66,7 @@ so set a large number instead.
 | `egress.exclude` | `[]` | list of globs | Paths never to send, on top of the built-in excludes |
 | `profiles` | `[]` | list | Extra model profiles, or overrides of built-in ones by `id` |
 | `route.*` | see [Routing hints](#routing-hints) | mapping | The Claude Code routing hook |
+| `guard.packs.*` | see [Guard packs](#guard-packs) | mapping | Opt-in hook checks, such as `done-check`. `enabled` is read from the repo file only |
 
 A repo config that sets several of these:
 
@@ -156,6 +157,25 @@ without a `name` and a `pattern`, a pattern that doesn't compile, and a name in 
 isn't a built-in trigger. Patterns are checked even when `enabled` is false. When the config is
 wrong, the hook stays silent and `decide doctor` reports it as a `route` warning. Test a change
 with `decide route --text "…"`.
+
+## Guard packs
+
+Guard packs are hook checks that send content to the provider at a harness event, such as
+`done-check` at the agent's Stop. Each one is dormant until the user enables it in this repo, on
+top of egress consent, with `decide guard enable <pack>` ([cli.md](cli.md#guard)). Settings go
+under `guard.packs.<pack>:`.
+
+| Key | Default (`done-check`) | Type | Combines | Meaning |
+|---|---|---|---|---|
+| `enabled` | `false` | boolean | **repo file only** | Whether the pack acts on its events. Set by `decide guard enable`/`disable`, with `enabledAt` and `enabledBy` |
+| `latencyMs` | `5000` | number > 0 | repo wins | Time a check may add at the event; past it, the check fails open with a reason |
+| `maxUsdPerSession` | `0.01` | number ≥ 0 | repo wins | Measured spend per session before checks are skipped (and reported) |
+| `criteria` | `[TASK.md, .system1/done.md]` | list of paths | first file that sets it | Files whose bullets are the criteria |
+| `evidence` | `[]` | list of paths | first file that sets it | Extra files sent with the change, such as a test log |
+
+`enabled` in the user file is ignored, like `egress.consent`: one user-level setting must not
+switch on egress in every repo. That, an unknown pack or key, and a value of the wrong type are
+ignored with a warning that `decide doctor` and `decide config` show.
 
 ## Credentials file
 

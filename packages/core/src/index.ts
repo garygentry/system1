@@ -1,4 +1,4 @@
-export { assertConsent, setConsent } from "./config/consent.js"
+export { assertConsent, setConsent, setGuardEnabled } from "./config/consent.js"
 export type {
   Budget,
   Consent,
@@ -26,6 +26,8 @@ export type { ErrorCode } from "./errors.js"
 export { DecisionsError, isDecisionsError, ProviderError } from "./errors.js"
 export type { FixtureRecord } from "./fixtures/store.js"
 export { canonicalJson, FIXTURE_VERSION, FixtureStore, fixtureKey } from "./fixtures/store.js"
+export type { GuardConfig, GuardPackConfig, PackName } from "./guard/packs.js"
+export { isPackName, PACK_NAMES, PACKS } from "./guard/packs.js"
 export {
   confidenceOf,
   DEFAULT_UNDECIDED_FLOOR,

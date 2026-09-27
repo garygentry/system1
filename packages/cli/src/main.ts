@@ -17,6 +17,7 @@ Commands:
   many      One question set over many items (fan-out), filtered to what matters
   usage     Measured spend from the ledger (--session, --since)
   config    Show resolved config; \`config egress allow|deny|status\` for consent
+  guard     list | status | enable <pack> | disable <pack>: opt-in hook checks (the user enables)
   spec      list | show <name> | validate [name|path] | lint [name|path] | check <name> [--live]
   opportunities  add --file <json> | list [--keep …] | check: the scout backlog (local)
   schema    Print the JSON Schema of a tool's input (\`decide schema\` lists them)
@@ -80,6 +81,8 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return (await import("./commands/misc.js")).runUsageCommand(rest, io, format)
     case "config":
       return (await import("./commands/config.js")).runConfigCommand(rest, io, format)
+    case "guard":
+      return (await import("./commands/guard.js")).runGuardCommand(rest, io, format)
     case "spec":
       return (await import("./commands/spec.js")).runSpecCommand(rest, io, format)
     case "opportunities":

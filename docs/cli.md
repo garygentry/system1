@@ -24,6 +24,7 @@ decide <command> [options] [--format json|jsonl|brief]
 | `decide opportunities` | The scout backlog: `add --file`, `list`, `check`. Local; sends nothing |
 | `decide usage` | Measured spend from the ledger |
 | `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent |
+| `decide guard` | Opt-in hook checks: `list`, `status`, `enable <pack>`, `disable <pack>`. The user enables a pack |
 | `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
 | `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route` |
 | `decide ping` | Check the endpoint is reachable. No key needed, no spend |
@@ -181,6 +182,28 @@ terminal (typing it there is the decision; there's no further prompt), or `--con
 how a user grants it where there's no terminal, such as Claude Code's `!` prompt.
 **Consent is the user's.** Agents must not pass `--confirm` for the user. `--by` records who
 granted it; without it, the record says `decide config` or `decide config --confirm`.
+
+### `guard`
+
+```sh
+decide guard [list|status]
+decide guard enable <pack> [--by <who>] [--i-consent]
+decide guard disable <pack> [--by <who>]
+```
+
+Guard packs are hook checks that send content to the provider at a harness event. The only pack
+is `done-check`. `list` and `status` show each pack as `active` (enabled, with egress consent),
+enabled but dormant (no consent), or `dormant`.
+**Enabling a pack is the user's decision**, like egress consent:
+- `enable` refuses with exit 3 unless this repo already has egress consent.
+- It needs an interactive terminal, or `--i-consent` where there's no terminal, such as Claude
+  Code's `!` prompt; without either it also exits 3. `--confirm` doesn't count, because agents
+  pass it to approve spend.
+- Agents must not pass `--i-consent` for the user, and skills never do.
+- `disable` needs neither, since it only stops egress.
+- `--by` records who changed it; without it, the record says how.
+
+Settings are in [configuration.md § Guard packs](configuration.md#guard-packs).
 
 ### `route`
 

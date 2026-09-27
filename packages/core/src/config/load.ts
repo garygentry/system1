@@ -13,6 +13,7 @@ import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { parse } from "yaml"
 import { DecisionsError } from "../errors.js"
+import { type GuardConfig, readGuard } from "../guard/packs.js"
 import {
   DEFAULT_MODEL_ID,
   JEV_CALL_OVERHEAD_TOKENS,
@@ -69,6 +70,8 @@ export interface ResolvedConfig extends DecisionsConfig {
   /** `SYSTEM1_SESSION`, else the harness session id (`claude:…`, `codex:…`, `pi:…`). */
   session: string | undefined
   sessionOrigin: DetectedSession["origin"] | undefined
+  /** Guard packs (M10). `enabled` comes only from the repo layer. */
+  guard: GuardConfig
   /** Which files contributed, for `decide config`. */
   layers: { user?: string; repo?: string; credentials?: string }
   /**
@@ -158,6 +161,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
     route: readRoute(user, userFile, repo, repoFile, env),
   }
 
+  const guard = readGuard(user, userFile, repo, repoFile, warnings)
   const key = resolveApiKey(env, userDir)
   const session = detectSession(env)
   return {
@@ -171,6 +175,7 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
     replay: /^(1|true|yes)$/i.test(env.SYSTEM1_REPLAY ?? ""),
     session: session?.id,
     sessionOrigin: session?.origin,
+    guard,
     layers: {
       ...(user ? { user: userFile } : {}),
       ...(repo ? { repo: repoFile } : {}),
@@ -214,7 +219,17 @@ function readLayer(file: string): Layer {
 
 /** Top-level keys, and keys of the plain sections, that loading reads. */
 const KNOWN: Record<string, readonly string[]> = {
-  "": ["model", "endpoint", "concurrency", "timeoutMs", "budget", "egress", "profiles", "route"],
+  "": [
+    "model",
+    "endpoint",
+    "concurrency",
+    "timeoutMs",
+    "budget",
+    "egress",
+    "profiles",
+    "route",
+    "guard",
+  ],
   budget: ["maxCalls", "maxUsd"],
   egress: ["consent", "exclude"],
 }
