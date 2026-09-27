@@ -11,6 +11,7 @@ import { delimiter, join } from "node:path"
 import { userConfigDir } from "../config/load.js"
 import { detectHarness, type Harness } from "../config/session.js"
 import { isDecisionsError } from "../errors.js"
+import { PACK_NAMES } from "../guard/packs.js"
 import { backlogPath, readBacklog } from "../opportunities/backlog.js"
 import { ping } from "../ping.js"
 import { activeTriggers, route } from "../route/route.js"
@@ -29,6 +30,7 @@ export const DOCTOR_CHECKS = [
   "key",
   "consent",
   "route",
+  "guard",
   "backlog",
   "network",
 ] as const
@@ -65,6 +67,24 @@ export interface DoctorOptions extends ContextOptions {
    * (0014). Without it the `path-version` check is skipped.
    */
   probeVersion?: (path: string) => Promise<string | undefined>
+}
+
+/** Guard packs (M10): which are active, and any enabled without consent (dormant). */
+function guardCheck(config: ToolContext["config"]): DoctorCheck {
+  const enabled = PACK_NAMES.filter((name) => config.guard.packs[name].enabled)
+  if (enabled.length === 0)
+    return { name: "guard", status: "ok", detail: "no guard pack enabled (all dormant)" }
+  if (!config.egress.consent.granted) {
+    return {
+      name: "guard",
+      status: "warn",
+      detail: `${enabled.join(", ")} enabled, but this repo has no egress consent: dormant`,
+      fix: "grant consent (see the consent check), or turn it off with `decide guard disable <pack>`",
+      // The consent check already stands between this shell and a live decision.
+      advisory: true,
+    }
+  }
+  return { name: "guard", status: "ok", detail: `active: ${enabled.join(", ")}` }
 }
 
 /**
@@ -217,6 +237,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
   )
 
   checks.push(routeCheck(config.route))
+  checks.push(guardCheck(config))
   checks.push(backlogCheck(config.repoRoot))
 
   let reach: Awaited<ReturnType<typeof ping>>

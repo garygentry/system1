@@ -329,6 +329,73 @@ describe("decide ask", () => {
   })
 })
 
+describe("decide guard", () => {
+  const read = (cwd: string) => readFileSync(join(cwd, ".system1/config.yaml"), "utf8")
+
+  it("lists every pack, dormant by default", async () => {
+    const { io, out, json } = rig()
+    expect(await main(["guard"], io)).toBe(0)
+    expect(json().result).toMatchObject({
+      consent: true,
+      packs: [{ name: "done-check", enabled: false, active: false }],
+    })
+    expect(await main(["guard", "status", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/^done-check: dormant · /)
+  })
+
+  it("refuses to enable without egress consent (exit 3), whatever the flags", async () => {
+    const { io, cwd, json } = rig({}, { consent: false, interactive: true })
+    expect(await main(["guard", "enable", "done-check", "--i-consent"], io)).toBe(3)
+    expect(json().error.message).toMatch(/has not agreed/)
+    expect(() => read(cwd)).toThrow()
+  })
+
+  it("refuses to enable with no terminal and no --i-consent (exit 3); --confirm is not it", async () => {
+    const { io, cwd, json } = rig()
+    expect(await main(["guard", "enable", "done-check"], io)).toBe(3)
+    expect(json().error.message).toMatch(/An agent must not enable it/)
+    expect(await main(["guard", "enable", "done-check", "--confirm"], io)).toBe(2)
+    expect(read(cwd)).not.toContain("guard")
+  })
+
+  it("enables from a terminal, or with --i-consent, and records how", async () => {
+    const tty = rig({}, { interactive: true })
+    expect(await main(["guard", "enable", "done-check"], tty.io)).toBe(0)
+    expect(tty.json().result).toMatchObject({
+      changed: "done-check",
+      packs: [{ name: "done-check", enabled: true, active: true, enabledBy: "decide guard" }],
+    })
+    const bang = rig()
+    expect(await main(["guard", "enable", "done-check", "--i-consent"], bang.io)).toBe(0)
+    expect(read(bang.cwd)).toContain("enabledBy: decide guard --i-consent")
+    expect(await main(["guard", "disable", "done-check"], bang.io)).toBe(0)
+    expect(bang.json().result.packs[0]).toMatchObject({ enabled: false, active: false })
+  })
+
+  it("rejects an unknown pack or action (exit 2)", async () => {
+    const { io, json } = rig({}, { interactive: true })
+    expect(await main(["guard", "enable", "lint-check"], io)).toBe(2)
+    expect(json().error.message).toMatch(/Unknown guard pack "lint-check". Known: done-check/)
+    expect(await main(["guard", "enable"], io)).toBe(2)
+    expect(await main(["guard", "arm", "done-check"], io)).toBe(2)
+  })
+
+  it("shows an enabled pack without consent as dormant, and doctor warns without blaming setup", async () => {
+    const { io, out } = rig({
+      ".system1/config.yaml": "guard:\n  packs:\n    done-check:\n      enabled: true\n",
+    })
+    expect(await main(["guard", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/^done-check: enabled, but no egress consent: dormant/)
+    expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(
+      /warn guard: done-check enabled, but this repo has no egress consent/,
+    )
+    expect(out.at(-1)).toMatch(/SETUP NEEDED \((path, )?consent\)/)
+    expect(await main(["config", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toContain("guard: done-check enabled (dormant: no egress consent)")
+  })
+})
+
 describe("decide config egress", () => {
   it("refuses a non-interactive allow without --confirm: consent is the user's", async () => {
     const { io, json } = rig({}, { consent: false })
@@ -818,6 +885,7 @@ describe("decide doctor", () => {
       "key",
       "consent",
       "route",
+      "guard",
       "backlog",
       "network",
     ])

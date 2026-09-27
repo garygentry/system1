@@ -41,6 +41,7 @@ describe("doctor", () => {
       key: "ok",
       consent: "ok",
       route: "ok",
+      guard: "ok",
       backlog: "ok",
       network: "ok",
     })

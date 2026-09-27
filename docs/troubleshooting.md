@@ -91,6 +91,12 @@ Whether the Claude Code routing hook will hint, and with which triggers. A warni
 name under `disable`. The hook stays silent until it's fixed, and your prompts are never blocked.
 Test a fix with `decide route --text "…"`. See [routing-hints.md](routing-hints.md).
 
+### doctor: `guard`
+
+Which guard packs are active. A warning means a pack is enabled in this repo's config but the repo
+has no egress consent, so the pack stays dormant and sends nothing. Grant consent (see `consent`),
+or turn the pack off with `decide guard disable <pack>`. See [cli.md § guard](cli.md#guard).
+
 ### doctor: `backlog`
 
 Whether the scout backlog, `.system1/opportunities.json`, is valid. It's fine for it not to

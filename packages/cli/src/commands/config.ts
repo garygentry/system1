@@ -124,6 +124,7 @@ function show(io: Io, cwd: string) {
      */
     profiles: allProfiles(config).filter((p) => config.profiles.some((c) => c.id === p.id)),
     route: config.route,
+    guard: config.guard,
     files: config.layers,
     specDirs: ctx.specDirs,
     warnings: config.warnings,
@@ -145,9 +146,18 @@ function brief(r: ConfigResult): string {
     `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency} · timeout ${r.timeoutMs} ms`,
     ...(r.profiles.length ? [`profiles: ${r.profiles.map((p) => p.id).join(", ")}`] : []),
     `route: ${routeLine(r.route)}`,
+    `guard: ${guardLine(r.guard, c.granted)}`,
     `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "SYSTEM1_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
     ...(r.warnings.length ? [`ignored: ${r.warnings.join("; ")}`] : []),
   ].join("\n")
+}
+
+function guardLine(guard: ReturnType<typeof show>["guard"], consent: boolean): string {
+  const on = Object.entries(guard.packs)
+    .filter(([, p]) => p.enabled)
+    .map(([name]) => name)
+  if (on.length === 0) return "no pack enabled"
+  return `${on.join(", ")} enabled${consent ? "" : " (dormant: no egress consent)"}`
 }
 
 /** Never fails: `config` is where a user looks to see what resolved, even when `route:` is wrong. */
