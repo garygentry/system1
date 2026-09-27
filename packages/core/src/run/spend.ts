@@ -8,6 +8,8 @@ export type AnswerSource = "live" | "replay"
 export interface SpendEntry extends Usage {
   ts: string
   session?: string
+  /** Who made the call, when it wasn't the agent itself, e.g. `guard:done-check`. */
+  tag?: string
   model: string
   source: AnswerSource
   calls: number
@@ -61,10 +63,11 @@ export class SpendLedger {
       })
   }
 
-  summary(filter: { session?: string; since?: Date } = {}): SpendSummary {
+  summary(filter: { session?: string; since?: Date; tag?: string } = {}): SpendSummary {
     const rows = this.entries().filter(
       (e) =>
         (filter.session === undefined || e.session === filter.session) &&
+        (filter.tag === undefined || e.tag === filter.tag) &&
         (filter.since === undefined || new Date(e.ts) >= filter.since),
     )
     const count = (source: AnswerSource) =>

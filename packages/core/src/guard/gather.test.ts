@@ -39,6 +39,7 @@ function ctx(dir: string, pack: Partial<PackContext["pack"]> = {}): PackContext 
     repoRoot: dir,
     sessionKey: "claude:s1",
     ledgerSession: "claude:s1",
+    tool: { cwd: dir, env: {} },
     harness: "claude",
     pack: {
       enabled: true,

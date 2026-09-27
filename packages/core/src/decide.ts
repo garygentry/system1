@@ -34,6 +34,8 @@ export interface DeciderOptions {
   ledger?: SpendLedger
   mode?: DecideMode
   session?: string
+  /** Written on every ledger line, e.g. `guard:done-check`, so its spend can be summed apart. */
+  tag?: string
   now?: () => Date
 }
 
@@ -69,7 +71,7 @@ export interface Decider {
 const ZERO: Usage = { input_tokens: 0, output_tokens: 0, cost: 0 }
 
 export function createDecider(options: DeciderOptions): Decider {
-  const { profile, transport, fixtures, ledger, session } = options
+  const { profile, transport, fixtures, ledger, session, tag } = options
   const now = options.now ?? (() => new Date())
   const mode: Exclude<DecideMode, "auto"> =
     (options.mode ?? "auto") === "auto"
@@ -92,6 +94,7 @@ export function createDecider(options: DeciderOptions): Decider {
     ledger?.append({
       ts: now().toISOString(),
       ...(session ? { session } : {}),
+      ...(tag ? { tag } : {}),
       model,
       source,
       calls: 1,

@@ -25,6 +25,8 @@ export const HOOK_LATENCY_CEILING_MS = 55_000
 export interface HookOptions extends LoadOptions {
   /** Which harness's wiring ran this; inferred from the event when absent. */
   harness?: "claude" | "codex"
+  /** The provider's fetch, for tests. */
+  fetch?: typeof fetch
   /** For tests: replaces a pack's module. */
   packs?: Partial<Record<PackName, PackModule>>
   now?: Date
@@ -115,6 +117,12 @@ export async function runHook(
       repoRoot: config.repoRoot,
       sessionKey: `${harness}:${event.session_id}`,
       ledgerSession: config.session ?? `${harness}:${event.session_id}`,
+      tool: {
+        cwd: config.repoRoot,
+        env: session ? { ...env, SYSTEM1_SESSION: session } : env,
+        ...(options.home ? { home: options.home } : {}),
+        ...(options.fetch ? { fetch: options.fetch } : {}),
+      },
       harness,
       pack: settings,
       event,
@@ -150,7 +158,7 @@ export function failOpenReason(error: unknown, latencyMs: number): string {
     case "replay-miss":
       return "replay is forced (SYSTEM1_REPLAY) and has no recorded answer"
     case "budget-exceeded":
-      return "the spend cap was reached"
+      return error.message.split("\n")[0] ?? "the spend cap was reached"
     case "state-too-large":
       return "the change is too large to send"
     case "source-error":
