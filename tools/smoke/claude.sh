@@ -21,4 +21,12 @@ fixture_repo "$SMOKE/claude-scout"
   --allowedTools "Bash(decide *)" "Skill" --model "${SMOKE_CLAUDE_MODEL:-haiku}" </dev/null) \
   >"$SMOKE/claude-scout.txt" 2>&1 || true
 assert_marker claude:scout "$SCOUT_MARKER" "$SMOKE/claude-scout.txt" || status=1
+consent_repo "$SMOKE/claude-guard"
+(cd "$SMOKE/claude-guard" && timeout "$TIMEOUT" claude -p "/system1:guard $GUARD_PROMPT" \
+  --plugin-dir "$REPO/plugins/system1" --output-format stream-json --verbose \
+  --allowedTools "Bash(decide *)" "Skill" --model "${SMOKE_CLAUDE_MODEL:-haiku}" </dev/null) \
+  >"$SMOKE/claude-guard.txt" 2>&1 || true
+assert_marker claude:guard "$GUARD_MARKER" "$SMOKE/claude-guard.txt" || status=1
+assert_dormant claude:guard-dormant "$SMOKE/claude-guard" "$SMOKE/claude-guard.txt" \
+  '"command":"[^"]*guard enable' || status=1
 exit $status

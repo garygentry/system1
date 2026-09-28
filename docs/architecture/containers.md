@@ -7,7 +7,7 @@ which still show deferred pieces (plugin `specs/`, agents, `decide hook <pack>`)
 ```mermaid
 flowchart TB
     subgraph plugin["plugins/system1 (the plugin)"]
-        skills["skills/ask · design · setup<br/>(+ agents/openai.yaml for Codex)"]
+        skills["skills/ask · design · setup · scout · guard<br/>(+ agents/openai.yaml for Codex)"]
         shim["bin/decide<br/>generated shell shim"]
         hook["hooks/claude-hooks.json<br/>UserPromptSubmit (Claude only)"]
     end
@@ -39,9 +39,10 @@ flowchart TB
 | `@garygentry/system1-core` | `packages/core` | The engine as a library. Published beside the CLI (M6 D1), with `index.ts` as its surface and three deep exports (`./errors`, `./version`, `./route`) that keep the CLI's startup path off the barrel. Its stability as a public API is undecided. |
 | `@garygentry/system1-pi` | `packages/pi` | Skills only, for `pi install npm:`. Its `package.json` and `prepack.mjs` are generated, and `prepack` copies `plugins/system1/skills` in. |
 
-The four skills are `ask` (hand a closed judgement to `decide`), `design` (save a reusable spec),
-`setup` (user-only: install, key, consent, network) and `scout` (user-only: screen code or agent
-configuration for decision-model opportunities into a backlog). None ships a spec to the lookup
+The five skills are `ask` (hand a closed judgement to `decide`), `design` (save a reusable spec),
+`setup` (user-only: install, key, consent, network), `scout` (user-only: screen code or agent
+configuration for decision-model opportunities into a backlog) and `guard` (user-only: explain the
+guard packs and hand the user the line to enable one; it never enables a pack itself). None ships a spec to the lookup
 path: scout's two signal tables sit in its `references/` and are passed to `--spec` by path. The lowest-priority
 spec directory (origin `bundled`) is set only by `SYSTEM1_SPECS_PATH`; no package carries one.
 

@@ -3,7 +3,7 @@
  *
  *   pnpm validate
  *
- * Covers: Agent Skills frontmatter, version lockstep across every manifest, the
+ * Covers: Agent Skills frontmatter, no guard consent flag in a skill, version lockstep across every manifest, the
  * repository url npm trusted publishing matches on, the Agent Plugins required fields, and `claude plugin validate --strict` when the
  * `claude` CLI is on PATH.
  */
@@ -16,6 +16,8 @@ import { loadCatalog, npmRepository, ROOT } from "./generate.js"
 
 const PLUGIN_DIR = join(ROOT, "plugins/system1")
 const SKILL_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/
+/** The guard consent flag (M10 X6): enabling is the user's act, so no skill may spell it out. */
+const GUARD_CONSENT_FLAG = "--i-consent"
 
 export function checkSkill(dir: string, name: string, text: string): string[] {
   const problems: string[] = []
@@ -50,8 +52,20 @@ function skills(): string[] {
     const dir = join(root, entry.name)
     const file = join(dir, "SKILL.md")
     if (!existsSync(file)) return [`${entry.name}: missing SKILL.md`]
-    return checkSkill(dir, entry.name, readFileSync(file, "utf8"))
+    return [
+      ...checkSkill(dir, entry.name, readFileSync(file, "utf8")),
+      ...consentFlag(dir, entry.name),
+    ]
   })
+}
+
+/** Every file a skill ships (SKILL.md, references, the Codex sidecar) that spells out the guard consent flag. */
+export function consentFlag(dir: string, name: string): string[] {
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => relative(dir, join(entry.parentPath, entry.name)))
+    .filter((path) => readFileSync(join(dir, path), "utf8").includes(GUARD_CONSENT_FLAG))
+    .map((path) => `${name}: ${path} must not contain ${GUARD_CONSENT_FLAG} (the user's flag)`)
 }
 
 function versions(): string[] {

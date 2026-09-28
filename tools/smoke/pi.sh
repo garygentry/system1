@@ -18,4 +18,9 @@ assert_marker pi:many "$MANY_MARKER" "$SMOKE/pi-many.txt" || status=1
 fixture_repo "$SMOKE/pi-scout"
 drive "$SMOKE/pi-scout" "/skill:scout $SCOUT_PROMPT" "$SMOKE/pi-scout.txt"
 assert_marker pi:scout "$SCOUT_MARKER" "$SMOKE/pi-scout.txt" || status=1
+consent_repo "$SMOKE/pi-guard"
+(log_decide "$SMOKE/pi-guard-log"; drive "$SMOKE/pi-guard" "/skill:guard $GUARD_PROMPT" "$SMOKE/pi-guard.txt")
+assert_marker pi:guard "$GUARD_MARKER" "$SMOKE/pi-guard.txt" || status=1
+assert_dormant pi:guard-dormant "$SMOKE/pi-guard" "$SMOKE/pi-guard-log/calls.txt" \
+  '^guard enable' || status=1
 exit $status

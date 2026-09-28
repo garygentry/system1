@@ -1,6 +1,9 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { drift, loadCatalog, render } from "./generate.js"
-import { checkRepository, checkSkill } from "./validate.js"
+import { checkRepository, checkSkill, consentFlag } from "./validate.js"
 
 const skill = (front: string) => `---\n${front}\n---\n\n# Body\n`
 
@@ -23,6 +26,19 @@ describe("checkSkill", () => {
 
   it("rejects missing frontmatter", () => {
     expect(checkSkill("/nowhere", "ping", "# no frontmatter")).toHaveLength(1)
+  })
+})
+
+describe("consentFlag", () => {
+  it("finds the guard consent flag in any file a skill ships", () => {
+    const dir = mkdtempSync(join(tmpdir(), "skill-"))
+    mkdirSync(join(dir, "references"))
+    writeFileSync(join(dir, "SKILL.md"), skill("name: ping\ndescription: x"))
+    expect(consentFlag(dir, "ping")).toEqual([])
+    writeFileSync(join(dir, "references/enable.md"), "decide guard enable done-check --i-consent\n")
+    expect(consentFlag(dir, "ping")).toEqual([
+      "ping: references/enable.md must not contain --i-consent (the user's flag)",
+    ])
   })
 })
 

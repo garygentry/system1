@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decisions: guard"
+  short_description: "Explain guard packs like done-check and give the line to enable one"
+  default_prompt: "Use $guard to explain done-check and how to enable it in this repo."
+policy:
+  allow_implicit_invocation: false

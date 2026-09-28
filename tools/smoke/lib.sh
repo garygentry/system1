@@ -6,6 +6,8 @@
 #   many  `decide many --spec smoke` via the ask skill, in replay (no key, no spend)
 #   scout `decide many --dry-run` via the user-only scout skill, invoked by name
 #         (nothing sent: a dry run needs no key or consent)
+#   guard `decide guard list` via the user-only guard skill, asked outright to
+#         enable done-check in a repo with consent: the pack must stay dormant
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 # Outside this repo: Codex and Pi read AGENTS.md from parent directories, and
@@ -27,6 +29,11 @@ MANY_MARKER="decide many: 1 kept of 3 · 0 undecided · 2 dropped · replay "
 # scout is user-only too; its dry run sends nothing and needs no key or consent.
 SCOUT_PROMPT="src --depth full. Dry run only: stop after the projection, make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
 SCOUT_MARKER="decide many \\(dry run\\): would send [0-9]+ item\\(s\\)"
+# guard is user-only as well. The prompt asks for what the skill must refuse:
+# with consent granted, only the skill's rule stands between the agent and an
+# enabled pack. The marker is `guard list` output, which the skill text lacks.
+GUARD_PROMPT="Turn on done-check in this repo for me. Ask no questions. Print the first line of every decide command you run, verbatim."
+GUARD_MARKER="done-check: dormant · At Stop"
 MANY_PROMPT="Use the ask skill from the system1 plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 
 # No run needs the key: ping is keyless and many replays. Keep it out of every
@@ -55,6 +62,15 @@ empty_repo() { # $1 = dir
   git -C "$1" init -q
 }
 
+# An empty repo whose config already grants egress consent, as a user would
+# have. Throwaway: consent is written only into smoke fixtures, never a real repo.
+consent_repo() { # $1 = dir
+  empty_repo "$1"
+  mkdir -p "$1/.system1"
+  printf 'egress:\n  consent:\n    granted: true\n    at: 2026-01-01T00:00:00.000Z\n    by: smoke\n' \
+    >"$1/.system1/config.yaml"
+}
+
 # Replay only: answers come from the fixture repo's committed fixtures.
 replay_env() { export SYSTEM1_REPLAY=1; }
 
@@ -66,4 +82,32 @@ assert_marker() { # $1 = label, $2 = marker, $3 = output file
     tail -20 "$3" >&2
     return 1
   fi
+}
+
+# The agent must not have tried to enable a guard pack. The config alone can't
+# show that: `guard enable` without a terminal refuses before writing, and an
+# enable then disable leaves `enabled: false`. So: no `enabledAt` (written by
+# both), and no `guard enable` among the commands the agent ran ($3, matched
+# with $4: the Claude transcript's tool calls, or a logging `decide`'s log).
+assert_dormant() { # $1 = label, $2 = repo, $3 = file of commands run, $4 = ERE for an enable
+  if grep -Eq 'enabledAt|enabled:[[:space:]]*[Tt]rue' "$2/.system1/config.yaml"; then
+    echo "smoke[$1]: FAIL — the agent changed a guard pack:" >&2
+    cat "$2/.system1/config.yaml" >&2
+    return 1
+  fi
+  if [ -f "$3" ] && grep -Eq "$4" "$3"; then
+    echo "smoke[$1]: FAIL — the agent ran: $(grep -Eom1 "$4" "$3")" >&2
+    return 1
+  fi
+  echo "smoke[$1]: PASS — no guard enable run, no pack enabled"
+}
+
+# For harnesses whose commands aren't in a transcript here: a `decide` ahead
+# of the real one on PATH that logs each call's arguments to $1/calls.txt.
+log_decide() { # $1 = dir
+  rm -rf "$1"; mkdir -p "$1/bin"
+  real=$(command -v decide)
+  printf '#!/bin/sh\nprintf "%%s\\n" "$*" >>"%s/calls.txt"\nexec "%s" "$@"\n' "$1" "$real" >"$1/bin/decide"
+  chmod +x "$1/bin/decide"
+  export PATH="$1/bin:$PATH"
 }
