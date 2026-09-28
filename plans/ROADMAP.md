@@ -10,7 +10,28 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-25 (0.4.1).** M9 is done: `scout` finds decision-model opportunities in code and agent configuration, and 0.4.0 ships it. 0.4.1 fixes a quoted API key and is the first release published through CI. M10 (`guard` and `done-check`) is next. Design partners moved to M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+**Updated 2026-09-28 (0.5.0).** M10 is done: `guard` and its first pack, `done-check`, check the agent's work at Stop against the repo's criteria in Claude Code and Codex, for repos that opt in. 0.5.0 ships it. M11 (`adopt` + `compare`) is next. Design partners are M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+
+**0.5.0, released and verified 2026-09-28** (tag `v0.5.0` on `698fdf4`). The plan and its results are in [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) § M10.
+
+- **What it adds (#23–#35):**
+  - `decide guard` and `decide hook`.
+  - The `done-check` pack, wired into Claude's and Codex's Stop and SessionStart hooks, dormant until the user enables it in a repo with consent.
+  - The user-only `guard` skill.
+  - `docs/guard.md`.
+  - The labelled stop-event eval (`tools/done-check-eval`), which fitted the judgeable question and the thresholds.
+- **Gates:**
+  - `pnpm check` (793 tests), `validate`, `release:check` 12/12, a stage dry run and `release:verify`.
+  - One `eval:routing all` run at 100% in every category on all three harnesses, `guard` included.
+  - Smoke passed 17 of 18. The failure was the new guard check: Haiku ran a plain `decide guard enable` when told "Turn on done-check for me". The CLI refused it (exit 3), and nothing was enabled. #35 moved the skill's rule to its top, and the Claude guard smoke then passed 5 of 5; the Codex and Pi guard checks passed again.
+- **CI release:** the tag staged all three packages; the maintainer approved with 2FA. It was `release.yml`'s first run since the Dependabot bump (#18), and both jobs passed.
+- **Published artifacts, fresh profiles:** Claude (plugin only), Codex and Pi each installed 0.5.0 and ran a live `decide many`, for $0.000073, $0.000077 and $0.000080 measured.
+- **Live done-check from the published plugin:**
+  - The setup: Claude plugin only (the CLI found through npx's cache), in a throwaway repo with consent and the pack enabled.
+  - The task: TASK.md asked for `greet` and README docs, and the prompt said to edit only `src/greet.ts`.
+  - The Stop was **blocked once**, naming the README criterion. Claude then documented `greet` and finished.
+  - It made one live call (661 input tokens), ledgered as `guard:done-check` under Claude's session.
+- **Open:** Codex's hook trust needs an interactive session, so it wasn't exercised headless. It's for the maintainer to trust once and confirm the key `doctor` matches.
 
 **0.4.1, released and verified 2026-09-25** (tag `v0.4.1` on `a61ca37`). The first release staged from CI ([0022](decisions/0022-ci-publish-trusted-staged.md)); the plan is [`baseline-0.4.1.md`](baseline-0.4.1.md).
 
@@ -245,7 +266,7 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M7** | Evidence: measure what we claim | **done 2026-09-23**, see `milestones/M7-evidence.md`. 478 pairs labelled blind (by one labeller, disclosed); checkable curve published in `docs/calibration.md` (Brier 0.028, ECE 0.054); threshold guidance derived from it; judgement questions reported as unmeasured. M6's last box closed: a live `ask` in each harness. The routing retry held Codex/Pi at 8/8 but not Claude, so it was reverted (gap 1) |
 | **M8** | **Onboarding: the first hour works** | **done** 2026-09-23, **0.2.0 published**, see `milestones/M8-onboarding.md`. Six replay-tested cookbook recipes, `docs/` checked against the code by a test, six first-run stalls fixed across three harnesses, CI on Ubuntu and macOS (which found a real symlinked-path bug). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
 | **M9** | **`scout` → 0.4.0** | **done 2026-09-25, 0.4.0 released and verified**; see `milestones/M9-M11-scout-guard-adopt.md` ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Screen a codebase or agent configuration for decisions worth handing over; typed backlog via `decide opportunities`; offline `decide spec lint` |
-| **M10** | **`guard` + `done-check` → 0.5.0** | **next**, same plan. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 for repos that opt in with a criteria file |
+| M10 | `guard` + `done-check` → 0.5.0 | **done** 2026-09-28, released 0.5.0. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 for repos that opt in with a criteria file |
 | **M11** | **`adopt` + `compare` → 0.6.0** | planned, same plan. TS/Python policy modules through the engine with fallback; shadow run against the current mechanism and an `emulated` baseline |
 | M12 | **Design partners: 3–5 real users** (was M9) | outline, after M11 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
 | M13 | **Release** (was M10) | outline. Hygiene informed by M12 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
