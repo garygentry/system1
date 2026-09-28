@@ -1,6 +1,6 @@
 # Plan: M10 §3–§6 — guard state, `decide hook`, `done-check`, wiring
 
-- **Status:** in progress, 2026-09-27. Merged: §1 spike (#23), §2 `guard` (#24), PR 1 state (#25), PR 2 hook runner (#26), PR 3 gathering (#27), PR 4 decisions (#28), PR 5 wiring (#29), named files (#30). §7 `guard` skill in review; then §8, §9 and 0.5.0.
+- **Status:** done 2026-09-28, released as 0.5.0. Merged: §1 spike (#23), §2 `guard` (#24), state (#25), hook runner (#26), gathering (#27), decisions (#28), wiring (#29), named files (#30), §7 skill (#31, #35), §8 eval (#32), §9 docs (#34).
 - **Spec:** [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) §M10. This file is the implementation plan for work items 3–6; the spec wins where they differ, except for the decisions below.
 
 ## Decisions (maintainer, 2026-09-27)

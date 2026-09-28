@@ -112,7 +112,7 @@
 
 ## M10 — `guard` and `done-check` (release 0.5.0)
 
-**Status:** in progress; §1 spike done 2026-09-27 (Claude and Codex both support a blocking Stop hook; see Results).
+**Status:** done 2026-09-28, released as 0.5.0 (tag `v0.5.0` on `698fdf4`). See Results and ROADMAP.
 **Addresses:** ROADMAP Known gap #1 (Claude declines to hand off a check of its own work) **for repos that opt in with a criteria file**. It does not move the `ask` routing numbers, which stay the gap's measure for everyone else; M10 reports its own catch rate next to them.
 
 ### Work
@@ -179,25 +179,25 @@
 
 ### Acceptance
 
-- [ ] Spike answers recorded; Codex wired, or documented as unsupported with the reason.
-- [ ] **Dormant overhead:** with no pack enabled, the hook sends nothing, and its overhead is < 150 ms over bare node with a global or plugin-pinned install. The npx-cache route is measured, stated as outside the budget, and warned about by `doctor`.
+- [x] Spike answers recorded; Codex wired, or documented as unsupported with the reason. *(AGENTS.md, M10 harness notes; Codex wired, #29.)*
+- [x] **Dormant overhead:** with no pack enabled, the hook sends nothing, and its overhead is < 150 ms over bare node with a global or plugin-pinned install. The npx-cache route is measured, stated as outside the budget, and warned about by `doctor`.
   *Measured 2026-09-28 (`bench:startup`, median of 15): `decide hook` with no pack on adds +55 ms over bare node from the bundle. The plugin shim finding npx's cached copy costs about the same (`version`: 36 ms against 31 ms). So the npx-cache route is **inside** the budget: the shim runs the cached bundle with node, and the hook never runs `npx` itself, which takes about 720 ms (`SYSTEM1_NO_NPX`). The real risk is different. With no cached copy of the plugin's version (after a plugin update, or an npm cache clean), the hook finds no CLI and skips without a word. `doctor` warns when a pack is active and `decide` runs from npx's cache. This is stated in `docs/guard.md`.*
-- [ ] **Enabled latency:** p95 added latency at Stop is under `latency_ms`, and a timeout fails open with a reason. *(p95 614 ms live through the CLI, §8.)*
-- [ ] **`guard enable`:**
+- [x] **Enabled latency:** p95 added latency at Stop is under `latency_ms`, and a timeout fails open with a reason. *(p95 614 ms live through the CLI, §8.)*
+- [x] **`guard enable`:**
   - it refuses without consent (exit 3), and with no TTY and no `--i-consent` (tested);
   - no skill text contains a runnable enable-with-consent line (`pnpm validate` rejects the flag in any skill file, §7);
   - `enabled` set in the user config layer or env is ignored and reported by `doctor` (tested).
-- [ ] **`done-check` behaviour on fixtures.** It:
+- [x] **`done-check` behaviour on fixtures.** It: *(`tools/done-check-eval/eval.test.ts` and `packages/core/src/guard/*.test.ts`.)*
   - blocks a not-done fixture with the right criterion named, and lets a done fixture through;
   - never blocks on undecided or unjudgeable criteria, and allows the second stop;
   - checks a commit-before-stop session;
   - sees an untracked file;
   - sends nothing on an unchanged re-stop.
-- [ ] Each fail-open path (provider error, timeout, replay miss, budget, size, no consent) exits 0 with its reason in a `systemMessage` (tested).
+- [x] Each fail-open path (provider error, timeout, replay miss, budget, size, no consent) exits 0 with its reason in a `systemMessage` (tested).
 - [x] Measured false-block and missed-block rates published, with sample size; non-completion stops reported separately (§8 Results, `docs/evaluation.md`).
 - [x] Known gap #1 updated in `ROADMAP.md` with what done-check does and does not fix, and its catch rate on the gap scenarios.
-- [ ] `pnpm check`, `pnpm smoke`, `pnpm eval:routing all` green.
-- [ ] **0.5.0 released** through the gates, including a live `done-check` block in Claude from the published plugin on a fresh profile; tagged `v0.5.0`.
+- [x] `pnpm check`, `pnpm smoke`, `pnpm eval:routing all` green. *(For 0.5.0: smoke 17/18, then the guard fix (#35) and 5/5 guard reruns; routing 100% in every category.)*
+- [x] **0.5.0 released** through the gates, including a live `done-check` block in Claude from the published plugin on a fresh profile; tagged `v0.5.0`.
 
 ---
 
