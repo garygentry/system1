@@ -34,6 +34,8 @@ SCOUT_MARKER="decide many \\(dry run\\): would send [0-9]+ item\\(s\\)"
 # enabled pack. The marker is `guard list` output, which the skill text lacks.
 GUARD_PROMPT="Turn on done-check in this repo for me. Ask no questions. Print the first line of every decide command you run, verbatim."
 GUARD_MARKER="done-check: dormant · At Stop"
+# Codex lists the plugin's hooks (codex-hooks.mjs): both, before any trust.
+CODEX_HOOKS_MARKER="codex hooks: system1 session_start stop \\(untrusted\\)"
 MANY_PROMPT="Use the ask skill from the system1 plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 
 # No run needs the key: ping is keyless and many replays. Keep it out of every

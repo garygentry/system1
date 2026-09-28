@@ -1072,7 +1072,7 @@
       ],
       "diagrams": [
         {
-          "description": "catalog.yaml feeding tools/generate.ts, which emits plugin.json, .claude-plugin and .codex-plugin manifests, both marketplaces, bin/decide, hooks/claude-hooks.json, and version stamps into each package.json and core/src/version.ts; packages build to the three npm packages.",
+          "description": "catalog.yaml feeding tools/generate.ts, which emits the .claude-plugin and .codex-plugin manifests, both marketplaces, bin/decide, hooks/claude-hooks.json, and version stamps into each package.json and core/src/version.ts; packages build to the three npm packages.",
           "sourceRefs": ["s-catalog", "s-generate"]
         }
       ],

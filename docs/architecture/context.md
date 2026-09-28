@@ -29,7 +29,7 @@ flowchart TB
   `~/.config/system1/credentials`) and egress consent, which is per repo and written only by
   `decide config egress allow`. See [crosscutting.md](crosscutting.md#egress).
 - **Agent harnesses.** Claude Code, Codex and Pi are first-class, and other Agent Skills hosts are
-  best effort (`plugins/system1/plugin.json` is the portable manifest for them). The harness loads
+  best effort: they get the skills at the plugin root. There is no root Agent Plugins `plugin.json`, because Codex then ignores the plugin's hooks (0007). The harness loads
   the skills in `plugins/system1/skills/` and runs `decide` in its shell. How each one finds
   `decide` differs; see [containers.md](containers.md#per-harness).
 - **CI, git hooks and scripts** call `decide` directly. The contract they rely on is one JSON

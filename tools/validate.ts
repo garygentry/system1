@@ -4,7 +4,7 @@
  *   pnpm validate
  *
  * Covers: Agent Skills frontmatter, no guard consent flag in a skill, version lockstep across every manifest, the
- * repository url npm trusted publishing matches on, the Agent Plugins required fields, and `claude plugin validate --strict` when the
+ * repository url npm trusted publishing matches on, no root plugin.json (Codex drops hooks), and `claude plugin validate --strict` when the
  * `claude` CLI is on PATH.
  */
 import { spawnSync } from "node:child_process"
@@ -75,7 +75,6 @@ function versions(): string[] {
     "packages/core/package.json",
     "packages/cli/package.json",
     "packages/pi/package.json",
-    "plugins/system1/plugin.json",
     "plugins/system1/.claude-plugin/plugin.json",
     "plugins/system1/.codex-plugin/plugin.json",
   ]
@@ -110,18 +109,16 @@ function repositories(): string[] {
   })
 }
 
-function agentPlugin(): string[] {
-  const manifest = JSON.parse(readFileSync(join(PLUGIN_DIR, "plugin.json"), "utf8")) as Record<
-    string,
-    unknown
-  >
-  const problems: string[] = []
-  if (typeof manifest.$schema !== "string")
-    problems.push("plugin.json: $schema is required (Agent Plugins 1.0)")
-  if (typeof manifest.name !== "string" || !/^[A-Za-z0-9.-]{1,64}$/.test(manifest.name)) {
-    problems.push("plugin.json: name must be 1–64 of [A-Za-z0-9.-]")
-  }
-  return problems
+/**
+ * No root `plugin.json` (Agent Plugins 1.0). With one there, Codex reads it as
+ * the manifest and loads none of the plugin's hooks, silently (0007, amended).
+ */
+export function noRootManifest(pluginDir: string = PLUGIN_DIR): string[] {
+  return existsSync(join(pluginDir, "plugin.json"))
+    ? [
+        `${relative(ROOT, join(pluginDir, "plugin.json"))}: must not exist: Codex then ignores the plugin's hooks (0007)`,
+      ]
+    : []
 }
 
 function claudeValidate(): string[] {
@@ -149,7 +146,7 @@ if (process.argv[1] && relative(process.argv[1], fileURLToPath(import.meta.url))
     ...skills(),
     ...versions(),
     ...repositories(),
-    ...agentPlugin(),
+    ...noRootManifest(),
     ...claudeValidate(),
   ]
   if (problems.length > 0) {

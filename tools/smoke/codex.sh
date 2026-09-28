@@ -15,6 +15,8 @@ drive() { # $1 = workdir, $2 = prompt, $3 = output file
   (cd "$1" && timeout "$TIMEOUT" codex exec --skip-git-repo-check "$2" </dev/null) >"$3" 2>&1 || true
 }
 status=0
+node "$REPO/tools/smoke/codex-hooks.mjs" "$SMOKE/codex" >"$SMOKE/codex/hooks.txt" 2>&1
+assert_marker codex:hooks "$CODEX_HOOKS_MARKER" "$SMOKE/codex/hooks.txt" || status=1
 drive "$SMOKE/codex" "\$system1:setup $SETUP_PROMPT" "$SMOKE/codex/ping.txt"
 assert_marker codex:setup "$PING_MARKER" "$SMOKE/codex/ping.txt" || status=1
 assert_marker codex:setup-skill "$DOCTOR_MARKER" "$SMOKE/codex/ping.txt" || status=1
