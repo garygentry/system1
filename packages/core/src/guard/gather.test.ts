@@ -269,6 +269,7 @@ describe("gather", () => {
       notes: [],
       sources: [],
       context: [],
+      evidence: [],
     })
   })
 
@@ -284,7 +285,7 @@ describe("gather", () => {
     )
     expect(got.criteria).toHaveLength(MAX_CRITERIA)
     expect(got.checkYourself.filter((c) => /limit/.test(c.why))).toHaveLength(2)
-    expect(got.sources).toContainEqual({ kind: "file", path: "test.log", optional: true })
+    expect(got.evidence).toEqual([{ kind: "file", path: "test.log", optional: true }])
     expect(got.notes).toContain("evidence file missing.log was not found")
   })
 })

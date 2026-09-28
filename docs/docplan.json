@@ -469,6 +469,52 @@
       ]
     },
     {
+      "id": "howto-guard",
+      "title": "Guard: check the agent's work when it stops",
+      "slug": "how-to/guard",
+      "path": "docs/guard.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["agent-user"],
+      "purpose": "Turn on the done-check guard pack, write criteria it can judge, understand what it sends, costs and adds at each stop, and turn it off.",
+      "sourceRefs": ["s-cli-commands"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "Turn on done-check",
+          "intent": "Consent first, the enable line the user types (terminal, or ! with --i-consent), Codex hook trust, committing the config.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "Write criteria that work",
+          "intent": "TASK.md and .system1/done.md bullets; one checkable statement; name the file; unjudgeable and exact-fact bullets; evidence files.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "What happens at a stop",
+          "intent": "Nothing sent without a change; block once naming criteria, the next stop allowed; the allow line; not checked with a reason.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "What it sends, and what it costs",
+          "intent": "Change, criteria, named and evidence files through prepare(); measured cost, latency and accuracy; install routes and the npx-cache caveat.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "Where it falls short",
+          "intent": "Question stops, oversize changes never block, text not behaviour.",
+          "sourceRefs": ["s-cli-commands"]
+        },
+        {
+          "heading": "Turn it off",
+          "intent": "decide guard disable; the troubleshooting section.",
+          "sourceRefs": ["s-cli-commands"]
+        }
+      ],
+      "verification": "Claims checked against packages/core/src/guard and the tools/done-check-eval results (M10 §8, 2026-09-27)."
+    },
+    {
       "id": "howto-routing",
       "title": "Tune or turn off routing hints",
       "slug": "how-to/routing-hints",

@@ -135,7 +135,11 @@ export async function decideDone(
     signal: ctx.signal,
   }
   // The change, file by file, through excludes, scrubbing and size. Local: nothing sent.
-  const files = await prepare({ ...base, sources: gathered.sources, split: { kind: "file" } })
+  // The change and the evidence, file by file. Evidence alone isn't work: only
+  // the change decides whether there is anything to judge.
+  const change = [...gathered.sources, ...gathered.evidence]
+  const files = await prepare({ ...base, sources: change, split: { kind: "file" } })
+  const evidencePaths = new Set(gathered.evidence.map((s) => (s.kind === "file" ? s.path : "")))
   // The files the criteria name, the same way. Context, not change: one too
   // large to show is left out (and said), never counted as withheld.
   const named = await prepare({ ...base, sources: gathered.context, split: { kind: "file" } })
@@ -154,7 +158,7 @@ export async function decideDone(
   }
   // No change the model may see: a stop with nothing done (a question to the
   // user, say) must never be judged, since an empty change looks "unmet".
-  if (files.items.length === 0) {
+  if (files.items.every((item) => evidencePaths.has(item.path ?? ""))) {
     return withheld.length > 0
       ? {
           output: {
@@ -186,11 +190,7 @@ export async function decideDone(
   const join = (extra: SourceSpec[]) =>
     prepare({
       ...base,
-      sources: [
-        { kind: "text", id: "about", text: PREAMBLE + hidden },
-        ...gathered.sources,
-        ...extra,
-      ],
+      sources: [{ kind: "text", id: "about", text: PREAMBLE + hidden }, ...change, ...extra],
       split: { kind: "join" },
     })
   let joined = await join(shown)

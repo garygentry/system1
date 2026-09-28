@@ -251,6 +251,28 @@ describe("done-check decisions", () => {
     expect(calls).toHaveLength(0)
   })
 
+  it("never judges a session that changed nothing because an evidence file exists", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    writeFileSync(join(dir, ".system1/config.yaml"), `${CONFIG}      evidence: [test-output.txt]\n`)
+    execFileSync("git", ["-C", dir, "add", "-A"])
+    execFileSync("git", [
+      "-C",
+      dir,
+      "-c",
+      "user.name=t",
+      "-c",
+      "user.email=t@t",
+      "commit",
+      "-qm",
+      "task",
+    ])
+    // A test log, untracked and rewritten during the session: evidence, not work.
+    const edit = (d: string) => writeFileSync(join(d, "test-output.txt"), "1 passed\n")
+    expect(await stop(dir, fetch, {}, edit)).toEqual({})
+    expect(calls).toHaveLength(0)
+  })
+
   it("says so, without a call, when the only change is withheld", async () => {
     const { fetch, calls } = provider()
     const dir = repo("- The README documents the flag [unmet]\n")

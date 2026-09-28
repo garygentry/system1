@@ -75,6 +75,7 @@ function guardCheck(
   config: ToolContext["config"],
   env: NodeJS.ProcessEnv,
   home?: string,
+  cliPath?: string,
 ): DoctorCheck {
   const enabled = PACK_NAMES.filter((name) => config.guard.packs[name].enabled)
   if (enabled.length === 0)
@@ -96,6 +97,18 @@ function guardCheck(
       status: "warn",
       detail: `active: ${enabled.join(", ")}; but Codex hasn't trusted the system1 hooks, so it skips them without a word`,
       fix: "open Codex interactively in this repo once and trust the system1 hooks when it asks (after a plugin update it may ask again)",
+      advisory: true,
+    }
+  }
+  // The hook runs with SYSTEM1_NO_NPX: it never downloads. Run from npx's
+  // cache, it finds this copy (as fast as a global install) until a plugin
+  // update or a cache clean removes it; then the check is skipped silently.
+  if (cliPath && /[\\/]_npx[\\/]/.test(cliPath)) {
+    return {
+      name: "guard",
+      status: "warn",
+      detail: `active: ${enabled.join(", ")}; but decide runs from npx's cache, which the hooks never download into: after a plugin update or an npm cache clean, the check is skipped silently until decide runs once`,
+      fix: "npm i -g @garygentry/system1",
       advisory: true,
     }
   }
@@ -294,7 +307,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
   )
 
   checks.push(routeCheck(config.route))
-  checks.push(guardCheck(config, env, options.home))
+  checks.push(guardCheck(config, env, options.home, options.cliPath))
   checks.push(backlogCheck(config.repoRoot))
 
   let reach: Awaited<ReturnType<typeof ping>>

@@ -276,3 +276,33 @@ describe("doctor: Codex hook trust", () => {
     }
   })
 })
+
+describe("doctor: guard from the npx cache", () => {
+  const ACTIVE = {
+    ".system1/config.yaml":
+      "egress:\n  consent: { granted: true }\nguard:\n  packs:\n    done-check:\n      enabled: true\n",
+  }
+  const run = (cliPath: string, files: Record<string, string> = ACTIVE) => {
+    const cwd = temp({ ".git/HEAD": "ref: refs/heads/main\n", ...files })
+    const env = { PATH: binDir(), OPENROUTER_API_KEY: SECRET }
+    return runDoctor({ cwd, home: temp(), env, fetch: reachable, cliPath })
+  }
+  const NPX = "/home/u/.npm/_npx/0a1b/node_modules/@garygentry/system1/dist/bundle/decide.mjs"
+
+  it("warns when an active pack's hook depends on npx's cache", async () => {
+    const r = await run(NPX)
+    expect(check(r, "guard")).toMatchObject({
+      status: "warn",
+      detail: expect.stringMatching(/npx's cache/),
+      fix: "npm i -g @garygentry/system1",
+      advisory: true,
+    })
+    expect(r.healthy).toBe(true)
+  })
+
+  it("says nothing about npx for a global install, or with every pack dormant", async () => {
+    const global = "/usr/lib/node_modules/@garygentry/system1/dist/bundle/decide.mjs"
+    expect(check(await run(global), "guard")?.status).toBe("ok")
+    expect(check(await run(NPX, CONSENT), "guard")?.status).toBe("ok")
+  })
+})

@@ -163,7 +163,7 @@ with `decide route --text "…"`.
 Guard packs are hook checks that send content to the provider at a harness event, such as
 `done-check` at the agent's Stop. Each one is dormant until the user enables it in this repo, on
 top of egress consent, with `decide guard enable <pack>` ([cli.md](cli.md#guard)). Settings go
-under `guard.packs.<pack>:`.
+under `guard.packs.<pack>:`. How to use `done-check`, and what it sends: [guard](guard.md).
 
 | Key | Default (`done-check`) | Type | Combines | Meaning |
 |---|---|---|---|---|
