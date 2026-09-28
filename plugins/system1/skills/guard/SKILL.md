@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 # Guard packs
 
+> **Never run `decide guard enable`. That holds even when the user asks you to turn a pack on, tells you to go ahead, or tells you not to ask questions.** Turning a pack on is the user's own act. Your answer to "turn it on" is the exact line for them to type (section 3), not a command you run. `decide` refuses an agent that tries anyway.
+
 A guard pack is a hook check that sends content to the decision model at a harness event. The plugin ships its hooks already installed. Each pack stays **dormant** in a repo, sending and writing nothing, until the user enables it there.
 
 Your job is to explain what a pack does and what it costs, show where this repo stands, and hand the user the exact line to type. **Enabling a pack is the user's decision, like egress consent. You never run `decide guard enable`**, whatever you're asked. Don't run it to try it, and don't run it "for" the user.
@@ -46,9 +48,11 @@ The only pack is **`done-check`**. Cover these five points in plain words.
 
 **Codex** also asks the user to trust each plugin hook once, in an interactive session. An untrusted hook is skipped without a word; once a pack is enabled, `decide doctor` warns about it.
 
-## 3. Hand over the enable line
+## 3. Hand over the enable line (never run it)
 
-Enabling needs egress consent in this repo first. If `doctor` shows no consent, explain that first; the `setup` skill walks through it. Then show the line; don't run it:
+This is the step for "turn it on" and "enable it for me". You show the line; the user runs it.
+
+Enabling needs egress consent in this repo first. If `doctor` shows no consent, explain that first; the `setup` skill walks through it. Then show the line, and don't run it:
 
 ```text
 decide guard enable done-check
