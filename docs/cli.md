@@ -204,7 +204,8 @@ enabled but dormant (no consent), or `dormant`.
 - `disable` needs neither, since it only stops egress.
 - `--by` records who changed it; without it, the record says how.
 
-Settings are in [configuration.md § Guard packs](configuration.md#guard-packs).
+Settings are in [configuration.md § Guard packs](configuration.md#guard-packs); how to use
+`done-check` is in [guard](guard.md).
 
 ### `route`
 
