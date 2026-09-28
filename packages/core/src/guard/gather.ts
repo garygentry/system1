@@ -126,6 +126,11 @@ export interface Gathered {
    * session that changed nothing is never judged just because a file was named.
    */
   context: SourceSpec[]
+  /**
+   * The configured evidence files (a test log, say), sent with the change.
+   * Not part of it: a stop with no work is never judged because a log exists.
+   */
+  evidence: SourceSpec[]
 }
 
 /**
@@ -259,6 +264,7 @@ export async function gather(ctx: PackContext, session: GuardSession): Promise<G
 
   const sources: SourceSpec[] = []
   const context: SourceSpec[] = []
+  const evidence: SourceSpec[] = []
   if (criteria.length > 0) {
     const git_ = (args: string[]) => git(ctx.repoRoot, args, { signal: ctx.signal })
     let range: string
@@ -322,11 +328,11 @@ export async function gather(ctx: PackContext, session: GuardSession): Promise<G
     for (const configured of ctx.pack.evidence) {
       const path = repoPath(ctx.repoRoot, configured)
       if (path && existsSync(resolve(ctx.repoRoot, path)) && isRegularFile(ctx.repoRoot, path)) {
-        sources.push({ kind: "file", path, optional: true })
+        evidence.push({ kind: "file", path, optional: true })
       } else {
         notes.push(`evidence file ${configured} was not found`)
       }
     }
   }
-  return { criteria, checkYourself, notes, sources, context }
+  return { criteria, checkYourself, notes, sources, context, evidence }
 }

@@ -175,11 +175,13 @@
    - **Live measurement:** false-block rate (non-completion stops counted separately), missed-block rate, p50/p95 added latency at Stop, and cost per event and per session. Results go in `Results` and `docs/evaluation.md`.
    *Built: `tools/done-check-eval/`, 28 events plus a 10-event holdout, replayed in CI. See Results, "M10 §8".*
 9. **Docs:** a guard page; a done-check recipe; troubleshooting (why it blocked, why it skipped, how to turn it off); CLI reference; the npx-cache install's latency, stated.
+   *Built: `docs/guard.md` (turning it on, writing criteria, what a stop does, what it sends and costs, the install routes, limits), a troubleshooting section, and links from the README, getting-started, configuration and cli. The npx route measured differently than the spec assumed; see the Dormant overhead item. A fact-check of the page against the code found a false-block path, now fixed. Evidence files counted as part of the change, so with `evidence` configured, a stop with no work (a question before starting) was judged and could block. Evidence now travels separately, and only the change decides whether there is anything to judge (`check.ts`, with a test).*
 
 ### Acceptance
 
 - [ ] Spike answers recorded; Codex wired, or documented as unsupported with the reason.
 - [ ] **Dormant overhead:** with no pack enabled, the hook sends nothing, and its overhead is < 150 ms over bare node with a global or plugin-pinned install. The npx-cache route is measured, stated as outside the budget, and warned about by `doctor`.
+  *Measured 2026-09-28 (`bench:startup`, median of 15): `decide hook` with no pack on adds +55 ms over bare node from the bundle. The plugin shim finding npx's cached copy costs about the same (`version`: 36 ms against 31 ms). So the npx-cache route is **inside** the budget: the shim runs the cached bundle with node, and the hook never runs `npx` itself, which takes about 720 ms (`SYSTEM1_NO_NPX`). The real risk is different. With no cached copy of the plugin's version (after a plugin update, or an npm cache clean), the hook finds no CLI and skips without a word. `doctor` warns when a pack is active and `decide` runs from npx's cache. This is stated in `docs/guard.md`.*
 - [ ] **Enabled latency:** p95 added latency at Stop is under `latency_ms`, and a timeout fails open with a reason. *(p95 614 ms live through the CLI, §8.)*
 - [ ] **`guard enable`:**
   - it refuses without consent (exit 3), and with no TTY and no `--i-consent` (tested);

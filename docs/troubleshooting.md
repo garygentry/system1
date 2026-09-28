@@ -102,6 +102,12 @@ hooks only after you trust them, and skips untrusted ones without a word, so `do
 runs there. Open Codex interactively in the repo once and trust the system1 hooks when it asks.
 It may ask again after a plugin update changes a hook.
 
+A warning can also mean an active pack's `decide` runs from npx's cache (the Claude Code plugin
+with no global install). The hooks never download. So after a plugin update or an npm cache
+clean, they find no CLI and skip the check without a word, until the agent runs `decide` once.
+The warning says the setup can fail this way; it can't see whether the cache is empty now. `npm i -g @garygentry/system1` avoids it. See
+[guard § How the install affects it](guard.md#how-the-install-affects-it).
+
 ### doctor: `backlog`
 
 Whether the scout backlog, `.system1/opportunities.json`, is valid. It's fine for it not to
@@ -212,6 +218,59 @@ persists, report it with the envelope.
 
 A bug in `decide`. Please report it with the command and the envelope, at
 <https://github.com/garygentry/system1/issues>.
+
+## done-check blocked, skipped or said nothing
+
+Every check `done-check` makes ends in one of three ways. It blocks and names criteria, it lets
+the stop through with a `System 1 done-check: …` line, or it says nothing. See [guard](guard.md).
+
+**It blocked, and you think the work is done.**
+
+- The block names the criteria that look unmet. Either the change really misses them, or the
+  evidence isn't in what was sent.
+- The change is the session's diff, plus new untracked files, the files the criteria name, and
+  any `evidence` files. A criterion about a file the change didn't touch needs to name that file.
+- The agent can say why a criterion doesn't apply. **The next stop is always allowed.**
+- To stop it while you look into it, turn the pack off.
+
+**It let the stop through with "not settled".** The model wasn't confident the criterion could
+be judged, or whether it's met. That never blocks. Rewrite the bullet as one checkable statement
+about the code, and name the file where the evidence is.
+
+**"the change was too large to check it".** The change didn't fit one call, so each criterion
+was checked over only the files that share its words, and a partial view never blocks. Split the
+work, or keep large generated files out with `.gitignore` or `egress.exclude`.
+
+**"for the agent to check".** The bullet asks for an exact fact (tests pass, a count, a date).
+Such bullets are never sent: send a test log as evidence instead.
+
+**`not checked: …`**, and what each reason means:
+
+| Reason | What to do |
+|---|---|
+| `no API key is set` | Set `OPENROUTER_API_KEY`, or use the credentials file |
+| `the decision model's provider failed (…)` | A provider error: see the matching [error](#errors). In Codex's sandbox, the hook may have no network |
+| `it took longer than N ms (latencyMs)` | Raise `latencyMs` ([settings](configuration.md#guard-packs)), up to 55000 |
+| `this session's done-check spend reached …` | The session hit `maxUsdPerSession`; raise it, or start a new session |
+| `the change would cost more than one request may` | The change is over the spend guard (`budget.maxCalls` / `budget.maxUsd`) |
+| `the only changes are withheld from the provider (…)` | Everything changed is excluded or secret-shaped, so there was nothing to judge |
+| `replay is forced (SYSTEM1_REPLAY) …` | Unset `SYSTEM1_REPLAY` |
+| `git failed (…)` | Run `git status` in the repo |
+
+**It said nothing at all.** Check these in order:
+
+1. `decide guard status`: is the pack `active` in this repo? `enabled` is read only from the
+   repo's `.system1/config.yaml`, never from your user config. Without egress consent an
+   enabled pack is dormant.
+2. Are there open bullets in `TASK.md` or `.system1/done.md` (or your `criteria` files)?
+3. Has anything changed since the session started, or since the last check? A check runs only
+   when something it would send has changed.
+4. Codex: are the hooks trusted? `decide doctor` warns if not.
+5. The Claude Code plugin with no global install, after a plugin update or an npm cache clean:
+   the hook finds no CLI until the agent runs `decide` once. A global install avoids it.
+6. A config file that doesn't load makes the hook stay silent. `decide doctor` shows the error.
+
+**Turn it off:** `decide guard disable done-check`.
 
 ## In an agent
 

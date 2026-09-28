@@ -37,7 +37,7 @@ judgement (a batch to triage, a checklist to tick off, "is this done?"), it adds
 
 In Claude Code and Codex, the plugin also installs guard hooks at session start and stop. They
 run `decide hook` and do nothing, sending nothing and writing nothing, until you enable a guard
-pack in a repo with `decide guard enable` ([cli.md § guard](cli.md#guard)). Codex asks you to
+pack in a repo with `decide guard enable` ([guard](guard.md)). Codex asks you to
 trust a plugin's hooks before it runs them. Expect that prompt on first use, and again if a plugin
 update changes a hook. Trusting them is safe while no pack is enabled.
 
