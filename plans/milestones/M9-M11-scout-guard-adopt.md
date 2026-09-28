@@ -173,13 +173,14 @@
      - an oversize diff;
      - an edited criteria file.
    - **Live measurement:** false-block rate (non-completion stops counted separately), missed-block rate, p50/p95 added latency at Stop, and cost per event and per session. Results go in `Results` and `docs/evaluation.md`.
+   *Built: `tools/done-check-eval/`, 28 events plus a 10-event holdout, replayed in CI. See Results, "M10 §8".*
 9. **Docs:** a guard page; a done-check recipe; troubleshooting (why it blocked, why it skipped, how to turn it off); CLI reference; the npx-cache install's latency, stated.
 
 ### Acceptance
 
 - [ ] Spike answers recorded; Codex wired, or documented as unsupported with the reason.
 - [ ] **Dormant overhead:** with no pack enabled, the hook sends nothing, and its overhead is < 150 ms over bare node with a global or plugin-pinned install. The npx-cache route is measured, stated as outside the budget, and warned about by `doctor`.
-- [ ] **Enabled latency:** p95 added latency at Stop is under `latency_ms`, and a timeout fails open with a reason.
+- [ ] **Enabled latency:** p95 added latency at Stop is under `latency_ms`, and a timeout fails open with a reason. *(p95 614 ms live through the CLI, §8.)*
 - [ ] **`guard enable`:**
   - it refuses without consent (exit 3), and with no TTY and no `--i-consent` (tested);
   - no skill text contains a runnable enable-with-consent line (`pnpm validate` rejects the flag in any skill file, §7);
@@ -191,8 +192,8 @@
   - sees an untracked file;
   - sends nothing on an unchanged re-stop.
 - [ ] Each fail-open path (provider error, timeout, replay miss, budget, size, no consent) exits 0 with its reason in a `systemMessage` (tested).
-- [ ] Measured false-block and missed-block rates published, with sample size; non-completion stops reported separately.
-- [ ] Known gap #1 updated in `ROADMAP.md` with what done-check does and does not fix, and its catch rate on the gap scenarios.
+- [x] Measured false-block and missed-block rates published, with sample size; non-completion stops reported separately (§8 Results, `docs/evaluation.md`).
+- [x] Known gap #1 updated in `ROADMAP.md` with what done-check does and does not fix, and its catch rate on the gap scenarios.
 - [ ] `pnpm check`, `pnpm smoke`, `pnpm eval:routing all` green.
 - [ ] **0.5.0 released** through the gates, including a live `done-check` block in Claude from the published plugin on a fresh profile; tagged `v0.5.0`.
 
@@ -330,6 +331,46 @@ This used a throwaway fixture under `~/.cache/system1-e2e`, running headless `cl
 - **After the fix, work done:** "2 of 2 criteria met", allowed.
 - **After the review fixes:** named files are context, not change, capped at three per criterion, ranked path > name > stem, left out when too large, and matched in one pass. The not-done run still blocked at the 0.7 bar.
 - **Cost:** one call per check, about $0.00003; the fully done session cost $0.000035 in total. Every call was ledgered as `guard:done-check` under Claude's session id.
+
+### M10 §8: the labelled stop events (2026-09-27)
+
+**What was built.** `tools/done-check-eval/` holds 28 labelled stop events (69 criteria) in `scenarios.yaml`, plus a 10-event holdout (23 criteria) in `holdout.yaml`. The holdout was written after the fit and before it was ever run. Each event is a real git repo: the session start, a criteria file, and the agent's change. It runs through the real hook: `runHook` in-process to record and replay, and the built CLI for the live repeats.
+- Every criterion is labelled `met`, `unmet`, `unjudgeable` or `self` (an exact fact that lint keeps from the model). Each event is a `completion`, `question` or `oversize` stop.
+- `pnpm eval:done-check` replays both sets; `tools/done-check-eval/eval.test.ts` does the same in CI. `--record` re-records live, `--fit` sweeps the thresholds, and `--latency N` runs N live stops per event through `decide hook`.
+- The set covers the spec's list: done and not done; both Known-gap prompts, over the routing-eval fixture (TASK.md, and the pre-commit rules as `.system1/done.md`); commit before stop; an untracked file; three question stops, one with no change; unjudgeable criteria, including three of kinds the question never names; exact facts; a prompt-injection comment; an oversize diff; a ticked and a deleted criterion; named files (the README); and a 120 KB untracked log.
+
+**What it changed.**
+1. **The judgeable question.**
+   - With the old wording ("Could a reviewer decide whether this criterion holds just by reading the text shown?"), unmet criteria whose code was simply missing hedged at judgeable 0.25–0.65. So 6 of 14 not-done stops were missed at the 0.7 bar, and no threshold separated them from the unjudgeable ones (up to 0.33).
+   - A second wording ("can the text settle it… even if what it asks for is missing") did worse: 7 of 14 missed.
+   - The shipped wording asks what kind of claim a criterion is: "a claim about this repository's code, docs, tests or files… rather than about events or opinions outside the repository?" With it, unjudgeable criteria scored 0.05–0.08 (0.40 for "users find it clear", with met 0.67).
+2. **The thresholds** went from judgeable ≥ 0.7 and met ≤ 0.2 to **judgeable ≥ 0.5 and met ≤ 0.25**, fixed before the holdout was written.
+   - **Judgeable.** The undecided floor already holds back answers in 0.425–0.575, so the working bar is about 0.575. In-sample, any bar from 0.3 to 0.7 fits alike. On the holdout, 0.5 catches `h-clicks-counts-misses` (judgeable 0.64, met 0.20), which 0.7 would miss. Review asked for 0.7 as the cautious choice; that is the trade.
+   - **Met.** Unmet criteria scored met ≤ 0.23 and met ones ≥ 0.30, so the margin is thin. Its edge is one label set before any run and arguable: "A test covers the timeout behaviour" is `met` in `gap-task-md`, but that test asserts a signal `legacy.ts` never passes. Under the other reading it isn't a near false block, and `gap-task-md` names three of four unmet criteria.
+3. **Harness isolation.** A global `*.log` ignore on the author's machine hid a test log from the eval's own `git add` but not from the hook, so the first live run measured the harness, not the hook. Every git call in the eval now runs without global or system config.
+4. **Tried and reverted:** leaving withheld files out of the joined change.
+   - A 120 KB untracked log makes the change too large to show whole. The check then goes partial and can't block (`untracked-big-log`).
+   - Joining the rest without it would fix that. But review showed it false-blocks when the big file is the one holding the work, since `namesWithheld` only catches criteria that name the file.
+   - A false block is the worse failure, so a large untracked file disabling blocking stays, by design, like an oversize diff.
+
+**Results.** Replay is one recorded answer per event, at the shipped thresholds. Live is 3 stops per event through `decide hook`, with a key, on 2026-09-27.
+
+| Set | Replay: false / missed | Live: false blocks | Live: missed blocks | Live: question stops blocked | Live: oversize blocked |
+|---|---|---|---|---|---|
+| scenarios (fitted on) | 0/9 · 0/14 | 0/27 done stops | 0/42 | 6/9 | 0/6 |
+| holdout | 0/4 · 0/5 | 0/12 | 0/15 | 3/3 | – |
+
+- **Known gap #1 scenarios:** both block in replay and in 6 of 6 live runs. `gap-precommit-rules` names "No debugging output".
+- **Run-to-run variance:** in an earlier live run, `expiry-not-deleted` was missed in 2 of 3. That run had identical code for this event; the only difference was the withheld-file change, which doesn't touch it. Half of one criterion is done there, and met drifts across 0.25. So a live miss rate of 0/57 overstates what to expect; the earlier runs gave 2/57.
+- **Question stops** (the agent stops to ask the user something with work unfinished) are blocked 9 times in 12. The check doesn't read the message, and the work really is unfinished, so the block names real gaps. Decision 2 deferred a local completion-claim check "until §8 measures it". This is that measurement, and it argues for adding the check.
+- **Latency,** Stop through the CLI when it calls the model: p50 463 ms, p95 614 ms, max 661 ms (n 81); holdout p50 452 ms, p95 523 ms (n 30). Both are well under `latencyMs` (5000).
+- **Cost:** one call per stop, $0.000039–0.000048 per stop. The whole eval (recording, fitting and the live repeats) cost under $0.02.
+- **Found on the way:** random-letter content tokenizes at about 2 characters a token, under the size check's 3. The provider refused an 86 K-character state with `max_tokens_exceeded`, and done-check failed open with that reason. The oversize scenario now uses real words.
+- **Limits:**
+  - One author wrote the events and labels, on one toy project plus the routing fixture.
+  - Only the holdout (n = 10) is out of sample.
+  - Recorded answers are one sample of a stochastic model; the live repeats are 3 per event.
+  - `simulate` (`--fit`) models only the paths this set exercises.
 
 ### M9 pre-check: does scout find anything? (2026-09-24, before any M9 code)
 

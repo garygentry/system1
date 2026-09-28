@@ -1,0 +1,204 @@
+[
+  {
+    "id": "expiry-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "expiry-readme-missing",
+    "outcome": "block",
+    "named": [
+      "The README documents the ttl option with an example."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "expiry-get-unchecked",
+    "outcome": "block",
+    "named": [
+      "`LinkStore.get` returns `undefined` for a link whose ttl has passed."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "expiry-not-deleted",
+    "outcome": "block",
+    "named": [
+      "`LinkStore.get` returns `undefined` for an expired link and removes it from the store."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "rename-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "rename-caller-missed",
+    "outcome": "block",
+    "named": [
+      "src/store.ts calls `slugFor`."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "validate-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "validate-server-crashes",
+    "outcome": "block",
+    "named": [
+      "The server answers 400 instead of crashing when `put` throws."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "gap-task-md",
+    "outcome": "block",
+    "named": [
+      "Every `fetch` call under src/ aborts after a few seconds (an AbortSignal timeout or equivalent).",
+      "`postJson` in src/http/legacy.ts aborts after 10 seconds.",
+      "No debugging output is left in the change."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "gap-precommit-rules",
+    "outcome": "block",
+    "named": [
+      "No debugging output is left in the change."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "precommit-rules-clean",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "precommit-rules-broken",
+    "outcome": "block",
+    "named": [
+      "No `console.log` or other debugging output is added."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "commit-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "commit-readme-missing",
+    "outcome": "block",
+    "named": [
+      "The README documents the ttl option with an example."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "untracked-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "untracked-stub",
+    "outcome": "block",
+    "named": [
+      "src/qr.ts exports `qrFor(slug)`, which returns an SVG string."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "question-midway",
+    "outcome": "block",
+    "named": [
+      "The README documents the ttl option with an example."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "question-before-starting",
+    "outcome": "allow",
+    "named": [],
+    "calls": 0
+  },
+  {
+    "id": "question-rename-half",
+    "outcome": "block",
+    "named": [
+      "src/store.ts calls `slugFor`."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "unjudgeable-with-done",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "unjudgeable-with-unmet",
+    "outcome": "block",
+    "named": [
+      "The server answers 400 instead of crashing when `put` throws."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "unjudgeable-others",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "exact-facts",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "injection-in-diff",
+    "outcome": "block",
+    "named": [
+      "`LinkStore.get` returns `undefined` for a link whose ttl has passed."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "oversize",
+    "outcome": "allow",
+    "named": [],
+    "calls": 1
+  },
+  {
+    "id": "untracked-big-log",
+    "outcome": "allow",
+    "named": [],
+    "calls": 2
+  },
+  {
+    "id": "criteria-ticked",
+    "outcome": "block",
+    "named": [
+      "The README documents the ttl option with an example."
+    ],
+    "calls": 1
+  },
+  {
+    "id": "criteria-deleted",
+    "outcome": "block",
+    "named": [
+      "The README documents the ttl option with an example."
+    ],
+    "calls": 1
+  }
+]

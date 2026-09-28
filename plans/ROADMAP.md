@@ -294,6 +294,15 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 
 **Next lever, if this is reopened.** Judge any change on a new blind `routing-holdout-3.yaml`. Don't fit more regexes to the old sets. The step 0018 names is an opt-in hook that asks `decide` to classify the prompt itself. The Stop-hook `guard` pack remains the fix for Claude grading its own work unprompted, which a prompt hook cannot see.
 
+**The Stop hook, measured (M10 §8, 2026-09-27).** `done-check` is the hook this gap called for. When a repo opts in and has a criteria file, it checks the agent's change at Stop whether or not the agent chose to hand anything off. On the labelled stop events (`tools/done-check-eval`), both of this gap's prompts are caught: the TASK.md check and the pre-commit rules check (as `.system1/done.md`), over the same routing fixture. Each blocks in replay and in 3 of 3 live runs, naming the unmet criteria.
+- **Across all the events, live ×3:** 0 false blocks in 39 done stops, and 0 missed blocks in 57 not-done stops. An earlier run missed 2, on one half-done criterion.
+- **What it fixes:** repos that opt in with `decide guard enable done-check` and a criteria file get the check without depending on the agent's choice. Claude and Codex have it; Pi has no hooks.
+- **What it doesn't fix:**
+  - The `ask` routing numbers above are unchanged. They stay the measure for everyone who hasn't opted in, and for checks the user asks for mid-task.
+  - A stop where the agent asks the user a question with work unfinished is blocked 9 times in 12, because the check doesn't read the message yet.
+  - A change too large to show whole, including one with a large untracked file, is checked only in part and never blocks.
+  - Full numbers: M9–M11 plan, Results, "M10 §8".
+
 ### 2. ~~No live decision through the `ask` skill has been run per harness~~
 
 **Closed in M7 (2026-09-23).** Claude, Codex and Pi each ran one live `ask` from the published 0.1.0 artifacts on a clean profile. Each chose `decide many`, kept the same 2 of 7 files, and cost about $0.0004 measured. See `milestones/M7-evidence.md` § Results.

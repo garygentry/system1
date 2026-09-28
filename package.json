@@ -30,6 +30,7 @@
     "smoke": "sh tools/smoke/all.sh",
     "smoke:published": "sh tools/smoke/published.sh",
     "eval:routing": "tsx tools/evals/run.ts",
+    "eval:done-check": "tsx tools/done-check-eval/run.ts",
     "bench:startup": "tsx tools/bench-startup.ts",
     "dev:link": "sh tools/dev-link.sh link",
     "dev:unlink": "sh tools/dev-link.sh unlink",
