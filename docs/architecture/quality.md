@@ -26,7 +26,7 @@ measure. For the results themselves, dated and with their limits, see
   `*.live.test.ts` (`vitest.config.ts`). Tests sit beside their source and run offline: the
   transport takes an injected `fetch`, and config tests pass a temporary `home`.
 - **`pnpm generate:check`**: generated files match `catalog.yaml` ([deployment.md](deployment.md)).
-- **`pnpm validate`**: skill frontmatter, version lockstep, Agent Plugins fields, and
+- **`pnpm validate`**: skill frontmatter, version lockstep, no root `plugin.json`, and
   `claude plugin validate --strict` when `claude` is installed. CI has no `claude`, so that part
   runs only locally.
 - **`node tools/notices.mjs --check`**: the CLI's third-party notices are current.

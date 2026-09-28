@@ -117,6 +117,8 @@ run_codex() {
   [ -d "$CODEX_HOME/plugins/cache/system1/system1/$VERSION" ] ||
     { echo "smoke[codex:install]: FAIL — no plugin $VERSION (is the bump on main?)" >&2; return 1; }
   echo "smoke[codex:install]: PASS — plugin $VERSION, CLI $(decide version)"
+  node "$REPO/tools/smoke/codex-hooks.mjs" "$(workdir codex)" >"$P/codex-hooks.txt" 2>&1
+  assert_marker codex:hooks "$CODEX_HOOKS_MARKER" "$P/codex-hooks.txt" || return 1
   check codex decide "$(workdir codex)" "codex exec --skip-git-repo-check \"$PROMPT\""
 }
 

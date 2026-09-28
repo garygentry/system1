@@ -105,14 +105,8 @@ export function render(catalog: Catalog, root = ROOT): Output[] {
         },
       }),
     },
-    // Agent Plugins 1.0: the portable baseline for best-effort hosts.
-    {
-      path: `${PLUGIN_DIR}/plugin.json`,
-      content: json({
-        $schema: "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-        ...common,
-      }),
-    },
+    // No root plugin.json (Agent Plugins 1.0): Codex takes it as the manifest
+    // and then loads no plugin hooks, so done-check never ran there (0007).
     {
       path: ".claude-plugin/marketplace.json",
       content: json({

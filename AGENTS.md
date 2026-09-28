@@ -12,7 +12,7 @@ Before starting, read `plans/ROADMAP.md` — including its **Known gaps** — th
 | `packages/pi` | `@garygentry/system1-pi`, the skills packaged for Pi. **Generated**; its `skills/` copy is made by `prepack` and is gitignored |
 | `packages/cli` | `@garygentry/system1`, the `decide` CLI (`entry.ts` → `bin.ts` → `main.ts`, the testable core, then `commands/*` loaded lazily). `bundle.mjs` builds `dist/bundle/decide.mjs`, the entry that `bin` and the shim run |
 | `plugins/system1/skills/` | Agent Skills, authored once and shared by every harness |
-| `plugins/system1/{plugin.json,.claude-plugin,.codex-plugin,bin/decide,hooks/}` | **Generated**. `hooks/claude-hooks.json` is the Claude-only routing hook ([0018](plans/decisions/0018-claude-routing-hook.md)); tune it with `route:` in config |
+| `plugins/system1/{.claude-plugin,.codex-plugin,bin/decide,hooks/}` | **Generated**. No root `plugin.json`: with one, Codex loads no plugin hooks ([0007](plans/decisions/0007-cursor-copilot-and-other-agent-plugins-1-0-clients.md), amended). `hooks/claude-hooks.json` is the Claude-only routing hook ([0018](plans/decisions/0018-claude-routing-hook.md)); tune it with `route:` in config |
 | `.claude-plugin/`, `.agents/plugins/` | **Generated** marketplaces (Claude Code, Codex) |
 | `catalog.yaml` | Source of truth for names, version, descriptions and npm scope |
 | `tools/generate.ts`, `tools/validate.ts`, `tools/smoke/`, `tools/evals/`, `tools/done-check-eval/` | Generator, structural validator, headless harness smoke tests, skill routing evals, done-check's labelled stop events |
@@ -74,6 +74,7 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
   - **Output:** `{"decision":"block","reason":…}` makes the agent continue with `reason` as its instruction. On the next stop, `stop_hook_active` is `true`. A `systemMessage` is shown to the user as "↳ Hook · …".
   - `SessionStart` also fires, with `source: "startup"`.
   - Hook commands get `PLUGIN_ROOT`/`PLUGIN_DATA` and `CLAUDE_PLUGIN_ROOT`/`CLAUDE_PLUGIN_DATA`, and `${PLUGIN_ROOT}` is substituted. So one hooks file can serve both harnesses.
+- **A root `plugin.json` turns plugin hooks off (verified 2026-09-28, 0.5.0).** When the plugin directory has an Agent Plugins `plugin.json` beside `.codex-plugin/plugin.json`, Codex reads the root one and lists no hooks. It doesn't matter whether the root file has a `hooks` path or an inline object, or whether `hooks/hooks.json` exists. Skills still load. So nothing prompts for trust, and done-check never runs. `codex app-server` → `hooks/list` shows what Codex sees; `tools/validate.ts` now forbids the root file.
 - **Plugin hooks need the user's trust.** It is stored per hook in `$CODEX_HOME/config.toml`, as `[hooks.state."<plugin>@<marketplace>:<file>:<event>:<i>:<j>"] trusted_hash = "sha256:…"`. Changing a hook's entry presumably asks for trust again.
   - An untrusted hook is skipped **silently**, and headless `codex exec` never asks for trust.
   - Interactive Codex recorded trust on first use.

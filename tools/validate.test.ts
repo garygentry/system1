@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { drift, loadCatalog, render } from "./generate.js"
-import { checkRepository, checkSkill, consentFlag } from "./validate.js"
+import { checkRepository, checkSkill, consentFlag, noRootManifest } from "./validate.js"
 
 const skill = (front: string) => `---\n${front}\n---\n\n# Body\n`
 
@@ -39,6 +39,15 @@ describe("consentFlag", () => {
     expect(consentFlag(dir, "ping")).toEqual([
       "ping: references/enable.md must not contain --i-consent (the user's flag)",
     ])
+  })
+})
+
+describe("noRootManifest", () => {
+  it("passes the plugin as generated, and fails on a root plugin.json", () => {
+    expect(noRootManifest()).toEqual([])
+    const dir = mkdtempSync(join(tmpdir(), "plugin-"))
+    writeFileSync(join(dir, "plugin.json"), "{}")
+    expect(noRootManifest(dir)).toEqual([expect.stringMatching(/must not exist: Codex/)])
   })
 })
 

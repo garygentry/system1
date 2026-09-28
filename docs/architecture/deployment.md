@@ -19,7 +19,6 @@ flowchart LR
     subgraph pluginfiles["plugins/system1/"]
         claudeman[".claude-plugin/plugin.json"]
         codexman[".codex-plugin/plugin.json"]
-        portable["plugin.json (Agent Plugins 1.0)"]
         shim["bin/decide (shim, pinned version)"]
         hooks["hooks/claude-hooks.json"]
     end
@@ -54,7 +53,7 @@ flowchart LR
   catalog's version.
 - **`pnpm validate`** (`tools/validate.ts`) checks skill frontmatter, version lockstep across every
   manifest, that each package's `repository.url` is the exact form npm trusted publishing matches
-  on (the generator stamps it), the Agent Plugins required fields, and runs `claude plugin validate --strict` when
+  on (the generator stamps it), that there is no root `plugin.json` (Codex would ignore the hooks), and runs `claude plugin validate --strict` when
   `claude` is on PATH. CI has no `claude`, so run it locally before a release.
 - **The Pi package's `skills/`** is not committed. Its generated `prepack.mjs` copies
   `plugins/system1/skills` in when the package is packed.
