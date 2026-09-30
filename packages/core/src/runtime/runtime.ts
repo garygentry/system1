@@ -25,7 +25,7 @@ import {
   resolveProfile,
 } from "../model/profiles.js"
 import type { Answers, QuestionSet, State, Usage } from "../model/types.js"
-import { prepareState } from "../prepare.js"
+import { prepareState } from "../prepare-state.js"
 import { SpendLedger } from "../run/spend.js"
 import { createOpenRouterTransport, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
 
@@ -138,11 +138,13 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
   const setup = validate(opts)
   const root = typeof opts.root === "string" && opts.root ? opts.root : undefined
   const fixtures = root ? new FixtureStore(join(root, "fixtures")) : undefined
-  // Written until a write fails; then memory only for the rest of the process.
+  // The runtime writes its own spend lines (what it counted, not only what was
+  // reported), until a write fails; then memory only for the rest of the process.
   let ledger: SpendLedger | undefined =
     root && typeof setup !== "string" && setup.mode === "live"
       ? new SpendLedger(join(root, "usage.jsonl"))
       : undefined
+  if (ledger?.unwritable()) ledger = undefined
 
   // Today's spend: seeded once a day from the file, then kept in memory.
   let day = { key: "", usd: 0 }
@@ -150,6 +152,26 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
     const key = now().toISOString().slice(0, 10)
     if (day.key === key) return
     day = { key, usd: ledger ? todayFromFile(ledger.file, `${key}T00:00:00.000Z`) : 0 }
+  }
+  /** Count `usd` against the day the call reserved on, and record it. */
+  const settle = (dayKey: string, delta: number, entry?: { usd: number; usage?: Usage }) => {
+    if (day.key === dayKey && Number.isFinite(delta)) day.usd += delta
+    if (!entry || !ledger || typeof setup === "string") return
+    try {
+      ledger.append({
+        ts: now().toISOString(),
+        tag: RUNTIME_TAG,
+        model: setup.profile.id,
+        source: "live",
+        calls: 1,
+        input_tokens: entry.usage?.input_tokens ?? 0,
+        output_tokens: entry.usage?.output_tokens ?? 0,
+        cost: entry.usd,
+        ...(entry.usage?.reported === false || !entry.usage ? { reported: false } : {}),
+      })
+    } catch {
+      ledger = undefined
+    }
   }
   const spentToday = () => {
     rollDay()
@@ -185,19 +207,24 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
 
     // Reserve the projection before any await, so concurrent calls see it.
     const projected = mode === "live" ? projectCost(profile, 1, prepared.tokens) : 0
+    if (mode === "live") spentToday() // rolls the day over first
+    const dayKey = day.key
     if (mode === "live") {
-      const spent = spentToday()
-      if (spent + projected > cap)
+      if (day.usd + projected > cap)
         return fallback(
           "budget",
-          `today's spend $${spent.toFixed(4)} would pass the $${cap} cap (maxUsdPerDay)`,
+          `today's spend $${day.usd.toFixed(4)} would pass the $${cap} cap (maxUsdPerDay)`,
         )
       day.usd += projected
     }
-    const deadline = AbortSignal.timeout(timeoutMs)
-    let result: DecisionResult
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const timedOut = new Promise<"timeout">((resolve) =>
+      controller.signal.addEventListener("abort", () => resolve("timeout"), { once: true }),
+    )
+    let result: DecisionResult | "timeout"
     try {
-      result = await createDecider({
+      const call = createDecider({
         profile,
         egressConsent: opts.egress === "on",
         mode,
@@ -212,22 +239,41 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
             }
           : {}),
         ...(fixtures ? { fixtures } : {}),
-        ...(ledger ? { ledger } : {}),
-        tag: RUNTIME_TAG,
         now,
-      }).decide({ state: prepared.state, questions, namespace, signal: deadline })
+      }).decide({ state: prepared.state, questions, namespace, signal: controller.signal })
+      // The deadline wins even over a fetch that ignores the abort.
+      result = await Promise.race([call, timedOut])
     } catch (error) {
-      // Nothing measured came back. The projection stays counted: the provider
-      // may have been paid (a timeout after it answered), and over-counting is
-      // the safe side of a cap.
-      if (deadline.aborted) return fallback("timeout", `no answer within ${timeoutMs} ms`)
-      return fallback(reasonFor(error), describe(error))
+      if (controller.signal.aborted) result = "timeout"
+      else {
+        // A request refused before it ran (a 4xx other than 408 or 429) isn't
+        // billed. Anything else may have been: keep the projection, the safe
+        // side of a cap, and record it so a restart counts it too.
+        const status = (error as { status?: number })?.status
+        const unbilled =
+          typeof status === "number" &&
+          status >= 400 &&
+          status < 500 &&
+          status !== 408 &&
+          status !== 429
+        if (mode === "live")
+          settle(dayKey, unbilled ? -projected : 0, unbilled ? undefined : { usd: projected })
+        return fallback(reasonFor(error), describe(error))
+      }
+    } finally {
+      clearTimeout(timer)
+    }
+    if (result === "timeout") {
+      if (mode === "live") settle(dayKey, 0, { usd: projected })
+      return fallback("timeout", `no answer within ${timeoutMs} ms`)
     }
     if (mode === "live") {
-      // Swap the reservation for what was measured; unreported cost stays projected.
-      const measured = result.usage.reported === false ? projected : result.usage.cost
-      if (Number.isFinite(measured)) day.usd += measured - projected
-      if (result.unsaved?.some((u) => u.what === "ledger")) ledger = undefined
+      // Swap the reservation for what was counted: the reported cost, never
+      // below zero; an unreported one stays at its projection.
+      const reported = result.usage.reported === false ? undefined : result.usage.cost
+      const counted =
+        reported !== undefined && Number.isFinite(reported) ? Math.max(0, reported) : projected
+      settle(dayKey, counted - projected, { usd: counted, usage: result.usage })
     }
     if (result.undecided.length > 0)
       return fallback("undecided", `undecided: ${result.undecided.join(", ")}`, {
@@ -270,8 +316,13 @@ function validate(opts: Partial<PolicyRuntimeOptions>): Setup | string {
   const mode = opts.mode ?? "live"
   if (mode !== "live" && mode !== "replay") return `mode must be "live" or "replay"`
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  if (typeof timeoutMs !== "number" || !Number.isFinite(timeoutMs) || timeoutMs <= 0)
-    return "timeoutMs must be a number above 0"
+  if (
+    typeof timeoutMs !== "number" ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs <= 0 ||
+    timeoutMs > 600_000
+  )
+    return "timeoutMs must be a number above 0, at most 600000"
   if (opts.root !== undefined && typeof opts.root !== "string") return "root must be a path"
   let profile: ModelProfile
   try {
@@ -288,12 +339,17 @@ function validate(opts: Partial<PolicyRuntimeOptions>): Setup | string {
   return { profile, mode, cap, timeoutMs, ...(apiKey ? { apiKey } : {}) }
 }
 
+/** How far out of order a shared ledger's lines may be (clock skew between processes). */
+const SKEW_MS = 60 * 60 * 1000
+
 /**
  * Today's runtime spend in a ledger file, read backwards from the end until a
- * line is older than today: the file is append-only and in time order, so a
- * long history costs nothing. Only finite costs count.
+ * line is more than an hour older than today: the file is append-only and in
+ * roughly time order, so a long history costs nothing. Timestamps are compared
+ * as instants, not text. Only finite, non-negative costs count.
  */
-function todayFromFile(file: string, since: string): number {
+function todayFromFile(file: string, sinceIso: string): number {
+  const since = Date.parse(sinceIso)
   let fd: number
   try {
     fd = openSync(file, "r")
@@ -314,13 +370,12 @@ function todayFromFile(file: string, since: string): number {
       for (const line of lines.reverse()) {
         const entry = parse(line)
         if (!entry) continue
-        if (entry.ts < since) return usd
-        if (entry.tag === RUNTIME_TAG && Number.isFinite(entry.cost)) usd += entry.cost
+        if (entry.at < since - SKEW_MS) return usd
+        if (entry.at >= since && entry.tag === RUNTIME_TAG) usd += entry.cost
       }
     }
     const first = parse(carry)
-    if (first && first.ts >= since && first.tag === RUNTIME_TAG && Number.isFinite(first.cost))
-      usd += first.cost
+    if (first && first.at >= since && first.tag === RUNTIME_TAG) usd += first.cost
     return usd
   } catch {
     return 0
@@ -329,16 +384,14 @@ function todayFromFile(file: string, since: string): number {
   }
 }
 
-function parse(line: string): { ts: string; tag?: string; cost: number } | undefined {
+function parse(line: string): { at: number; tag?: string; cost: number } | undefined {
   if (!line.trim()) return undefined
   try {
     const e = JSON.parse(line) as { ts?: unknown; tag?: unknown; cost?: unknown }
-    if (typeof e.ts !== "string") return undefined
-    return {
-      ts: e.ts,
-      ...(typeof e.tag === "string" ? { tag: e.tag } : {}),
-      cost: typeof e.cost === "number" ? e.cost : Number.NaN,
-    }
+    const at = typeof e.ts === "string" ? Date.parse(e.ts) : Number.NaN
+    if (!Number.isFinite(at)) return undefined
+    const cost = typeof e.cost === "number" && Number.isFinite(e.cost) ? Math.max(0, e.cost) : 0
+    return { at, ...(typeof e.tag === "string" ? { tag: e.tag } : {}), cost }
   } catch {
     return undefined
   }
@@ -379,7 +432,10 @@ function describe(error: unknown): string {
     if (error.code === "provider-unreachable" || error.code === "malformed-response")
       return error.code
   }
-  const text = error instanceof Error ? error.message : String(error)
+  // Only this engine's own messages; another error (a JSON.parse of a corrupt
+  // fixture, say) can quote the content it choked on, so only its name is kept.
+  if (!isDecisionsError(error)) return error instanceof Error ? error.name : "error"
+  const text = error.message
   return scrubText(
     (text.split("\n")[0] ?? "").replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]"),
   ).slice(0, 200)

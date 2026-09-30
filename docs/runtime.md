@@ -25,19 +25,20 @@ against, so an upgrade is always your change.
 | Option | Default | Meaning |
 |---|---|---|
 | `egress` | required | Exactly `"on"` turns egress on; anything else is off. A generated module passes its one marked `EGRESS` line here, and `adopt` only ever writes `"off"`. It is the only grant: no config file or environment variable turns egress on, and a key alone never does |
-| `maxUsdPerDay` | required | Measured spend per UTC day before every call falls back with `budget`. It must be a finite number of at least 0; anything else makes every call fall back as `internal`, never uncapped. Each call reserves its projected cost before it waits, so concurrent calls can't race past the cap. A call's measured cost can still pass it by the difference from its projection. A cost the provider doesn't report counts at its projection, never as free |
-| `root` | none | The directory for `usage.jsonl` and `fixtures/`. The runtime never searches for one. Without it, or when it can't be written, spend is counted in memory for the process and each result says `ledger: "memory"`. With a readable `root`, today's runtime spend there is read once a day (from the end of the file, so a long history costs nothing) and the cap survives a restart. Processes sharing a `root` start from the same day's total, then each counts its own calls |
+| `maxUsdPerDay` | required | Measured spend per UTC day before every call falls back with `budget`. It must be a finite number of at least 0; anything else makes every call fall back as `internal`, never uncapped. Each call reserves its projected cost before it waits, so concurrent calls can't race past the cap. A call's measured cost can still pass it by the difference from its projection. A cost the provider doesn't report counts at its projection, never as free, and a negative one counts as zero. A call that fails after it may have been billed (a timeout, a 5xx) keeps its projection; one refused before it ran (a 4xx other than 408 or 429) gives it back |
+| `root` | none | The directory for `usage.jsonl` and `fixtures/`. The runtime never searches for one, and creates it if it's missing. Without it, or when it can't be written, spend is counted in memory for the process and each result says `ledger: "memory"`. The runtime writes a line per live call with the cost it counted. With a readable `root`, today's runtime spend there is read once a day (from the end of the file, so a long history costs nothing) and the cap survives a restart. Processes sharing a `root` start from the same day's total, then each counts its own calls |
 | `model` | `typesafe/jev-1.13` | The model profile |
 | `mode` | `live` | `live` or `replay`. `replay` answers from `root`'s fixtures, sends nothing and writes nothing, so it needs no grant and no key: this is how generated tests run offline |
 | `apiKey` | `OPENROUTER_API_KEY` | A key alone never grants egress |
-| `timeoutMs` | 5000 | The whole call, retries included |
+| `timeoutMs` | 5000 | The whole call, retries and backoff included; at most 600000 |
 
 ## Results
 
 A result is either an answer, `{ok: true, source, answers, usage, latencyMs, ledger}`, or a
 fallback, `{ok: false, reason, detail, ledger}`. On a fallback, keep using your existing
 mechanism. `detail` is one line for your log, built from codes and limits: it never contains the
-state, the key or the provider's response body.
+state, the key or the provider's response body. An error that isn't the engine's own is reported
+by its name only (`SyntaxError`, say), since its message could quote the content it choked on.
 
 | `reason` | When |
 |---|---|

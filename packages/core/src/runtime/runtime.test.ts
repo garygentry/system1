@@ -29,6 +29,8 @@ interface ProviderOpts {
   echo?: boolean
   /** Check the Authorization header the way a real fetch would. */
   strictHeaders?: boolean
+  /** Hang, and ignore the abort signal. */
+  deaf?: boolean
 }
 
 /** A fake decisions endpoint: `noul` for every question. */
@@ -37,6 +39,7 @@ function provider(noul = 0.95, opts: ProviderOpts = {}) {
   const fetch = (async (_url: string, init?: RequestInit) => {
     if (opts.strictHeaders) new Headers(init?.headers) // throws on a bad header value, quoting it
     calls.push(JSON.parse(String(init?.body)))
+    if (opts.deaf) return new Promise(() => {})
     if (opts.hang)
       return new Promise((_, reject) =>
         init?.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
@@ -304,5 +307,133 @@ describe("createPolicyRuntime: where it writes", () => {
       reason: "provider-error",
       detail: "no recorded answer for this state (replay)",
     })
+  })
+})
+
+describe("createPolicyRuntime: after the re-review", () => {
+  it("never lets a negative cost open the cap, from the provider or the ledger", async () => {
+    const rt = runtime({ maxUsdPerDay: 0.001 }, provider(0.95, { cost: -1 }).fetch)
+    expect((await rt.decide(request)).ok).toBe(true)
+    expect(rt.spentToday()).toBeGreaterThanOrEqual(0)
+    const root = temp()
+    appendFileSync(join(root, "usage.jsonl"), line(new Date().toISOString(), -1e6))
+    expect(runtime({ root }).spentToday()).toBe(0)
+  })
+
+  it("records an unreported cost at its projection, so a restart still counts it", async () => {
+    const root = temp()
+    const { fetch } = provider(0.95, { noUsage: true })
+    const first = runtime({ root }, fetch)
+    await first.decide(request)
+    await first.decide(request)
+    expect(runtime({ root }, fetch).spentToday()).toBeCloseTo(first.spentToday())
+    expect(first.spentToday()).toBeGreaterThan(0)
+  })
+
+  it("releases the reservation for a request refused before it ran, keeps it otherwise", async () => {
+    const refused = runtime({}, provider(0.95, { status: 400 }).fetch)
+    await refused.decide(request)
+    expect(refused.spentToday()).toBe(0)
+    const failed = runtime({}, provider(0.95, { status: 500 }).fetch)
+    await failed.decide(request)
+    expect(failed.spentToday()).toBeGreaterThan(0)
+  })
+
+  it("holds the deadline across backoff sleeps and against a fetch that ignores the abort", async () => {
+    for (const opts of [{ status: 503 }, { deaf: true }]) {
+      const started = performance.now()
+      const r = await runtime({ timeoutMs: 150 }, provider(0.95, opts).fetch).decide(request)
+      expect(r, JSON.stringify(opts)).toMatchObject({ ok: false })
+      expect(performance.now() - started, JSON.stringify(opts)).toBeLessThan(400)
+    }
+    expect(
+      await runtime({ timeoutMs: 150 }, provider(0.95, { deaf: true }).fetch).decide(request),
+    ).toMatchObject({ reason: "timeout" })
+  })
+
+  it("refuses a timeout no timer can hold", async () => {
+    expect(await runtime({ timeoutMs: 2 ** 31 }).decide(request)).toMatchObject({
+      reason: "internal",
+    })
+  })
+
+  it("reads today's spend past a slightly older line from another writer", () => {
+    const root = temp()
+    const today = new Date().toISOString()
+    const earlier = new Date(Date.now() - 36 * 3600 * 1000).toISOString()
+    writeFileSync(
+      join(root, "usage.jsonl"),
+      line(today, 0.5) +
+        `${JSON.stringify({ ts: new Date(Date.parse(`${today.slice(0, 10)}T00:00:00Z`) - 60_000).toISOString(), tag: "cli", cost: 1 })}\n`,
+    )
+    expect(runtime({ root }).spentToday()).toBeCloseTo(0.5)
+    writeFileSync(join(root, "usage.jsonl"), line(earlier, 3) + line(today, 0.25))
+    expect(runtime({ root }).spentToday()).toBeCloseTo(0.25)
+  })
+
+  it("settles a call that crosses midnight against the day it reserved on", async () => {
+    let at = new Date("2026-10-01T23:59:59Z")
+    let answer: () => void = () => {}
+    const fetch = (async (_url: string, init?: RequestInit) => {
+      await new Promise<void>((resolve) => {
+        answer = resolve
+      })
+      const body = JSON.parse(String(init?.body)) as { questions: Record<string, unknown> }
+      return Response.json({
+        model: "typesafe/jev-1.13-20260917",
+        answers: Object.fromEntries(
+          Object.keys(body.questions).map((q) => [q, { type: "noul", noul: 0.95 }]),
+        ),
+        usage: { input_tokens: 1, output_tokens: 1, cost: 0 },
+      })
+    }) as unknown as typeof globalThis.fetch
+    const rt = runtime({ now: () => at }, fetch)
+    const pending = rt.decide(request)
+    await new Promise((r) => setTimeout(r, 10))
+    at = new Date("2026-10-02T00:00:01Z")
+    expect(rt.spentToday()).toBe(0)
+    answer()
+    await pending
+    expect(rt.spentToday()).toBe(0)
+  })
+
+  it("keeps only the name of an error that isn't the engine's own", async () => {
+    const root = temp()
+    const profile = resolveProfile("typesafe/jev-1.13")
+    const safe = prepareState(request.state, { questions, profile })
+    const { fixtureKey } = await import("../fixtures/store.js")
+    const key = fixtureKey({ model: profile.id, state: safe.state, questions })
+    const { mkdirSync } = await import("node:fs")
+    mkdirSync(join(root, "fixtures", "triage"), { recursive: true })
+    writeFileSync(join(root, "fixtures", "triage", `${key}.json`), "secret-patient-data")
+    const r = await runtime({ root, egress: "off", mode: "replay" }).decide(request)
+    expect(r).toMatchObject({ ok: false, reason: "internal", detail: "SyntaxError" })
+  })
+})
+
+describe("the runtime's imports", () => {
+  it("load no config, no YAML and no git or glob code", async () => {
+    const { readFileSync } = await import("node:fs")
+    const { dirname, resolve } = await import("node:path")
+    const seen = new Set<string>()
+    const visit = (file: string) => {
+      if (seen.has(file)) return
+      seen.add(file)
+      const text = readFileSync(file, "utf8")
+      for (const m of text.matchAll(/^(?:import|export)\s[^"']*?from\s+["']([^"']+)["']/gm)) {
+        const spec = m[1] as string
+        if (/^import type|^export type/.test(m[0])) continue
+        if (spec.startsWith(".")) visit(resolve(dirname(file), spec.replace(/\.js$/, ".ts")))
+        else seen.add(spec)
+      }
+    }
+    visit(new URL("./index.ts", import.meta.url).pathname)
+    const all = [...seen]
+    expect(all.some((f) => f.endsWith("/decide.ts"))).toBe(true) // the walk really walked
+    for (const banned of ["yaml", "node:child_process", "tinyglobby", "picomatch"])
+      expect(all, banned).not.toContain(banned)
+    expect(
+      all.filter((f) => /config\/(load|consent)\.ts$|sources\/read\.ts$|\/prepare\.ts$/.test(f)),
+    ).toEqual([])
   })
 })

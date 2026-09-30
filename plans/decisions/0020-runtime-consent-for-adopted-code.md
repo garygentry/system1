@@ -27,7 +27,7 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
 3. **The environment is explicit.**
    - `createPolicyRuntime({ egress, maxUsdPerDay, root?, model?, mode?, apiKey?, timeoutMs?, … })` (the full list is in `docs/runtime.md`). It never walks up the tree to find a root. Fixtures live under `root`; `mode: "replay"` answers from them offline and writes nothing.
    - `root` names the directory for the spend ledger and fixtures.
-   - When `root` is absent, missing or unwritable, spend is counted in memory for the process, and every result says `ledger: "memory"`. A failed write is never an error after a paid call.
+   - When `root` isn't given, or can't be written, spend is counted in memory for the process, and every result says `ledger: "memory"`. A missing `root` directory is created. A failed write is never an error after a paid call.
 4. **A production spend cap:** `maxUsdPerDay`, counted from the provider's reported cost, or the projection when it reports none. In one process it holds against concurrent calls. Across processes it holds only through a shared, writable `root`, and can be overshot by the calls in flight at once.
    - [0011](0011-default-spend-guard-a-request-above-200-calls-or-0.md)'s per-request and per-session caps don't map onto a long-running app.
    - `adopt` writes the cap into each module explicitly, with a default of **$1.00**: about 30,000 decisions a day at current prices for small states, fewer for large ones.

@@ -5,8 +5,8 @@
  */
 
 export type { Answer, Answers, QuestionSet, State, Usage } from "../model/types.js"
-export type { PreparedState } from "../prepare.js"
-export { prepareState } from "../prepare.js"
+export type { PreparedState } from "../prepare-state.js"
+export { prepareState } from "../prepare-state.js"
 export {
   createPolicyRuntime,
   type PolicyRequest,

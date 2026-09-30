@@ -45,6 +45,26 @@ export interface Transport {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
+/** `wait`, or the abort's reason as soon as `signal` aborts. */
+function untilAborted(wait: Promise<void>, signal?: AbortSignal): Promise<void> {
+  if (!signal) return wait
+  if (signal.aborted) return Promise.reject(signal.reason)
+  return new Promise<void>((resolve, reject) => {
+    const abort = () => reject(signal.reason)
+    signal.addEventListener("abort", abort, { once: true })
+    wait.then(
+      () => {
+        signal.removeEventListener("abort", abort)
+        resolve()
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", abort)
+        reject(error)
+      },
+    )
+  })
+}
+
 /**
  * The `openrouter-decisions` transport: POSTs one decision request, with retry,
  * exponential backoff, a timeout per attempt and caller abort, and validates
@@ -67,7 +87,8 @@ export function createOpenRouterTransport(options: TransportOptions): Transport 
         const timeout = AbortSignal.timeout(timeoutMs)
         const composite = signal ? AbortSignal.any([signal, timeout]) : timeout
         const last = attempt === maxAttempts
-        const wait = () => sleep(backoffMs * 2 ** (attempt - 1))
+        // A backoff the caller's abort cuts short, so a deadline holds across retries.
+        const wait = () => untilAborted(sleep(backoffMs * 2 ** (attempt - 1)), signal)
 
         let response: Response
         try {

@@ -43,7 +43,7 @@ const event = (dir: string, name: string, extra: Record<string, unknown> = {}) =
   ...extra,
 })
 
-const run = (dir: string, e: unknown, packs?: Partial<Record<"done-check", PackModule>>) =>
+const run = (_dir: string, e: unknown, packs?: Partial<Record<"done-check", PackModule>>) =>
   runHook("done-check", e, { env: {}, home: temp(), now: NOW, ...(packs ? { packs } : {}) })
 
 const state = (dir: string) => readGuardState(guardStatePath(dir))
