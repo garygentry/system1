@@ -47,6 +47,10 @@
     "./hook": {
       "types": "./dist/tools/hook.d.ts",
       "default": "./dist/tools/hook.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "default": "./dist/runtime/index.js"
     }
   },
   "files": [

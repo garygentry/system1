@@ -31,7 +31,7 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
 4. **A production spend cap:** `maxUsdPerDay`, counted from the provider's reported cost, or the projection when it reports none. In one process it holds against concurrent calls. Across processes it holds only through a shared, writable `root`, and can be overshot by the calls in flight at once.
    - [0011](0011-default-spend-guard-a-request-above-200-calls-or-0.md)'s per-request and per-session caps don't map onto a long-running app.
    - `adopt` writes the cap into each module explicitly, with a default of **$1.00**: about 30,000 decisions a day at current prices for small states, fewer for large ones.
-   - At the cap, the module falls back with `budget` until the UTC day turns.
+   - At the cap, the module falls back with `budget` until the UTC day turns. A call goes when today's spend plus its projected cost fits, so the last one can pass the cap by the difference between its measured and projected cost.
 5. **Every result that isn't a model answer is a fallback with a reason code** the app can log or count. So "silently never called" is visible. The codes:
    - `egress-off`: the marked line is off;
    - `undecided`: below the spec's thresholds or undecided;
@@ -41,6 +41,7 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
    - `timeout`: past the module's latency limit;
    - `no-key`: no API key in the runtime;
    - `engine-unavailable`: Python only, when `decide` is missing or the wrong version.
+   - `internal`: anything else, such as an unknown model or a malformed question set. *Added in M11 PR 3, so that "never throws" holds without mislabelling a bug as a provider error.*
 6. **Python reaches the engine through `decide runtime`.**
    - The module spawns `decide runtime --module <its own path> --root <dir>`, with `{questions, state, namespace}` as JSON on stdin and one result as JSON on stdout.
    - **There is no egress flag.** `decide runtime` reads the grant from the module file: exactly one marked `EGRESS = "on"` line turns it on, and anything else is off. An agent can't grant egress by typing a command; only a line of code does.
