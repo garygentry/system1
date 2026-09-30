@@ -13,7 +13,7 @@ import type { Decider } from "../decide.js"
 import { assertStateFits } from "../egress/size.js"
 import { DecisionsError } from "../errors.js"
 import type { ModelProfile } from "../model/profiles.js"
-import { resolveProfile } from "../model/profiles.js"
+import { assertDecisionProfile, resolveProfile } from "../model/profiles.js"
 import type { Answers, QuestionSet } from "../model/types.js"
 import { prepare } from "../prepare.js"
 import { checkBudget, project } from "../run/budget.js"
@@ -227,6 +227,7 @@ export async function decideDone(
   // Without a key the decider would fall back to replay: say what is actually missing.
   if (!config.apiKey && !config.replay) throw new DecisionsError("no-key", "no API key")
   const profile = resolveProfile(config.model, allProfiles(config))
+  assertDecisionProfile(profile)
   const all: QuestionSet = Object.assign({}, ...gathered.criteria.map((c, i) => questionsFor(c, i)))
   const base = {
     questions: all,

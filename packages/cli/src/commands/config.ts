@@ -6,6 +6,7 @@ import {
   DecisionsError,
   loadConfig,
   repoConfigPath,
+  setAllowProfile,
   setConsent,
 } from "@garygentry/system1-core"
 import { typedParse } from "../args.js"
@@ -35,10 +36,14 @@ export function runConfigCommand(argv: string[], io: Io, format: Format): Promis
 
 type ConfigResult =
   | ReturnType<typeof show>
-  | { egress: { consent: unknown; file: string; changed?: boolean } }
+  | { egress: { consent: unknown; allowProfiles?: string[]; file: string; changed?: boolean } }
 
 /** Flags of `config`. Exported so `docs/cli.md` can be checked against them. */
-export const CONFIG_OPTIONS = { confirm: { type: "boolean" }, by: { type: "string" } } as const
+export const CONFIG_OPTIONS = {
+  confirm: { type: "boolean" },
+  "i-consent": { type: "boolean" },
+  by: { type: "string" },
+} as const
 
 function body(argv: string[], io: Io): ConfigResult {
   const { values, positionals } = typedParse({
@@ -46,7 +51,7 @@ function body(argv: string[], io: Io): ConfigResult {
     allowPositionals: true,
     options: CONFIG_OPTIONS,
   })
-  const [section = "show", action = "status"] = positionals
+  const [section = "show", action = "status", target] = positionals
   const cwd = io.cwd ?? process.cwd()
   if (section === "show") return show(io, cwd)
   if (section !== "egress") {
@@ -59,7 +64,59 @@ function body(argv: string[], io: Io): ConfigResult {
   const file = repoConfigPath(config.repoRoot)
   switch (action) {
     case "status":
-      return { egress: { consent: config.egress.consent, file } }
+      return {
+        egress: {
+          consent: config.egress.consent,
+          allowProfiles: config.egress.allowProfiles,
+          file,
+        },
+      }
+    case "allow-profile":
+    case "deny-profile": {
+      // A stale grant (its profile since removed) can always be revoked.
+      if (action === "deny-profile" && target && config.egress.allowProfiles.includes(target)) {
+        return {
+          egress: {
+            consent: config.egress.consent,
+            allowProfiles: setAllowProfile(config.repoRoot, target, false),
+            file,
+            changed: true,
+          },
+        }
+      }
+      const profile = allProfiles(config).find((p) => p.id === target)
+      if (profile?.transport !== "openrouter-chat") {
+        throw new DecisionsError(
+          "invalid-request",
+          `Name an emulated baseline to ${action === "allow-profile" ? "allow" : "deny"}: ${allProfiles(
+            config,
+          )
+            .filter((p) => p.transport === "openrouter-chat")
+            .map((p) => p.id)
+            .join(", ")}`,
+        )
+      }
+      // Allowing sends content to a second vendor: the user's decision, like consent.
+      if (action === "allow-profile" && !io.interactive && !values["i-consent"]) {
+        throw new DecisionsError(
+          "egress-refused",
+          `Allowing ${profile.id} lets \`decide compare\` send this repo's content to a second ` +
+            "vendor. That is the user's decision: an agent must not allow it, with or without a " +
+            "flag. Show the user this message instead. The user allows it by typing " +
+            `\`decide config egress allow-profile ${profile.id}\` in a terminal at the repo root. ` +
+            "If they run it through their agent prompt's shell escape instead (not as a chat " +
+            "message), they add --i-consent to say the decision is theirs.",
+        )
+      }
+      return {
+        egress: {
+          consent: config.egress.consent,
+          allowProfiles: setAllowProfile(config.repoRoot, profile.id, action === "allow-profile"),
+          file,
+          changed: true,
+        },
+      }
+    }
     case "allow":
       if (!io.interactive && !values.confirm) {
         throw new DecisionsError(
@@ -94,7 +151,7 @@ function body(argv: string[], io: Io): ConfigResult {
     default:
       throw new DecisionsError(
         "invalid-request",
-        `Unknown egress action "${action}". Use: status, allow, deny`,
+        `Unknown egress action "${action}". Use: status, allow, deny, allow-profile <id>, deny-profile <id>`,
       )
   }
 }

@@ -184,7 +184,7 @@ describe("loadConfig", () => {
       "profiles:\n  - { id: acme/judge-1, maxStateTokens: 8000, usdPerInputToken: 0, undecidedFloor: 0.2, priceAsOf: }\n",
     )
     const config = loadConfig({ cwd: repo, env: {}, home })
-    expect(config.egress).toEqual({ consent: { granted: false }, exclude: [] })
+    expect(config.egress).toEqual({ consent: { granted: false }, exclude: [], allowProfiles: [] })
     expect(config.profiles[0]?.priceAsOf).toBe("unknown")
     expect(config.warnings).toEqual([])
   })
@@ -421,5 +421,51 @@ describe("consent", () => {
     writeFileSync(join(repo, "untouched"), "x")
     setConsent(repo, true)
     expect(readFileSync(join(repo, "untouched"), "utf8")).toBe("x")
+  })
+})
+
+describe("the emulated baseline in config (M11 D2)", () => {
+  it("reads egress.allowProfiles from the repo file only", () => {
+    const allow = "egress:\n  allowProfiles: [emulated:anthropic/claude-haiku-4.5]\n"
+    const repoSide = setup(allow)
+    expect(
+      loadConfig({ cwd: repoSide.repo, env: {}, home: repoSide.home }).egress.allowProfiles,
+    ).toEqual(["emulated:anthropic/claude-haiku-4.5"])
+    const userSide = setup(undefined, allow)
+    const config = loadConfig({ cwd: userSide.repo, env: {}, home: userSide.home })
+    expect(config.egress.allowProfiles).toEqual([])
+    expect(config.warnings).toEqual([
+      expect.stringMatching(/egress\.allowProfiles is read only from the repo file/),
+    ])
+  })
+
+  it("never takes an emulated profile from the user file, and checks transports", () => {
+    const chat =
+      "profiles:\n  - { id: emulated:openai/gpt-x, transport: openrouter-chat, maxStateTokens: 1000, usdPerInputToken: 0.000001, undecidedFloor: 0.3 }\n"
+    const user = setup(undefined, chat)
+    const fromUser = loadConfig({ cwd: user.repo, env: {}, home: user.home })
+    expect(allProfiles(fromUser).map((p) => p.id)).not.toContain("emulated:openai/gpt-x")
+    expect(fromUser.warnings).toEqual([expect.stringMatching(/only the repo file may define one/)])
+    const repo = setup(chat)
+    expect(
+      allProfiles(loadConfig({ cwd: repo.repo, env: {}, home: repo.home })).map((p) => p.id),
+    ).toContain("emulated:openai/gpt-x")
+    // `emulated:` belongs to baselines, both ways: no shadowing a decision model.
+    const shadow = setup(chat.replace("emulated:openai/gpt-x", "typesafe/jev-1.13"))
+    expect(() => loadConfig({ cwd: shadow.repo, env: {}, home: shadow.home })).toThrow(
+      /must start with "emulated:"/,
+    )
+    const pretend = setup(chat.replace(", transport: openrouter-chat", ""))
+    expect(() => loadConfig({ cwd: pretend.repo, env: {}, home: pretend.home })).toThrow(
+      /only an emulated baseline/,
+    )
+    const scalar = setup("egress:\n  allowProfiles: emulated:x\n")
+    expect(() => loadConfig({ cwd: scalar.repo, env: {}, home: scalar.home })).toThrow(
+      /must be a list of profile ids/,
+    )
+    const bad = setup(chat.replace("openrouter-chat", "carrier-pigeon"))
+    expect(() => loadConfig({ cwd: bad.repo, env: {}, home: bad.home })).toThrow(
+      /transport must be one of/,
+    )
   })
 })

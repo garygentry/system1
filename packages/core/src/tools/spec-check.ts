@@ -2,7 +2,7 @@ import { assertConsent } from "../config/consent.js"
 import { allProfiles } from "../config/load.js"
 import type { Unsaved } from "../decide.js"
 import { DecisionsError, isDecisionsError } from "../errors.js"
-import { resolveProfile } from "../model/profiles.js"
+import { assertDecisionProfile, resolveProfile } from "../model/profiles.js"
 import type { Answers, Usage } from "../model/types.js"
 import { type Prepared, prepare } from "../prepare.js"
 import { checkBudget, combineProjections } from "../run/budget.js"
@@ -83,6 +83,7 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
   // uncheckable. A problem with one example's file only withholds that one.
   assertExamples(spec)
   const profile = resolveProfile(input.model ?? ctx.config.model, allProfiles(ctx.config))
+  assertDecisionProfile(profile)
   const root = ctx.config.repoRoot
 
   type Ready = { id: string; expect: Record<string, Expectation>; prep?: Prepared; reason?: string }

@@ -46,7 +46,7 @@ export interface Transport {
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /** `wait`, or the abort's reason as soon as `signal` aborts. */
-function untilAborted(wait: Promise<void>, signal?: AbortSignal): Promise<void> {
+export function untilAborted(wait: Promise<void>, signal?: AbortSignal): Promise<void> {
   if (!signal) return wait
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise<void>((resolve, reject) => {

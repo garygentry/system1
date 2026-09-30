@@ -23,7 +23,7 @@ decide <command> [options] [--format json|jsonl|brief]
 | `decide spec` | `list`, `show <name>`, `validate [name\|path]`, `lint [name\|path]`, `check <name\|path>` |
 | `decide opportunities` | The scout backlog: `add --file`, `list`, `check`. Local; sends nothing |
 | `decide usage` | Measured spend from the ledger |
-| `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent |
+| `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent, `allow-profile\|deny-profile` for an emulated baseline |
 | `decide guard` | Opt-in hook checks: `list`, `status`, `enable <pack>`, `disable <pack>`. The user enables a pack |
 | `decide hook` | A guard pack on a harness hook event. Run by the plugin's hooks, not by hand |
 | `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
@@ -175,6 +175,8 @@ decide config [show]
 decide config egress status
 decide config egress allow [--by <who>] [--confirm]
 decide config egress deny
+decide config egress allow-profile <id> [--i-consent]
+decide config egress deny-profile <id>
 ```
 
 `show` prints every resolved setting, the profiles the config files add, the routing config, and
@@ -183,6 +185,13 @@ terminal (typing it there is the decision; there's no further prompt), or `--con
 how a user grants it where there's no terminal, such as Claude Code's `!` prompt.
 **Consent is the user's.** Agents must not pass `--confirm` for the user. `--by` records who
 granted it; without it, the record says `decide config` or `decide config --confirm`.
+
+`allow-profile <id>` lets `decide compare` send this repo's content to an emulated baseline such
+as `emulated:anthropic/claude-haiku-4.5`, a chat model on a second vendor. It adds the id to
+`egress.allowProfiles`. Like `guard enable`, it needs an interactive terminal, or
+`--i-consent` where there's none; `--confirm` doesn't count. Agents must not run it.
+`deny-profile <id>` removes it and needs neither. `status` reports both consent and the allowed
+profiles.
 
 ### `guard`
 
@@ -267,7 +276,7 @@ branch on it, not on the message.
 |---|---|---|
 | 0 | ok, including a `many` run where only some items failed (listed in `failed`) | — |
 | 1 | a bug in `decide` | `error` |
-| 2 | usage, config or source problem (in `many`, an oversize item is skipped rather than `state-too-large`) | `invalid-request`, `state-too-large`, `unknown-model`, `config-error`, `source-error`, `no-key` |
+| 2 | usage, config or source problem (in `many`, an oversize item is skipped rather than `state-too-large`) | `invalid-request`, `state-too-large`, `unknown-model`, `profile-not-allowed`, `config-error`, `source-error`, `no-key` |
 | 3 | egress refused | `egress-refused` |
 | 4 | spend guard; the projection is in `details` | `budget-exceeded` |
 | 5 | provider failure | `provider-unreachable`, `provider-http`, `malformed-response` |

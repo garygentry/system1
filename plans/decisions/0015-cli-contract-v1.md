@@ -180,3 +180,10 @@ Plan: `m11-adopt.md`, PR 2. Additive.
   - on `many`, and its `jsonl` summary line: `{ledger, fixture, reason}`.
 - **What it means:** a spend line or a recorded answer couldn't be written (a read-only disk, say). The call's answer stands and the exit code is unchanged. Before this, the write threw after the paid call, which was exit 1.
 - **`spec check` fails** (`passed: false`) when an answer couldn't be recorded, since recording is what `--live` is for.
+
+## M11: the emulated baseline (added 2026-09-30)
+
+Plan: `m11-adopt.md`, PR 4 (D2). Additive.
+
+- **`profile-not-allowed`, exit 2** (usage): an emulated baseline (`transport: openrouter-chat`) named for a decision (`ask`, `many`, `spec check`, a guard hook, the runtime), or one this repo hasn't allowed, inside `compare`.
+- **`decide config egress allow-profile <id> [--i-consent]` and `deny-profile <id>`:** add or remove an emulated baseline in `egress.allowProfiles`. `allow-profile` without a terminal and without `--i-consent` is `egress-refused`, exit 3, like `guard enable`; `--confirm` doesn't count. `status` gains `allowProfiles`.

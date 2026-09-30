@@ -195,7 +195,15 @@ above.
 ### `unknown-model` · exit 2
 
 The model id from `--model`, `SYSTEM1_MODEL` or `model:` in config has no profile. The default,
-`typesafe/jev-1.13`, is the only supported model.
+`typesafe/jev-1.13`, is the only supported decision model.
+
+### `profile-not-allowed` · exit 2
+
+The model is an emulated baseline, such as `emulated:anthropic/claude-haiku-4.5`: a chat model
+asked for the same answers as JSON. Its answers are single, uncalibrated values, so only
+`decide compare` may use it, never `ask`, `many`, `spec check`, a guard hook or adopted code.
+Unset `SYSTEM1_MODEL` or `--model`, or set it to a decision model. Inside `compare`, it also means
+this repo hasn't allowed that baseline: the user runs `decide config egress allow-profile <id>`.
 
 ### `provider-unreachable` · exit 5
 

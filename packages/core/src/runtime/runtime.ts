@@ -330,6 +330,8 @@ function validate(opts: Partial<PolicyRuntimeOptions>): Setup | string {
   } catch {
     return `unknown model "${String(opts.model)}"`
   }
+  if (profile.transport !== "openrouter-decisions")
+    return `${profile.id} is an emulated baseline; the runtime uses decision models only`
   let apiKey: string | undefined
   try {
     apiKey = unquoteKey(opts.apiKey ?? process.env.OPENROUTER_API_KEY)?.value
