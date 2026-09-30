@@ -62,7 +62,7 @@ Then the spec's §7 (the `guard` skill), §8 (evaluation, which fits the thresho
 ## To verify along the way
 
 - Does the Codex Stop `session_id` equal `CODEX_THREAD_ID`, and does the Claude one equal `CLAUDE_CODE_SESSION_ID`? The ledger's session ids depend on it.
-- Does a Codex hook command have network (decision 3)?
+- Does a Codex hook command have network (decision 3)? *Yes: verified 2026-09-30, a live done-check block from `codex exec -s workspace-write` (0.5.1).*
 - Does Codex key hook trust as `system1@<mkt>:hooks/codex-hooks.json:stop:0:0` for a hooks file in a subdirectory? The doctor match accepts any `…codex-hooks.json:stop:` form. Confirm it in the 0.5.0 Codex smoke.
 - Doctor's warning about npx-route latency (§6) is not built yet. It goes with §9's docs on install latency.
 - Is the 0.5.0 release the first real run of `release.yml` after #18? Check its `verify` and `stage` jobs before approving.
