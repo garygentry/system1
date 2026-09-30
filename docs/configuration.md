@@ -119,7 +119,7 @@ Optional fields, with the default a config profile gets:
 | `maxChoices` | `255` | The most options one `choice` question may have. A whole number, at least 2 |
 | `callOverheadTokens` | `300` | Input tokens the provider bills on every call beyond the item and the questions, added to each call in a **projection**. Jev's measured value. A whole number, at least 0 |
 | `displayName` | the `id` | A name for display |
-| `transport` | `openrouter-decisions` | How the model is reached: `openrouter-decisions` for a decision model, `openrouter-chat` for an emulated baseline. Only the repo file may define an `openrouter-chat` profile; one in the user file is dropped with a warning |
+| `transport` | `openrouter-decisions` | How the model is reached: `openrouter-decisions` for a decision model, `openrouter-chat` for an emulated baseline. An `openrouter-chat` profile's id must start with `emulated:`, and only such a profile may use that prefix (a `config-error` otherwise), so a baseline can never stand in for a decision model. Only the repo file may define one; one in the user file is dropped with a warning |
 | `usdPerOutputToken` | `0` | Listed output price |
 | `priceAsOf` | `unknown` | When the listed price was read |
 | `calibrated` | `true` | Whether the model's probabilities are calibrated |
@@ -139,7 +139,10 @@ model asked for the same answers as JSON, so `decide compare` can measure a deci
 it. Its answers are single, uncalibrated values (`calibrated: false`), so it is refused, with
 `profile-not-allowed` (exit 2), everywhere but `compare`: `ask`, `many`, `spec check`, guard hooks
 and adopted code. It sends content to a second vendor, so `compare` also needs it in
-`egress.allowProfiles`, and it asks OpenRouter not to route to providers that keep data.
+`egress.allowProfiles`, and it asks OpenRouter not to route to providers that keep data. It always
+calls OpenRouter's chat endpoint: `endpoint` and `SYSTEM1_ENDPOINT` name the decisions endpoint only.
+A reply with no content, or one cut off at the output limit, is counted as a parse failure, and
+its cost is still recorded.
 
 ## Routing hints
 

@@ -73,6 +73,17 @@ function body(argv: string[], io: Io): ConfigResult {
       }
     case "allow-profile":
     case "deny-profile": {
+      // A stale grant (its profile since removed) can always be revoked.
+      if (action === "deny-profile" && target && config.egress.allowProfiles.includes(target)) {
+        return {
+          egress: {
+            consent: config.egress.consent,
+            allowProfiles: setAllowProfile(config.repoRoot, target, false),
+            file,
+            changed: true,
+          },
+        }
+      }
       const profile = allProfiles(config).find((p) => p.id === target)
       if (profile?.transport !== "openrouter-chat") {
         throw new DecisionsError(

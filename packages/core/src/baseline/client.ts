@@ -58,7 +58,10 @@ export interface BaselineClientOptions {
 /** What a recorded baseline fixture keeps: the reply as it came, so a replay parses it afresh. */
 export interface BaselineRecorded {
   model: string
-  content: string
+  /** Null when the model answered with no content (a refusal, say): still paid for. */
+  content: string | null
+  /** OpenRouter's `finish_reason`: `length` means the reply was cut off at the output limit. */
+  finishReason?: string
   usage: Usage
 }
 
@@ -129,7 +132,11 @@ export function createBaselineClient(options: BaselineClientOptions): BaselineCl
       unsaved.push({ what: "ledger", reason: reasonOf(error) })
     }
   }
-  const read = (content: string, questions: QuestionSet) => {
+  const read = (reply: BaselineRecorded, questions: QuestionSet) => {
+    const { content } = reply
+    if (content === null) return { parseError: "the reply had no content" }
+    if (reply.finishReason === "length")
+      return { parseError: "the reply was cut off at the output limit" }
     try {
       return { answers: parseBaseline(JSON.parse(content), questions) }
     } catch (error) {
@@ -155,7 +162,12 @@ export function createBaselineClient(options: BaselineClientOptions): BaselineCl
 
       if (mode === "replay") {
         const started = performance.now()
-        const record = fixtures?.lookup<BaselineRecorded>(namespace, request)
+        const found = fixtures?.lookup<BaselineRecorded>(namespace, request)
+        // A record of another shape (a decision's) is no baseline answer.
+        const record =
+          found && (typeof found.response?.content === "string" || found.response?.content === null)
+            ? found
+            : undefined
         if (!record)
           throw new DecisionsError(
             "replay-miss",
@@ -168,7 +180,7 @@ export function createBaselineClient(options: BaselineClientOptions): BaselineCl
           source: "replay",
           model: profile.id,
           servedBy: record.response.model,
-          ...read(record.response.content, safeQuestions),
+          ...read(record.response, safeQuestions),
           usage: ZERO,
           latencyMs: Math.round(performance.now() - started),
           fixtureKey: key,
@@ -200,7 +212,7 @@ export function createBaselineClient(options: BaselineClientOptions): BaselineCl
         source: "live",
         model: profile.id,
         servedBy: reply.model,
-        ...read(reply.content, safeQuestions),
+        ...read(reply, safeQuestions),
         usage: reply.usage,
         latencyMs,
         fixtureKey: key,
@@ -267,11 +279,12 @@ async function post(
       continue
     }
     if (!response.ok) {
-      const detail = (await response.text()).slice(0, 300)
+      // The body isn't quoted: a chat endpoint may echo the prompt, and so the state.
+      await response.body?.cancel().catch(() => {})
       if (!RETRY_STATUSES.has(response.status) || last)
         throw new ProviderError(
           "provider-http",
-          `${endpoint} returned ${response.status}: ${detail}`,
+          `${endpoint} returned ${response.status}`,
           response.status,
         )
       await wait()
@@ -291,26 +304,37 @@ async function post(
   throw new ProviderError("provider-unreachable", `Could not reach ${endpoint}`)
 }
 
-/** The message content and usage of a completions reply. The content is parsed later, as answers. */
+/**
+ * The message content and usage of a completions reply. The content is parsed
+ * later, as answers. A 200 is paid for, so a reply with no content is returned
+ * (and logged), not thrown: it becomes a counted parse failure.
+ */
 function chatReply(raw: unknown, profile: ModelProfile, endpoint: string): BaselineRecorded {
+  if (typeof raw !== "object" || raw === null)
+    throw new ProviderError(
+      "malformed-response",
+      `${endpoint} returned a body that is not an object`,
+    )
   const body = raw as {
-    choices?: Array<{ message?: { content?: unknown } }>
+    choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>
     usage?: { prompt_tokens?: unknown; completion_tokens?: unknown; cost?: unknown }
     model?: unknown
   }
-  const content = body?.choices?.[0]?.message?.content
-  if (typeof content !== "string")
-    throw new ProviderError("malformed-response", `${endpoint} returned no message content`)
+  const choice = body.choices?.[0]
+  const content = typeof choice?.message?.content === "string" ? choice.message.content : null
   const u = body.usage
-  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined)
+  // A negative or missing figure is not a measurement: count it as unreported.
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined
   const cost = num(u?.cost)
   return {
     model: typeof body.model === "string" ? body.model : chatModelOf(profile),
     content,
+    ...(typeof choice?.finish_reason === "string" ? { finishReason: choice.finish_reason } : {}),
     usage: {
       input_tokens: num(u?.prompt_tokens) ?? 0,
       output_tokens: num(u?.completion_tokens) ?? 0,
-      cost: cost !== undefined ? Math.max(0, cost) : 0,
+      cost: cost ?? 0,
       ...(cost === undefined ? { reported: false } : {}),
     },
   }

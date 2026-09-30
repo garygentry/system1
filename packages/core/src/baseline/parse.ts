@@ -35,7 +35,7 @@ export function parseBaseline(raw: unknown, questions: QuestionSet): BaselineAns
     throw new BaselineParseError("the reply has a field that wasn't asked")
   const answers: BaselineAnswers = {}
   for (const [name, question] of Object.entries(questions)) {
-    const value = object[name]
+    const value = Object.hasOwn(object, name) ? object[name] : undefined
     if (value === undefined || value === null) throw new BaselineParseError(`"${name}" is missing`)
     switch (question.type) {
       case "choice":
@@ -53,12 +53,12 @@ export function parseBaseline(raw: unknown, questions: QuestionSet): BaselineAns
           throw new BaselineParseError(
             `"${name}" is not a level from 0 to ${question.criteria.length - 1}`,
           )
-        answers[name] = { type: "score", score: value }
+        answers[name] = { type: "score", score: value + 0 }
         break
       case "noul":
         if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1)
           throw new BaselineParseError(`"${name}" is not a probability from 0 to 1`)
-        answers[name] = { type: "noul", noul: value }
+        answers[name] = { type: "noul", noul: value + 0 }
         break
     }
   }

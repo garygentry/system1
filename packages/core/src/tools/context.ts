@@ -11,7 +11,7 @@ import {
 import { createDecider, type DecideMode, type Decider } from "../decide.js"
 import { DecisionsError } from "../errors.js"
 import { FixtureStore } from "../fixtures/store.js"
-import { type ModelProfile, resolveProfile } from "../model/profiles.js"
+import { assertDecisionProfile, type ModelProfile, resolveProfile } from "../model/profiles.js"
 import type { QuestionSet } from "../model/types.js"
 import { parseFilter, parseSort } from "../project/project.js"
 import { SpendLedger } from "../run/spend.js"
@@ -124,6 +124,8 @@ export function resolveRequest(
   const keepText = input.keep ?? spec?.keep ?? []
   const sortText = input.sort ?? spec?.sort
   const profile = resolveProfile(input.model ?? ctx.config.model, allProfiles(ctx.config))
+  // Before any dry run or projection: a baseline never stands in for a decision.
+  assertDecisionProfile(profile)
   return {
     ...(spec ? { spec } : {}),
     namespace: spec?.name ?? "adhoc",

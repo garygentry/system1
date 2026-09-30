@@ -17,6 +17,7 @@ import { DecisionsError } from "../errors.js"
 import { type GuardConfig, readGuard } from "../guard/packs.js"
 import {
   DEFAULT_MODEL_ID,
+  EMULATED_PREFIX,
   JEV_CALL_OVERHEAD_TOKENS,
   type ModelProfile,
   PROFILES,
@@ -453,6 +454,19 @@ function profileList(
       throw new DecisionsError(
         "config-error",
         `${file}: profiles[${i}].transport must be one of ${TRANSPORTS.join(", ")}`,
+        { file },
+      )
+    }
+    // `emulated:` is the baseline's namespace, both ways, so a baseline can't
+    // shadow a decision model (or the reverse) and their fixtures never meet.
+    const chat = profile.transport === "openrouter-chat"
+    const prefixed = (profile.id as string).startsWith(EMULATED_PREFIX)
+    if (chat !== prefixed) {
+      throw new DecisionsError(
+        "config-error",
+        chat
+          ? `${file}: profiles[${i}] is an emulated baseline, so its id must start with "${EMULATED_PREFIX}"`
+          : `${file}: profiles[${i}].id starts with "${EMULATED_PREFIX}", which only an emulated baseline (transport: openrouter-chat) may use`,
         { file },
       )
     }

@@ -21,7 +21,7 @@ const SKILL_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/
  * flag (M10 X6), and allowing an emulated baseline to receive the repo's
  * content (M11, plan m11-adopt D2).
  */
-const USER_ONLY = ["--i-consent", "allow-profile"]
+const USER_ONLY = ["--i-consent", "allow-profile", "allowProfiles"]
 
 export function checkSkill(dir: string, name: string, text: string): string[] {
   const problems: string[] = []

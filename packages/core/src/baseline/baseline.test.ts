@@ -53,7 +53,7 @@ describe("schemaFor and promptFor (ported from jev-poc)", () => {
 })
 
 describe("parseBaseline: strict, never repaired", () => {
-  it("reads the replies jev-poc recorded from Haiku 4.5", () => {
+  it("reads replies Haiku 4.5 gave in jev-poc (copied: that repo isn't in CI)", () => {
     // Raw objects from jev-poc/fixtures/baseline/alert-dedup.json.
     const one = { same_incident: { type: "noul" as const, instructions: "Same incident?" } }
     for (const [raw, noul] of [
@@ -100,15 +100,31 @@ describe("parseBaseline: strict, never repaired", () => {
 })
 
 /** A fake OpenRouter chat endpoint answering `content`, or a status. */
-function chat(content: unknown, opts: { status?: number; cost?: number | null } = {}) {
+function chat(
+  content: unknown,
+  opts: {
+    status?: number
+    /** Statuses to answer first, one per attempt, before the reply. */
+    first?: number[]
+    cost?: number | null
+    finish?: string
+    echo?: boolean
+  } = {},
+) {
   const calls: Array<{ url: string; body: Record<string, unknown> }> = []
+  const first = [...(opts.first ?? [])]
   const fetch = (async (url: string, init?: RequestInit) => {
     calls.push({ url, body: JSON.parse(String(init?.body)) })
-    if (opts.status) return new Response("nope", { status: opts.status })
+    const early = first.shift()
+    if (early) return new Response("busy", { status: early })
+    if (opts.status)
+      return new Response(opts.echo ? String(init?.body) : "nope", { status: opts.status })
+    const text =
+      content === null ? null : typeof content === "string" ? content : JSON.stringify(content)
     return Response.json({
       model: "anthropic/claude-4.5-haiku-20251001",
       choices: [
-        { message: { content: typeof content === "string" ? content : JSON.stringify(content) } },
+        { message: { content: text }, ...(opts.finish ? { finish_reason: opts.finish } : {}) },
       ],
       usage: {
         prompt_tokens: 420,
@@ -167,28 +183,50 @@ describe("createBaselineClient", () => {
     }
   })
 
-  it("marks a cost the provider didn't report as unknown, not free", async () => {
-    const { fetch } = chat({ same_incident: 0.1, severity: 0, team: "none" }, { cost: null })
-    const r = await client({ fetch }).answer({ state, questions })
-    expect(r.usage).toMatchObject({ cost: 0, reported: false })
+  it("marks a cost the provider didn't report, or reported below zero, as unknown", async () => {
+    for (const cost of [null, -1]) {
+      const { fetch } = chat({ same_incident: 0.1, severity: 0, team: "none" }, { cost })
+      const r = await client({ fetch }).answer({ state, questions })
+      expect(r.usage, String(cost)).toMatchObject({ cost: 0, reported: false })
+    }
   })
 
+  it("keeps a paid reply with no content, or one cut off, as a parse failure, and logs it", async () => {
+    const ledger = new SpendLedger(join(temp(), "usage.jsonl"))
+    const empty = await client({ fetch: chat(null).fetch, ledger }).answer({ state, questions })
+    expect(empty).toMatchObject({
+      parseError: "the reply had no content",
+      usage: { cost: 0.00049 },
+    })
+    const cutFetch = chat('{"same_incident": 0.', { finish: "length" }).fetch
+    const cut = await client({ fetch: cutFetch, ledger }).answer({ state, questions })
+    expect(cut.parseError).toBe("the reply was cut off at the output limit")
+    expect(ledger.summary()).toMatchObject({ liveCalls: 2 })
+  })
+
+  it("retries a busy provider like the decisions transport", async () => {
+    const reply = { same_incident: 0.2, severity: 0, team: "none" }
+    const { fetch, calls } = chat(reply, { first: [429, 503] })
+    expect((await client({ fetch }).answer({ state, questions })).answers).toBeDefined()
+    expect(calls).toHaveLength(3)
+  })
   it("sends nothing without repo consent, or without the repo allowing this baseline", async () => {
     const { fetch, calls } = chat({})
     await expect(
       client({ fetch, egressConsent: false }).answer({ state, questions }),
-    ).rejects.toMatchObject({
-      code: "egress-refused",
-    })
+    ).rejects.toMatchObject({ code: "egress-refused" })
     await expect(
       client({ fetch, allowed: false }).answer({ state, questions }),
     ).rejects.toMatchObject({
       code: "profile-not-allowed",
       message: expect.stringMatching(/decide config egress allow-profile emulated:/),
     })
+    const fixtures = new FixtureStore(join(temp(), "fixtures"))
+    await expect(
+      client({ fetch, allowed: false, mode: "record", fixtures }).answer({ state, questions }),
+    ).rejects.toMatchObject({ code: "profile-not-allowed" })
     expect(calls).toHaveLength(0)
   })
-
   it("refuses a decision-model profile, and has no key → no-key", () => {
     expect(() => client({ profile: resolveProfile("typesafe/jev-1.13") })).toThrow(
       expect.objectContaining({ code: "profile-not-allowed" }),
@@ -218,7 +256,7 @@ describe("createBaselineClient", () => {
     expect(replayed).toMatchObject({ source: "replay", answers: live.answers, usage: { cost: 0 } })
     expect(replayed.fixtureKey).toBe(live.fixtureKey)
     expect(ledger.summary({ tag: "compare" })).toMatchObject({ liveCalls: 1 })
-    // A different key from a decision model's over the same state: never mixed up.
+    // A state never recorded is a miss, never someone else's answer.
     await expect(
       createBaselineClient({
         profile: emulated,
@@ -235,18 +273,57 @@ describe("createBaselineClient", () => {
   })
 
   it("surfaces a provider error, without the reply body's content", async () => {
-    const r = client({ fetch: chat({}, { status: 400 }).fetch }).answer({ state, questions })
+    const r = client({ fetch: chat({}, { status: 400, echo: true }).fetch }).answer({
+      state,
+      questions,
+    })
     await expect(r).rejects.toMatchObject({ code: "provider-http" })
+    await r.catch((error: Error) => expect(error.message).not.toContain("db pool"))
+  })
+
+  it("treats a record of the other kind as a miss, both ways, never a crash", async () => {
+    const fixtures = new FixtureStore(join(temp(), "fixtures"))
+    const jev = resolveProfile("typesafe/jev-1.13")
+    const one = { alert: "x" }
+    const usage = { input_tokens: 0, output_tokens: 0, cost: 0 }
+    fixtures.record(
+      "n",
+      { model: jev.id, state: one, questions },
+      { model: "m", content: "{}", usage },
+    )
+    fixtures.record(
+      "n",
+      { model: emulated.id, state: one, questions },
+      { model: "m", answers: {}, usage },
+    )
+    await expect(
+      createDecider({ profile: jev, egressConsent: false, fixtures, mode: "replay" }).decide({
+        state: one,
+        questions,
+        namespace: "n",
+      }),
+    ).rejects.toMatchObject({ code: "replay-miss" })
+    const replay = createBaselineClient({
+      profile: emulated,
+      egressConsent: false,
+      allowed: false,
+      fixtures,
+      mode: "replay",
+    })
+    await expect(replay.answer({ state: one, questions, namespace: "n" })).rejects.toMatchObject({
+      code: "replay-miss",
+    })
   })
 })
 
 describe("the emulated baseline is refused outside compare", () => {
-  it("by the decider, so ask, many, spec check and guard hooks can't use it", () => {
-    expect(() => createDecider({ profile: emulated, egressConsent: true, mode: "live" })).toThrow(
-      expect.objectContaining({ code: "profile-not-allowed" }),
-    )
+  it("by the decider, including a dated build of the baseline", () => {
+    for (const id of [DEFAULT_EMULATED_ID, `${DEFAULT_EMULATED_ID}-20251001`])
+      expect(
+        () => createDecider({ profile: resolveProfile(id), egressConsent: true, mode: "live" }),
+        id,
+      ).toThrow(expect.objectContaining({ code: "profile-not-allowed" }))
   })
-
   it("by the runtime, as a fallback", async () => {
     const r = await createPolicyRuntime({
       egress: "on",

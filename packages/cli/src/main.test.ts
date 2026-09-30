@@ -461,11 +461,29 @@ describe("decide config egress", () => {
     ).toBe(2)
   })
 
-  it("refuses the emulated baseline for a decision, as a usage error", async () => {
-    const { io, json } = rig({ "a.txt": "auth" })
+  it("refuses the emulated baseline for a decision, even a dry run, as a usage error", async () => {
+    const spec =
+      "description: A.\nquestions:\n  q: { type: noul, instructions: Auth. }\nexamples:\n  - { id: one, state: auth }\n"
+    const { io, json } = rig({ "a.txt": "auth", ".system1/specs/auth.yaml": spec })
     const env = { ...io.env, SYSTEM1_MODEL: "emulated:anthropic/claude-haiku-4.5" }
-    expect(await main(["ask", "--file", "a.txt", "--question", Q], { ...io, env })).toBe(2)
-    expect(json().error.code).toBe("profile-not-allowed")
+    for (const argv of [
+      ["ask", "--file", "a.txt", "--question", Q],
+      ["many", "--glob", "*.txt", "--question", Q, "--dry-run"],
+      ["spec", "check", "auth"],
+    ]) {
+      expect(await main(argv, { ...io, env }), argv.join(" ")).toBe(2)
+      expect(json().error.code, argv.join(" ")).toBe("profile-not-allowed")
+    }
+  })
+
+  it("revokes a stale grant whose profile no longer exists", async () => {
+    const { cwd, io, json } = rig()
+    writeFileSync(
+      join(cwd, ".system1/config.yaml"),
+      "egress:\n  consent: { granted: true }\n  allowProfiles: [emulated:gone/model]\n",
+    )
+    expect(await main(["config", "egress", "deny-profile", "emulated:gone/model"], io)).toBe(0)
+    expect(json().result.egress.allowProfiles).toEqual([])
   })
 
   it("refuses a non-interactive allow without --confirm: consent is the user's", async () => {

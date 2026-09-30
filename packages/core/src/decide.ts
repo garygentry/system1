@@ -5,7 +5,7 @@ import { DecisionsError } from "./errors.js"
 import type { FixtureStore } from "./fixtures/store.js"
 import { fixtureKey } from "./fixtures/store.js"
 import { undecidedNames } from "./model/answers.js"
-import type { ModelProfile } from "./model/profiles.js"
+import { assertDecisionProfile, type ModelProfile } from "./model/profiles.js"
 import type { Answers, DecisionRequest, QuestionSet, State, Usage } from "./model/types.js"
 import { assertQuestionSet } from "./model/validate.js"
 import type { AnswerSource, SpendLedger } from "./run/spend.js"
@@ -94,13 +94,7 @@ export function createDecider(options: DeciderOptions): Decider {
 
   // A decider answers with calibrated distributions. An emulated chat baseline
   // can't, so it never becomes one: only `compare` asks it, through its own client.
-  if (profile.transport !== "openrouter-decisions") {
-    throw new DecisionsError(
-      "profile-not-allowed",
-      `${profile.id} is an emulated baseline (${profile.transport}): its answers are single, uncalibrated values, so only \`decide compare\` may use it. Pick a decision model (e.g. typesafe/jev-1.13).`,
-      { model: profile.id, transport: profile.transport },
-    )
-  }
+  assertDecisionProfile(profile)
   if ((mode === "live" || mode === "record") && !transport) {
     throw new DecisionsError(
       "no-key",
@@ -150,7 +144,12 @@ export function createDecider(options: DeciderOptions): Decider {
 
       if (mode === "replay") {
         const started = performance.now()
-        const record = fixtures?.lookup(namespace, request)
+        const found = fixtures?.lookup(namespace, request)
+        // A record of another shape (a baseline's) is no decision.
+        const record =
+          found && typeof found.response?.answers === "object" && found.response.answers !== null
+            ? found
+            : undefined
         if (!record) {
           const where = `(namespace "${namespace}", key ${key.slice(0, 12)}…)`
           // Without a key, replay is the only mode, so the key is the real cause.

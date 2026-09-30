@@ -450,6 +450,19 @@ describe("the emulated baseline in config (M11 D2)", () => {
     expect(
       allProfiles(loadConfig({ cwd: repo.repo, env: {}, home: repo.home })).map((p) => p.id),
     ).toContain("emulated:openai/gpt-x")
+    // `emulated:` belongs to baselines, both ways: no shadowing a decision model.
+    const shadow = setup(chat.replace("emulated:openai/gpt-x", "typesafe/jev-1.13"))
+    expect(() => loadConfig({ cwd: shadow.repo, env: {}, home: shadow.home })).toThrow(
+      /must start with "emulated:"/,
+    )
+    const pretend = setup(chat.replace(", transport: openrouter-chat", ""))
+    expect(() => loadConfig({ cwd: pretend.repo, env: {}, home: pretend.home })).toThrow(
+      /only an emulated baseline/,
+    )
+    const scalar = setup("egress:\n  allowProfiles: emulated:x\n")
+    expect(() => loadConfig({ cwd: scalar.repo, env: {}, home: scalar.home })).toThrow(
+      /must be a list of profile ids/,
+    )
     const bad = setup(chat.replace("openrouter-chat", "carrier-pigeon"))
     expect(() => loadConfig({ cwd: bad.repo, env: {}, home: bad.home })).toThrow(
       /transport must be one of/,

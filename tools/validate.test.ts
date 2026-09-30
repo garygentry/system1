@@ -51,6 +51,10 @@ describe("consentFlag", () => {
     expect(consentFlag(dir, "compare")).toEqual([
       "compare: notes.md must not contain allow-profile (the user's to run)",
     ])
+    writeFileSync(join(dir, "notes.md"), "Add it to egress.allowProfiles in .system1/config.yaml\n")
+    expect(consentFlag(dir, "compare")).toEqual([
+      "compare: notes.md must not contain allowProfiles (the user's to run)",
+    ])
   })
 })
 

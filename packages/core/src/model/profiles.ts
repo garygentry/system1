@@ -59,6 +59,20 @@ export function chatModelOf(profile: ModelProfile): string {
     : profile.id
 }
 
+/**
+ * Refuse a profile that isn't a decision model where a decision is made (or
+ * projected): an emulated baseline's answers are single, uncalibrated values,
+ * so only `compare` uses it, through its own client.
+ */
+export function assertDecisionProfile(profile: ModelProfile): void {
+  if (profile.transport === "openrouter-decisions") return
+  throw new DecisionsError(
+    "profile-not-allowed",
+    `${profile.id} is an emulated baseline (${profile.transport}): its answers are single, uncalibrated values, so only \`decide compare\` may use it. Pick a decision model (the default is ${DEFAULT_MODEL_ID}).`,
+    { model: profile.id, transport: profile.transport },
+  )
+}
+
 /** The emulated baseline `compare` uses unless told otherwise (plan m11-adopt D2). */
 export const DEFAULT_EMULATED_ID = "emulated:anthropic/claude-haiku-4.5"
 
@@ -84,9 +98,14 @@ export const PROFILES: readonly ModelProfile[] = [
     // Kept at Jev's limit, so both sides of a comparison see the same states.
     maxStateTokens: 32_000,
     maxChoices: 255,
-    // The system prompt and each question's rendering around the state; an
-    // estimate for projections only, measured cost comes back per call.
-    callOverheadTokens: 150,
+    // For projections only (measured cost comes back per call). The prompt
+    // renders each question twice (schema and text) and the provider adds
+    // structured-output tokens: one live call over three questions billed 494
+    // input tokens where the estimate of state and questions was 129. The ~30
+    // output tokens of a small reply cost 5x input, so they are folded in here
+    // as 150 more: projections cover input and output alike. A reply near the
+    // 512-token output cap costs more than projected.
+    callOverheadTokens: 500,
     // OpenRouter's listed price, read 2026-09-19 (jev-poc CHAT_PRICES).
     usdPerInputToken: 1 / 1_000_000,
     usdPerOutputToken: 5 / 1_000_000,
