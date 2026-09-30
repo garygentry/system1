@@ -10,6 +10,9 @@
  *   pnpm eval:done-check --fit           sweep the thresholds over the recorded answers
  *   … --holdout                          the holdout set (holdout.yaml) instead; never fitted on
  *   … --only <id>                        one scenario
+ *   pnpm eval:done-check --messages      the question check alone, over labelled last messages
+ *                                        (messages.yaml; with --holdout, messages-holdout.yaml):
+ *                                        replay, or live with --record, and a threshold sweep
  *
  * Replay needs no key and runs in CI (`done-check-eval.test.ts`). Live modes
  * take OPENROUTER_API_KEY from the environment or the user's credentials file
@@ -30,16 +33,23 @@ import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
+import { allProfiles } from "../../packages/core/src/config/load.js"
 import type { DecideMode } from "../../packages/core/src/decide.js"
-import { asksUser } from "../../packages/core/src/guard/asks.js"
 import {
+  ASKS_QUESTIONS,
+  ASKS_THRESHOLD,
+  ASKS_USER_MESSAGE,
+  DONE_CHECK_TAG,
   DONE_CHECK_THRESHOLDS,
   judge,
+  messageState,
   type Thresholds,
 } from "../../packages/core/src/guard/check.js"
 import { DEFAULT_UNDECIDED_FLOOR, undecidedNames } from "../../packages/core/src/model/answers.js"
+import { resolveProfile } from "../../packages/core/src/model/profiles.js"
 import type { Answers } from "../../packages/core/src/model/types.js"
 import { SpendLedger } from "../../packages/core/src/run/spend.js"
+import { createContext, deciderFor } from "../../packages/core/src/tools/context.js"
 import { type HookOutput, runHook } from "../../packages/core/src/tools/hook.js"
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -270,6 +280,26 @@ export function answersFrom(dir: string, fixtureKeys?: Set<string>): Record<stri
   return out
 }
 
+/**
+ * The question check's answer, read from a scenario's fixtures: the `asks`
+ * probability, or undefined when there was no message call or it was undecided.
+ */
+export function asksFrom(dir: string): number | undefined {
+  if (!existsSync(dir)) return undefined
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".json")) continue
+    const record = JSON.parse(readFileSync(join(dir, name), "utf8")) as {
+      request: { questions: Record<string, unknown> }
+      response: { answers: Answers }
+    }
+    if (!("asks" in record.request.questions)) continue
+    const a = record.response.answers.asks
+    const undecided = undecidedNames(record.response.answers, DEFAULT_UNDECIDED_FLOOR)
+    return a?.type === "noul" && !undecided.includes("asks") ? a.noul : undefined
+  }
+  return undefined
+}
+
 /** Run one scenario through the hook in process: replay, or record live. */
 export async function runScenario(
   s: Scenario,
@@ -361,8 +391,8 @@ export interface Scorecard {
   /** Changes too large to show whole: by design they never block, so a block is a bug. */
   oversizeBlock: { n: number; blocked: number }
   /**
-   * Stops the local question check let through unchecked, from each message:
-   * question stops (wanted) and completion stops (each one a stop never checked).
+   * Stops the question check let through unchecked: question stops (wanted),
+   * and the ids of other stops (each one never checked).
    */
   askSkip: { questions: number; completions: string[] }
 }
@@ -379,7 +409,7 @@ export function score(
     "question-block": [],
     "not-checked": [],
   }
-  const ran = runs.map((run) => byId(scenarios, run.id))
+  const skippedIds = runs.filter((r) => r.message === ASKS_USER_MESSAGE).map((r) => r.id)
   let done = 0
   let notDone = 0
   let questions = 0
@@ -413,10 +443,8 @@ export function score(
       blocked: grades["false-block"].filter((id) => byId(scenarios, id).kind === "oversize").length,
     },
     askSkip: {
-      questions: ran.filter((s) => s.kind === "question" && asksUser(s.message)).length,
-      completions: ran
-        .filter((s) => s.kind === "completion" && asksUser(s.message))
-        .map((s) => s.id),
+      questions: skippedIds.filter((id) => byId(scenarios, id).kind === "question").length,
+      completions: skippedIds.filter((id) => byId(scenarios, id).kind !== "question"),
     },
   }
 }
@@ -431,7 +459,7 @@ function byId(scenarios: Scenario[], id: string): Scenario {
  * The outcome each scenario would have at other thresholds, from its recorded
  * answers: a stop blocks when any criterion the model saw whole is unmet. An
  * oversize change is seen in parts, which never block, and a stop whose message
- * asks the user something isn't checked. It mirrors `decideDone`
+ * the model read as asking the user something isn't checked. It mirrors `decideDone`
  * only for the paths this set exercises: a completion event that went partial,
  * or a criterion lint or a withheld file kept from the model, isn't modelled.
  */
@@ -439,8 +467,11 @@ export function simulate(
   s: Scenario,
   answers: Record<string, Probabilities>,
   t: Thresholds,
-): { outcome: "block" | "allow"; named: string[] } {
-  if (s.kind === "oversize" || asksUser(s.message)) return { outcome: "allow", named: [] }
+  asks?: number,
+): { outcome: "block" | "allow"; named: string[]; message?: string } {
+  if (asks !== undefined && asks >= ASKS_THRESHOLD)
+    return { outcome: "allow", named: [], message: ASKS_USER_MESSAGE }
+  if (s.kind === "oversize") return { outcome: "allow", named: [] }
   const named = s.criteria.items
     .map((c) => c.text)
     .filter((text) => {
@@ -466,12 +497,16 @@ export interface FitRow {
 export function fitThresholds(
   scenarios: Scenario[],
   answers: Record<string, Record<string, Probabilities>>,
+  asks: Record<string, number | undefined> = {},
 ): FitRow[] {
   const rows: FitRow[] = []
   for (let j = 30; j <= 95; j += 5) {
     for (let u = 55; u <= 95; u += 5) {
       const t = { judgeable: j / 100, unmet: u / 100 }
-      const runs = scenarios.map((s) => ({ id: s.id, ...simulate(s, answers[s.id] ?? {}, t) }))
+      const runs = scenarios.map((s) => ({
+        id: s.id,
+        ...simulate(s, answers[s.id] ?? {}, t, asks[s.id]),
+      }))
       rows.push({ t, card: score(scenarios, runs) })
     }
   }
@@ -587,6 +622,10 @@ async function main(): Promise<void> {
   }
   const only = flag("--only")
   const set: SetName = args.includes("--holdout") ? "holdout" : "scenarios"
+  if (args.includes("--messages")) {
+    await messagesMain(set === "holdout" ? "holdout" : "messages", args.includes("--record"))
+    return
+  }
   const all = loadScenarios(set)
   const scenarios = only ? all.filter((s) => s.id === only) : all
   if (scenarios.length === 0) throw new Error(`no scenario ${only}`)
@@ -594,7 +633,8 @@ async function main(): Promise<void> {
   if (args.includes("--fit")) {
     if (set === "holdout") throw new Error("the holdout is never fitted on")
     const answers = Object.fromEntries(all.map((s) => [s.id, answersFrom(fixtureDir(s.id))]))
-    const rows = fitThresholds(all, answers)
+    const asks = Object.fromEntries(all.map((s) => [s.id, asksFrom(fixtureDir(s.id))]))
+    const rows = fitThresholds(all, answers, asks)
     const now = rows.find(
       (r) =>
         r.t.judgeable === DONE_CHECK_THRESHOLDS.judgeable &&
@@ -686,6 +726,121 @@ async function main(): Promise<void> {
   if (record) {
     const cost = runs.reduce((n, r) => n + r.cost, 0)
     console.log(`recorded ${runs.reduce((n, r) => n + r.calls, 0)} calls, $${cost.toFixed(6)}`)
+  }
+}
+
+// ─── The question check alone, over labelled last messages ───────────────────
+
+const MESSAGE_SETS = {
+  messages: join(HERE, "messages.yaml"),
+  holdout: join(HERE, "messages-holdout.yaml"),
+} as const
+export type MessageSetName = keyof typeof MESSAGE_SETS
+
+export interface LabelledMessage {
+  id: string
+  /** `question`: the agent needs the user's answer to carry on. `completion`: it reports its work. */
+  label: "question" | "completion"
+  text: string
+}
+
+export function loadMessages(set: MessageSetName): LabelledMessage[] {
+  return (parse(readFileSync(MESSAGE_SETS[set], "utf8")) as { messages: LabelledMessage[] })
+    .messages
+}
+
+export interface MessageRun {
+  id: string
+  label: LabelledMessage["label"]
+  /** The `asks` probability; undefined when undecided or not asked (too large, withheld). */
+  asks: number | undefined
+}
+
+/** Ask the question check about each message: replayed from fixtures, or recorded live. */
+export async function runMessages(
+  set: MessageSetName,
+  opts: { mode: "replay" | "record"; key?: string },
+): Promise<MessageRun[]> {
+  const dir = mkdtempSync(join(tmpdir(), "done-check-messages-"))
+  const home = mkdtempSync(join(tmpdir(), "done-check-home-"))
+  const fixtures = join(FIXTURES, set === "holdout" ? "messages-holdout" : "messages")
+  try {
+    write(dir, { ".system1/config.yaml": "egress:\n  consent: { granted: true }\n" })
+    git(dir, "init", "-q")
+    const store = join(dir, ".system1/fixtures", NAMESPACE)
+    if (opts.mode === "replay" && existsSync(fixtures)) {
+      mkdirSync(store, { recursive: true })
+      cpSync(fixtures, store, { recursive: true })
+    }
+    const env: NodeJS.ProcessEnv =
+      opts.mode === "replay" ? { SYSTEM1_REPLAY: "1" } : { OPENROUTER_API_KEY: opts.key ?? "" }
+    const tool = createContext({ cwd: dir, env, home })
+    const profile = resolveProfile(tool.config.model, allProfiles(tool.config))
+    const mode: DecideMode = opts.mode === "record" ? "record" : "auto"
+    const decider = deciderFor(tool, profile, mode, { tag: DONE_CHECK_TAG })
+    const out: MessageRun[] = []
+    for (const m of loadMessages(set)) {
+      const prepared = await messageState(m.text, {
+        profile,
+        cwd: dir,
+        exclude: tool.config.egress.exclude,
+      })
+      let asks: number | undefined
+      if (prepared) {
+        const r = await decider.decide({
+          state: prepared.state,
+          questions: ASKS_QUESTIONS,
+          namespace: NAMESPACE,
+        })
+        const a = r.answers.asks
+        asks = a?.type === "noul" && !r.undecided.includes("asks") ? a.noul : undefined
+      }
+      out.push({ id: m.id, label: m.label, asks })
+    }
+    if (opts.mode === "record") {
+      rmSync(fixtures, { recursive: true, force: true })
+      if (existsSync(store)) cpSync(store, fixtures, { recursive: true })
+    }
+    return out
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+    rmSync(home, { recursive: true, force: true })
+  }
+}
+
+/** At threshold `t`: question stops let through, and completion stops skipped (never checked). */
+export function messageCard(runs: MessageRun[], t = ASKS_THRESHOLD) {
+  const skipped = (r: MessageRun) => r.asks !== undefined && r.asks >= t
+  const questions = runs.filter((r) => r.label === "question")
+  const completions = runs.filter((r) => r.label === "completion")
+  return {
+    questions: { n: questions.length, skipped: questions.filter(skipped).map((r) => r.id) },
+    completions: { n: completions.length, skipped: completions.filter(skipped).map((r) => r.id) },
+  }
+}
+
+async function messagesMain(set: MessageSetName, record: boolean): Promise<void> {
+  const runs = await runMessages(set, {
+    mode: record ? "record" : "replay",
+    ...(record ? { key: apiKey() } : {}),
+  })
+  for (const r of runs) {
+    const p = r.asks === undefined ? "undecided" : r.asks.toFixed(2)
+    const wrong = (r.label === "question") !== (r.asks !== undefined && r.asks >= ASKS_THRESHOLD)
+    console.log(`${wrong ? "FAIL" : "ok  "} ${r.id.padEnd(34)} ${r.label.padEnd(10)} asks ${p}`)
+  }
+  const card = messageCard(runs)
+  console.log(`\nat asks >= ${ASKS_THRESHOLD}:`)
+  console.log(`  question stops let through  ${card.questions.skipped.length}/${card.questions.n}`)
+  console.log(
+    `  completion stops skipped    ${card.completions.skipped.length}/${card.completions.n}${card.completions.skipped.length ? ` (${card.completions.skipped.join(", ")})` : ""}`,
+  )
+  console.log("\nthreshold  questions let through  completions skipped")
+  for (let t = 50; t <= 95; t += 5) {
+    const c = messageCard(runs, t / 100)
+    console.log(
+      `  ${(t / 100).toFixed(2)}     ${`${c.questions.skipped.length}/${c.questions.n}`.padStart(8)}  ${`${c.completions.skipped.length}/${c.completions.n}`.padStart(18)}`,
+    )
   }
 }
 

@@ -97,12 +97,12 @@ version from the start of the session, and says the file changed.
 - **Nothing changed since the session started:** nothing is sent. This covers a stop to ask you
   something before any work. Evidence files don't count as a change.
 - **Nothing changed since the last check:** nothing is sent.
-- **The agent stopped to ask you something:** nothing is sent, and the stop goes through with
-  `System 1 done-check: the agent asked you something, so this stop wasn't checked`. done-check
-  reads the agent's last message on your machine, and never sends it. It counts a stop as a
-  question only when the last paragraph asks one, the message doesn't say the work is done
-  ("done", "finished", "ready to commit"…), and the question doesn't offer more work ("Anything
-  else?", "Want me to add tests?"). Anything else is checked as usual.
+- **The agent stopped to ask you something:** the stop goes through with
+  `System 1 done-check: the agent asked you something, so this stop wasn't checked`, and the
+  change isn't sent. First, done-check asks the decision model one question about the agent's
+  last message, in a call of its own: is the agent waiting on your answer to carry on? Only a
+  confident yes skips the check. A message that presents the work as done is checked, even if it
+  ends "Want me to add tests?" or "Anything else?".
 - **A criterion is clearly unmet:** the stop is blocked, and the agent sees:
 
   ```text
@@ -132,7 +132,9 @@ When a check runs, it sends the decision model, under the repo's egress consent:
 - the criteria bullets;
 - the session's change since it started, including commits made during the session and new
   untracked files;
-- the files the criteria name, and any evidence files.
+- the files the criteria name, and any evidence files;
+- in a separate call, the agent's last message, to ask whether it stopped to ask you something.
+  The criteria are never judged with the agent's own account of its work beside them.
 
 Secret-looking files are left out and listed, secret-shaped strings are scrubbed, and nothing
 too large is cut short (see [concepts](concepts.md)). A criterion that names a withheld file is
@@ -168,10 +170,10 @@ through `npx` itself takes about 720 ms. The hooks never make one.
 
 ## Where it falls short
 
-- **A finished-sounding stop that ends in a real-looking question isn't checked.** The question
-  check reads words, not intent. "Should I look for other places that use the old name?" after a
-  rename that missed a caller reads as a question, so that stop goes through unchecked. Of 16
-  not-done stops measured, the 2 written to look like this were missed; none of the others were.
+- **Some questions still get checked.** The question check lets a stop through only when it's
+  confident, so a question that reads like a report can be checked and blocked as before. On a
+  blind set of final messages, it let 17 of 22 questions through and skipped none of 28
+  completions.
 - **Large changes are checked only in part, and never blocked.** That includes a change beside
   one large untracked file, such as a 100 KB log. Add such files to `.gitignore`, or to
   `egress.exclude`.

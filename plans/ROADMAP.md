@@ -334,7 +334,7 @@ Live limitations of the shipped product. Each says what is wrong, why it is not 
 - **What it fixes:** repos that opt in with `decide guard enable done-check` and a criteria file get the check without depending on the agent's choice. Claude and Codex have it; Pi has no hooks.
 - **What it doesn't fix:**
   - The `ask` routing numbers above are unchanged. They stay the measure for everyone who hasn't opted in, and for checks the user asks for mid-task.
-  - A stop where the agent asks the user a question with work unfinished was blocked 9 times in 12. Since 2026-09-30 (unreleased) a local check on the last message skips such stops, sending nothing: in replay 0 of 4 are blocked, at the cost of 2 of 16 not-done stops whose finished-sounding message ends in a real-looking question. See `docs/evaluation.md`.
+  - A stop where the agent asks the user a question with work unfinished was blocked 9 times in 12. Since 2026-09-30 (unreleased) done-check first asks the decision model whether the agent's last message waits on the user, and a confident yes lets the stop through unchecked: 0 of 8 question stops blocked live, and on a blind set of messages 17 of 22 questions let through with 0 of 28 completions skipped. See `docs/evaluation.md`, "The question check".
   - A change too large to show whole, including one with a large untracked file, is checked only in part and never blocks.
   - Full numbers: M9–M11 plan, Results, "M10 §8".
 

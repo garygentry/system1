@@ -34,11 +34,12 @@ The only pack is **`done-check`**. Cover these five points in plain words.
    - Undecided or unjudgeable criteria never block; the message counts them as "not settled". Bullets that ask for an exact fact, a count or a date ("all tests pass", "before Friday") aren't sent at all; the message counts them as "for the agent to check".
    - If a criteria file changed during the session, the check uses the version from the start of the session, and the message says it changed.
    - Once it has checked, it checks again only when something it sends has changed.
-   - When the agent stops to ask the user a question (read locally from its last message, which is never sent), nothing is sent and the stop goes through with a line saying it wasn't checked. A message that says the work is done, or offers more ("Anything else?"), is still checked.
+   - When the agent stops to ask the user a question, the stop goes through with a line saying it wasn't checked, and the change isn't sent. The decision model decides this from the agent's last message, in a call of its own, and only a confident yes skips the check. A message that presents the work as done is checked, even if it ends by offering more ("Want me to add tests?").
 2. **What it sends** to the provider (openrouter.ai), under the repo's egress consent:
    - the criteria bullets;
    - the session's change since it started, including commits made during the session and new untracked files;
-   - tracked files the criteria name (up to three per criterion, ten in all), and any `evidence` files configured.
+   - tracked files the criteria name (up to three per criterion, ten in all), and any `evidence` files configured;
+   - in a separate call, the agent's last message (see point 1).
 
    The usual rules always apply: secret-looking files are left out and listed, secret-shaped strings are scrubbed, and oversized content is split or skipped with a reason, never cut short.
 3. **Cost.** Usually one decision call per check, about $0.00003. `maxUsdPerSession` (default $0.01) caps what done-check spends in one session. Once the cap is reached, checks are skipped and the message says so.

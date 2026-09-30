@@ -3,7 +3,7 @@
     "id": "h-clicks-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-clicks-no-readme",
@@ -11,7 +11,7 @@
     "named": [
       "The README explains click counts."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-clicks-never-counted",
@@ -19,7 +19,7 @@
     "named": [
       "Each successful `LinkStore.get` adds one to that slug's click count."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-clicks-counts-misses",
@@ -27,13 +27,13 @@
     "named": [
       "Only a lookup that finds a link counts as a click; an unknown slug gets no count."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-no-store-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-no-store-301",
@@ -41,19 +41,19 @@
     "named": [
       "The redirect still uses status 302."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-unjudgeable",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-question",
     "outcome": "allow",
     "named": [],
-    "calls": 0
+    "calls": 1
   },
   {
     "id": "h-rules-new-dependency",
@@ -61,12 +61,12 @@
     "named": [
       "No new dependency is added to package.json."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "h-rules-clean",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   }
 ]

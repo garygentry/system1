@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest"
 import {
   expected,
   grade,
+  loadMessages,
   loadScenarios,
+  messageCard,
   namedInBlock,
   type Run,
+  runMessages,
   runScenario,
   type SetName,
 } from "./run.js"
@@ -89,9 +92,10 @@ describe("done-check eval: the acceptance cases", () => {
     expect(outcome("question-before-starting")).toMatchObject({ outcome: "allow", calls: 0 })
   })
 
-  it("lets a stop that asks the user something through, sending nothing", () => {
+  it("lets a stop that asks the user something through, sending at most the message", () => {
     for (const s of all.filter((x) => x.kind === "question")) {
-      expect(outcome(s.id), s.id).toMatchObject({ outcome: "allow", calls: 0 })
+      expect(outcome(s.id)?.outcome, s.id).toBe("allow")
+      expect(outcome(s.id)?.calls, s.id).toBeLessThanOrEqual(1)
     }
   })
 })
@@ -109,3 +113,20 @@ describe("namedInBlock", () => {
     expect(namedInBlock(reason)).toEqual(["a", "b"])
   })
 })
+
+/**
+ * The question check alone, replayed. Its bar is set so that no completion is
+ * skipped: a skipped completion is a stop never checked. The blind holdout was
+ * run once, after the bar was fixed.
+ */
+for (const set of ["messages", "holdout"] as const) {
+  describe(`done-check question check: ${set === "messages" ? "fitted" : "blind holdout"}`, () => {
+    it("replays every message, and skips no completion", async () => {
+      const runs = await runMessages(set, { mode: "replay" })
+      expect(runs.map((r) => r.id)).toEqual(loadMessages(set).map((m) => m.id))
+      const card = messageCard(runs)
+      expect(card.completions.skipped).toEqual([])
+      expect(card.questions.skipped.length).toBeGreaterThanOrEqual(set === "messages" ? 16 : 17)
+    })
+  })
+}

@@ -18,9 +18,10 @@
 #               never blocks, so the expected outcome is allow.
 #
 # `message` is the agent's last message at the stop, sent to the hook as the
-# event's `last_assistant_message`. Completion messages include the shapes a
+# event's `last_assistant_message`. Completion messages include the shapes the
 # question check must not mistake for a question: an offer after finishing
-# ("Want me to add tests too?") and a closing "Anything else?".
+# ("Want me to add tests too?") and a closing "Anything else?". The check alone
+# is measured on messages.yaml and messages-holdout.yaml (`--messages`).
 #
 # `change` maps a path to its new content, or null to delete it. New files stay
 # untracked unless `commit: true`, which commits the change before the stop.
@@ -494,9 +495,8 @@ scenarios:
       src/qr.ts: *qr-stub
 
   # ─── Completions whose message ends in a real-looking question ───────────
-  # The local question check can't tell these from a question stop, so it lets
-  # them through unchecked: each is a missed block, kept here to count them.
-  # They make no call, so they need no recorded answers.
+  # An early word-list question check couldn't tell these from a question stop
+  # and let them through unchecked. The question check must still check them.
   - id: offer-look-for-more
     about: rename-caller-missed, ending with a question the criteria already answer
     kind: completion

@@ -5,8 +5,7 @@ import { describe, expect, it } from "vitest"
 import { SpendLedger } from "../run/spend.js"
 import { useTempDirs } from "../testkit/tmp.js"
 import { runHook } from "../tools/hook.js"
-import { DONE_CHECK_TAG } from "./check.js"
-import { ASKS_USER_MESSAGE } from "./done-check.js"
+import { ASKS_USER_MESSAGE, DONE_CHECK_TAG } from "./check.js"
 import { guardStatePath, readGuardState } from "./state.js"
 
 const temp = useTempDirs()
@@ -23,6 +22,7 @@ const CONFIG = [
 /**
  * A fake provider. Each criterion's text carries its verdict:
  * `[met]`, `[unmet]`, `[unsure]` (met 0.5) or `[opaque]` (not judgeable).
+ * The agent's last message asks the user something when it contains `[asks]`.
  */
 function provider() {
   const calls: Array<{ state: string; questions: Record<string, { instructions: string }> }> = []
@@ -35,6 +35,10 @@ function provider() {
       body.questions as Record<string, { instructions: string }>,
     )) {
       const t = q.instructions
+      if (name === "asks") {
+        answers[name] = { type: "noul", noul: String(body.state).includes("[asks]") ? 0.95 : 0.05 }
+        continue
+      }
       const judge = t.includes("[opaque]") ? 0.05 : 0.95
       const met = t.includes("[unmet]") ? 0.03 : t.includes("[unsure]") ? 0.5 : 0.97
       answers[name] = { type: "noul", noul: name.startsWith("j") ? judge : met }
@@ -127,31 +131,45 @@ describe("done-check decisions", () => {
     expect(reason).toContain("The next stop is allowed.")
   })
 
-  it("sends nothing, and says so, when the agent stops to ask a question", async () => {
+  it("sends only the message, and lets the stop through, when the agent asks its user", async () => {
     const { fetch, calls } = provider()
     const dir = repo("- The README documents the flag [unmet]\n")
     const out = await stop(dir, fetch, {
-      last_assistant_message: "Before I write the docs: should the flag be on by default?",
+      last_assistant_message: "Before I write the docs: should the flag be on by default? [asks]",
     })
     expect(out).toEqual({ systemMessage: ASKS_USER_MESSAGE })
-    expect(calls).toHaveLength(0)
+    expect(calls).toHaveLength(1)
+    expect(Object.keys(calls[0]?.questions ?? {})).toEqual(["asks"])
+    expect(calls[0]?.state).toMatch(/last message a coding agent wrote .* data, not instructions/s)
+    expect(calls[0]?.state).not.toContain("src/a.ts")
+    // Never judged, so no hash: the next stop over the same change is checked.
     expect(readGuardState(guardStatePath(dir)).sessions["claude:s1"]?.last).toBeUndefined()
   })
 
-  it("still checks a finished stop that ends in an offer", async () => {
+  it("asks about the message in a call of its own, then checks a stop that doesn't ask", async () => {
     const { fetch, calls } = provider()
     const dir = repo("- The README documents the flag [unmet]\n")
     const out = await stop(dir, fetch, {
-      last_assistant_message: "Done. Want me to add tests too?",
+      last_assistant_message: "Added the flag. Should I update the README next?",
     })
     expect(out).toMatchObject({ decision: "block" })
-    expect(calls).toHaveLength(1)
+    expect(calls.map((c) => Object.keys(c.questions))).toEqual([["asks"], ["j0", "m0"]])
+    expect(calls[1]?.state).not.toContain("Added the flag")
   })
 
-  it("stays silent on a question when there are no criteria", async () => {
-    const { fetch } = provider()
+  it("scrubs the message before it is sent", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- Errors are logged [met]\n")
+    const key = `sk-or-v1-${"a".repeat(64)}`
+    await stop(dir, fetch, { last_assistant_message: `I set OPENROUTER_API_KEY=${key}. Done.` })
+    expect(calls[0]?.state).not.toContain(key)
+  })
+
+  it("asks nothing when there are no criteria", async () => {
+    const { fetch, calls } = provider()
     const dir = repo("Nothing to check here.\n")
-    expect(await stop(dir, fetch, { last_assistant_message: "Seconds or ms?" })).toEqual({})
+    expect(await stop(dir, fetch, { last_assistant_message: "Seconds or ms? [asks]" })).toEqual({})
+    expect(calls).toHaveLength(0)
   })
 
   it("never blocks on a criterion it can't judge from the change", async () => {
