@@ -55,7 +55,9 @@ const PREAMBLE =
 
 /**
  * Does the agent stop to ask its user something? (M10 decision 2, added
- * 2026-09-30: §8 found done-check blocking 9 of 12 such stops.) The agent's
+ * 2026-09-30: §8 found done-check blocking 9 of 12 such stops.) Opt-in, with
+ * `askAboutMessage: true` in the repo's config: it sends more than the pack's
+ * consent first covered. The agent's
  * last message goes, scrubbed, in a call of its own before the criteria's, so
  * the agent's own account of its work never sits beside the change the
  * criteria are judged on. Only a confident yes skips the check, and then the
@@ -342,7 +344,9 @@ export async function decideDone(
   if (hash === lastHash) return { output: {}, hash, outcome: "skipped" }
   // The question check only saves a criteria call, so it is asked only when one follows.
   let message =
-    sendable.length > 0 ? await messageState(ctx.event.last_assistant_message, base) : undefined
+    ctx.pack.askAboutMessage && sendable.length > 0
+      ? await messageState(ctx.event.last_assistant_message, base)
+      : undefined
 
   // Spend: this event within the budget (never confirmed), the session within its cap.
   const projection = project(profile, tokens)

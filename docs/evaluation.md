@@ -25,7 +25,7 @@ Two things frame all of it:
 | Does the agent use System 1 when it should, and not when it shouldn't? | Codex and Pi: every time. Claude with the hook: 91% of positives on the blind set, no false triggers | Five runs per set. Claude misses some checks of its own work |
 | Does a new user reach a first live decision? | Yes, after six first-run stalls were fixed | The author walked it in each harness on Linux; no outside user yet |
 | Does `done-check` block the stops it should, and only those? | Live: no false block in 39 done stops; 0 missed in 57 not-done stops (2 in an earlier run); both Known-gap checks caught | 38 labelled stop events by the author, 10 of them held out; 3 live runs each |
-| Does `done-check` let a stop that asks the user through, without skipping a finished one? | On a blind set: 17 of 22 questions let through, 0 of 28 completions skipped; live, 0 of 8 question stops blocked | 88 final messages, 50 of them blind, written by another agent; the stop events, 2 live runs each |
+| With `askAboutMessage`, does `done-check` let a stop that asks the user through, without skipping a finished one? | On a blind set: 17 of 22 questions let through, 0 of 28 completions skipped; live, 0 of 8 question stops blocked | 88 final messages, 50 of them blind, written by another agent; the stop events, 2 live runs each |
 | Does it work on macOS? | The CLI does (CI). The harnesses are unverified | See [known gaps](../plans/ROADMAP.md#5-macos-is-unverified) |
 
 ## Answer quality: calibration
@@ -254,8 +254,9 @@ agent's change, run through the real hook.
 
 ### The question check (2026-09-30)
 
-done-check now asks the decision model, in a call of its own, whether the agent's last message
-stops to wait on the user. A confident yes (≥ 0.8) lets the stop through unchecked, and the
+With `askAboutMessage: true` (opt-in, since it sends the agent's own words), done-check asks the
+decision model, in a call of its own, whether the agent's last message stops to wait on the
+user. A confident yes (≥ 0.8) lets the stop through unchecked, and the
 change isn't sent. A skipped completion is a stop never checked, so the bar is set to skip none.
 If the question call fails, is unsure, or doesn't fit the spend cap beside the criteria call,
 the stop is checked as before.

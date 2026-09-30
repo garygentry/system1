@@ -16,6 +16,7 @@ export const PACKS = {
       maxUsdPerSession: 0.01,
       criteria: ["TASK.md", ".system1/done.md"],
       evidence: [] as string[],
+      askAboutMessage: false,
     },
   },
 } as const
@@ -42,6 +43,12 @@ export interface GuardPackConfig {
   criteria: string[]
   /** Extra files sent with the change as evidence, e.g. a test log. */
   evidence: string[]
+  /**
+   * Also send the agent's last message, to ask whether it stopped to ask the
+   * user something (and if so, skip the check). It widens what is sent, so,
+   * like `enabled`, it is read only from the repo layer. Off by default.
+   */
+  askAboutMessage: boolean
 }
 
 export interface GuardConfig {
@@ -59,7 +66,11 @@ const PACK_KEYS = [
   "maxUsdPerSession",
   "criteria",
   "evidence",
+  "askAboutMessage",
 ] as const
+
+/** Keys that widen what a pack sends: a consent act, so read from the repo layer only. */
+const REPO_ONLY = new Set(["enabled", "enabledAt", "enabledBy", "askAboutMessage"])
 
 /**
  * `guard:` from both layers, with warnings for everything ignored. Options:
@@ -89,6 +100,7 @@ export function readGuard(
       maxUsdPerSession: defaults.maxUsdPerSession,
       criteria: [...defaults.criteria],
       evidence: [...defaults.evidence],
+      askAboutMessage: defaults.askAboutMessage,
     }
     const seen = new Set<string>()
     for (const { packs: sections, file, which } of layers) {
@@ -106,7 +118,7 @@ export function readGuard(
           warnings.push(`${file}: unknown key ${path}`)
           continue
         }
-        if (key.startsWith("enabled") && which === "user") {
+        if (REPO_ONLY.has(key) && which === "user") {
           warnings.push(`${file}: ${path} is read only from the repo file (ignored)`)
           continue
         }
@@ -114,7 +126,8 @@ export function readGuard(
           warnings.push(`${file}: ${path} must be ${expected} (ignored)`)
         switch (key) {
           case "enabled":
-            if (typeof value === "boolean") set("enabled", value)
+          case "askAboutMessage":
+            if (typeof value === "boolean") set(key, value)
             else bad("true or false")
             break
           case "enabledAt":

@@ -190,6 +190,7 @@ export function buildRepo(s: Scenario, dir: string): void {
       "  packs:",
       "    done-check:",
       "      enabled: true",
+      "      askAboutMessage: true",
       `      criteria: [${JSON.stringify(file)}]`,
       "",
     ].join("\n"),

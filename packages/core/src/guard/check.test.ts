@@ -17,6 +17,7 @@ const CONFIG = [
   "  packs:",
   "    done-check:",
   "      enabled: true",
+  "      askAboutMessage: true",
   "",
 ].join("\n")
 
@@ -174,6 +175,19 @@ describe("done-check decisions", () => {
       expect(await messageState(empty, opts)).toBeUndefined()
     const huge = "word ".repeat(profile.maxStateTokens * 2)
     expect(await messageState(huge, opts)).toBeUndefined()
+  })
+
+  it("never sends the message unless the repo opts in", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    writeFileSync(
+      join(dir, ".system1/config.yaml"),
+      CONFIG.replace("      askAboutMessage: true\n", ""),
+    )
+    const out = await stop(dir, fetch, { last_assistant_message: "Seconds or ms? [asks]" })
+    expect(out).toMatchObject({ decision: "block" })
+    expect(calls.map((c) => Object.keys(c.questions))).toEqual([["j0", "m0"]])
+    expect(JSON.stringify(calls)).not.toContain("Seconds or ms")
   })
 
   it("checks the criteria as before when the question call fails or is unsure", async () => {
