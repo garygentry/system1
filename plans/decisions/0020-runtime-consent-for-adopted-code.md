@@ -1,8 +1,8 @@
 # 0020. Runtime consent and runtime environment for adopted code
 
-- **Status:** accepted 2026-09-30 (maintainer, at the start of M11: the marked line is the only grant; the default cap is $1.00 a day)
+- **Status:** accepted 2026-09-30. The maintainer ruled that the marked line is the only grant (§1) and that the default cap is $1.00 a day (§4). §2, §3 and §5–§7 are the agent's proposals, revised after an adversarial review (§6 first had a `--egress on` flag) and accepted with the plan.
 - **Date:** 2026-09-30
-- **Amends:** [0009](0009-egress-consent-once-per-repo.md) for code that runs outside a harness. **Plan:** [`../m11-adopt.md`](../m11-adopt.md) D1, D5–D7. **Spec:** [`../milestones/M9-M11-scout-guard-adopt.md`](../milestones/M9-M11-scout-guard-adopt.md) §M11.1.
+- **Amends:** [0009](0009-egress-consent-once-per-repo.md) and AGENTS.md's egress rule, for adopted code: its grant is a line of code, not the repo config. **Plan:** [`../m11-adopt.md`](../m11-adopt.md) D1, D5–D7. **Spec:** [`../milestones/M9-M11-scout-guard-adopt.md`](../milestones/M9-M11-scout-guard-adopt.md) §M11.1.
 
 ## Context
 
@@ -21,30 +21,32 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
    - TypeScript: `const EGRESS = "off" // system1: runtime egress. Set to "on" to send this module's inputs to the decision model.`
    - Python: `EGRESS = "off"  # system1: runtime egress. …`
    - The module passes it to the runtime as `egress`. Switching it to `"on"` is a user edit in reviewed code, and it is the only grant. The runtime reads no repo config for consent.
-   - **`adopt` never writes `"on"`.** Each generated module ships a test that fails when its marked line is on, which a user who switches it on updates on purpose. `tools/validate.ts` scans the templates for `EGRESS = "on"`, `egressConsent: true` and `--egress on`.
+   - **`adopt` never writes `"on"`.** Each generated module ships a test that fails when its marked line is on, which a user who switches it on updates on purpose. `tools/validate.ts` scans the templates for any grant, not one spelling: `EGRESS` set to anything but `"off"` with any quoting or spacing, `egress:` given anything but `"off"`, `egressConsent`, and an `EGRESS` read from the environment. The generated test does the same over the module as written, so code adapted to the repo's idiom is checked too.
    - **Consent is never read from an environment variable,** here or anywhere.
-2. **A runtime entry point that templates use, and nothing else.** `@garygentry/system1-core/runtime` exports `createPolicyRuntime`, `prepareState` and the reason codes. Every call goes through `prepareState` (scrub and size) and then the decider. Templates never import `createDecider`. The subpath's exports are pinned by a test and committed under semver: a breaking change needs a minor bump and a decision record. `adopt` pins an exact version.
+2. **A runtime entry point that templates use, and nothing else.** `@garygentry/system1-core/runtime` exports `createPolicyRuntime`, `prepareState` and the reason codes. Every call goes through `prepareState` (scrub and size) and then the decider. **Excludes don't apply:** they match paths, and an in-memory state has none. This departs from the spec's "scrub, size and exclude"; a module that must hold back a field leaves it out of the state it builds. Templates never import `createDecider`. The subpath's exports are pinned by a test and committed under semver: a breaking change needs a minor bump and a decision record. `adopt` pins an exact version.
 3. **The environment is explicit.**
    - `createPolicyRuntime({ root?, egress, maxUsdPerDay, model?, fixtures? })`. It never walks up the tree to find a root.
    - `root` names the directory for the spend ledger and fixtures.
    - When `root` is absent, missing or unwritable, spend is counted in memory for the process, and every result says `ledger: "memory"`. A failed write is never an error after a paid call.
-4. **A production spend cap:** `maxUsdPerDay`, per process, measured from the provider's reported cost.
+4. **A production spend cap:** `maxUsdPerDay`, counted from the provider's reported cost, or the projection when it reports none. In one process it holds against concurrent calls. Across processes it holds only through a shared, writable `root`, and can be overshot by the calls in flight at once.
    - [0011](0011-default-spend-guard-a-request-above-200-calls-or-0.md)'s per-request and per-session caps don't map onto a long-running app.
-   - `adopt` writes the cap into each module explicitly, with a default of **$1.00**: about 30,000 decisions a day at current prices.
+   - `adopt` writes the cap into each module explicitly, with a default of **$1.00**: about 30,000 decisions a day at current prices for small states, fewer for large ones.
    - At the cap, the module falls back with `budget` until the UTC day turns.
 5. **Every result that isn't a model answer is a fallback with a reason code** the app can log or count. So "silently never called" is visible. The codes:
    - `egress-off`: the marked line is off;
    - `undecided`: below the spec's thresholds or undecided;
    - `provider-error`: HTTP, network or malformed response;
-   - `refused`: the state is too large, or scrubbing refused it;
+   - `refused`: the state is too large;
    - `budget`: the daily cap was reached;
    - `timeout`: past the module's latency limit;
    - `no-key`: no API key in the runtime;
    - `engine-unavailable`: Python only, when `decide` is missing or the wrong version.
 6. **Python reaches the engine through `decide runtime`.**
-   - The module spawns `decide runtime <spec> --root <dir> --egress on|off`, with the state as JSON on stdin and one result as JSON on stdout.
-   - `--egress` comes only from the module's marked line. The validator forbids `--egress on` in skills and templates, as it forbids `--i-consent`.
-   - The module checks `decide version` once at startup, and falls back with `engine-unavailable` on a mismatch.
+   - The module spawns `decide runtime --module <its own path> --root <dir>`, with `{questions, state, namespace}` as JSON on stdin and one result as JSON on stdout.
+   - **There is no egress flag.** `decide runtime` reads the grant from the module file: exactly one marked `EGRESS = "on"` line turns it on, and anything else is off. An agent can't grant egress by typing a command; only a line of code does.
+   - A live call needs a writable `--root`, so the cap holds across the one-process-per-call spawns.
+   - It loads no repo config and reads no `SYSTEM1_*` variable. Skills never run it: the validator forbids it in skill files.
+   - The module checks `decide runtime --protocol` once at startup, a number that changes only when the stdin/stdout shape does, and falls back with `engine-unavailable` on a mismatch. Upgrading a global `decide` doesn't disable adopted modules.
 7. **The API key** comes from the environment (`OPENROUTER_API_KEY`), like everywhere else. A key alone never grants egress.
 
 ## Rationale
@@ -57,6 +59,8 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
 
 - **An agent can write the grant.** A user who approves a diff without reading it can ship egress on. The generated test, the validator and doctor's report of modules found with egress on (M11 §9) make this visible, not impossible.
 - **The in-memory ledger resets on restart,** so a crash-looping process can exceed the daily cap. Give the runtime a writable `root` to have the cap survive restarts.
+- **Excludes don't reach runtime states** (§2): the module decides what goes into a state.
+- **The cap is approximate across processes** (§4).
 
 ## Revisit when
 
