@@ -13,7 +13,7 @@ import { describeExpectation, type Expectation, meets, parseExpect } from "../sp
 import { type LintFinding, lintSpec } from "../spec/lint.js"
 import { assertExamples, exampleFileProblem, loadSpec } from "../spec/spec.js"
 import { parseSplit } from "../split/split.js"
-import { checkInput, deciderFor, type ToolContext } from "./context.js"
+import { checkInput, deciderFor, fixturesFor, type ToolContext } from "./context.js"
 import { type SkippedSummary, summariseSkipped } from "./many.js"
 import type { SpecCheckInput } from "./schemas.js"
 
@@ -133,6 +133,16 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
   }
 
   const decider = deciderFor(ctx, profile, input.mode ?? "replay")
+  if (decider.mode === "record") {
+    // Recording is the point of --live: never pay for answers that can't be kept.
+    const code = fixturesFor(ctx).unwritable(spec.name)
+    if (code)
+      throw new DecisionsError(
+        "invalid-request",
+        `Can't record: .system1/fixtures/${spec.name} can't be written (${code}). Nothing was sent.`,
+        { code },
+      )
+  }
   if (decider.mode !== "replay") {
     assertConsent(ctx.config.egress.consent, root)
     const parts = prepared.flatMap((p) => (p.prep ? [p.prep.projection] : []))

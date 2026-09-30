@@ -95,7 +95,13 @@ export function scrubText(text: string, counts: ScrubCounts = {}): string {
  * past the scrubber. A value JSON can't hold (a cycle, a BigInt) is refused.
  */
 export function scrubState(state: State, counts: ScrubCounts = {}): State {
-  return walk(toPlainJson(state), counts) as State
+  const plain = toPlainJson(state)
+  try {
+    return walk(plain, counts) as State
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error
+    throw new DecisionsError("invalid-request", "The state is nested too deeply to send.")
+  }
 }
 
 /** What `JSON.stringify` would send, as a value; `invalid-request` if it can't. */

@@ -648,7 +648,7 @@ examples:
   - { id: login, state: "auth flow", expect: { relevant: true } }
   - { id: helper, state: "string helper", expect: { relevant: true } }
 `
-  it("fails a --live check whose answers couldn't be recorded, and says so", async () => {
+  it("refuses a --live check whose answers couldn't be recorded, before paying for any", async () => {
     const good = `description: Auth.
 questions:
   relevant: { type: noul, instructions: Handles auth. }
@@ -657,15 +657,12 @@ examples:
 `
     const { cwd, io, out, json } = rig({ ".system1/specs/auth.yaml": good })
     writeFileSync(join(cwd, ".system1/fixtures"), "")
-    expect(await main(["spec", "check", "auth", "--live"], io)).toBe(0)
-    expect(json().result).toMatchObject({
-      passed: false,
-      counts: { pass: 1 },
-      unsaved: [{ what: "fixture", reason: expect.stringMatching(/^E[A-Z]+$/) }],
+    expect(await main(["spec", "check", "auth", "--live"], io)).toBe(2)
+    expect(json().error).toMatchObject({
+      code: "invalid-request",
+      message: expect.stringMatching(/Can't record: .*\(E[A-Z]+\)\. Nothing was sent\./),
     })
-    out.length = 0
-    expect(await main(["spec", "check", "auth", "--live", "--format", "brief"], io)).toBe(0)
-    expect(out.join("\n")).toMatch(/NOT RECORDED \(E[A-Z]+\): 1 answer\(s\) couldn't be written/)
+    expect(out.length).toBeGreaterThan(0)
   })
 
   it("records with --live, then replays offline; a mismatch is exit 0 with passed false", async () => {

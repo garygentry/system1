@@ -69,6 +69,8 @@ export function prepareState(
   assertStateShape(state)
   const counts: ScrubCounts = {}
   const safe = scrubState(state, counts)
+  // Again on what will be sent: a `toJSON` can turn an object into anything.
+  assertStateShape(safe)
   const tokens = assertStateFits(options.id ?? "state", safe, options.questions, options.profile)
   return { state: safe, tokens, redactions: Object.values(counts).reduce((a, b) => a + b, 0) }
 }

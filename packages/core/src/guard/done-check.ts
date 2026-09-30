@@ -10,6 +10,7 @@ import { createHash } from "node:crypto"
 import { closeSync, constants, fstatSync, openSync, readSync, realpathSync } from "node:fs"
 import { dirname, isAbsolute, relative, resolve } from "node:path"
 import type { DecideMode } from "../decide.js"
+import { isDecisionsError } from "../errors.js"
 import type { ContextOptions } from "../tools/context.js"
 import { decideDone } from "./check.js"
 import { gather } from "./gather.js"
@@ -224,12 +225,18 @@ export async function stop(ctx: PackContext): Promise<HookOutput> {
         { now: ctx.now },
       )
     } catch (error) {
+      // Only a disk that can't be written or another hook's lock: a refusal to
+      // write an invalid state is a bug, and fails open as one.
+      const errno = (error as NodeJS.ErrnoException)?.code
+      const locked = isDecisionsError(error) && "lock" in error.details
+      if (!locked && !(typeof errno === "string" && /^E[A-Z]+$/.test(errno))) throw error
       // Without the hash the next stop checks again (and pays): say so.
-      const code = (error as NodeJS.ErrnoException)?.code ?? "an error"
+      const why = locked ? "another guard hook holds its lock" : errno
+      const note = `the guard state couldn't be saved (${why}), so the next stop is checked again`
       if ("systemMessage" in result.output)
-        return {
-          systemMessage: `${result.output.systemMessage} (not saved: the guard state couldn't be written, ${code})`,
-        }
+        return { systemMessage: `${result.output.systemMessage} (${note})` }
+      if ("decision" in result.output)
+        return { decision: "block", reason: `${result.output.reason}\nNote: ${note}.` }
     }
   }
   return result.output

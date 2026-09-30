@@ -272,7 +272,10 @@ describe("a state in memory", () => {
   it("refuses what JSON can't send, and states that aren't strings, objects or arrays", () => {
     const cycle: Record<string, unknown> = {}
     cycle.self = cycle
-    for (const bad of [cycle, { n: 10n }, null, 42, undefined]) {
+    let deep: unknown = "leaf"
+    for (let i = 0; i < 3000; i++) deep = { d: deep }
+    const odd = [{ toJSON: () => undefined }, { toJSON: () => 42 }, deep]
+    for (const bad of [cycle, { n: 10n }, null, 42, undefined, ...odd]) {
       expect(() => prepareState(bad as never, { questions, profile })).toThrow(
         expect.objectContaining({ code: "invalid-request" }),
       )
