@@ -92,6 +92,15 @@ export function createDecider(options: DeciderOptions): Decider {
         : "replay"
       : (options.mode as Exclude<DecideMode, "auto">)
 
+  // A decider answers with calibrated distributions. An emulated chat baseline
+  // can't, so it never becomes one: only `compare` asks it, through its own client.
+  if (profile.transport !== "openrouter-decisions") {
+    throw new DecisionsError(
+      "profile-not-allowed",
+      `${profile.id} is an emulated baseline (${profile.transport}): its answers are single, uncalibrated values, so only \`decide compare\` may use it. Pick a decision model (e.g. typesafe/jev-1.13).`,
+      { model: profile.id, transport: profile.transport },
+    )
+  }
   if ((mode === "live" || mode === "record") && !transport) {
     throw new DecisionsError(
       "no-key",

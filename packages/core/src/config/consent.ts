@@ -96,4 +96,25 @@ export function setGuardEnabled(
   return { enabled, enabledAt: at, ...(by ? { enabledBy: by } : {}) }
 }
 
+/**
+ * Allow (or stop allowing) an emulated baseline to receive this repo's content
+ * in `compare`: `egress.allowProfiles` in `<repo>/.system1/config.yaml`. It is
+ * the user's decision, like consent itself; the CLI checks for it.
+ */
+export function setAllowProfile(repoRoot: string, id: string, allowed: boolean): string[] {
+  const file = repoConfigPath(repoRoot)
+  const doc = editable(file, ["egress"])
+  const current = doc.getIn(["egress", "allowProfiles"])
+  const list: string[] = Array.isArray((current as { toJSON?: () => unknown })?.toJSON?.())
+    ? ((current as { toJSON: () => unknown[] })
+        .toJSON()
+        .filter((v) => typeof v === "string") as string[])
+    : []
+  const next = allowed ? [...new Set([...list, id])] : list.filter((p) => p !== id)
+  doc.setIn(["egress", "allowProfiles"], next)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, doc.toString())
+  return next
+}
+
 export { assertConsent } from "./assert-consent.js"

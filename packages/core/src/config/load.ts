@@ -20,6 +20,7 @@ import {
   JEV_CALL_OVERHEAD_TOKENS,
   type ModelProfile,
   PROFILES,
+  TRANSPORTS,
 } from "../model/profiles.js"
 import { ROUTE_DEFAULTS, type RouteConfig, type Trigger } from "../route/route.js"
 import { DEFAULT_ENDPOINT, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
@@ -54,6 +55,11 @@ export interface DecisionsConfig {
     consent: Consent
     /** Extra path patterns never to send, on top of the defaults. */
     exclude: string[]
+    /**
+     * Emulated baselines this repo lets `compare` send content to: a second
+     * vendor, so a second opt-in. Only ever taken from the repo layer.
+     */
+    allowProfiles: string[]
   }
   /** Extra model profiles, on top of the built-in ones. */
   profiles: ModelProfile[]
@@ -90,7 +96,7 @@ export const DEFAULTS: DecisionsConfig = {
   concurrency: 8,
   timeoutMs: DEFAULT_TIMEOUT_MS,
   budget: { maxCalls: 200, maxUsd: 0.05 },
-  egress: { consent: { granted: false }, exclude: [] },
+  egress: { consent: { granted: false }, exclude: [], allowProfiles: [] },
   profiles: [],
   route: ROUTE_DEFAULTS,
 }
@@ -158,8 +164,12 @@ export function loadConfig(options: LoadOptions = {}): ResolvedConfig {
         ...stringList(user, "egress.exclude", userFile),
         ...stringList(repo, "egress.exclude", repoFile),
       ],
+      allowProfiles: readAllowProfiles(repo, repoFile),
     },
-    profiles: [...profileList(user, userFile, warnings), ...profileList(repo, repoFile, warnings)],
+    profiles: [
+      ...profileList(user, userFile, warnings, "user"),
+      ...profileList(repo, repoFile, warnings, "repo"),
+    ],
     route: readRoute(user, userFile, repo, repoFile, env),
   }
 
@@ -233,7 +243,7 @@ const KNOWN: Record<string, readonly string[]> = {
     "guard",
   ],
   budget: ["maxCalls", "maxUsd"],
-  egress: ["consent", "exclude"],
+  egress: ["consent", "exclude", "allowProfiles"],
 }
 
 /**
@@ -260,6 +270,9 @@ function unknownKeys(layer: Layer, file: string, which: "user" | "repo"): string
   const egress = layer.egress
   if (which === "user" && isMapping(egress) && egress.consent !== undefined) {
     warnings.push(`${file}: egress.consent is read only from the repo file (ignored)`)
+  }
+  if (which === "user" && isMapping(egress) && egress.allowProfiles !== undefined) {
+    warnings.push(`${file}: egress.allowProfiles is read only from the repo file (ignored)`)
   }
   return warnings
 }
@@ -340,6 +353,21 @@ function readConsent(repo: Layer, file: string): Consent {
   }
 }
 
+function readAllowProfiles(repo: Layer, file: string): string[] {
+  const value = (repo?.egress as Record<string, unknown> | undefined)?.allowProfiles
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value) || !value.every((v) => typeof v === "string" && v.trim())) {
+    throw new DecisionsError(
+      "config-error",
+      `${file}: egress.allowProfiles must be a list of profile ids`,
+      {
+        file,
+      },
+    )
+  }
+  return value
+}
+
 function stringList(layer: Layer, path: string, file: string): string[] {
   const value = (layer?.egress as Record<string, unknown> | undefined)?.exclude
   if (value === undefined || value === null) return []
@@ -366,12 +394,17 @@ const PROFILE_FIELDS: readonly (keyof ModelProfile)[] = [
   "calibrated",
 ]
 
-function profileList(layer: Layer, file: string, warnings: string[]): ModelProfile[] {
+function profileList(
+  layer: Layer,
+  file: string,
+  warnings: string[],
+  which: "user" | "repo",
+): ModelProfile[] {
   const value = layer?.profiles
   if (value === undefined || value === null) return []
   if (!Array.isArray(value))
     throw new DecisionsError("config-error", `${file}: profiles must be a list`, { file })
-  return value.map((p, i) => {
+  const list = value.map((p, i) => {
     const profile = { ...(p as object) } as Partial<ModelProfile>
     // A field with no value (`priceAsOf:`) is unset, so the default applies. This
     // runs before the checks below, so an empty optional field is never an error.
@@ -413,6 +446,16 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
         { file },
       )
     }
+    if (
+      profile.transport !== undefined &&
+      !(TRANSPORTS as readonly unknown[]).includes(profile.transport)
+    ) {
+      throw new DecisionsError(
+        "config-error",
+        `${file}: profiles[${i}].transport must be one of ${TRANSPORTS.join(", ")}`,
+        { file },
+      )
+    }
     const extra = Object.keys(profile).filter(
       (k) => !PROFILE_FIELDS.includes(k as keyof ModelProfile),
     )
@@ -432,6 +475,15 @@ function profileList(layer: Layer, file: string, warnings: string[]): ModelProfi
       callOverheadTokens: JEV_CALL_OVERHEAD_TOKENS,
       ...profile,
     } as ModelProfile
+  })
+  // A chat baseline sends content to a second vendor: only the built-ins and
+  // the repo file may define one, never the user file (plan m11-adopt D2).
+  return list.filter((profile, i) => {
+    if (which === "repo" || profile.transport !== "openrouter-chat") return true
+    warnings.push(
+      `${file}: profiles[${i}] (${profile.id}) is an emulated baseline; only the repo file may define one (ignored)`,
+    )
+    return false
   })
 }
 

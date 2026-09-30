@@ -27,6 +27,7 @@ export const BY_CODE: Record<ErrorCode, ExitCode> = {
   "invalid-request": EXIT.usage,
   "state-too-large": EXIT.usage,
   "unknown-model": EXIT.usage,
+  "profile-not-allowed": EXIT.usage,
   "config-error": EXIT.usage,
   "source-error": EXIT.usage,
   "no-key": EXIT.usage,

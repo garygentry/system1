@@ -64,6 +64,7 @@ so set a large number instead.
 | `budget.maxUsd` | `0.05` | number ≥ 0 | The spend guard: a request projected over this many US dollars needs `--confirm` |
 | `egress.consent` | `{granted: false}` | mapping | Whether this repo agreed to send content to the provider. Repo file only |
 | `egress.exclude` | `[]` | list of globs | Paths never to send, on top of the built-in excludes |
+| `egress.allowProfiles` | `[]` | list of profile ids | Emulated baselines `decide compare` may send this repo's content to (a second vendor). Set with `decide config egress allow-profile`. Repo file only |
 | `profiles` | `[]` | list | Extra model profiles, or overrides of built-in ones by `id` |
 | `route.*` | see [Routing hints](#routing-hints) | mapping | The Claude Code routing hook |
 | `guard.packs.*` | see [Guard packs](#guard-packs) | mapping | Opt-in hook checks, such as `done-check`. `enabled` is read from the repo file only |
@@ -118,7 +119,7 @@ Optional fields, with the default a config profile gets:
 | `maxChoices` | `255` | The most options one `choice` question may have. A whole number, at least 2 |
 | `callOverheadTokens` | `300` | Input tokens the provider bills on every call beyond the item and the questions, added to each call in a **projection**. Jev's measured value. A whole number, at least 0 |
 | `displayName` | the `id` | A name for display |
-| `transport` | `openrouter-decisions` | How the model is reached. It's the only one there is |
+| `transport` | `openrouter-decisions` | How the model is reached: `openrouter-decisions` for a decision model, `openrouter-chat` for an emulated baseline. Only the repo file may define an `openrouter-chat` profile; one in the user file is dropped with a warning |
 | `usdPerOutputToken` | `0` | Listed output price |
 | `priceAsOf` | `unknown` | When the listed price was read |
 | `calibrated` | `true` | Whether the model's probabilities are calibrated |
@@ -132,6 +133,13 @@ profile replaces a user one with the same `id`, and within one file the last ent
 wins. A model id resolves to the profile with that `id`. A dated build such as
 `typesafe/jev-1.13-20260917` resolves to its family's profile, and the dated id is what gets
 sent. An id with no profile is `unknown-model` (exit 2).
+
+**The emulated baseline.** One built-in profile, `emulated:anthropic/claude-haiku-4.5`, is a chat
+model asked for the same answers as JSON, so `decide compare` can measure a decision model against
+it. Its answers are single, uncalibrated values (`calibrated: false`), so it is refused, with
+`profile-not-allowed` (exit 2), everywhere but `compare`: `ask`, `many`, `spec check`, guard hooks
+and adopted code. It sends content to a second vendor, so `compare` also needs it in
+`egress.allowProfiles`, and it asks OpenRouter not to route to providers that keep data.
 
 ## Routing hints
 

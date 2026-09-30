@@ -37,7 +37,19 @@ describe("consentFlag", () => {
     expect(consentFlag(dir, "ping")).toEqual([])
     writeFileSync(join(dir, "references/enable.md"), "decide guard enable done-check --i-consent\n")
     expect(consentFlag(dir, "ping")).toEqual([
-      "ping: references/enable.md must not contain --i-consent (the user's flag)",
+      "ping: references/enable.md must not contain --i-consent (the user's to run)",
+    ])
+  })
+
+  it("finds the emulated baseline's opt-in, which only the user may grant", () => {
+    const dir = mkdtempSync(join(tmpdir(), "skill-"))
+    writeFileSync(join(dir, "SKILL.md"), skill("name: compare\ndescription: x"))
+    writeFileSync(
+      join(dir, "notes.md"),
+      "decide config egress allow-profile emulated:anthropic/claude-haiku-4.5\n",
+    )
+    expect(consentFlag(dir, "compare")).toEqual([
+      "compare: notes.md must not contain allow-profile (the user's to run)",
     ])
   })
 })

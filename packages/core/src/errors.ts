@@ -18,6 +18,11 @@ export type ErrorCode =
   | "replay-miss"
   /** The requested model has no profile. */
   | "unknown-model"
+  /**
+   * The profile can't be used here: an emulated (chat) baseline anywhere but
+   * `compare`, or one this repo hasn't allowed (`egress.allowProfiles`).
+   */
+  | "profile-not-allowed"
   /** The request itself is invalid (caller bug, not a provider problem). */
   | "invalid-request"
   /** A live call in a repo that has not consented to sending content off the machine. */

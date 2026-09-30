@@ -16,8 +16,12 @@ import { loadCatalog, npmRepository, ROOT } from "./generate.js"
 
 const PLUGIN_DIR = join(ROOT, "plugins/system1")
 const SKILL_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/
-/** The guard consent flag (M10 X6): enabling is the user's act, so no skill may spell it out. */
-const GUARD_CONSENT_FLAG = "--i-consent"
+/**
+ * What only the user may run, so no skill may spell it out: the guard consent
+ * flag (M10 X6), and allowing an emulated baseline to receive the repo's
+ * content (M11, plan m11-adopt D2).
+ */
+const USER_ONLY = ["--i-consent", "allow-profile"]
 
 export function checkSkill(dir: string, name: string, text: string): string[] {
   const problems: string[] = []
@@ -59,13 +63,17 @@ function skills(): string[] {
   })
 }
 
-/** Every file a skill ships (SKILL.md, references, the Codex sidecar) that spells out the guard consent flag. */
+/** Every file a skill ships (SKILL.md, references, the Codex sidecar) that spells out what only the user may run. */
 export function consentFlag(dir: string, name: string): string[] {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => relative(dir, join(entry.parentPath, entry.name)))
-    .filter((path) => readFileSync(join(dir, path), "utf8").includes(GUARD_CONSENT_FLAG))
-    .map((path) => `${name}: ${path} must not contain ${GUARD_CONSENT_FLAG} (the user's flag)`)
+    .flatMap((path) => {
+      const text = readFileSync(join(dir, path), "utf8")
+      return USER_ONLY.filter((word) => text.includes(word)).map(
+        (word) => `${name}: ${path} must not contain ${word} (the user's to run)`,
+      )
+    })
 }
 
 function versions(): string[] {

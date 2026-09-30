@@ -224,7 +224,7 @@
      - that **every fallback carries a reason code** the app can log or count, so "silently never called" is visible.
 2. **`emulated` transport and profile** ([0003](../decisions/0003-model-layer-one-transport-data-only-model-profiles.md)): a chat model on OpenRouter, given a JSON schema derived from the question set (port `jev-poc/shared/baseline.ts`).
    - `calibrated: false`; it returns single values; parse failures are counted, never repaired into answers.
-   - **It sends content to a different vendor than Jev**, so it needs its own repo-only opt-in (`egress.allow_profiles: [emulated:<model>]`, granted like consent), and it sends OpenRouter's no-data-collection provider preference.
+   - **It sends content to a different vendor than Jev**, so it needs its own repo-only opt-in (`egress.allowProfiles: [emulated:<model>]`, granted like consent), and it sends OpenRouter's no-data-collection provider preference.
    - **It is usable only inside `compare`:** `ask`, `many`, `hook` and the runtime refuse it with exit 2, so `SYSTEM1_MODEL` can't switch real gates to an uncalibrated model.
    - Choose the model here and record it in the profile. It uses the same `prepare()`, fixtures and ledger.
 3. **A minimal stability promise for the imported surface.** Adopted TypeScript imports `@garygentry/system1-core`, which has no documented API or stability policy (that is M13).

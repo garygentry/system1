@@ -1,4 +1,19 @@
-export { assertConsent, setConsent, setGuardEnabled } from "./config/consent.js"
+export {
+  type BaselineClient,
+  type BaselineClientOptions,
+  type BaselineRecorded,
+  type BaselineResult,
+  createBaselineClient,
+  DEFAULT_CHAT_ENDPOINT,
+} from "./baseline/client.js"
+export {
+  type BaselineAnswer,
+  type BaselineAnswers,
+  BaselineParseError,
+  parseBaseline,
+} from "./baseline/parse.js"
+export { promptFor, type StructuredSchema, schemaFor } from "./baseline/schema.js"
+export { assertConsent, setAllowProfile, setConsent, setGuardEnabled } from "./config/consent.js"
 export type {
   Budget,
   Consent,
@@ -48,7 +63,16 @@ export {
   undecidedNames,
 } from "./model/answers.js"
 export type { ModelProfile } from "./model/profiles.js"
-export { DEFAULT_MODEL_ID, PROFILES, projectCost, resolveProfile } from "./model/profiles.js"
+export {
+  chatModelOf,
+  DEFAULT_EMULATED_ID,
+  DEFAULT_MODEL_ID,
+  PROFILES,
+  projectCost,
+  resolveProfile,
+  TRANSPORTS,
+  type TransportKind,
+} from "./model/profiles.js"
 export type * from "./model/types.js"
 export { assertQuestionSet, parseDecisionResponse } from "./model/validate.js"
 export type { Backlog, Candidate, Opportunity, OpportunityStatus } from "./opportunities/backlog.js"
@@ -111,7 +135,7 @@ export { parseSplit, split } from "./split/split.js"
 export type { AskResult } from "./tools/ask.js"
 export { runAsk } from "./tools/ask.js"
 export type { ContextOptions, ToolContext } from "./tools/context.js"
-export { createContext, deciderFor } from "./tools/context.js"
+export { baselineFor, createContext, deciderFor } from "./tools/context.js"
 export type { CheckStatus, DoctorCheck, DoctorOptions, DoctorResult } from "./tools/doctor.js"
 export { CODEX_RULE, DOCTOR_CHECKS, runDoctor, which } from "./tools/doctor.js"
 export type { ManyResult, ResultRow, SkippedSummary } from "./tools/many.js"

@@ -13,12 +13,13 @@ import type { DecisionRequest, DecisionResponse } from "../model/types.js"
  */
 export const FIXTURE_VERSION = 1
 
-export interface FixtureRecord {
+/** A recorded call. `R` is the response kept: a decision, or an emulated baseline's reply. */
+export interface FixtureRecord<R = DecisionResponse> {
   v: typeof FIXTURE_VERSION
   key: string
   recordedAt: string
   request: DecisionRequest
-  response: DecisionResponse
+  response: R
 }
 
 /**
@@ -78,21 +79,24 @@ export class FixtureStore {
     }
   }
 
-  lookup(namespace: string, request: DecisionRequest): FixtureRecord | undefined {
+  lookup<R = DecisionResponse>(
+    namespace: string,
+    request: DecisionRequest,
+  ): FixtureRecord<R> | undefined {
     const file = this.path(namespace, fixtureKey(request))
     if (!existsSync(file)) return undefined
-    const record = JSON.parse(readFileSync(file, "utf8")) as FixtureRecord
+    const record = JSON.parse(readFileSync(file, "utf8")) as FixtureRecord<R>
     return record.v === FIXTURE_VERSION ? record : undefined
   }
 
-  record(
+  record<R = DecisionResponse>(
     namespace: string,
     request: DecisionRequest,
-    response: DecisionResponse,
+    response: R,
     now = new Date(),
-  ): FixtureRecord {
+  ): FixtureRecord<R> {
     const key = fixtureKey(request)
-    const record: FixtureRecord = {
+    const record: FixtureRecord<R> = {
       v: FIXTURE_VERSION,
       key,
       recordedAt: now.toISOString(),

@@ -1,5 +1,6 @@
 import { isAbsolute, join, relative } from "node:path"
 import { Value } from "typebox/value"
+import { type BaselineClient, createBaselineClient } from "../baseline/client.js"
 import {
   allProfiles,
   loadConfig,
@@ -225,6 +226,33 @@ export function deciderFor(
           }),
         }
       : {}),
+    fixtures: new FixtureStore(join(dir, "fixtures")),
+    ledger: new SpendLedger(join(dir, "usage.jsonl")),
+    mode: config.replay ? "replay" : mode,
+    ...(config.session ? { session: config.session } : {}),
+    ...(extra.tag ? { tag: extra.tag } : {}),
+  })
+}
+
+/**
+ * The emulated baseline's client, from layered config: the repo's consent and
+ * its `egress.allowProfiles`. Only `compare` calls this (plan m11-adopt D2).
+ */
+export function baselineFor(
+  ctx: ToolContext,
+  profile: ModelProfile,
+  mode: DecideMode = "auto",
+  extra: { tag?: string } = {},
+): BaselineClient {
+  const { config } = ctx
+  const dir = stateDir(config.repoRoot)
+  return createBaselineClient({
+    profile,
+    egressConsent: config.egress.consent.granted,
+    allowed: config.egress.allowProfiles.includes(profile.id),
+    repoRoot: config.repoRoot,
+    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
+    ...(ctx.fetch ? { fetch: ctx.fetch } : {}),
     fixtures: new FixtureStore(join(dir, "fixtures")),
     ledger: new SpendLedger(join(dir, "usage.jsonl")),
     mode: config.replay ? "replay" : mode,
