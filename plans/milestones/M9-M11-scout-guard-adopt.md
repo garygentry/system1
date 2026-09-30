@@ -112,7 +112,7 @@
 
 ## M10 — `guard` and `done-check` (release 0.5.0)
 
-**Status:** done 2026-09-28, released as 0.5.0 (tag `v0.5.0` on `698fdf4`). See Results and ROADMAP.
+**Status:** done 2026-09-28, released as 0.5.0 (tag `v0.5.0` on `698fdf4`). done-check runs in Codex from 0.5.1 (tag `v0.5.1`): 0.5.0's root `plugin.json` hid the hooks from Codex. See Results and ROADMAP.
 **Addresses:** ROADMAP Known gap #1 (Claude declines to hand off a check of its own work) **for repos that opt in with a criteria file**. It does not move the `ask` routing numbers, which stay the gap's measure for everyone else; M10 reports its own catch rate next to them.
 
 ### Work
@@ -319,7 +319,7 @@
     - `decide doctor` should read `$CODEX_HOME/config.toml` `hooks.state` and warn when guard is enabled but the system1 hooks aren't trusted;
     - the guard docs should say trust is a second opt-in on Codex;
     - smoke can't run the Codex hook headless without the bypass flag.
-- **Still to check in §4:** whether a Codex hook command has network. The spike's hook needed none, and the model's shell has none in the default sandbox.
+- **Still to check in §4:** whether a Codex hook command has network. The spike's hook needed none, and the model's shell has none in the default sandbox. *Answered 2026-09-30: it has. A done-check Stop hook made a live call from `codex exec -s workspace-write` and blocked (ROADMAP, 0.5.1).*
 
 ### M10 live proof: done-check in a real Claude session (2026-09-27)
 

@@ -249,7 +249,7 @@ Such bullets are never sent: send a test log as evidence instead.
 | Reason | What to do |
 |---|---|
 | `no API key is set` | Set `OPENROUTER_API_KEY`, or use the credentials file |
-| `the decision model's provider failed (…)` | A provider error: see the matching [error](#errors). In Codex's sandbox, the hook may have no network |
+| `the decision model's provider failed (…)` | A provider error: see the matching [error](#errors). A Codex hook has network even when the model's shell doesn't |
 | `it took longer than N ms (latencyMs)` | Raise `latencyMs` ([settings](configuration.md#guard-packs)), up to 55000 |
 | `this session's done-check spend reached …` | The session hit `maxUsdPerSession`; raise it, or start a new session |
 | `the change would cost more than one request may` | The change is over the spend guard (`budget.maxCalls` / `budget.maxUsd`) |

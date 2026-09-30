@@ -10,7 +10,21 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-28 (0.5.0).** M10 is done: `guard` and its first pack, `done-check`, check the agent's work at Stop against the repo's criteria in Claude Code and Codex, for repos that opt in. 0.5.0 ships it. M11 (`adopt` + `compare`) is next. Design partners are M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+**Updated 2026-09-30 (0.5.1).** M10 is done: `guard` and its first pack, `done-check`, check the agent's work at Stop against the repo's criteria in Claude Code and Codex, for repos that opt in. It shipped in 0.5.0, and in Codex it works from 0.5.1. M11 (`adopt` + `compare`) is next. Design partners are M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+
+**0.5.1, released and verified 2026-09-30** (tag `v0.5.1` on `293128d`, signed with the rotated `gov-git-signing` key, #38). A fix to 0.5.0: done-check now runs in Codex.
+
+- **What it fixes (#37):**
+  - The plugin shipped a root `plugin.json` (Agent Plugins 1.0) beside `.codex-plugin/plugin.json`. Codex 0.155.1 then reads the root file as the manifest and loads none of the plugin's hooks. There was no trust prompt, done-check never ran in Codex, and nothing said so; skills still loaded.
+  - The maintainer found it in 0.5.0's verification: two interactive Codex sessions, with no hook-trust prompt. `codex app-server` → `hooks/list` showed no system1 hooks.
+  - The root manifest is gone ([0007](decisions/0007-cursor-copilot-and-other-agent-plugins-1-0-clients.md), amended), `validate` forbids it, and smoke now asks Codex itself which hooks it lists (`tools/smoke/codex-hooks.mjs`).
+- **Gates:** `pnpm check` (794 tests), `validate`, `release:check` 12/12, a stage dry run, Codex smoke 7/7 including the new hooks check, Claude smoke 6/6, and `release:verify`.
+- **Release:** `main` was pushed before the approval, the step the runbook puts after it. For about a day, until approval, the marketplaces served a 0.5.1 plugin whose CLI npm didn't serve yet. The rotated signing key needed `.github/allowed_signers` updated first (#38).
+- **Published artifacts, fresh profiles:** smoke passed 10/10. Claude, Codex and Pi each ran a live `decide many`, for $0.000073, $0.000075 and $0.000084. Codex listed both system1 hooks, `untrusted` until the user trusts them.
+- **Codex, end to end:**
+  - The maintainer trusted the hooks interactively, and Codex stored `hooks.state."system1@system1:hooks/codex-hooks.json:{session_start,stop}:0:0"`. `decide doctor` reads it: `ok` when trusted, and a warning with the fix in a profile that isn't.
+  - Then a headless `codex exec -s workspace-write`, with the pack enabled in a throwaway repo, was told to edit only `src/greet.ts`, against a README criterion. The Stop was **blocked once**, naming it. The agent replied that the criterion didn't apply, since it was told to edit only `greet.ts`, and the next stop was allowed.
+  - That was one live call (661 input tokens) from inside the Codex hook, so a Codex hook command does have network (decision 3's open question).
 
 **0.5.0, released and verified 2026-09-28** (tag `v0.5.0` on `698fdf4`). The plan and its results are in [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) § M10.
 
@@ -31,7 +45,7 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
   - The task: TASK.md asked for `greet` and README docs, and the prompt said to edit only `src/greet.ts`.
   - The Stop was **blocked once**, naming the README criterion. Claude then documented `greet` and finished.
   - It made one live call (661 input tokens), ledgered as `guard:done-check` under Claude's session.
-- **Open:** Codex's hook trust needs an interactive session, so it wasn't exercised headless. It's for the maintainer to trust once and confirm the key `doctor` matches.
+- **Missed at the time:** Codex never loaded 0.5.0's hooks (a root `plugin.json`), so done-check never ran there. Headless smoke couldn't see it, since only an interactive session shows the trust prompt. Fixed in 0.5.1.
 
 **0.4.1, released and verified 2026-09-25** (tag `v0.4.1` on `a61ca37`). The first release staged from CI ([0022](decisions/0022-ci-publish-trusted-staged.md)); the plan is [`baseline-0.4.1.md`](baseline-0.4.1.md).
 
