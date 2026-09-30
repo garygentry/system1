@@ -1,4 +1,4 @@
-import { assertConsent } from "./config/consent.js"
+import { assertConsent } from "./config/assert-consent.js"
 import { scrubQuestions, scrubState } from "./egress/scrub.js"
 import { assertStateFits } from "./egress/size.js"
 import { DecisionsError } from "./errors.js"

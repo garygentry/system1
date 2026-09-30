@@ -25,22 +25,23 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
    - **Consent is never read from an environment variable,** here or anywhere.
 2. **A runtime entry point that templates use, and nothing else.** `@garygentry/system1-core/runtime` exports `createPolicyRuntime`, `prepareState` and the reason codes. Every call goes through `prepareState` (scrub and size) and then the decider. **Excludes don't apply:** they match paths, and an in-memory state has none. This departs from the spec's "scrub, size and exclude"; a module that must hold back a field leaves it out of the state it builds. Templates never import `createDecider`. The subpath's exports are pinned by a test and committed under semver: a breaking change needs a minor bump and a decision record. `adopt` pins an exact version.
 3. **The environment is explicit.**
-   - `createPolicyRuntime({ root?, egress, maxUsdPerDay, model?, fixtures? })`. It never walks up the tree to find a root.
+   - `createPolicyRuntime({ egress, maxUsdPerDay, root?, model?, mode?, apiKey?, timeoutMs?, … })` (the full list is in `docs/runtime.md`). It never walks up the tree to find a root. Fixtures live under `root`; `mode: "replay"` answers from them offline and writes nothing.
    - `root` names the directory for the spend ledger and fixtures.
-   - When `root` is absent, missing or unwritable, spend is counted in memory for the process, and every result says `ledger: "memory"`. A failed write is never an error after a paid call.
+   - When `root` isn't given, or can't be written, spend is counted in memory for the process, and every result says `ledger: "memory"`. A missing `root` directory is created. A failed write is never an error after a paid call.
 4. **A production spend cap:** `maxUsdPerDay`, counted from the provider's reported cost, or the projection when it reports none. In one process it holds against concurrent calls. Across processes it holds only through a shared, writable `root`, and can be overshot by the calls in flight at once.
    - [0011](0011-default-spend-guard-a-request-above-200-calls-or-0.md)'s per-request and per-session caps don't map onto a long-running app.
    - `adopt` writes the cap into each module explicitly, with a default of **$1.00**: about 30,000 decisions a day at current prices for small states, fewer for large ones.
-   - At the cap, the module falls back with `budget` until the UTC day turns.
+   - At the cap, the module falls back with `budget` until the UTC day turns. Each call reserves its projected cost before it waits, so concurrent calls in one process can't race past the cap; a call's measured cost can still pass it by the difference. A cost the provider doesn't report counts at its projection. A cap that isn't a finite number of at least 0 makes every call fall back, never uncapped.
 5. **Every result that isn't a model answer is a fallback with a reason code** the app can log or count. So "silently never called" is visible. The codes:
    - `egress-off`: the marked line is off;
-   - `undecided`: below the spec's thresholds or undecided;
+   - `undecided`: the model's answer is too flat to act on. The spec's thresholds are the module's to apply, and it takes the fallback when they aren't met;
    - `provider-error`: HTTP, network or malformed response;
    - `refused`: the state is too large;
    - `budget`: the daily cap was reached;
    - `timeout`: past the module's latency limit;
    - `no-key`: no API key in the runtime;
    - `engine-unavailable`: Python only, when `decide` is missing or the wrong version.
+   - `internal`: anything else, such as an unknown model or a malformed question set. *Added in M11 PR 3, so that "never throws" holds without mislabelling a bug as a provider error.*
 6. **Python reaches the engine through `decide runtime`.**
    - The module spawns `decide runtime --module <its own path> --root <dir>`, with `{questions, state, namespace}` as JSON on stdin and one result as JSON on stdout.
    - **There is no egress flag.** `decide runtime` reads the grant from the module file: exactly one marked `EGRESS = "on"` line turns it on, and anything else is off. An agent can't grant egress by typing a command; only a line of code does.
