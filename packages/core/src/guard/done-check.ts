@@ -10,6 +10,7 @@ import { createHash } from "node:crypto"
 import { closeSync, constants, fstatSync, openSync, readSync, realpathSync } from "node:fs"
 import { dirname, isAbsolute, relative, resolve } from "node:path"
 import type { DecideMode } from "../decide.js"
+import { isDecisionsError } from "../errors.js"
 import type { ContextOptions } from "../tools/context.js"
 import { decideDone } from "./check.js"
 import { gather } from "./gather.js"
@@ -198,29 +199,45 @@ export async function stop(ctx: PackContext): Promise<HookOutput> {
   assertLive(ctx)
   if (result.hash && result.outcome !== "skipped") {
     const hash = result.hash
-    updateGuardState(
-      guardStatePath(ctx.repoRoot),
-      (state) => {
-        const current = state.sessions[ctx.sessionKey]
-        if (!current) return { result: undefined }
-        const at = ctx.now.toISOString()
-        return {
-          state: {
-            ...state,
-            sessions: {
-              ...state.sessions,
-              [ctx.sessionKey]: {
-                ...current,
-                updatedAt: at,
-                last: { hash, at, outcome: result.outcome },
+    // The verdict is paid for: a state file that can't be written never discards it.
+    try {
+      updateGuardState(
+        guardStatePath(ctx.repoRoot),
+        (state) => {
+          const current = state.sessions[ctx.sessionKey]
+          if (!current) return { result: undefined }
+          const at = ctx.now.toISOString()
+          return {
+            state: {
+              ...state,
+              sessions: {
+                ...state.sessions,
+                [ctx.sessionKey]: {
+                  ...current,
+                  updatedAt: at,
+                  last: { hash, at, outcome: result.outcome },
+                },
               },
             },
-          },
-          result: undefined,
-        }
-      },
-      { now: ctx.now },
-    )
+            result: undefined,
+          }
+        },
+        { now: ctx.now },
+      )
+    } catch (error) {
+      // Only a disk that can't be written or another hook's lock: a refusal to
+      // write an invalid state is a bug, and fails open as one.
+      const errno = (error as NodeJS.ErrnoException)?.code
+      const locked = isDecisionsError(error) && "lock" in error.details
+      if (!locked && !(typeof errno === "string" && /^E[A-Z]+$/.test(errno))) throw error
+      // Without the hash the next stop checks again (and pays): say so.
+      const why = locked ? "another guard hook holds its lock" : errno
+      const note = `the guard state couldn't be saved (${why}), so the next stop is checked again`
+      if ("systemMessage" in result.output)
+        return { systemMessage: `${result.output.systemMessage} (${note})` }
+      if ("decision" in result.output)
+        return { decision: "block", reason: `${result.output.reason}\nNote: ${note}.` }
+    }
   }
   return result.output
 }

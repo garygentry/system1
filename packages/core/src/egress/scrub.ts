@@ -1,3 +1,4 @@
+import { DecisionsError } from "../errors.js"
 import type { QuestionSet, State } from "../model/types.js"
 
 /**
@@ -87,9 +88,35 @@ export function scrubText(text: string, counts: ScrubCounts = {}): string {
   return out
 }
 
-/** Scrub a state: the string itself, or every string leaf of an object. */
+/**
+ * Scrub a state: the string itself, or every string leaf of an object. An
+ * object is first turned into plain JSON, exactly as the wire will serialize
+ * it, so a `toJSON` method, a getter or a class instance can't carry content
+ * past the scrubber. A value JSON can't hold (a cycle, a BigInt) is refused.
+ */
 export function scrubState(state: State, counts: ScrubCounts = {}): State {
-  return walk(state, counts) as State
+  const plain = toPlainJson(state)
+  try {
+    return walk(plain, counts) as State
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error
+    throw new DecisionsError("invalid-request", "The state is nested too deeply to send.")
+  }
+}
+
+/** What `JSON.stringify` would send, as a value; `invalid-request` if it can't. */
+export function toPlainJson(value: unknown): unknown {
+  if (typeof value === "string" || value === null || typeof value !== "object") return value
+  let text: string | undefined
+  try {
+    text = JSON.stringify(value)
+  } catch (error) {
+    throw new DecisionsError(
+      "invalid-request",
+      `The state can't be sent as JSON: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+  return text === undefined ? undefined : JSON.parse(text)
 }
 
 /**
@@ -101,6 +128,8 @@ const SECRET_KEY = new RegExp(`^${SECRET_NAME}$`, "i")
 
 function walk(value: unknown, counts: ScrubCounts, key?: string): unknown {
   if (typeof value === "string") {
+    // Already redacted (a state scrubbed twice): not a second secret.
+    if (/^\[REDACTED:[a-z-]+\]$/.test(value)) return value
     if (key !== undefined && SECRET_KEY.test(key) && value.trim().length >= 4) {
       counts["assigned-secret"] = (counts["assigned-secret"] ?? 0) + 1
       return "[REDACTED:assigned-secret]"

@@ -233,6 +233,10 @@ export function deciderFor(
   })
 }
 
+export function fixturesFor(ctx: ToolContext): FixtureStore {
+  return new FixtureStore(join(stateDir(ctx.config.repoRoot), "fixtures"))
+}
+
 export function ledgerFor(ctx: ToolContext): SpendLedger {
   return new SpendLedger(join(stateDir(ctx.config.repoRoot), "usage.jsonl"))
 }

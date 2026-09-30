@@ -1,5 +1,6 @@
 import { assertConsent } from "../config/consent.js"
 import { allProfiles } from "../config/load.js"
+import type { Unsaved } from "../decide.js"
 import { DecisionsError, isDecisionsError } from "../errors.js"
 import { resolveProfile } from "../model/profiles.js"
 import type { Answers, Usage } from "../model/types.js"
@@ -12,7 +13,7 @@ import { describeExpectation, type Expectation, meets, parseExpect } from "../sp
 import { type LintFinding, lintSpec } from "../spec/lint.js"
 import { assertExamples, exampleFileProblem, loadSpec } from "../spec/spec.js"
 import { parseSplit } from "../split/split.js"
-import { checkInput, deciderFor, type ToolContext } from "./context.js"
+import { checkInput, deciderFor, fixturesFor, type ToolContext } from "./context.js"
 import { type SkippedSummary, summariseSkipped } from "./many.js"
 import type { SpecCheckInput } from "./schemas.js"
 
@@ -51,6 +52,12 @@ export interface SpecCheckResult {
    * `--strict` still judge the examples alone.
    */
   lint: LintFinding[]
+  /**
+   * Spend lines or recorded answers that couldn't be written, for example on a
+   * read-only disk. A fixture lost while recording fails the check: recording
+   * is what `--live` is for.
+   */
+  unsaved?: Unsaved[]
 }
 
 /**
@@ -126,6 +133,16 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
   }
 
   const decider = deciderFor(ctx, profile, input.mode ?? "replay")
+  if (decider.mode === "record") {
+    // Recording is the point of --live: never pay for answers that can't be kept.
+    const code = fixturesFor(ctx).unwritable(spec.name)
+    if (code)
+      throw new DecisionsError(
+        "invalid-request",
+        `Can't record: .system1/fixtures/${spec.name} can't be written (${code}). Nothing was sent.`,
+        { code },
+      )
+  }
   if (decider.mode !== "replay") {
     assertConsent(ctx.config.egress.consent, root)
     const parts = prepared.flatMap((p) => (p.prep ? [p.prep.projection] : []))
@@ -134,6 +151,7 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
 
   const results: ExampleResult[] = []
   const usages: Usage[] = []
+  const unsaved: Unsaved[] = []
   let misses = 0
   for (const { id, expect, prep, reason } of prepared) {
     const item = prep?.items[0]
@@ -148,6 +166,7 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
         namespace: spec.name,
       })
       usages.push(r.usage)
+      unsaved.push(...(r.unsaved ?? []))
       results.push(judge(id, r.answers, r.undecided, expect))
     } catch (error) {
       if (isDecisionsError(error) && error.code === "replay-miss") {
@@ -180,12 +199,17 @@ export async function runSpecCheck(ctx: ToolContext, rawInput: unknown): Promise
     file: spec.file,
     model: profile.id,
     source: decider.mode === "replay" ? "replay" : "live",
-    passed: counts.fail === 0 && counts.undecided === 0 && counts.withheld === 0,
+    passed:
+      counts.fail === 0 &&
+      counts.undecided === 0 &&
+      counts.withheld === 0 &&
+      !unsaved.some((u) => u.what === "fixture"),
     counts,
     examples: results,
     usage: sumUsage(usages),
     skipped: summariseSkipped(prepared.flatMap((p) => p.prep?.skipped ?? [])),
     lint,
+    ...(unsaved.length ? { unsaved } : {}),
   }
 }
 

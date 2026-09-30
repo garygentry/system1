@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
@@ -149,6 +149,83 @@ describe("createDecider", () => {
       }),
     ).rejects.toMatchObject({ code: "invalid-request" })
     expect(calls).toHaveLength(0)
+  })
+})
+
+describe("createDecider at the wire", () => {
+  it("sends an object as plain JSON, so a toJSON method can't smuggle a secret", async () => {
+    const { decider, calls } = rig("live")
+    const key = `sk-or-v1-${"a".repeat(64)}`
+    await decider.decide({ state: { note: "hi", x: { toJSON: () => key } }, questions })
+    expect(JSON.stringify(calls[0])).not.toContain(key)
+  })
+
+  it("refuses a bad fixture namespace before the call is paid for", async () => {
+    const { decider, calls } = rig("record")
+    await expect(decider.decide({ state, questions, namespace: "Bad Name" })).rejects.toThrow()
+    expect(calls).toHaveLength(0)
+  })
+})
+
+describe("createDecider on a disk it can't write", () => {
+  /** A regular file where a directory should be: every write under it fails, even as root. */
+  function blocked() {
+    const dir = tempDir()
+    const file = join(dir, "not-a-dir")
+    writeFileSync(file, "")
+    return file
+  }
+
+  it("keeps a paid answer when the spend line can't be written, and says so", async () => {
+    const fake = fakeTransport()
+    const decider = createDecider({
+      profile,
+      egressConsent: true,
+      transport: fake.transport,
+      ledger: new SpendLedger(join(blocked(), "usage.jsonl")),
+      mode: "live",
+    })
+    const result = await decider.decide({ state, questions })
+    expect(result.source).toBe("live")
+    expect(result.answers).toBeDefined()
+    expect(result.unsaved).toEqual([{ what: "ledger", reason: expect.stringMatching(/^E[A-Z]+$/) }])
+    expect(fake.calls).toHaveLength(1)
+  })
+
+  it("keeps a paid answer when the fixture can't be recorded", async () => {
+    const fake = fakeTransport()
+    const decider = createDecider({
+      profile,
+      egressConsent: true,
+      transport: fake.transport,
+      fixtures: new FixtureStore(join(blocked(), "fixtures")),
+      mode: "record",
+    })
+    const result = await decider.decide({ state, questions, namespace: "guardrail" })
+    expect(result.recordedAt).toBeUndefined()
+    expect(result.unsaved).toEqual([
+      { what: "fixture", reason: expect.stringMatching(/^E[A-Z]+$/) },
+    ])
+  })
+
+  it("replays when the spend line can't be written", async () => {
+    const recorder = rig("record")
+    await recorder.decider.decide({ state, questions, namespace: "guardrail" })
+    const replayer = createDecider({
+      profile,
+      egressConsent: false,
+      fixtures: recorder.fixtures,
+      ledger: new SpendLedger(join(blocked(), "usage.jsonl")),
+      mode: "replay",
+    })
+    const result = await replayer.decide({ state, questions, namespace: "guardrail" })
+    expect(result.source).toBe("replay")
+    expect(result.unsaved?.[0]?.what).toBe("ledger")
+  })
+
+  it("adds nothing when every write succeeds", async () => {
+    const { decider } = rig("record")
+    expect((await decider.decide({ state, questions, namespace: "g" })).unsaved).toBeUndefined()
   })
 })
 

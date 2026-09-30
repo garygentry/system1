@@ -77,6 +77,13 @@ export function briefMany(r: ManyResult): string {
     }
   }
   lines.push(...withheld(r.skipped, r.redactions))
+  if (r.unsaved) {
+    const what = [
+      r.unsaved.ledger ? `${r.unsaved.ledger} spend line(s)` : "",
+      r.unsaved.fixture ? `${r.unsaved.fixture} fixture(s)` : "",
+    ].filter(Boolean)
+    lines.push(`not saved (${r.unsaved.reason}): ${what.join(", ")}; the answers stand`)
+  }
   return lines.join("\n")
 }
 
@@ -89,6 +96,10 @@ export function briefAsk(r: AskResult): string {
   ]
   if (r.verdict) lines.push(`verdict: ${r.verdict}`)
   lines.push(...withheld(r.skipped, r.redactions))
+  for (const u of r.unsaved ?? [])
+    lines.push(
+      `not saved (${u.reason}): the ${u.what === "ledger" ? "spend line" : "fixture"}; the answer stands`,
+    )
   return lines.join("\n")
 }
 
@@ -125,6 +136,14 @@ export function briefSpecCheck(r: SpecCheckResult): string {
     )
     lines.push(...r.lint.map(briefFinding))
   }
+  const lost = (what: "ledger" | "fixture") => r.unsaved?.filter((u) => u.what === what) ?? []
+  const fixtures = lost("fixture")
+  if (fixtures.length)
+    lines.push(
+      `NOT RECORDED (${fixtures[0]?.reason}): ${fixtures.length} answer(s) couldn't be written, so the check fails`,
+    )
+  const ledger = lost("ledger")
+  if (ledger.length) lines.push(`not saved (${ledger[0]?.reason}): ${ledger.length} spend line(s)`)
   return lines.join("\n")
 }
 

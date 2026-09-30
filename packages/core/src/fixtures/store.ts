@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import type { DecisionRequest, DecisionResponse } from "../model/types.js"
 
@@ -59,6 +59,23 @@ export class FixtureStore {
       throw new Error(`Invalid fixture namespace "${namespace}" (lowercase letters, digits, . _ -)`)
     }
     return join(this.dir, namespace, `${key}.json`)
+  }
+
+  /**
+   * Can a fixture be recorded in `namespace`? Writes and removes an empty
+   * probe file. Returns the error code when it can't, so a recording run can
+   * stop before it pays for answers it couldn't keep.
+   */
+  unwritable(namespace: string): string | undefined {
+    const probe = join(dirname(this.path(namespace, "probe")), `.probe.${process.pid}`)
+    try {
+      mkdirSync(dirname(probe), { recursive: true })
+      writeFileSync(probe, "")
+      rmSync(probe, { force: true })
+      return undefined
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code ?? "unwritable"
+    }
   }
 
   lookup(namespace: string, request: DecisionRequest): FixtureRecord | undefined {

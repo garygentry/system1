@@ -66,6 +66,8 @@ export interface ManyResult {
   wallClockMs: number
   /** Present on a dry run: the first item ids that would be sent. */
   sampleIds?: string[]
+  /** Calls whose ledger line or fixture couldn't be written; their answers stand. */
+  unsaved?: { ledger: number; fixture: number; reason: string }
 }
 
 const SAMPLE = 5
@@ -179,7 +181,16 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
     failed,
     usage: sumUsage(done.map((d) => d.result.usage)),
     wallClockMs: Math.round(performance.now() - started),
+    ...unsavedOf(done.map((d) => d.result)),
   }
+}
+
+function unsavedOf(results: DecisionResult[]): Pick<ManyResult, "unsaved"> {
+  const all = results.flatMap((r) => r.unsaved ?? [])
+  const [first] = all
+  if (!first) return {}
+  const count = (what: "ledger" | "fixture") => all.filter((u) => u.what === what).length
+  return { unsaved: { ledger: count("ledger"), fixture: count("fixture"), reason: first.reason } }
 }
 
 function row(item: Item, answers: Answers): ResultRow {

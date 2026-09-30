@@ -296,6 +296,18 @@ describe("decide many", () => {
 })
 
 describe("decide ask", () => {
+  it("keeps a paid answer when the spend ledger can't be written, and says so", async () => {
+    const { cwd, io, out, json } = rig({ "src/auth.ts": "auth" })
+    mkdirSync(join(cwd, ".system1/usage.jsonl"))
+    expect(await main(["ask", "--file", "src/auth.ts", "--question", Q], io)).toBe(0)
+    expect(json().result.unsaved).toEqual([{ what: "ledger", reason: "EISDIR" }])
+    out.length = 0
+    expect(await main(["many", "--glob", "src/*", "--question", Q, "--format", "brief"], io)).toBe(
+      0,
+    )
+    expect(out.join("\n")).toMatch(/not saved \(EISDIR\): 1 spend line\(s\); the answers stand/)
+  })
+
   it("answers one file and reports a verdict", async () => {
     const { io, out } = rig({ "a.ts": "auth" })
     expect(
@@ -636,6 +648,23 @@ examples:
   - { id: login, state: "auth flow", expect: { relevant: true } }
   - { id: helper, state: "string helper", expect: { relevant: true } }
 `
+  it("refuses a --live check whose answers couldn't be recorded, before paying for any", async () => {
+    const good = `description: Auth.
+questions:
+  relevant: { type: noul, instructions: Handles auth. }
+examples:
+  - { id: login, state: "auth flow", expect: { relevant: true } }
+`
+    const { cwd, io, out, json } = rig({ ".system1/specs/auth.yaml": good })
+    writeFileSync(join(cwd, ".system1/fixtures"), "")
+    expect(await main(["spec", "check", "auth", "--live"], io)).toBe(2)
+    expect(json().error).toMatchObject({
+      code: "invalid-request",
+      message: expect.stringMatching(/Can't record: .*\(E[A-Z]+\)\. Nothing was sent\./),
+    })
+    expect(out.length).toBeGreaterThan(0)
+  })
+
   it("records with --live, then replays offline; a mismatch is exit 0 with passed false", async () => {
     const live = rig({ ".system1/specs/auth.yaml": spec })
     expect(await main(["spec", "check", "auth", "--live"], live.io)).toBe(0)

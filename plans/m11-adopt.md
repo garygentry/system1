@@ -88,6 +88,8 @@ The maintainer ruled on 1, 2, 6 and 8. The others are the agent's proposals, rev
 
 ## To verify along the way
 
+- **The transport can lose a paid call's cost (found in PR 2's review; predates M11).** A timeout while reading a 200's body is reported as `malformed-response`; a body that fails validation drops its `usage`; a retry after a server-side timeout can pay twice and log once. The runtime's `maxUsdPerDay` and `compare`'s cost signal count only what the transport returns. Fix in the transport before PR 5 reports cost.
+
 - Does OpenRouter's chat endpoint honour `provider.data_collection: "deny"` for the chosen model, and report usage and cost in the response?
 - Does `strict: true` structured output hold for the chosen model, and at what parse-failure rate on the dogfood states?
 - Inside the Codex sandbox, does a Python test that spawns `decide` (node) see stdout? The known quirk is node spawning node.

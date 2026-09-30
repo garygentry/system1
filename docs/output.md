@@ -95,6 +95,7 @@ and how many items they were in.
 | `latencyMs` | measured time for the call |
 | `skipped` | see [Shared fields](#shared-fields) |
 | `redactions` | see [Shared fields](#shared-fields) |
+| `unsaved` | *optional*. `[{what, reason}]` when the spend line (`ledger`) or the recorded answer (`fixture`) couldn't be written, for example on a read-only disk. `reason` is the filesystem error code, such as `EROFS`, or else the error's message. The answer stands |
 
 ```json
 {
@@ -133,6 +134,7 @@ and how many items they were in.
 | `projection` | the projection made before running. See [Shared fields](#shared-fields) |
 | `wallClockMs` | measured time for the whole run |
 | `sampleIds` | *optional*, dry run only: the first 5 item ids that would be sent |
+| `unsaved` | *optional*. `{ledger, fixture, reason}`: how many calls' spend lines and recorded answers couldn't be written, and the first reason. Their answers stand |
 
 Dropped items are counted in `counts.dropped` and not listed.
 

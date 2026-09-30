@@ -362,7 +362,16 @@ export async function decideDone(
     )
   }
   // Replayed answers cost nothing, so the session cap applies to live checks only.
-  const spent = ledgerFor(tool).summary({ session: ctx.ledgerSession, tag: DONE_CHECK_TAG }).cost
+  const ledger = ledgerFor(tool)
+  // A cap it can't count is no cap: refuse to spend rather than spend unrecorded.
+  const unwritable = config.replay ? undefined : ledger.unwritable()
+  if (unwritable) {
+    throw new DecisionsError(
+      "budget-exceeded",
+      `the spend ledger can't be written (${unwritable}), so the session's cap (maxUsdPerSession) can't be kept`,
+    )
+  }
+  const spent = ledger.summary({ session: ctx.ledgerSession, tag: DONE_CHECK_TAG }).cost
   const cap = ctx.pack.maxUsdPerSession
   if (!config.replay && sendable.length > 0 && spent + projection.projectedUsd > cap) {
     throw new DecisionsError(
