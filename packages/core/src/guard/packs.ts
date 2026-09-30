@@ -46,7 +46,8 @@ export interface GuardPackConfig {
   /**
    * Also send the agent's last message, to ask whether it stopped to ask the
    * user something (and if so, skip the check). It widens what is sent, so,
-   * like `enabled`, it is read only from the repo layer. Off by default.
+   * like `enabled`, it is read only from the repo layer. Off by default. There
+   * is no command or terminal gate for it: turn it on only when the user asks.
    */
   askAboutMessage: boolean
 }
@@ -69,7 +70,7 @@ const PACK_KEYS = [
   "askAboutMessage",
 ] as const
 
-/** Keys that widen what a pack sends: a consent act, so read from the repo layer only. */
+/** Keys that switch a pack on or widen what it sends: read from the repo layer only. */
 const REPO_ONLY = new Set(["enabled", "enabledAt", "enabledBy", "askAboutMessage"])
 
 /**

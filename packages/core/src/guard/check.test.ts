@@ -41,6 +41,10 @@ function provider() {
       if (name === "asks") {
         const state = String(body.state)
         if (state.includes("[asks-fails]")) return new Response("boom", { status: 500 })
+        if (state.includes("[asks-hangs]"))
+          return new Promise<Response>((_, reject) =>
+            init.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
+          )
         const p = state.includes("[asks-unsure]") ? 0.5 : state.includes("[asks]") ? 0.95 : 0.05
         answers[name] = { type: "noul", noul: p }
         continue
@@ -201,6 +205,17 @@ describe("done-check decisions", () => {
       expect(asked.at(-1), marker).toBe("j0,m0")
       expect(new Set(asked.slice(0, -1)), marker).toEqual(new Set(["asks"]))
     }
+  })
+
+  it("still checks the stop when the question call stalls", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    writeFileSync(join(dir, ".system1/config.yaml"), `${CONFIG}      latencyMs: 900\n`)
+    const started = performance.now()
+    const out = await stop(dir, fetch, { last_assistant_message: "Which default? [asks-hangs]" })
+    expect(out).toMatchObject({ decision: "block" })
+    expect(performance.now() - started).toBeLessThan(900)
+    expect(calls.at(-1) && Object.keys(calls.at(-1)?.questions ?? {})).toEqual(["j0", "m0"])
   })
 
   it("checks without a message, or with one too large to send", async () => {

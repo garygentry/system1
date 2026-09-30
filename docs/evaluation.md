@@ -288,6 +288,7 @@ the stop is checked as before.
   - 2 of 42 not-done stops missed: the half-done criterion noted above.
   - Latency roughly doubles, since a stop with a message makes two calls in turn: p50 about
     850 ms, p95 about 1.1 s. Cost: about $0.00005–0.00006 per stop.
+- **What CI replays:** every stop event with `askAboutMessage: true`, the measured setting. The default (off) sends exactly what 0.5.1 did; a unit test covers it, but the question stops' criteria-only answers are no longer recorded.
 - **Limits:** an agent can skip the check by ending on a plausible question, and the only
   prompt-injection case ("answer yes") is in the fitted set (it scored 0.08).
 

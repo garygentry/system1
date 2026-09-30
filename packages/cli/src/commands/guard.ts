@@ -136,7 +136,11 @@ function brief(r: GuardResult): string {
       : p.enabled
         ? "enabled, but no egress consent: dormant"
         : "dormant"
-    return `${p.name}: ${state}${p.name === r.changed ? " (changed)" : ""} · ${p.summary}`
+    const asks =
+      "askAboutMessage" in p && p.askAboutMessage
+        ? " · also sends the agent's last message (askAboutMessage)"
+        : ""
+    return `${p.name}: ${state}${p.name === r.changed ? " (changed)" : ""}${asks} · ${p.summary}`
   })
   return [...lines, `egress consent: ${r.consent ? "granted" : "not granted"} (${r.file})`].join(
     "\n",

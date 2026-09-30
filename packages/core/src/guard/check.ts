@@ -126,12 +126,15 @@ export async function messageState(
  * Only the deadline ends the check.
  */
 async function waitsOnUser(ctx: PackContext, decider: Decider, state: string): Promise<boolean> {
+  // A third of the hook's time at most, so a stalled question call leaves the
+  // criteria call time to run: it never costs the stop its check.
+  const own = AbortSignal.timeout(Math.max(250, Math.floor(ctx.pack.latencyMs / 3)))
   try {
     const r = await decider.decide({
       state,
       questions: ASKS_QUESTIONS,
       namespace: "guard-done-check",
-      signal: ctx.signal,
+      signal: AbortSignal.any([ctx.signal, own]),
     })
     return asksUser(r.answers, r.undecided)
   } catch (error) {
@@ -344,7 +347,7 @@ export async function decideDone(
   if (hash === lastHash) return { output: {}, hash, outcome: "skipped" }
   // The question check only saves a criteria call, so it is asked only when one follows.
   let message =
-    ctx.pack.askAboutMessage && sendable.length > 0
+    ctx.pack.askAboutMessage && sendable.some((p) => !p.partial)
       ? await messageState(ctx.event.last_assistant_message, base)
       : undefined
 
