@@ -1,3 +1,4 @@
+import type { Unsaved } from "../decide.js"
 import { DecisionsError } from "../errors.js"
 import type { Answers, Usage } from "../model/types.js"
 import { prepare } from "../prepare.js"
@@ -28,6 +29,8 @@ export interface AskResult {
   latencyMs: number
   skipped: SkippedSummary
   redactions: { total: number; items: number }
+  /** The ledger line or fixture that couldn't be written; the answer stands. */
+  unsaved?: Unsaved[]
 }
 
 /** One state, one question set, one call. The shape hooks and scripts want. */
@@ -87,5 +90,6 @@ export async function runAsk(ctx: ToolContext, rawInput: unknown): Promise<AskRe
     latencyMs: result.latencyMs,
     skipped: summariseSkipped(prepared.skipped),
     redactions: { total: prepared.redactions.total, items: prepared.redactions.items },
+    ...(result.unsaved ? { unsaved: result.unsaved } : {}),
   }
 }

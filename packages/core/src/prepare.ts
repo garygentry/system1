@@ -50,6 +50,34 @@ export interface Prepared {
  * Nothing here touches the network. The caller then checks the budget and
  * consent before any call is made.
  */
+export interface PreparedState {
+  /** Scrubbed, and within the profile's size limit with its questions. */
+  state: State
+  /** Estimated input tokens, state plus questions: what a call would project. */
+  tokens: number
+  /** How many secret-shaped strings were replaced. */
+  redactions: number
+}
+
+/**
+ * One in-memory state, made safe to send: scrubbed, then sized against the
+ * profile with its questions. The state-level entry point for code that holds
+ * its content in memory, such as an adopted policy module (M11, 0020). There
+ * is no path, so excludes can't apply. A state that doesn't fit is refused
+ * with `state-too-large`, never cut short.
+ */
+export function prepareState(
+  state: State,
+  options: { questions: QuestionSet; profile: ModelProfile; id?: string },
+): PreparedState {
+  assertQuestionSet(options.questions)
+  assertChoicesFit(options.questions, options.profile)
+  const counts: ScrubCounts = {}
+  const safe = scrubState(state, counts)
+  const tokens = assertStateFits(options.id ?? "state", safe, options.questions, options.profile)
+  return { state: safe, tokens, redactions: Object.values(counts).reduce((a, b) => a + b, 0) }
+}
+
 export async function prepare(input: PrepareInput): Promise<Prepared> {
   assertQuestionSet(input.questions)
   assertChoicesFit(input.questions, input.profile)

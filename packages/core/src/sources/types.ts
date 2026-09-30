@@ -17,6 +17,12 @@ export type SourceSpec =
   | { kind: "glob"; patterns: string[] }
   | { kind: "jsonl"; path: string }
   /**
+   * A state already in memory, such as one captured by a shadow run. It is one
+   * item under any split, an object stays an object, and it has no path, so
+   * excludes can't apply to it; scrubbing and the size check still do.
+   */
+  | { kind: "state"; state: State; id?: string }
+  /**
    * `git diff`. With no `range`, working tree changes against `HEAD`; `staged`
    * means the index against `HEAD`. `paths` limits the diff.
    */

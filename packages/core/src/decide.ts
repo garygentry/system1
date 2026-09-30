@@ -47,6 +47,16 @@ export interface DecideInput {
   signal?: AbortSignal
 }
 
+/**
+ * A record a decision couldn't keep, such as on a read-only disk. The answer
+ * stands: a failed write after a paid call is reported, never thrown.
+ */
+export interface Unsaved {
+  what: "ledger" | "fixture"
+  /** The filesystem error code (`EROFS`, `EACCES`, …), else its message. */
+  reason: string
+}
+
 export interface DecisionResult {
   source: AnswerSource
   /** Requested model id. */
@@ -61,6 +71,8 @@ export interface DecisionResult {
   latencyMs: number
   fixtureKey: string
   recordedAt?: string
+  /** Present when the ledger line or the fixture couldn't be written. */
+  unsaved?: Unsaved[]
 }
 
 export interface Decider {
@@ -90,16 +102,24 @@ export function createDecider(options: DeciderOptions): Decider {
     throw new DecisionsError("invalid-request", `Mode "${mode}" needs a fixture store`)
   }
 
-  const log = (source: AnswerSource, model: string, usage: Usage) =>
-    ledger?.append({
-      ts: now().toISOString(),
-      ...(session ? { session } : {}),
-      ...(tag ? { tag } : {}),
-      model,
-      source,
-      calls: 1,
-      ...usage,
-    })
+  const reasonOf = (error: unknown): string =>
+    (error as NodeJS.ErrnoException)?.code ??
+    (error instanceof Error ? error.message : String(error))
+  const log = (source: AnswerSource, model: string, usage: Usage, unsaved: Unsaved[]) => {
+    try {
+      ledger?.append({
+        ts: now().toISOString(),
+        ...(session ? { session } : {}),
+        ...(tag ? { tag } : {}),
+        model,
+        source,
+        calls: 1,
+        ...usage,
+      })
+    } catch (error) {
+      unsaved.push({ what: "ledger", reason: reasonOf(error) })
+    }
+  }
 
   return {
     mode,
@@ -135,7 +155,8 @@ export function createDecider(options: DeciderOptions): Decider {
             { namespace, key },
           )
         }
-        log("replay", profile.id, ZERO)
+        const unsaved: Unsaved[] = []
+        log("replay", profile.id, ZERO, unsaved)
         return {
           source: "replay",
           model: profile.id,
@@ -146,15 +167,24 @@ export function createDecider(options: DeciderOptions): Decider {
           latencyMs: Math.round(performance.now() - started),
           fixtureKey: key,
           recordedAt: record.recordedAt,
+          ...(unsaved.length ? { unsaved } : {}),
         }
       }
 
       // mode is live or record; the constructor guaranteed a transport.
       assertConsent({ granted: options.egressConsent }, options.repoRoot ?? "this repo")
       const { response, latencyMs } = await (transport as Transport).decide(request, signal)
-      const recorded =
-        mode === "record" ? fixtures?.record(namespace, request, response, now()) : undefined
-      log("live", profile.id, response.usage)
+      // The call is paid for: from here on, nothing may throw it away.
+      const unsaved: Unsaved[] = []
+      let recorded: ReturnType<FixtureStore["record"]> | undefined
+      if (mode === "record") {
+        try {
+          recorded = fixtures?.record(namespace, request, response, now())
+        } catch (error) {
+          unsaved.push({ what: "fixture", reason: reasonOf(error) })
+        }
+      }
+      log("live", profile.id, response.usage, unsaved)
       return {
         source: "live",
         model: profile.id,
@@ -165,6 +195,7 @@ export function createDecider(options: DeciderOptions): Decider {
         latencyMs,
         fixtureKey: key,
         ...(recorded ? { recordedAt: recorded.recordedAt } : {}),
+        ...(unsaved.length ? { unsaved } : {}),
       }
     },
   }

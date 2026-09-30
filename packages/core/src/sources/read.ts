@@ -104,6 +104,11 @@ async function readSource(spec: SourceSpec, options: ReadOptions): Promise<ReadR
       return readGlob(spec.patterns, options)
     case "jsonl":
       return readJsonl(spec.path, options)
+    case "state":
+      return {
+        documents: [{ id: spec.id ?? "state", kind: "row", data: spec.state }],
+        skipped: [],
+      }
     case "diff":
       return readDiff(spec, options)
   }

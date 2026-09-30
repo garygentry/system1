@@ -77,6 +77,13 @@ export function briefMany(r: ManyResult): string {
     }
   }
   lines.push(...withheld(r.skipped, r.redactions))
+  if (r.unsaved) {
+    const what = [
+      r.unsaved.ledger ? `${r.unsaved.ledger} spend line(s)` : "",
+      r.unsaved.fixture ? `${r.unsaved.fixture} fixture(s)` : "",
+    ].filter(Boolean)
+    lines.push(`not saved (${r.unsaved.reason}): ${what.join(", ")}; the answers stand`)
+  }
   return lines.join("\n")
 }
 
@@ -89,6 +96,10 @@ export function briefAsk(r: AskResult): string {
   ]
   if (r.verdict) lines.push(`verdict: ${r.verdict}`)
   lines.push(...withheld(r.skipped, r.redactions))
+  for (const u of r.unsaved ?? [])
+    lines.push(
+      `not saved (${u.reason}): the ${u.what === "ledger" ? "spend line" : "fixture"}; the answer stands`,
+    )
   return lines.join("\n")
 }
 
