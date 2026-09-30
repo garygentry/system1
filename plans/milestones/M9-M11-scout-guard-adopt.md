@@ -203,7 +203,7 @@
 
 ## M11 — `adopt` + `compare` (release 0.6.0)
 
-**Status:** not started.
+**Status:** in progress (2026-09-30). Implementation plan: [`../m11-adopt.md`](../m11-adopt.md), which corrects §5's `decide many` route (compare reads the capture itself). Runtime consent: [0020](../decisions/0020-runtime-consent-for-adopted-code.md), accepted.
 **Order inside the milestone:** §1 (0020) first, then §2 and §5–§6 (emulated and compare, useful on their own), then the rest. **Contingency:** if 0020 is not accepted by the time §2 and §5–§6 are done, 0.6.0 ships compare plus policy modules with runtime egress off (usable in shadow runs only), and runtime consent follows in a point release. This orders the work; it doesn't reverse D3.
 
 ### Work
