@@ -51,11 +51,9 @@
   },
   {
     "id": "h-question",
-    "outcome": "block",
-    "named": [
-      "The README explains click counts."
-    ],
-    "calls": 1
+    "outcome": "allow",
+    "named": [],
+    "calls": 0
   },
   {
     "id": "h-rules-new-dependency",

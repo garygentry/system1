@@ -118,12 +118,22 @@
     "calls": 1
   },
   {
+    "id": "offer-look-for-more",
+    "outcome": "allow",
+    "named": [],
+    "calls": 0
+  },
+  {
+    "id": "offer-scope-question",
+    "outcome": "allow",
+    "named": [],
+    "calls": 0
+  },
+  {
     "id": "question-midway",
-    "outcome": "block",
-    "named": [
-      "The README documents the ttl option with an example."
-    ],
-    "calls": 1
+    "outcome": "allow",
+    "named": [],
+    "calls": 0
   },
   {
     "id": "question-before-starting",
@@ -133,11 +143,9 @@
   },
   {
     "id": "question-rename-half",
-    "outcome": "block",
-    "named": [
-      "src/store.ts calls `slugFor`."
-    ],
-    "calls": 1
+    "outcome": "allow",
+    "named": [],
+    "calls": 0
   },
   {
     "id": "unjudgeable-with-done",

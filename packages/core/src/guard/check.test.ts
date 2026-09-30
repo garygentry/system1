@@ -6,6 +6,7 @@ import { SpendLedger } from "../run/spend.js"
 import { useTempDirs } from "../testkit/tmp.js"
 import { runHook } from "../tools/hook.js"
 import { DONE_CHECK_TAG } from "./check.js"
+import { ASKS_USER_MESSAGE } from "./done-check.js"
 import { guardStatePath, readGuardState } from "./state.js"
 
 const temp = useTempDirs()
@@ -124,6 +125,33 @@ describe("done-check decisions", () => {
     )
     expect(reason).toMatch(/Check these yourself:\n- All tests pass \(asks for an exact fact/)
     expect(reason).toContain("The next stop is allowed.")
+  })
+
+  it("sends nothing, and says so, when the agent stops to ask a question", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    const out = await stop(dir, fetch, {
+      last_assistant_message: "Before I write the docs: should the flag be on by default?",
+    })
+    expect(out).toEqual({ systemMessage: ASKS_USER_MESSAGE })
+    expect(calls).toHaveLength(0)
+    expect(readGuardState(guardStatePath(dir)).sessions["claude:s1"]?.last).toBeUndefined()
+  })
+
+  it("still checks a finished stop that ends in an offer", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    const out = await stop(dir, fetch, {
+      last_assistant_message: "Done. Want me to add tests too?",
+    })
+    expect(out).toMatchObject({ decision: "block" })
+    expect(calls).toHaveLength(1)
+  })
+
+  it("stays silent on a question when there are no criteria", async () => {
+    const { fetch } = provider()
+    const dir = repo("Nothing to check here.\n")
+    expect(await stop(dir, fetch, { last_assistant_message: "Seconds or ms?" })).toEqual({})
   })
 
   it("never blocks on a criterion it can't judge from the change", async () => {

@@ -8,7 +8,7 @@
 | # | Question | Choice |
 |---|---|---|
 | 1 | What does `maxUsdPerSession` count? | **Guard spend only.** Ledger entries get an optional `tag` (for example `guard:done-check`), and the cap sums only the entries with the pack's tag. |
-| 2 | Should a local check for a completion claim in the last message be in 0.5.0? | **No, it's deferred.** The hash skip already sends nothing on an unchanged re-stop. §8 measures the false blocks on non-completion stops, and that data decides whether to add the check later. |
+| 2 | Should a local check for a completion claim in the last message be in 0.5.0? | **No, it's deferred.** The hash skip already sends nothing on an unchanged re-stop. §8 measures the false blocks on non-completion stops, and that data decides whether to add the check later. **Added 2026-09-30:** §8 blocked 9 of 12 question stops, so `guard/asks.ts` now skips a stop whose last message asks the user something, claims nothing done and offers no more work. It is local (the message is never sent) and errs toward checking. |
 | 3 | What if a Codex hook has no network? | **Wire Codex anyway.** It fails open with "not checked: no network from the Codex hook", and the docs say so and give the fix if there is one. |
 | 4 | Where does spend live? | **In the spend ledger**, by session id and tag, not in the state file. The spec says "spend so far" in state, but the ledger is measured and append-only, so a second copy would drift. |
 | 5 | How is the session id formed? | The generated wiring passes `--harness claude\|codex`. The hook sets `SYSTEM1_SESSION=<harness>:<session_id from stdin>`, unless it is already set. Without the flag, a present `turn_id` means Codex. |

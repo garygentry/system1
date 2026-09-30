@@ -11,6 +11,7 @@ import { closeSync, constants, fstatSync, openSync, readSync, realpathSync } fro
 import { dirname, isAbsolute, relative, resolve } from "node:path"
 import type { DecideMode } from "../decide.js"
 import type { ContextOptions } from "../tools/context.js"
+import { asksUser } from "./asks.js"
 import { decideDone } from "./check.js"
 import { gather } from "./gather.js"
 import { headCommit } from "./git.js"
@@ -184,15 +185,21 @@ export async function ensureSession(ctx: PackContext): Promise<GuardSession> {
   )
 }
 
+/** Said instead of checking when the agent stops to ask the user something. */
+export const ASKS_USER_MESSAGE =
+  "System 1 done-check: the agent asked you something, so this stop wasn't checked"
+
 /**
  * Stop: gather the criteria and the change, ask the model, and block once if
  * a criterion is confidently unmet. No criteria means silence and no egress;
- * an unchanged re-stop sends nothing.
+ * an unchanged re-stop sends nothing; a stop that asks the user a question
+ * (read locally from the agent's last message) sends nothing and says so.
  */
 export async function stop(ctx: PackContext): Promise<HookOutput> {
   const session = await ensureSession(ctx)
   const gathered = await gather(ctx, session)
   if (gathered.criteria.length === 0) return {}
+  if (asksUser(ctx.event.last_assistant_message)) return { systemMessage: ASKS_USER_MESSAGE }
   const result = await decideDone(ctx, gathered, session.last?.hash)
   assertLive(ctx)
   if (result.hash && result.outcome !== "skipped") {

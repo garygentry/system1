@@ -33,7 +33,8 @@ The only pack is **`done-check`**. Cover these five points in plain words.
    - A second stop in a row is always allowed.
    - Undecided or unjudgeable criteria never block; the message counts them as "not settled". Bullets that ask for an exact fact, a count or a date ("all tests pass", "before Friday") aren't sent at all; the message counts them as "for the agent to check".
    - If a criteria file changed during the session, the check uses the version from the start of the session, and the message says it changed.
-   - Once it has checked, it checks again only when something it sends has changed. So a later stop where the agent just asks the user a question sends nothing.
+   - Once it has checked, it checks again only when something it sends has changed.
+   - When the agent stops to ask the user a question (read locally from its last message, which is never sent), nothing is sent and the stop goes through with a line saying it wasn't checked. A message that says the work is done, or offers more ("Anything else?"), is still checked.
 2. **What it sends** to the provider (openrouter.ai), under the repo's egress consent:
    - the criteria bullets;
    - the session's change since it started, including commits made during the session and new untracked files;

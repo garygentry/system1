@@ -34,6 +34,11 @@ for (const set of ["scenarios", "holdout"] as const) {
       expect(recorded.map((r) => r.id).sort()).toEqual(scenarios.map((s) => s.id).sort())
     })
 
+    it("gives every scenario the agent's last message", () => {
+      const missing = scenarios.filter((s) => typeof s.message !== "string" || !s.message.trim())
+      expect(missing.map((s) => s.id)).toEqual([])
+    })
+
     for (const s of scenarios) {
       it.concurrent(`${s.id}: replays as recorded, and never blocks wrongly`, async () => {
         const run = await runScenario(s, { mode: "replay" })
@@ -82,6 +87,12 @@ describe("done-check eval: the acceptance cases", () => {
 
   it("sends nothing on a stop with no change", () => {
     expect(outcome("question-before-starting")).toMatchObject({ outcome: "allow", calls: 0 })
+  })
+
+  it("lets a stop that asks the user something through, sending nothing", () => {
+    for (const s of all.filter((x) => x.kind === "question")) {
+      expect(outcome(s.id), s.id).toMatchObject({ outcome: "allow", calls: 0 })
+    }
   })
 })
 

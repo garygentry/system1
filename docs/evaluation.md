@@ -230,9 +230,18 @@ agent's change, run through the real hook.
 - **Variance:** an earlier live run missed a half-done criterion ("returns `undefined` and
   removes it") in 2 of 3 runs. Its met score sits near the bar, so expect occasional misses like
   it.
-- **Question stops** are blocked most of the time. The check doesn't read the agent's message,
-  and the work it names as unfinished really is unfinished. A local check for a completion claim
-  would stop this, and is the next change these numbers argue for.
+- **Question stops** were blocked most of the time in these runs, because the check didn't read
+  the agent's message, and the work it named as unfinished really was unfinished.
+- **The question check (added 2026-09-30, after these runs).** done-check now reads the agent's
+  last message locally and skips a stop that asks the user something, sending nothing. Every
+  event now carries a last message, including completion messages that end in an offer
+  ("Want me to add tests too?", "Anything else you need?"). In replay:
+  - question stops blocked: 0 of 3 (fitted set) and 0 of 1 (holdout), from 2 of 3 and 1 of 1;
+  - done stops: still 0 false blocks;
+  - not-done stops: 2 of 16 missed, both events written to end in a question the check can't
+    tell from a real one (`offer-look-for-more`, `offer-scope-question`). No other not-done stop
+    is skipped, including those ending "Anything else you need?" or "Should I also…?".
+  - The same author wrote the messages and the rule, on the same day, so these are in-sample.
 - **Oversize changes never block, by design.** That includes a change beside a large untracked
   file such as a test log. A check of part of a change could miss the file that holds the work.
 - **Latency,** Stop through the CLI when it calls the model: p50 about 460 ms, p95 about 615 ms,

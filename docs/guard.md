@@ -97,6 +97,12 @@ version from the start of the session, and says the file changed.
 - **Nothing changed since the session started:** nothing is sent. This covers a stop to ask you
   something before any work. Evidence files don't count as a change.
 - **Nothing changed since the last check:** nothing is sent.
+- **The agent stopped to ask you something:** nothing is sent, and the stop goes through with
+  `System 1 done-check: the agent asked you something, so this stop wasn't checked`. done-check
+  reads the agent's last message on your machine, and never sends it. It counts a stop as a
+  question only when the last paragraph asks one, the message doesn't say the work is done
+  ("done", "finished", "ready to commit"…), and the question doesn't offer more work ("Anything
+  else?", "Want me to add tests?"). Anything else is checked as usual.
 - **A criterion is clearly unmet:** the stop is blocked, and the agent sees:
 
   ```text
@@ -162,9 +168,10 @@ through `npx` itself takes about 720 ms. The hooks never make one.
 
 ## Where it falls short
 
-- **Stops to ask a question.** When the agent stops mid-task to ask you something, done-check
-  doesn't read its message. So it blocks when the work so far leaves a criterion unmet, which
-  happened in 9 of 12 such stops measured. The agent's next stop is allowed.
+- **A finished-sounding stop that ends in a real-looking question isn't checked.** The question
+  check reads words, not intent. "Should I look for other places that use the old name?" after a
+  rename that missed a caller reads as a question, so that stop goes through unchecked. Of 16
+  not-done stops measured, the 2 written to look like this were missed; none of the others were.
 - **Large changes are checked only in part, and never blocked.** That includes a change beside
   one large untracked file, such as a 100 KB log. Add such files to `.gitignore`, or to
   `egress.exclude`.

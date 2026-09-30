@@ -31,6 +31,7 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
 import type { DecideMode } from "../../packages/core/src/decide.js"
+import { asksUser } from "../../packages/core/src/guard/asks.js"
 import {
   DONE_CHECK_THRESHOLDS,
   judge,
@@ -76,6 +77,8 @@ export interface Scenario {
   id: string
   about?: string
   kind: Kind
+  /** The agent's last message at the stop, sent as the event's `last_assistant_message`. */
+  message: string
   from?: "evals"
   commit?: boolean
   /** A generated word list: new and untracked, or with `tracked`, committed and then rewritten. */
@@ -295,7 +298,7 @@ export async function runScenario(
     const started = performance.now()
     const output: HookOutput = await runHook(
       "done-check",
-      { ...event, hook_event_name: "Stop" },
+      { ...event, hook_event_name: "Stop", last_assistant_message: s.message },
       options,
     )
     const latencyMs = performance.now() - started
@@ -357,6 +360,11 @@ export interface Scorecard {
   questionBlock: { n: number; blocked: number }
   /** Changes too large to show whole: by design they never block, so a block is a bug. */
   oversizeBlock: { n: number; blocked: number }
+  /**
+   * Stops the local question check let through unchecked, from each message:
+   * question stops (wanted) and completion stops (each one a stop never checked).
+   */
+  askSkip: { questions: number; completions: string[] }
 }
 
 export function score(
@@ -371,6 +379,7 @@ export function score(
     "question-block": [],
     "not-checked": [],
   }
+  const ran = runs.map((run) => byId(scenarios, run.id))
   let done = 0
   let notDone = 0
   let questions = 0
@@ -403,6 +412,12 @@ export function score(
       n: oversize,
       blocked: grades["false-block"].filter((id) => byId(scenarios, id).kind === "oversize").length,
     },
+    askSkip: {
+      questions: ran.filter((s) => s.kind === "question" && asksUser(s.message)).length,
+      completions: ran
+        .filter((s) => s.kind === "completion" && asksUser(s.message))
+        .map((s) => s.id),
+    },
   }
 }
 
@@ -415,7 +430,8 @@ function byId(scenarios: Scenario[], id: string): Scenario {
 /**
  * The outcome each scenario would have at other thresholds, from its recorded
  * answers: a stop blocks when any criterion the model saw whole is unmet. An
- * oversize change is seen in parts, which never block. It mirrors `decideDone`
+ * oversize change is seen in parts, which never block, and a stop whose message
+ * asks the user something isn't checked. It mirrors `decideDone`
  * only for the paths this set exercises: a completion event that went partial,
  * or a criterion lint or a withheld file kept from the model, isn't modelled.
  */
@@ -424,7 +440,7 @@ export function simulate(
   answers: Record<string, Probabilities>,
   t: Thresholds,
 ): { outcome: "block" | "allow"; named: string[] } {
-  if (s.kind === "oversize") return { outcome: "allow", named: [] }
+  if (s.kind === "oversize" || asksUser(s.message)) return { outcome: "allow", named: [] }
   const named = s.criteria.items
     .map((c) => c.text)
     .filter((text) => {
@@ -492,7 +508,9 @@ function cliStop(
         hook_event_name: name,
         session_id: `eval-${s.id}`,
         cwd: dir,
-        ...(name === "SessionStart" ? { source: "startup" } : {}),
+        ...(name === "SessionStart"
+          ? { source: "startup" }
+          : { last_assistant_message: s.message }),
       })
       const started = performance.now()
       const run = spawnSync("node", [bin, "hook", "done-check", "--harness", "claude"], {
@@ -554,6 +572,9 @@ function printCard(card: Scorecard): void {
   )
   console.log(`  question stops blocked ${card.questionBlock.blocked}/${card.questionBlock.n}`)
   console.log(`  oversize stops blocked ${card.oversizeBlock.blocked}/${card.oversizeBlock.n}`)
+  console.log(
+    `  let through as questions: ${card.askSkip.questions}/${card.questionBlock.n} question stops, ${card.askSkip.completions.length} completion stops${card.askSkip.completions.length ? ` (${card.askSkip.completions.join(", ")})` : ""}`,
+  )
   for (const [g, ids] of Object.entries(card.grades))
     if (g !== "correct" && ids.length) console.log(`  ${g}: ${ids.join(", ")}`)
 }
