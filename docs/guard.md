@@ -136,14 +136,20 @@ When a check runs, it sends the decision model, under the repo's egress consent:
 - in a separate call, the agent's last message, to ask whether it stopped to ask you something.
   The criteria are never judged with the agent's own account of its work beside them.
 
+The agent's message has no path, so `egress.exclude` can't hold it back: if the agent quotes a
+file it read, only the scrubbing below applies. The message is sent only when a criteria check
+would follow, and only with Claude Code versions that include it in the Stop event (2.1.285 does)
+and Codex; without it, done-check checks every stop as before.
+
 Secret-looking files are left out and listed, secret-shaped strings are scrubbed, and nothing
 too large is cut short (see [concepts](concepts.md)). A criterion that names a withheld file is
 left for the agent to check.
 
-- **Cost:** usually one call per check, about $0.00004–0.00005 measured.
+- **Cost:** usually two calls per check (the agent's message, then the criteria), about
+  $0.00005–0.00006 in all, measured.
   `maxUsdPerSession` (default $0.01) caps what done-check spends in one session.
-- **Latency:** a check that calls the model added a median of about 460 ms at the stop, and
-  615 ms at the 95th percentile (measured on 2026-09-27). `latencyMs` (default 5000) is the
+- **Latency:** a check that calls the model added a median of about 850 ms at the stop, and
+  1.1 s at the 95th percentile (measured on 2026-09-30). `latencyMs` (default 5000) is the
   limit. Past it, the stop goes through with a note.
 - **Accuracy:** on 38 labelled stop events run live 3 times each, it blocked no finished work
   and caught every unfinished task. In an earlier run it missed one half-done criterion in 2
@@ -170,6 +176,8 @@ through `npx` itself takes about 720 ms. The hooks never make one.
 
 ## Where it falls short
 
+- **The agent can skip the check** by ending its turn on a plausible question. You see
+  "this stop wasn't checked" when it does.
 - **Some questions still get checked.** The question check lets a stop through only when it's
   confident, so a question that reads like a report can be checked and blocked as before. On a
   blind set of final messages, it let 17 of 22 questions through and skipped none of 28

@@ -39,10 +39,10 @@ The only pack is **`done-check`**. Cover these five points in plain words.
    - the criteria bullets;
    - the session's change since it started, including commits made during the session and new untracked files;
    - tracked files the criteria name (up to three per criterion, ten in all), and any `evidence` files configured;
-   - in a separate call, the agent's last message (see point 1).
+   - in a separate call, the agent's last message (see point 1). It has no path, so `egress.exclude` doesn't apply to it; only scrubbing does.
 
    The usual rules always apply: secret-looking files are left out and listed, secret-shaped strings are scrubbed, and oversized content is split or skipped with a reason, never cut short.
-3. **Cost.** Usually one decision call per check, about $0.00003. `maxUsdPerSession` (default $0.01) caps what done-check spends in one session. Once the cap is reached, checks are skipped and the message says so.
+3. **Cost.** Usually two decision calls per check (the message, then the criteria), about $0.00006 in all. `maxUsdPerSession` (default $0.01) caps what done-check spends in one session. Once the cap is reached, checks are skipped and the message says so.
 4. **Latency.** A check adds at most `latencyMs` (default 5000 ms, at most 55000) at the stop. Past that, the stop goes through with a note saying it wasn't checked.
 5. **It fails open, with a reason.** Once the pack is active, a provider error, timeout, budget cap or size limit lets the stop through with a one-line message giving the reason, so "checked and fine" looks different from "not checked". The exceptions are a config file that doesn't load and a `decide` the hook can't run: then the hook does nothing, and `decide doctor` shows why.
 

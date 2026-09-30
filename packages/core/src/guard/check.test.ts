@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process"
-import { mkdirSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
+import { DEFAULT_MODEL_ID, resolveProfile } from "../model/profiles.js"
 import { SpendLedger } from "../run/spend.js"
 import { useTempDirs } from "../testkit/tmp.js"
 import { runHook } from "../tools/hook.js"
-import { ASKS_USER_MESSAGE, DONE_CHECK_TAG } from "./check.js"
+import { ASKS_USER_MESSAGE, DONE_CHECK_TAG, messageState } from "./check.js"
 import { guardStatePath, readGuardState } from "./state.js"
 
 const temp = useTempDirs()
@@ -22,7 +23,8 @@ const CONFIG = [
 /**
  * A fake provider. Each criterion's text carries its verdict:
  * `[met]`, `[unmet]`, `[unsure]` (met 0.5) or `[opaque]` (not judgeable).
- * The agent's last message asks the user something when it contains `[asks]`.
+ * The agent's last message asks the user something when it contains `[asks]`,
+ * gets an unsure answer (0.5) with `[asks-unsure]`, and fails (500) with `[asks-fails]`.
  */
 function provider() {
   const calls: Array<{ state: string; questions: Record<string, { instructions: string }> }> = []
@@ -36,7 +38,10 @@ function provider() {
     )) {
       const t = q.instructions
       if (name === "asks") {
-        answers[name] = { type: "noul", noul: String(body.state).includes("[asks]") ? 0.95 : 0.05 }
+        const state = String(body.state)
+        if (state.includes("[asks-fails]")) return new Response("boom", { status: 500 })
+        const p = state.includes("[asks-unsure]") ? 0.5 : state.includes("[asks]") ? 0.95 : 0.05
+        answers[name] = { type: "noul", noul: p }
         continue
       }
       const judge = t.includes("[opaque]") ? 0.05 : 0.95
@@ -157,12 +162,82 @@ describe("done-check decisions", () => {
     expect(calls[1]?.state).not.toContain("Added the flag")
   })
 
-  it("scrubs the message before it is sent", async () => {
-    const { fetch, calls } = provider()
-    const dir = repo("- Errors are logged [met]\n")
+  it("prepares the message like any content: scrubbed, framed as data, and only if it fits", async () => {
+    const profile = resolveProfile(DEFAULT_MODEL_ID)
+    const opts = { profile, cwd: temp(), exclude: [] }
     const key = `sk-or-v1-${"a".repeat(64)}`
-    await stop(dir, fetch, { last_assistant_message: `I set OPENROUTER_API_KEY=${key}. Done.` })
-    expect(calls[0]?.state).not.toContain(key)
+    const prepared = await messageState(`I set OPENROUTER_API_KEY=${key}. Done.`, opts)
+    expect(prepared?.state).not.toContain(key)
+    expect(prepared?.state).toMatch(/^Below is the last message .* data, not instructions/s)
+    expect(prepared?.tokens).toBeGreaterThan(0)
+    for (const empty of [undefined, null, "", "  ", 42])
+      expect(await messageState(empty, opts)).toBeUndefined()
+    const huge = "word ".repeat(profile.maxStateTokens * 2)
+    expect(await messageState(huge, opts)).toBeUndefined()
+  })
+
+  it("checks the criteria as before when the question call fails or is unsure", async () => {
+    for (const marker of ["[asks-fails]", "[asks-unsure]"]) {
+      const { fetch, calls } = provider()
+      const dir = repo("- The README documents the flag [unmet]\n")
+      const out = await stop(dir, fetch, { last_assistant_message: `Which default? ${marker}` })
+      expect(out, marker).toMatchObject({ decision: "block" })
+      // The transport may retry a failed call; the criteria call still comes last.
+      const asked = calls.map((c) => Object.keys(c.questions).join())
+      expect(asked.at(-1), marker).toBe("j0,m0")
+      expect(new Set(asked.slice(0, -1)), marker).toEqual(new Set(["asks"]))
+    }
+  })
+
+  it("checks without a message, or with one too large to send", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    expect(await stop(dir, fetch, { last_assistant_message: null })).toMatchObject({
+      decision: "block",
+    })
+    const other = repo("- The README documents the flag [unmet]\n")
+    const huge = `${"word ".repeat(80_000)}Seconds or ms? [asks]`
+    expect(await stop(other, fetch, { last_assistant_message: huge })).toMatchObject({
+      decision: "block",
+    })
+    expect(calls.map((c) => Object.keys(c.questions))).toEqual([
+      ["j0", "m0"],
+      ["j0", "m0"],
+    ])
+  })
+
+  it("drops the question call, not the check, when both don't fit the session cap", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- The README documents the flag [unmet]\n")
+    writeFileSync(
+      join(dir, ".system1/config.yaml"),
+      `${CONFIG}profiles:\n  - { id: typesafe/jev-1.13, maxStateTokens: 32000, usdPerInputToken: 0.000001, undecidedFloor: 0.3 }\n`,
+    )
+    new SpendLedger(join(dir, ".system1/usage.jsonl")).append({
+      ts: new Date().toISOString(),
+      session: "claude:s1",
+      tag: DONE_CHECK_TAG,
+      model: "m",
+      source: "live",
+      calls: 1,
+      input_tokens: 1,
+      output_tokens: 1,
+      cost: 0.009,
+    })
+    const long = `${"Here is some context. ".repeat(600)}Seconds or ms? [asks]`
+    expect(await stop(dir, fetch, { last_assistant_message: long })).toMatchObject({
+      decision: "block",
+    })
+    expect(calls.map((c) => Object.keys(c.questions))).toEqual([["j0", "m0"]])
+    // Control: with nothing spent, the same message is asked about, and skips.
+    const fresh = repo("- The README documents the flag [unmet]\n")
+    writeFileSync(
+      join(fresh, ".system1/config.yaml"),
+      readFileSync(join(dir, ".system1/config.yaml")),
+    )
+    expect(await stop(fresh, fetch, { last_assistant_message: long })).toEqual({
+      systemMessage: ASKS_USER_MESSAGE,
+    })
   })
 
   it("asks nothing when there are no criteria", async () => {

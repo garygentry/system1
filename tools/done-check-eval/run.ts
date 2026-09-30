@@ -12,7 +12,8 @@
  *   … --only <id>                        one scenario
  *   pnpm eval:done-check --messages      the question check alone, over labelled last messages
  *                                        (messages.yaml; with --holdout, messages-holdout.yaml):
- *                                        replay, or live with --record, and a threshold sweep
+ *                                        replay, or live with --record; a threshold sweep
+ *                                        on the fitted set only
  *
  * Replay needs no key and runs in CI (`done-check-eval.test.ts`). Live modes
  * take OPENROUTER_API_KEY from the environment or the user's credentials file
@@ -835,6 +836,8 @@ async function messagesMain(set: MessageSetName, record: boolean): Promise<void>
   console.log(
     `  completion stops skipped    ${card.completions.skipped.length}/${card.completions.n}${card.completions.skipped.length ? ` (${card.completions.skipped.join(", ")})` : ""}`,
   )
+  // The blind holdout is scored at the fixed bar only: a sweep over it invites refitting.
+  if (set === "holdout") return
   console.log("\nthreshold  questions let through  completions skipped")
   for (let t = 50; t <= 95; t += 5) {
     const c = messageCard(runs, t / 100)

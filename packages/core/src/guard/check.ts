@@ -9,6 +9,7 @@
 import { createHash } from "node:crypto"
 import { basename, extname } from "node:path"
 import { allProfiles } from "../config/load.js"
+import type { Decider } from "../decide.js"
 import { assertStateFits } from "../egress/size.js"
 import { DecisionsError } from "../errors.js"
 import type { ModelProfile } from "../model/profiles.js"
@@ -114,6 +115,26 @@ export async function messageState(
   } catch (error) {
     if ((error as DecisionsError).code === "state-too-large") return undefined
     throw error
+  }
+}
+
+/**
+ * Ask the question check. It is advisory: a provider error or a replay miss
+ * answers "no", and the criteria are checked as they were before it existed.
+ * Only the deadline ends the check.
+ */
+async function waitsOnUser(ctx: PackContext, decider: Decider, state: string): Promise<boolean> {
+  try {
+    const r = await decider.decide({
+      state,
+      questions: ASKS_QUESTIONS,
+      namespace: "guard-done-check",
+      signal: ctx.signal,
+    })
+    return asksUser(r.answers, r.undecided)
+  } catch (error) {
+    if (ctx.signal.aborted) throw error
+    return false
   }
 }
 
@@ -319,8 +340,9 @@ export async function decideDone(
     )
     .digest("hex")
   if (hash === lastHash) return { output: {}, hash, outcome: "skipped" }
-  const message = await messageState(ctx.event.last_assistant_message, base)
-  if (message) tokens.push(message.tokens)
+  // The question check only saves a criteria call, so it is asked only when one follows.
+  let message =
+    sendable.length > 0 ? await messageState(ctx.event.last_assistant_message, base) : undefined
 
   // Spend: this event within the budget (never confirmed), the session within its cap.
   const projection = project(profile, tokens)
@@ -335,25 +357,28 @@ export async function decideDone(
   // Replayed answers cost nothing, so the session cap applies to live checks only.
   const spent = ledgerFor(tool).summary({ session: ctx.ledgerSession, tag: DONE_CHECK_TAG }).cost
   const cap = ctx.pack.maxUsdPerSession
-  if (!config.replay && (sendable.length > 0 || message) && spent + projection.projectedUsd > cap) {
+  if (!config.replay && sendable.length > 0 && spent + projection.projectedUsd > cap) {
     throw new DecisionsError(
       "budget-exceeded",
       `this session's done-check spend reached $${spent.toFixed(4)} of its $${cap} cap (maxUsdPerSession)`,
     )
   }
+  // The question check never costs the criteria their check: asked only if both fit.
+  if (message) {
+    const both = project(profile, [...tokens, message.tokens])
+    let fits = config.replay || spent + both.projectedUsd <= cap
+    try {
+      checkBudget(both, config.budget, false)
+    } catch {
+      fits = false
+    }
+    if (!fits) message = undefined
+  }
 
   const decider = deciderFor(tool, profile, ctx.mode ?? "auto", { tag: DONE_CHECK_TAG })
-  if (message) {
-    const r = await decider.decide({
-      state: message.state,
-      questions: ASKS_QUESTIONS,
-      namespace: "guard-done-check",
-      signal: ctx.signal,
-    })
-    // No hash: the change was never judged, so the next stop checks it.
-    if (asksUser(r.answers, r.undecided))
-      return { output: { systemMessage: ASKS_USER_MESSAGE }, outcome: "skipped" }
-  }
+  // No hash on a skip: the change was never judged, so the next stop checks it.
+  if (message && (await waitsOnUser(ctx, decider, message.state)))
+    return { output: { systemMessage: ASKS_USER_MESSAGE }, outcome: "skipped" }
   const settled = await mapWithConcurrency(plan, config.concurrency, async (part) => {
     if (part.tooLarge)
       return part.criteria.map(({ c }) => ({ ...c, verdict: "not-checked" as const }))
