@@ -18,8 +18,10 @@ export type SourceSpec =
   | { kind: "jsonl"; path: string }
   /**
    * A state already in memory, such as one captured by a shadow run. It is one
-   * item under any split, an object stays an object, and it has no path, so
-   * excludes can't apply to it; scrubbing and the size check still do.
+   * item under any split, and an object stays an object (unless `join` folds it
+   * into text with other sources). It is sent as JSON, so what `JSON.stringify`
+   * drops is dropped. It has no path, so excludes can't apply to it; scrubbing
+   * and the size check still do.
    */
   | { kind: "state"; state: State; id?: string }
   /**

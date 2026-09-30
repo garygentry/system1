@@ -173,6 +173,8 @@ export function createDecider(options: DeciderOptions): Decider {
 
       // mode is live or record; the constructor guaranteed a transport.
       assertConsent({ granted: options.egressConsent }, options.repoRoot ?? "this repo")
+      // A bad namespace is a caller's bug: refuse it before the call is paid for.
+      if (mode === "record") fixtures?.path(namespace, key)
       const { response, latencyMs } = await (transport as Transport).decide(request, signal)
       // The call is paid for: from here on, nothing may throw it away.
       const unsaved: Unsaved[] = []

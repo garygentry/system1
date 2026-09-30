@@ -44,6 +44,21 @@ export function sumUsage(usages: ReadonlyArray<Usage | undefined>): Usage {
 export class SpendLedger {
   constructor(readonly file: string) {}
 
+  /**
+   * Can a line be appended? Writes nothing (an empty append). Returns the
+   * error code when it can't, so a caller that caps spend can refuse to call
+   * rather than spend without counting.
+   */
+  unwritable(): string | undefined {
+    try {
+      mkdirSync(dirname(this.file), { recursive: true })
+      appendFileSync(this.file, "")
+      return undefined
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code ?? "unwritable"
+    }
+  }
+
   append(entry: SpendEntry): void {
     mkdirSync(dirname(this.file), { recursive: true })
     appendFileSync(this.file, `${JSON.stringify(entry)}\n`)

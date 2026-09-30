@@ -4,7 +4,7 @@ import { assertStateFits } from "./egress/size.js"
 import { DecisionsError, isDecisionsError } from "./errors.js"
 import type { ModelProfile } from "./model/profiles.js"
 import type { QuestionSet, State } from "./model/types.js"
-import { assertQuestionSet } from "./model/validate.js"
+import { assertQuestionSet, assertStateShape } from "./model/validate.js"
 import { type Projection, project } from "./run/budget.js"
 import { applyFilter } from "./sources/filter.js"
 import { readSources } from "./sources/read.js"
@@ -44,12 +44,6 @@ export interface Prepared {
   projection: Projection
 }
 
-/**
- * sources → split → exclude → scrub → size check → projection.
- *
- * Nothing here touches the network. The caller then checks the budget and
- * consent before any call is made.
- */
 export interface PreparedState {
   /** Scrubbed, and within the profile's size limit with its questions. */
   state: State
@@ -72,12 +66,19 @@ export function prepareState(
 ): PreparedState {
   assertQuestionSet(options.questions)
   assertChoicesFit(options.questions, options.profile)
+  assertStateShape(state)
   const counts: ScrubCounts = {}
   const safe = scrubState(state, counts)
   const tokens = assertStateFits(options.id ?? "state", safe, options.questions, options.profile)
   return { state: safe, tokens, redactions: Object.values(counts).reduce((a, b) => a + b, 0) }
 }
 
+/**
+ * sources → split → exclude → scrub → size check → projection.
+ *
+ * Nothing here touches the network. The caller then checks the budget and
+ * consent before any call is made.
+ */
 export async function prepare(input: PrepareInput): Promise<Prepared> {
   assertQuestionSet(input.questions)
   assertChoicesFit(input.questions, input.profile)

@@ -4,6 +4,7 @@ import { isAbsolute, relative, resolve } from "node:path"
 import { glob } from "tinyglobby"
 import { isExcluded } from "../egress/exclude.js"
 import { DecisionsError } from "../errors.js"
+import { assertStateShape } from "../model/validate.js"
 import { applyFilter } from "./filter.js"
 import type { Document, LineRange, Skipped, SourceSpec } from "./types.js"
 
@@ -105,6 +106,7 @@ async function readSource(spec: SourceSpec, options: ReadOptions): Promise<ReadR
     case "jsonl":
       return readJsonl(spec.path, options)
     case "state":
+      assertStateShape(spec.state)
       return {
         documents: [{ id: spec.id ?? "state", kind: "row", data: spec.state }],
         skipped: [],

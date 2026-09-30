@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process"
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { DEFAULT_MODEL_ID, resolveProfile } from "../model/profiles.js"
@@ -341,6 +341,54 @@ describe("done-check decisions", () => {
     })
     expect(calls).toHaveLength(0)
   })
+
+  it("sends nothing when the spend ledger can't be written, since the cap couldn't be kept", async () => {
+    const { fetch, calls } = provider()
+    const dir = repo("- Errors are logged [met]\n")
+    mkdirSync(join(dir, ".system1/usage.jsonl"), { recursive: true })
+    expect(await stop(dir, fetch)).toEqual({
+      systemMessage: expect.stringMatching(
+        /not checked: the spend ledger can't be written \(EISDIR\), so the session's cap/,
+      ),
+    })
+    expect(calls).toHaveLength(0)
+  })
+
+  it.skipIf(process.getuid?.() === 0)(
+    "keeps a paid block when the guard state can't be saved",
+    async () => {
+      const { fetch, calls } = provider()
+      const dir = repo("- The README documents the flag [unmet]\n")
+      const env = { OPENROUTER_API_KEY: "sk-test" }
+      const home = temp()
+      const event = { session_id: "s1", cwd: dir }
+      await runHook(
+        "done-check",
+        { ...event, hook_event_name: "SessionStart", source: "startup" },
+        { env, home, fetch },
+      )
+      writeFileSync(join(dir, "src/a.ts"), "export const a = 2\n")
+      const guardDir = join(dir, ".system1/guard")
+      chmodSync(guardDir, 0o500)
+      try {
+        const out = await runHook(
+          "done-check",
+          { ...event, hook_event_name: "Stop" },
+          {
+            env,
+            home,
+            fetch,
+          },
+        )
+        expect(out).toMatchObject({ decision: "block" })
+        expect(calls).toHaveLength(1)
+      } finally {
+        chmodSync(guardDir, 0o700)
+      }
+      // The write really failed: no hash was saved for the next stop.
+      expect(readGuardState(guardStatePath(dir)).sessions["claude:s1"]?.last).toBeUndefined()
+    },
+  )
 
   it("counts only its own spend toward the cap", async () => {
     const { fetch, calls } = provider()

@@ -152,6 +152,21 @@ describe("createDecider", () => {
   })
 })
 
+describe("createDecider at the wire", () => {
+  it("sends an object as plain JSON, so a toJSON method can't smuggle a secret", async () => {
+    const { decider, calls } = rig("live")
+    const key = `sk-or-v1-${"a".repeat(64)}`
+    await decider.decide({ state: { note: "hi", x: { toJSON: () => key } }, questions })
+    expect(JSON.stringify(calls[0])).not.toContain(key)
+  })
+
+  it("refuses a bad fixture namespace before the call is paid for", async () => {
+    const { decider, calls } = rig("record")
+    await expect(decider.decide({ state, questions, namespace: "Bad Name" })).rejects.toThrow()
+    expect(calls).toHaveLength(0)
+  })
+})
+
 describe("createDecider on a disk it can't write", () => {
   /** A regular file where a directory should be: every write under it fails, even as root. */
   function blocked() {

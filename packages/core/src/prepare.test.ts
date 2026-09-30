@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { fixtureKey } from "./fixtures/store.js"
 import { resolveProfile } from "./model/profiles.js"
 import { prepare, prepareState } from "./prepare.js"
 import { checkBudget, project } from "./run/budget.js"
@@ -259,6 +260,38 @@ describe("a state in memory", () => {
     expect(() => prepareState("x", { questions: {}, profile })).toThrow()
   })
 
+  it("sends an object exactly as JSON would: no toJSON, getter or class smuggles a secret", () => {
+    const key = `sk-or-v1-${"a".repeat(64)}`
+    const sneaky = { note: "hi", x: { toJSON: () => key } }
+    const safe = prepareState(sneaky, { questions, profile })
+    expect(JSON.stringify(safe.state)).not.toContain(key)
+    const dated = prepareState({ at: new Date("2026-09-30T00:00:00Z") }, { questions, profile })
+    expect(dated.state).toEqual({ at: "2026-09-30T00:00:00.000Z" })
+  })
+
+  it("refuses what JSON can't send, and states that aren't strings, objects or arrays", () => {
+    const cycle: Record<string, unknown> = {}
+    cycle.self = cycle
+    for (const bad of [cycle, { n: 10n }, null, 42, undefined]) {
+      expect(() => prepareState(bad as never, { questions, profile })).toThrow(
+        expect.objectContaining({ code: "invalid-request" }),
+      )
+    }
+  })
+
+  it("counts a secret-named field once, however often the state is scrubbed", async () => {
+    const state = { password: "hunter2hunter2" }
+    expect(prepareState(state, { questions, profile }).redactions).toBe(1)
+    const prepared = await prepare({
+      sources: [{ kind: "state", state }],
+      split: { kind: "row" },
+      questions,
+      profile,
+      cwd: temp(),
+    })
+    expect(prepared.redactions.total).toBe(1)
+  })
+
   it("prepareState and a state source agree, so their fixture keys match", async () => {
     const state = { note: SECRET, n: 3 }
     const direct = prepareState(state, { questions, profile })
@@ -270,5 +303,16 @@ describe("a state in memory", () => {
       cwd: temp(),
     })
     expect(prepared.items[0]?.state).toEqual(direct.state)
+    const cwd = temp({ "rows.jsonl": `${JSON.stringify(state)}\n` })
+    const row = await prepare({
+      sources: [{ kind: "jsonl", path: "rows.jsonl" }],
+      split: { kind: "row" },
+      questions,
+      profile,
+      cwd,
+    })
+    const key = (s: unknown) => fixtureKey({ model: profile.id, state: s as never, questions })
+    expect(key(prepared.items[0]?.state)).toBe(key(direct.state))
+    expect(key(row.items[0]?.state)).toBe(key(direct.state))
   })
 })

@@ -95,7 +95,7 @@ and how many items they were in.
 | `latencyMs` | measured time for the call |
 | `skipped` | see [Shared fields](#shared-fields) |
 | `redactions` | see [Shared fields](#shared-fields) |
-| `unsaved` | *optional*. `[{what, reason}]` when the spend line (`ledger`) or the recorded answer (`fixture`) couldn't be written, for example on a read-only disk. `reason` is the filesystem error code, such as `EROFS`. The answer stands |
+| `unsaved` | *optional*. `[{what, reason}]` when the spend line (`ledger`) or the recorded answer (`fixture`) couldn't be written, for example on a read-only disk. `reason` is the filesystem error code, such as `EROFS`, or else the error's message. The answer stands |
 
 ```json
 {

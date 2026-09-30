@@ -1,5 +1,5 @@
 import { DecisionsError, ProviderError } from "../errors.js"
-import type { Answer, Answers, DecisionResponse, QuestionSet, Usage } from "./types.js"
+import type { Answer, Answers, DecisionResponse, QuestionSet, State, Usage } from "./types.js"
 
 const QUESTION_KEYS = ["type", "instructions", "criteria"]
 
@@ -182,4 +182,13 @@ function isDistribution(value: unknown): value is Record<string, number> {
 
 function finiteOrZero(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0
+}
+
+/** A state is a string, an object or an array: anything else is refused, never coerced. */
+export function assertStateShape(state: unknown): asserts state is State {
+  if (typeof state === "string" || (typeof state === "object" && state !== null)) return
+  throw new DecisionsError(
+    "invalid-request",
+    `A state must be a string, an object or an array, not ${state === null ? "null" : typeof state}.`,
+  )
 }

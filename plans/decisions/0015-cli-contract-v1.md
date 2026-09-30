@@ -170,3 +170,13 @@ Plan: `milestones/M9-M11-scout-guard-adopt.md` §M10 and `m10-hooks.md`.
   - **Dormant:** unless the pack is enabled in the repo and the repo has consent, it prints `{}`, sends nothing and writes nothing.
   - **Fail open:** once active, every failure allows the stop with the reason in a `systemMessage`.
 - **`doctor` gains a `guard` check.** It gives an advisory warning when a pack is enabled without consent.
+
+## M11: answers kept when a record can't be written (added 2026-09-30)
+
+Plan: `m11-adopt.md`, PR 2. Additive.
+
+- **`unsaved`** is an optional result field:
+  - on `ask` and `spec check`: `[{what: "ledger" | "fixture", reason}]`;
+  - on `many`, and its `jsonl` summary line: `{ledger, fixture, reason}`.
+- **What it means:** a spend line or a recorded answer couldn't be written (a read-only disk, say). The call's answer stands and the exit code is unchanged. Before this, the write threw after the paid call, which was exit 1.
+- **`spec check` fails** (`passed: false`) when an answer couldn't be recorded, since recording is what `--live` is for.

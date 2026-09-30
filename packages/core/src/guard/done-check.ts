@@ -198,29 +198,39 @@ export async function stop(ctx: PackContext): Promise<HookOutput> {
   assertLive(ctx)
   if (result.hash && result.outcome !== "skipped") {
     const hash = result.hash
-    updateGuardState(
-      guardStatePath(ctx.repoRoot),
-      (state) => {
-        const current = state.sessions[ctx.sessionKey]
-        if (!current) return { result: undefined }
-        const at = ctx.now.toISOString()
-        return {
-          state: {
-            ...state,
-            sessions: {
-              ...state.sessions,
-              [ctx.sessionKey]: {
-                ...current,
-                updatedAt: at,
-                last: { hash, at, outcome: result.outcome },
+    // The verdict is paid for: a state file that can't be written never discards it.
+    try {
+      updateGuardState(
+        guardStatePath(ctx.repoRoot),
+        (state) => {
+          const current = state.sessions[ctx.sessionKey]
+          if (!current) return { result: undefined }
+          const at = ctx.now.toISOString()
+          return {
+            state: {
+              ...state,
+              sessions: {
+                ...state.sessions,
+                [ctx.sessionKey]: {
+                  ...current,
+                  updatedAt: at,
+                  last: { hash, at, outcome: result.outcome },
+                },
               },
             },
-          },
-          result: undefined,
+            result: undefined,
+          }
+        },
+        { now: ctx.now },
+      )
+    } catch (error) {
+      // Without the hash the next stop checks again (and pays): say so.
+      const code = (error as NodeJS.ErrnoException)?.code ?? "an error"
+      if ("systemMessage" in result.output)
+        return {
+          systemMessage: `${result.output.systemMessage} (not saved: the guard state couldn't be written, ${code})`,
         }
-      },
-      { now: ctx.now },
-    )
+    }
   }
   return result.output
 }

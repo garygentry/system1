@@ -136,6 +136,14 @@ export function briefSpecCheck(r: SpecCheckResult): string {
     )
     lines.push(...r.lint.map(briefFinding))
   }
+  const lost = (what: "ledger" | "fixture") => r.unsaved?.filter((u) => u.what === what) ?? []
+  const fixtures = lost("fixture")
+  if (fixtures.length)
+    lines.push(
+      `NOT RECORDED (${fixtures[0]?.reason}): ${fixtures.length} answer(s) couldn't be written, so the check fails`,
+    )
+  const ledger = lost("ledger")
+  if (ledger.length) lines.push(`not saved (${ledger[0]?.reason}): ${ledger.length} spend line(s)`)
   return lines.join("\n")
 }
 
