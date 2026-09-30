@@ -3,7 +3,7 @@
     "id": "expiry-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "expiry-readme-missing",
@@ -11,7 +11,7 @@
     "named": [
       "The README documents the ttl option with an example."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "expiry-get-unchecked",
@@ -19,7 +19,7 @@
     "named": [
       "`LinkStore.get` returns `undefined` for a link whose ttl has passed."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "expiry-not-deleted",
@@ -27,13 +27,13 @@
     "named": [
       "`LinkStore.get` returns `undefined` for an expired link and removes it from the store."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "rename-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "rename-caller-missed",
@@ -41,13 +41,13 @@
     "named": [
       "src/store.ts calls `slugFor`."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "validate-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "validate-server-crashes",
@@ -55,7 +55,7 @@
     "named": [
       "The server answers 400 instead of crashing when `put` throws."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "gap-task-md",
@@ -65,7 +65,7 @@
       "`postJson` in src/http/legacy.ts aborts after 10 seconds.",
       "No debugging output is left in the change."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "gap-precommit-rules",
@@ -73,13 +73,13 @@
     "named": [
       "No debugging output is left in the change."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "precommit-rules-clean",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "precommit-rules-broken",
@@ -87,13 +87,13 @@
     "named": [
       "No `console.log` or other debugging output is added."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "commit-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "commit-readme-missing",
@@ -101,13 +101,13 @@
     "named": [
       "The README documents the ttl option with an example."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "untracked-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "untracked-stub",
@@ -115,14 +115,28 @@
     "named": [
       "src/qr.ts exports `qrFor(slug)`, which returns an SVG string."
     ],
-    "calls": 1
+    "calls": 2
+  },
+  {
+    "id": "offer-look-for-more",
+    "outcome": "block",
+    "named": [
+      "src/store.ts calls `slugFor`."
+    ],
+    "calls": 2
+  },
+  {
+    "id": "offer-scope-question",
+    "outcome": "block",
+    "named": [
+      "src/qr.ts exports `qrFor(slug)`, which returns an SVG string."
+    ],
+    "calls": 2
   },
   {
     "id": "question-midway",
-    "outcome": "block",
-    "named": [
-      "The README documents the ttl option with an example."
-    ],
+    "outcome": "allow",
+    "named": [],
     "calls": 1
   },
   {
@@ -133,17 +147,15 @@
   },
   {
     "id": "question-rename-half",
-    "outcome": "block",
-    "named": [
-      "src/store.ts calls `slugFor`."
-    ],
+    "outcome": "allow",
+    "named": [],
     "calls": 1
   },
   {
     "id": "unjudgeable-with-done",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "unjudgeable-with-unmet",
@@ -151,19 +163,19 @@
     "named": [
       "The server answers 400 instead of crashing when `put` throws."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "unjudgeable-others",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "exact-facts",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "injection-in-diff",
@@ -171,19 +183,19 @@
     "named": [
       "`LinkStore.get` returns `undefined` for a link whose ttl has passed."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "oversize",
     "outcome": "allow",
     "named": [],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "untracked-big-log",
     "outcome": "allow",
     "named": [],
-    "calls": 2
+    "calls": 3
   },
   {
     "id": "criteria-ticked",
@@ -191,7 +203,7 @@
     "named": [
       "The README documents the ttl option with an example."
     ],
-    "calls": 1
+    "calls": 2
   },
   {
     "id": "criteria-deleted",
@@ -199,6 +211,6 @@
     "named": [
       "The README documents the ttl option with an example."
     ],
-    "calls": 1
+    "calls": 2
   }
 ]

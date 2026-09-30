@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest"
 import {
   expected,
   grade,
+  loadMessages,
   loadScenarios,
+  messageCard,
   namedInBlock,
   type Run,
+  runMessages,
   runScenario,
   type SetName,
 } from "./run.js"
@@ -32,6 +35,11 @@ for (const set of ["scenarios", "holdout"] as const) {
 
     it("has a recorded result for every scenario", () => {
       expect(recorded.map((r) => r.id).sort()).toEqual(scenarios.map((s) => s.id).sort())
+    })
+
+    it("gives every scenario the agent's last message", () => {
+      const missing = scenarios.filter((s) => typeof s.message !== "string" || !s.message.trim())
+      expect(missing.map((s) => s.id)).toEqual([])
     })
 
     for (const s of scenarios) {
@@ -83,6 +91,13 @@ describe("done-check eval: the acceptance cases", () => {
   it("sends nothing on a stop with no change", () => {
     expect(outcome("question-before-starting")).toMatchObject({ outcome: "allow", calls: 0 })
   })
+
+  it("lets a stop that asks the user something through, sending at most the message", () => {
+    for (const s of all.filter((x) => x.kind === "question")) {
+      expect(outcome(s.id)?.outcome, s.id).toBe("allow")
+      expect(outcome(s.id)?.calls, s.id).toBeLessThanOrEqual(1)
+    }
+  })
 })
 
 describe("namedInBlock", () => {
@@ -98,3 +113,20 @@ describe("namedInBlock", () => {
     expect(namedInBlock(reason)).toEqual(["a", "b"])
   })
 })
+
+/**
+ * The question check alone, replayed. Its bar is set so that no completion is
+ * skipped: a skipped completion is a stop never checked. The blind holdout was
+ * run once, after the bar was fixed.
+ */
+for (const set of ["messages", "holdout"] as const) {
+  describe(`done-check question check: ${set === "messages" ? "fitted" : "blind holdout"}`, () => {
+    it("replays every message, and skips no completion", async () => {
+      const runs = await runMessages(set, { mode: "replay" })
+      expect(runs.map((r) => r.id)).toEqual(loadMessages(set).map((m) => m.id))
+      const card = messageCard(runs)
+      expect(card.completions.skipped).toEqual([])
+      expect(card.questions.skipped.length).toBeGreaterThanOrEqual(set === "messages" ? 16 : 17)
+    })
+  })
+}

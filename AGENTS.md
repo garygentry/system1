@@ -67,6 +67,10 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
 - **Inside the Codex Linux sandbox,** a child process spawned by node exits 0 with empty stdout (even `node -e "console.log(1)"`).
 - **Agents read `AGENTS.md` from parent directories.** Pi does so even from inside a nested git repo. Codex did from a workdir that wasn't a git repo. Smoke and eval workdirs therefore live outside this repo, under `~/.cache/system1-{smoke,evals}`.
 
+## Harness notes (verified 2026-09-30, Claude Code 2.1.285)
+
+- **Claude's Stop event carries `last_assistant_message`,** as Codex's does. done-check's question check reads it; without it, every stop is checked as before.
+
 ## Harness notes (verified in M10, 2026-09-27, Codex 0.155.1)
 
 - **Codex plugins can ship hooks,** and a Stop hook can block. The manifest names the file with `"hooks": "./hooks.json"`, and the format is Claude's: `{"hooks":{"Stop":[{"hooks":[{"type":"command","command":…,"timeout":…}]}]}}`.

@@ -44,6 +44,17 @@ describe("guard config", () => {
     ])
   })
 
+  it("reads askAboutMessage from the repo file only, off by default", () => {
+    expect(setup().load().guard.packs["done-check"].askAboutMessage).toBe(false)
+    const repo = "guard:\n  packs:\n    done-check:\n      askAboutMessage: true\n"
+    expect(setup(repo).load().guard.packs["done-check"].askAboutMessage).toBe(true)
+    const { guard, warnings } = setup(undefined, repo).load()
+    expect(guard.packs["done-check"].askAboutMessage).toBe(false)
+    expect(warnings).toEqual([
+      expect.stringMatching(/done-check\.askAboutMessage is read only from the repo file/),
+    ])
+  })
+
   it("layers the other options, repo over user over default; lists whole", () => {
     const user =
       "guard:\n  packs:\n    done-check:\n      latencyMs: 3000\n      maxUsdPerSession: 0.5\n      criteria: [A.md]\n"

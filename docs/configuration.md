@@ -172,9 +172,10 @@ under `guard.packs.<pack>:`. How to use `done-check`, and what it sends: [guard]
 | `maxUsdPerSession` | `0.01` | number ≥ 0 | repo wins | Measured spend per session before checks are skipped (and reported) |
 | `criteria` | `[TASK.md, .system1/done.md]` | list of paths | first file that sets it | Files whose bullets are the criteria |
 | `evidence` | `[]` | list of paths | first file that sets it | Extra files sent with the change, such as a test log |
+| `askAboutMessage` | `false` | boolean | **repo file only** | Also send the agent's last message, to let a stop that asks you something through unchecked ([guard](guard.md#let-questions-through-askaboutmessage)) |
 
-`enabled` in the user file is ignored, like `egress.consent`: one user-level setting must not
-switch on egress in every repo. That, an unknown pack or key, and a value of the wrong type are
+`enabled` and `askAboutMessage` in the user file are ignored, like `egress.consent`: one
+user-level setting must not switch on or widen egress in every repo. That, an unknown pack or key, and a value of the wrong type are
 ignored with a warning that `decide doctor` and `decide config` show.
 
 ## Credentials file

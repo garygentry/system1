@@ -33,14 +33,16 @@ The only pack is **`done-check`**. Cover these five points in plain words.
    - A second stop in a row is always allowed.
    - Undecided or unjudgeable criteria never block; the message counts them as "not settled". Bullets that ask for an exact fact, a count or a date ("all tests pass", "before Friday") aren't sent at all; the message counts them as "for the agent to check".
    - If a criteria file changed during the session, the check uses the version from the start of the session, and the message says it changed.
-   - Once it has checked, it checks again only when something it sends has changed. So a later stop where the agent just asks the user a question sends nothing.
+   - Once it has checked, it checks again only when something it sends has changed.
+   - Only if the repo opts in with `askAboutMessage: true`: when the agent stops to ask the user a question, the stop goes through with a line saying it wasn't checked, and the change isn't sent. The decision model decides this from the agent's last message, in a call of its own, and only a confident yes skips the check. A message that presents the work as done is checked, even if it ends by offering more ("Want me to add tests?").
 2. **What it sends** to the provider (openrouter.ai), under the repo's egress consent:
    - the criteria bullets;
    - the session's change since it started, including commits made during the session and new untracked files;
-   - tracked files the criteria name (up to three per criterion, ten in all), and any `evidence` files configured.
+   - tracked files the criteria name (up to three per criterion, ten in all), and any `evidence` files configured;
+   - only with `askAboutMessage: true`, in a separate call, the agent's last message (see point 1). It has no path, so `egress.exclude` doesn't apply to it; only scrubbing does, and a password in plain prose goes through.
 
    The usual rules always apply: secret-looking files are left out and listed, secret-shaped strings are scrubbed, and oversized content is split or skipped with a reason, never cut short.
-3. **Cost.** Usually one decision call per check, about $0.00003. `maxUsdPerSession` (default $0.01) caps what done-check spends in one session. Once the cap is reached, checks are skipped and the message says so.
+3. **Cost.** Usually one decision call per check, about $0.00004; two with `askAboutMessage` (the message, then the criteria), about $0.00006. `maxUsdPerSession` (default $0.01) caps what done-check spends in one session. Once the cap is reached, checks are skipped and the message says so.
 4. **Latency.** A check adds at most `latencyMs` (default 5000 ms, at most 55000) at the stop. Past that, the stop goes through with a note saying it wasn't checked.
 5. **It fails open, with a reason.** Once the pack is active, a provider error, timeout, budget cap or size limit lets the stop through with a one-line message giving the reason, so "checked and fine" looks different from "not checked". The exceptions are a config file that doesn't load and a `decide` the hook can't run: then the hook does nothing, and `decide doctor` shows why.
 
@@ -72,7 +74,7 @@ Offer to help write `TASK.md` or `.system1/done.md`. Write them only after a yes
 
 ## 5. Tuning and turning it off
 
-- **Settings** live under `guard.packs.done-check` in `.system1/config.yaml`: `latencyMs`, `maxUsdPerSession`, `criteria` (a list of files) and `evidence` (for example a test log). Change them only after the user says yes to that specific change. `enabled` is set only by the enable and disable commands.
+- **Settings** live under `guard.packs.done-check` in `.system1/config.yaml`: `latencyMs`, `maxUsdPerSession`, `criteria` (a list of files), `evidence` (for example a test log) and `askAboutMessage` (off by default; widens what is sent, so it is read only from the repo file and turned on only when the user asks for it). Change them only after the user says yes to that specific change. `enabled` is set only by the enable and disable commands.
 - **Turning it off:** `decide guard disable done-check`. It needs no consent, since it only stops egress. Run it only when the user asks you to, and show its output.
 - **Why did it block, or skip?** The block reason names the unmet criterion. A skip says why in its message. `decide guard status --format brief` shows the pack and this repo's consent.
 

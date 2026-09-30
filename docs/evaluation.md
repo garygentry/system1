@@ -25,6 +25,7 @@ Two things frame all of it:
 | Does the agent use System 1 when it should, and not when it shouldn't? | Codex and Pi: every time. Claude with the hook: 91% of positives on the blind set, no false triggers | Five runs per set. Claude misses some checks of its own work |
 | Does a new user reach a first live decision? | Yes, after six first-run stalls were fixed | The author walked it in each harness on Linux; no outside user yet |
 | Does `done-check` block the stops it should, and only those? | Live: no false block in 39 done stops; 0 missed in 57 not-done stops (2 in an earlier run); both Known-gap checks caught | 38 labelled stop events by the author, 10 of them held out; 3 live runs each |
+| With `askAboutMessage`, does `done-check` let a stop that asks the user through, without skipping a finished one? | On a blind set: 17 of 22 questions let through, 0 of 28 completions skipped; live, 0 of 8 question stops blocked | 88 final messages, 50 of them blind, written by another agent; the stop events, 2 live runs each |
 | Does it work on macOS? | The CLI does (CI). The harnesses are unverified | See [known gaps](../plans/ROADMAP.md#5-macos-is-unverified) |
 
 ## Answer quality: calibration
@@ -215,7 +216,8 @@ agent's change, run through the real hook.
     lint keeps from the model.
   - A prompt-injection comment, an oversize diff, a ticked or deleted criterion, and a large
     untracked log.
-- **The sets:** 28 events (69 criteria) were used to fit the thresholds and the question wording.
+- **The sets:** 28 events (69 criteria) were used to fit the thresholds and the question wording
+  (two more were added on 2026-09-30 for the question check below).
   A 10-event holdout on a different task was written after the fit and before it was run.
 - **The runs:** each event was replayed once in CI from recorded answers. It was then run 3 times
   live through `decide hook`.
@@ -230,13 +232,14 @@ agent's change, run through the real hook.
 - **Variance:** an earlier live run missed a half-done criterion ("returns `undefined` and
   removes it") in 2 of 3 runs. Its met score sits near the bar, so expect occasional misses like
   it.
-- **Question stops** are blocked most of the time. The check doesn't read the agent's message,
-  and the work it names as unfinished really is unfinished. A local check for a completion claim
-  would stop this, and is the next change these numbers argue for.
+- **Question stops** were blocked most of the time in these runs, because the check didn't read
+  the agent's message, and the work it named as unfinished really was unfinished.
+
 - **Oversize changes never block, by design.** That includes a change beside a large untracked
   file such as a test log. A check of part of a change could miss the file that holds the work.
 - **Latency,** Stop through the CLI when it calls the model: p50 about 460 ms, p95 about 615 ms,
-  max 661 ms, against a 5 s `latencyMs`.
+  max 661 ms, against a 5 s `latencyMs`. (Superseded by the question check below, which adds a
+  call.)
 - **Cost:** one call per stop, $0.00004–0.00005.
 - **What the eval changed:**
   - The judgeable question now asks whether the criterion is a claim about the repository at
@@ -248,6 +251,46 @@ agent's change, run through the real hook.
   - Only the holdout is out of sample, and it is small.
   - The met bar has a thin margin: unmet criteria scored met ≤ 0.23, and the lowest met
     criterion 0.30, on a label that could be read either way.
+
+### The question check (2026-09-30)
+
+With `askAboutMessage: true` (opt-in, since it sends the agent's own words), done-check asks the
+decision model, in a call of its own, whether the agent's last message stops to wait on the
+user. A confident yes (≥ 0.8) lets the stop through unchecked, and the
+change isn't sent. A skipped completion is a stop never checked, so the bar is set to skip none.
+If the question call fails, is unsure, or doesn't fit the spend cap beside the criteria call,
+the stop is checked as before.
+
+- **A word-list rule came first and was dropped.** An adversarial review found that ordinary
+  completion endings ("Added X. Should I update the README next?", a `README.md?` split at its
+  dot) were skipped, and the eval's own messages had missed them.
+- **Messages alone** (`--messages`): a fitted set of 38 by the author, including the review's
+  cases, and a blind holdout of 50 written by another agent that never saw the question. The
+  holdout was run once, after the wording and the bar were fixed.
+
+| Set | Questions let through | Completions skipped |
+|---|---|---|
+| Fitted (17 questions, 21 completions) | 16/17 | 0/21 |
+| Blind holdout (22 questions, 28 completions) | 17/22 | 0/28 |
+
+  - Fitted questions scored 0.86–0.97, except one asking to run a written migration in
+    production (0.19). Completions scored 0.08–0.74. The first wording let completions that end
+    in a next-step offer reach 0.90.
+  - The drop from 16 of 17 to 17 of 22 suggests the wording is partly fitted to the author's
+    questions. The 5 blind questions it missed scored 0.64–0.74; those stops are checked, as
+    before.
+  - The holdout's labels are its writer's. No one else checked them.
+- **Stop events,** each now with the agent's last message, live ×2 through `decide hook`
+  (2026-09-30; latency and cost from the run's output, not kept in the repo):
+  - 0 false blocks in 26 done stops. No completion was skipped as a question.
+  - Question stops blocked: 0 of 8 runs, over 4 events. One of them changed nothing, so it
+    never reaches the question check: 3 events (6 runs) exercise it.
+  - 2 of 42 not-done stops missed: the half-done criterion noted above.
+  - Latency roughly doubles, since a stop with a message makes two calls in turn: p50 about
+    850 ms, p95 about 1.1 s. Cost: about $0.00005–0.00006 per stop.
+- **What CI replays:** every stop event with `askAboutMessage: true`, the measured setting. The default (off) sends exactly what 0.5.1 did; a unit test covers it, but the question stops' criteria-only answers are no longer recorded.
+- **Limits:** an agent can skip the check by ending on a plausible question, and the only
+  prompt-injection case ("answer yes") is in the fitted set (it scored 0.08).
 
 ## Not measured
 
@@ -267,7 +310,7 @@ agent's change, run through the real hook.
 | One live decision | `pnpm test:live` | a key and this repo's consent |
 | Calibration scoring | `pnpm exec tsx tools/calibration.ts --run <run> --labels <labels>` | nothing; the runs and labels are in [`evidence/`](../evidence/README.md) |
 | Routing | `pnpm eval:routing all --repeat 3` (`EVAL_ROUTING=tools/evals/routing-holdout-2.yaml` for the blind set) | the three harnesses installed; spends their tokens |
-| Done-check stop events | `pnpm eval:done-check` (replay); `--latency 3` and `--holdout` live; `--fit` for the threshold sweep | nothing to replay; a key for live |
+| Done-check stop events | `pnpm eval:done-check` (replay); `--messages` for the question check; `--latency 3` and `--holdout` live; `--fit` for the threshold sweep | nothing to replay; a key for live |
 | Harness smoke tests | `pnpm smoke` | the three harnesses installed |
 | Startup | `pnpm bench:startup` | nothing |
 

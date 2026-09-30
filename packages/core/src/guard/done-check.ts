@@ -187,7 +187,8 @@ export async function ensureSession(ctx: PackContext): Promise<GuardSession> {
 /**
  * Stop: gather the criteria and the change, ask the model, and block once if
  * a criterion is confidently unmet. No criteria means silence and no egress;
- * an unchanged re-stop sends nothing.
+ * an unchanged re-stop sends nothing; a stop where the agent asks its user
+ * something sends only its last message, and is let through.
  */
 export async function stop(ctx: PackContext): Promise<HookOutput> {
   const session = await ensureSession(ctx)

@@ -97,6 +97,13 @@ version from the start of the session, and says the file changed.
 - **Nothing changed since the session started:** nothing is sent. This covers a stop to ask you
   something before any work. Evidence files don't count as a change.
 - **Nothing changed since the last check:** nothing is sent.
+- **The agent stopped to ask you something** (only with `askAboutMessage: true`, see below):
+  the stop goes through with
+  `System 1 done-check: the agent asked you something, so this stop wasn't checked`, and the
+  change isn't sent. First, done-check asks the decision model one question about the agent's
+  last message, in a call of its own: is the agent waiting on your answer to carry on? Only a
+  confident yes skips the check. A message that presents the work as done is checked, even if it
+  ends "Want me to add tests?" or "Anything else?".
 - **A criterion is clearly unmet:** the stop is blocked, and the agent sees:
 
   ```text
@@ -126,16 +133,19 @@ When a check runs, it sends the decision model, under the repo's egress consent:
 - the criteria bullets;
 - the session's change since it started, including commits made during the session and new
   untracked files;
-- the files the criteria name, and any evidence files.
+- the files the criteria name, and any evidence files;
+- only if you opt in, in a separate call, the agent's last message (see below).
 
 Secret-looking files are left out and listed, secret-shaped strings are scrubbed, and nothing
 too large is cut short (see [concepts](concepts.md)). A criterion that names a withheld file is
 left for the agent to check.
 
-- **Cost:** usually one call per check, about $0.00004–0.00005 measured.
+- **Cost:** usually one call per check, about $0.00004–0.00005 measured; two with
+  `askAboutMessage`, about $0.00006.
   `maxUsdPerSession` (default $0.01) caps what done-check spends in one session.
 - **Latency:** a check that calls the model added a median of about 460 ms at the stop, and
-  615 ms at the 95th percentile (measured on 2026-09-27). `latencyMs` (default 5000) is the
+  615 ms at the 95th percentile (measured on 2026-09-27); with `askAboutMessage`, about 850 ms
+  and 1.1 s (2026-09-30). `latencyMs` (default 5000) is the
   limit. Past it, the stop goes through with a note.
 - **Accuracy:** on 38 labelled stop events run live 3 times each, it blocked no finished work
   and caught every unfinished task. In an earlier run it missed one half-done criterion in 2
@@ -160,11 +170,42 @@ without a word**. When a pack is on and `decide` runs from npx's cache, `decide 
 that the setup can fail this way. A global install avoids it. For comparison, a call that goes
 through `npx` itself takes about 720 ms. The hooks never make one.
 
+### Let questions through: `askAboutMessage`
+
+Without it, done-check doesn't know when the agent stopped to ask you something, and blocks such
+a stop when the work so far leaves a criterion unmet (9 of 12 such stops measured). To let those
+stops through, opt in, in the repo's `.system1/config.yaml` (the user file can't set it):
+
+```yaml
+guard:
+  packs:
+    done-check:
+      askAboutMessage: true
+```
+
+Then, before checking the criteria, done-check sends the agent's last message in a call of its
+own and asks whether the agent is waiting on your answer. Know what that sends:
+
+- **The agent's own words.** They have no path, so `egress.exclude` can't hold them back. If the
+  agent quotes a file it read, such as a `.env`, only the scrubbing of secret-shaped strings
+  applies: a password written as plain prose goes through.
+- The message is sent only when a criteria check would follow, and only when both calls fit the
+  session's spend cap. The criteria are never judged with the message beside them.
+- It needs a harness that puts the message in the Stop event: Claude Code 2.1.285 and Codex do.
+  Without it, every stop is checked.
+- Each check becomes two calls: about 850 ms median at the stop (instead of about 460 ms), and
+  about $0.00006.
+
 ## Where it falls short
 
-- **Stops to ask a question.** When the agent stops mid-task to ask you something, done-check
-  doesn't read its message. So it blocks when the work so far leaves a criterion unmet, which
-  happened in 9 of 12 such stops measured. The agent's next stop is allowed.
+- **Stops to ask a question are blocked** when the work so far leaves a criterion unmet, unless
+  you opt in to `askAboutMessage`. The agent's next stop is allowed.
+- **With `askAboutMessage`:**
+  - The agent can skip the check by ending its turn on a plausible question. You see "this stop
+    wasn't checked" when it does.
+  - Some questions still get checked: it lets a stop through only when it's confident. On a
+    blind set of final messages, it let 17 of 22 questions through and skipped none of 28
+    completions.
 - **Large changes are checked only in part, and never blocked.** That includes a change beside
   one large untracked file, such as a 100 KB log. Add such files to `.gitignore`, or to
   `egress.exclude`.

@@ -1,0 +1,370 @@
+# Blind holdout: final agent messages labelled question/completion. Written without seeing the checker.
+messages:
+  - id: db-migration-choice
+    label: question
+    text: |
+      Should I use a blue-green deployment or a rolling update for this migration?
+
+  - id: force-push-confirm
+    label: question
+    text: |
+      This requires a force-push to main to fix the corrupted history. I don't want to do that without your explicit go-ahead — should I proceed?
+
+  - id: rm-rf-permission
+    label: question
+    text: |
+      The old `build/` and `dist/` directories are stale and conflicting with the new bundler output. Can I delete both before rebuilding?
+
+  - id: plan-confirm-migration
+    label: question
+    text: |
+      ## Migration plan
+
+      Here's what I'm about to do to move `orders` off the old sharding scheme:
+
+      - Add the new `shard_key` column, backfilled from `region_id`
+      - Dual-write to both the old and new tables for 24h
+      - Cut reads over to the new table
+      - Drop the old table once nothing references it
+
+      Steps 3 and 4 touch production directly and step 4 is irreversible without a restore. Let me know if this plan looks right before I start.
+
+  - id: wait-for-call-secrets
+    label: question
+    text: |
+      The `.env.production` file is missing the `STRIPE_SECRET_KEY` and `DATABASE_URL` values, so I can't run the integration tests. I'll wait for your call.
+
+  - id: heading-bullets-auth-approach
+    label: question
+    text: |
+      ## Two ways to add auth
+
+      - **Session cookies** — simpler, works well since everything is same-origin today
+      - **JWT + refresh tokens** — more setup, but needed if we ever split the API onto its own domain
+
+      Which one do you want me to build?
+
+  - id: question-middle-then-more
+    label: question
+    text: |
+      I looked into the flaky test in `tests/api/orders.test.ts`. Do you want me to bump the timeout to 5s, or is there a race condition worth chasing down properly? Either way I can start on the `checkout` refactor next since it's unrelated to this.
+
+  - id: table-options-cache-backend
+    label: question
+    text: |
+      I put together a comparison of the two candidates:
+
+      | Option | Pros | Cons |
+      |---|---|---|
+      | Redis | Shared across instances, TTL built in | Another service to run and monitor |
+      | Memcached | Slightly faster for our access pattern | No persistence, less tooling on our side |
+
+      Which backend should I wire up?
+
+  - id: code-fence-two-configs
+    label: question
+    text: |
+      I sketched both build configs so you can compare:
+
+      ```js
+      // webpack.config.js
+      module.exports = { entry: './src/index.ts', mode: 'production' };
+      ```
+
+      ```js
+      // vite.config.js
+      export default { build: { target: 'es2020' } };
+      ```
+
+      Which build tool do you want to standardize on?
+
+  - id: spanish-approval-question
+    label: question
+    text: |
+      He preparado el script de despliegue, pero necesito tu confirmación antes de ejecutarlo en producción porque borrará las copias de seguridad antiguas de más de 30 días. ¿Continúo?
+
+  - id: french-scope-question
+    label: question
+    text: |
+      J'ai terminé l'analyse du bug, mais avant de corriger le code je dois savoir : préférez-vous que je corrige uniquement le symptôme dans `checkout.tsx`, ou que je refactorise la fonction `calculerTotal` en profondeur puisque c'est elle qui cause le problème ?
+
+  - id: german-naming-question
+    label: question
+    text: |
+      Ich habe die neue Komponente fast fertig, bin mir aber beim Namen nicht sicher, weil sie an zwei Stellen mit leicht unterschiedlicher Bedeutung verwendet wird. Soll sie `UserProfileCard` oder `ProfileSummary` heißen?
+
+  - id: japanese-schema-question
+    label: question
+    text: |
+      データベースのスキーマ変更を適用する準備ができましたが、既存のユーザーデータおよそ12万件に影響します。本番環境に適用してもよろしいですか?
+
+  - id: long-partial-work-approval
+    label: question
+    text: |
+      I've finished the read path for the new `subscriptions` table — the API now serves subscription status from it and the response shapes match what the frontend expects. Feature-flagged behind `subs_v2`, so nothing user-facing has changed yet.
+
+      The part I haven't touched is the write path, because it needs this migration to run first:
+
+      ```sql
+      ALTER TABLE users DROP COLUMN legacy_plan_id;
+      ```
+
+      Nothing in the current codebase reads `legacy_plan_id` anymore as far as I can tell, but it's a one-way door and I didn't want to guess. Want me to go ahead and drop it, or would you rather I keep it around for a while as a safety net?
+
+  - id: short-npm-major-bump
+    label: question
+    text: |
+      I found three ways to clear the `npm audit` warning on `lodash`: pin the current vulnerable-but-working version, upgrade to v5 which has a couple of breaking changes in how we use `_.merge`, or vendor just the two functions we actually use. Which do you want?
+
+  - id: casual-blocking-empty-array
+    label: question
+    text: |
+      Quick one — did you want the API to return a 404 or an empty array when there are no results for a search? Kind of blocks me on finishing the rest of the endpoint, everything else is written.
+
+  - id: credentials-needed-aws
+    label: question
+    text: |
+      I can't finish deploying because I don't have AWS credentials with `s3:PutObject` permission for the `prod-assets` bucket. Can you either grant it or point me to a set of keys I can use?
+
+  - id: multiple-choice-lettered
+    label: question
+    text: |
+      Pick one:
+
+      A) Cache in Redis with a 5 min TTL
+      B) Cache in memory per-process
+      C) No caching, hit the DB every time
+
+      Which one?
+
+  - id: destructive-confirm-drop-table
+    label: question
+    text: |
+      Just to confirm before I run this: `DROP TABLE legacy_orders CASCADE` will also remove the `order_items` and `order_audit` tables since they reference it. That's about 40k rows total and there's no backup configured for this environment. Proceed?
+
+  - id: inline-code-filename-question
+    label: question
+    text: |
+      Quick check: should the new helper live in `src/utils/date.ts` or get its own `src/utils/dateFormat.ts`? Both make sense given how `formatDate` is already used across the codebase, and I'd rather not guess and have to move it later.
+
+  - id: url-query-string-context-question
+    label: question
+    text: |
+      I found the failing request in the logs: `https://api.example.com/v1/orders?status=pending&limit=50` returns a 500 when `limit` exceeds 100 server-side, even though the docs say 500 is the max, i.e. the docs are wrong or the server has an undocumented cap. Do you want me to raise this with the API vendor, or should I just clamp our client-side limit to 100 as a workaround for now?
+
+  - id: finished-analysis-pick-implementation
+    label: question
+    text: |
+      I've finished analyzing the three caching strategies for the product listing endpoint, and honestly the trade-offs are close enough that I don't have a strong recommendation either way. Which approach should I implement — write-through, write-behind, or read-through?
+
+  - id: one-liner-bugfix-done
+    label: completion
+    text: |
+      Done. Fixed the off-by-one error in `pagination.ts` — page counts now match the total row count.
+
+  - id: markdown-summary-offer-tests
+    label: completion
+    text: |
+      ## Summary
+
+      - Added the `/health` endpoint
+      - Wired it into the k8s liveness probe
+      - Updated `README.md` with the new endpoint
+
+      Want me to add tests for it?
+
+  - id: table-summary-anything-else
+    label: completion
+    text: |
+      Here's what changed:
+
+      | File | Change |
+      |---|---|
+      | `src/routes/billing.ts` | Added the refund handler |
+      | `src/db/migrations/0031_refunds.sql` | New `refunds` table |
+      | `tests/billing.test.ts` | Covers the happy path and the double-refund guard |
+
+      Anything else you'd like me to look at?
+
+  - id: code-fence-explanation-no-offer
+    label: completion
+    text: |
+      The leak was a subscription in `useOrderStream` that never got torn down on unmount:
+
+      ```diff
+      - useEffect(() => { subscribe(orderId, onUpdate); }, [orderId]);
+      + useEffect(() => {
+      +   const unsub = subscribe(orderId, onUpdate);
+      +   return unsub;
+      + }, [orderId]);
+      ```
+
+      Memory usage is flat now after 10 minutes of soak testing, where before it grew steadily.
+
+  - id: long-report-let-me-know-changes
+    label: completion
+    text: |
+      I finished the refactor of the checkout module. The main changes:
+
+      1. Split the 800-line `Checkout.tsx` into `Checkout.tsx`, `PaymentStep.tsx`, and `ReviewStep.tsx`, each owning its own local state.
+      2. Moved the tax and shipping calculations into `src/lib/pricing.ts` so they can be unit tested without mounting any React components.
+      3. Replaced the ad-hoc `useState` chain with a small `useReducer`, which fixed the bug where switching payment methods mid-flow could leave stale shipping data behind.
+
+      All existing checkout tests pass, and I added six new ones covering the payment-method-switch case specifically. Let me know if you'd like any changes.
+
+  - id: partial-failed-no-question
+    label: completion
+    text: |
+      I wasn't able to get the `pdf-export` job working — the underlying `wkhtmltopdf` binary isn't available in this sandbox and I don't have network access to install it. I've left the code path stubbed with a clear TODO in `src/export/pdf.ts` so it's easy to pick up once the binary is available.
+
+  - id: readme-next-no-done-word
+    label: completion
+    text: |
+      Added the `--verbose` flag to the CLI and updated the argument parser in `src/cli/args.ts`. Should I update the README next?
+
+  - id: spanish-completion-offer
+    label: completion
+    text: |
+      He añadido la validación de correo electrónico en el formulario de registro y actualicé las pruebas correspondientes. ¿Quieres que revise también el formulario de recuperación de contraseña?
+
+  - id: french-completion-courtesy
+    label: completion
+    text: |
+      J'ai optimisé la requête SQL dans `getUserOrders`, le temps de réponse est passé de 800ms à 60ms sur le jeu de données de test. Ça vous convient ?
+
+  - id: german-completion-nextstep
+    label: completion
+    text: |
+      Ich habe den Logger auf strukturierte JSON-Ausgabe umgestellt und alle bestehenden Log-Aufrufe in `src/` entsprechend angepasst. Ich könnte als Nächstes auch die Log-Level konfigurierbar machen, falls das hilfreich ist.
+
+  - id: japanese-completion-courtesy
+    label: completion
+    text: |
+      リクエストされた通り、ログイン画面にダークモードを実装しました。切り替えはヘッダーの新しいトグルから行えます。見た目は問題ないですか?
+
+  - id: courtesy-does-this-look-good
+    label: completion
+    text: |
+      Rewrote the onboarding email copy per the brief — shorter subject line, one clear CTA. Does this look good?
+
+  - id: what-next-ending
+    label: completion
+    text: |
+      That's everything from the ticket — tests pass, lint is clean, and the PR is up at https://github.com/acme/widgets/pull/512. What next?
+
+  - id: run-it-ending
+    label: completion
+    text: |
+      I've wired up the new seed script at `scripts/seed.ts`, it populates 50 users and 200 orders. Run it?
+
+  - id: next-step-suggestion-ci
+    label: completion
+    text: |
+      Set up the pre-commit hooks with `husky` and `lint-staged` so staged files get linted automatically. I can also add a CI check that runs the same linting on every PR if you want.
+
+  - id: bullet-list-thoughts
+    label: completion
+    text: |
+      Updated the pricing page:
+
+      - Swapped the three-tier layout for a two-tier one (Free / Pro)
+      - Moved the FAQ below the fold
+      - Added an annual/monthly toggle that recalculates the displayed price
+
+      Thoughts?
+
+  - id: one-liner-inline-code-files
+    label: completion
+    text: |
+      Renamed `oldHelper.js` to `src/lib/formatCurrency.ts` and updated every import; `pnpm build` passes.
+
+  - id: version-bump-v2-1
+    label: completion
+    text: |
+      Bumped the package to v2.1.0, updated `CHANGELOG.md`, and tagged the release locally. Not pushed yet, since you usually like to review the changelog first.
+
+  - id: url-query-pr-link
+    label: completion
+    text: |
+      Opened the PR: https://github.com/acme/widgets/pull/482?diff=unified — CI is green, no conflicts with main.
+
+  - id: numbered-list-changes
+    label: completion
+    text: |
+      Three changes went in:
+
+      1. Fixed the timezone bug in `formatEventDate`
+      2. Added a fallback for missing `avatar_url` values
+      3. Removed the unused `moment` dependency, saving about 60kb from the bundle
+
+      All three are covered by the existing test suite, which is green.
+
+  - id: rhetorical-question-hard-case
+    label: completion
+    text: |
+      Everything's migrated to the new auth provider and the old tokens have been invalidated. Not bad for an afternoon, right?
+
+  - id: no-punctuation-deployed
+    label: completion
+    text: |
+      Deployed
+
+  - id: failed-attempt-reporting
+    label: completion
+    text: |
+      I tried three different regex patterns to parse the legacy log format but none handle the edge case where the timestamp is missing entirely (about 2% of lines in `access.log`). I've left those lines in a `skipped.log` file for manual review rather than guessing at the format and getting it wrong silently.
+
+  - id: code-fence-test-output-passed
+    label: completion
+    text: |
+      Test run after the fix:
+
+      ```
+      PASS  tests/orders/refund.test.ts
+      PASS  tests/orders/cancel.test.ts
+      Tests: 34 passed, 34 total
+      ```
+
+      Both suites that were failing on main are green now.
+
+  - id: merge-unless-object-hard-case
+    label: completion
+    text: |
+      All checks pass and the diff is small and low-risk — just a typo fix in the error message shown when a card is declined. I'll go ahead and merge it unless you object.
+
+  - id: table-test-results
+    label: completion
+    text: |
+      | Suite | Result |
+      |---|---|
+      | unit | 212 passed |
+      | integration | 48 passed |
+      | e2e | 12 passed, 1 skipped (needs a live payment sandbox) |
+
+      Everything relevant to this change is passing.
+
+  - id: filenames-dots-completion
+    label: completion
+    text: |
+      Updated `README.md`, `src/api.ts`, and `package.json` to reflect the new endpoint naming. Everything's consistent now.
+
+  - id: long-structured-report-adjustments
+    label: completion
+    text: |
+      ## What changed
+
+      I implemented the notification preferences feature end to end:
+
+      ### Backend
+      - New `notification_preferences` table, one row per user
+      - `PATCH /v1/users/:id/preferences` endpoint, validated with the existing schema middleware
+
+      ### Frontend
+      - A new settings panel under `src/pages/settings/Notifications.tsx`
+      - Toggle state is optimistic, with rollback on a failed request
+
+      ### Testing
+      - Unit tests for the endpoint's validation edge cases
+      - One Playwright test that toggles a preference and reloads to confirm it persisted
+
+      Everything is behind the existing `settings_v2` flag, so it won't affect current users until that's turned on. Let me know if you want any adjustments.

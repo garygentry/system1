@@ -149,6 +149,7 @@ files:
 scenarios:
   - id: h-clicks-done
     kind: completion
+    message: "Click counting is done: each successful `get` adds one to the slug's count, and the README explains it."
     criteria:
       intro: "# Task: count clicks"
       items:
@@ -161,6 +162,7 @@ scenarios:
 
   - id: h-clicks-no-readme
     kind: completion
+    message: "`get` now counts clicks per slug. Want me to expose the counts through an endpoint?"
     criteria:
       intro: "# Task: count clicks"
       items:
@@ -171,6 +173,7 @@ scenarios:
 
   - id: h-clicks-never-counted
     kind: completion
+    message: "I've added a click count map to `LinkStore` and documented it in the README."
     criteria:
       intro: "# Task: count clicks"
       items:
@@ -184,6 +187,7 @@ scenarios:
   - id: h-clicks-counts-misses
     about: subtle; a lookup of an unknown slug creates a count
     kind: completion
+    message: "Clicks are counted on every `get`. Anything else?"
     criteria:
       intro: "# Task: count clicks"
       items:
@@ -195,6 +199,7 @@ scenarios:
 
   - id: h-no-store-done
     kind: completion
+    message: "The redirect now sends `Cache-Control: no-store`. Finished."
     criteria:
       intro: "# Task: don't let browsers cache redirects"
       items:
@@ -206,6 +211,7 @@ scenarios:
   - id: h-no-store-301
     about: subtle; the header is set but the status changed
     kind: completion
+    message: "Added `Cache-Control: no-store` to the redirect. Should I also add it to the 404 response?"
     criteria:
       intro: "# Task: don't let browsers cache redirects"
       items:
@@ -216,6 +222,7 @@ scenarios:
 
   - id: h-unjudgeable
     kind: completion
+    message: "The change is complete; the remaining items need someone outside the repo to confirm."
     criteria:
       intro: "# Task: count clicks"
       items:
@@ -228,6 +235,7 @@ scenarios:
   - id: h-question
     about: counting added; the agent asks whether a HEAD request should count
     kind: question
+    message: "Each successful `get` now counts a click. Should a HEAD request count as a click too, or only GET? I'll write the README section once that's settled."
     criteria:
       intro: "# Task: count clicks"
       items:
@@ -238,6 +246,7 @@ scenarios:
 
   - id: h-rules-new-dependency
     kind: completion
+    message: "I've added the feature using a small helper package. Ready for review."
     criteria:
       file: .system1/done.md
       intro: "# Rules for every change"
@@ -263,6 +272,7 @@ scenarios:
 
   - id: h-rules-clean
     kind: completion
+    message: "Done, and the change follows the rules in .system1/done.md."
     criteria:
       file: .system1/done.md
       intro: "# Rules for every change"
