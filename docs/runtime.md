@@ -24,31 +24,32 @@ against, so an upgrade is always your change.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `egress` | required | `"on"` or `"off"`. A generated module passes its one marked `EGRESS` line here, and `adopt` only ever writes `"off"`. It is the only grant: no config file or environment variable turns egress on |
-| `maxUsdPerDay` | required | Measured spend per UTC day, per process, before every call falls back with `budget`. A call goes when today's spend plus its projected cost fits, so the last call can pass the cap by the difference between its measured and projected cost |
-| `root` | none | The directory for `usage.jsonl` and `fixtures/`. The runtime never searches for one. Without it, or when it can't be written, spend is counted in memory and each result says `ledger: "memory"`. With a writable `root`, the day's spend survives a restart |
+| `egress` | required | Exactly `"on"` turns egress on; anything else is off. A generated module passes its one marked `EGRESS` line here, and `adopt` only ever writes `"off"`. It is the only grant: no config file or environment variable turns egress on, and a key alone never does |
+| `maxUsdPerDay` | required | Measured spend per UTC day before every call falls back with `budget`. It must be a finite number of at least 0; anything else makes every call fall back as `internal`, never uncapped. Each call reserves its projected cost before it waits, so concurrent calls can't race past the cap. A call's measured cost can still pass it by the difference from its projection. A cost the provider doesn't report counts at its projection, never as free |
+| `root` | none | The directory for `usage.jsonl` and `fixtures/`. The runtime never searches for one. Without it, or when it can't be written, spend is counted in memory for the process and each result says `ledger: "memory"`. With a readable `root`, today's runtime spend there is read once a day (from the end of the file, so a long history costs nothing) and the cap survives a restart. Processes sharing a `root` start from the same day's total, then each counts its own calls |
 | `model` | `typesafe/jev-1.13` | The model profile |
-| `mode` | `live` | `replay` answers from `root`'s fixtures and sends nothing, so it needs no grant and no key: this is how generated tests run offline |
+| `mode` | `live` | `live` or `replay`. `replay` answers from `root`'s fixtures, sends nothing and writes nothing, so it needs no grant and no key: this is how generated tests run offline |
 | `apiKey` | `OPENROUTER_API_KEY` | A key alone never grants egress |
-| `timeoutMs` | 5000 | Per attempt |
+| `timeoutMs` | 5000 | The whole call, retries included |
 
 ## Results
 
 A result is either an answer, `{ok: true, source, answers, usage, latencyMs, ledger}`, or a
 fallback, `{ok: false, reason, detail, ledger}`. On a fallback, keep using your existing
-mechanism. `detail` is one line for your log; it never contains the state or the key.
+mechanism. `detail` is one line for your log, built from codes and limits: it never contains the
+state, the key or the provider's response body.
 
 | `reason` | When |
 |---|---|
 | `egress-off` | The module's `EGRESS` line is off |
-| `undecided` | The model answered too flatly to act on. The fallback carries `answers` and `undecided` for your log |
+| `undecided` | The model answered too flatly to act on any question (the profile's undecided floor). The fallback carries `answers` and `undecided` for your log |
 | `provider-error` | HTTP, network or a malformed response, or no recorded answer in replay |
 | `refused` | The state is too large for the model. It is never cut short |
 | `budget` | Today's spend reached `maxUsdPerDay` |
-| `timeout` | Past `timeoutMs` on every attempt |
-| `no-key` | Live mode with no API key |
+| `timeout` | No answer within `timeoutMs`, retries included |
+| `no-key` | Live mode with no API key, or one that is malformed (it is never echoed) |
 | `engine-unavailable` | Python only: `decide` is missing or the wrong version |
-| `internal` | Anything else, such as an unknown model or a malformed question set |
+| `internal` | Anything else: an option out of range, an unknown model, a malformed question set or state |
 
 Thresholds from your spec are the module's job: it reads the answers and decides whether they
 clear them, and takes the fallback when they don't.

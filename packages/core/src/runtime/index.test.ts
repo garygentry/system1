@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, expectTypeOf, it } from "vitest"
+import type { PolicyRequest, PolicyResult, PolicyRuntime, PolicyRuntimeOptions } from "./index.js"
 import * as runtime from "./index.js"
 
 /**
@@ -15,6 +16,30 @@ describe("@garygentry/system1-core/runtime", () => {
       "createPolicyRuntime",
       "prepareState",
     ])
+  })
+
+  it("keeps the committed type shapes (checked by the typecheck)", () => {
+    expectTypeOf<keyof PolicyRuntimeOptions>().toEqualTypeOf<
+      | "egress"
+      | "maxUsdPerDay"
+      | "root"
+      | "model"
+      | "mode"
+      | "apiKey"
+      | "timeoutMs"
+      | "endpoint"
+      | "fetch"
+      | "now"
+    >()
+    expectTypeOf<PolicyRuntimeOptions["egress"]>().toEqualTypeOf<"on" | "off">()
+    expectTypeOf<keyof PolicyRequest>().toEqualTypeOf<"questions" | "state" | "namespace">()
+    expectTypeOf<keyof Extract<PolicyResult, { ok: true }>>().toEqualTypeOf<
+      "ok" | "source" | "answers" | "usage" | "latencyMs" | "ledger"
+    >()
+    expectTypeOf<keyof Extract<PolicyResult, { ok: false }>>().toEqualTypeOf<
+      "ok" | "reason" | "detail" | "answers" | "undecided" | "ledger"
+    >()
+    expectTypeOf<keyof PolicyRuntime>().toEqualTypeOf<"decide" | "spentToday">()
   })
 
   it("keeps the reason codes apps count", () => {

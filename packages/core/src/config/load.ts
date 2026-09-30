@@ -8,6 +8,7 @@
  * from the repo layer. Consent is per repo (decision 0009), so a user-level
  * grant is ignored rather than silently covering every repo.
  */
+
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
@@ -22,6 +23,7 @@ import {
 } from "../model/profiles.js"
 import { ROUTE_DEFAULTS, type RouteConfig, type Trigger } from "../route/route.js"
 import { DEFAULT_ENDPOINT, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
+import { unquoteKey } from "./key.js"
 import { type DetectedSession, detectSession } from "./session.js"
 
 export interface Consent {
@@ -558,29 +560,8 @@ function resolveApiKey(
   return key ? { ...key, source: "credentials", file } : undefined
 }
 
-/**
- * Trim, then remove one matching pair of `"` or `'`; a lone quote is left alone.
- * A key with a space or control character inside is refused without echoing it:
- * `fetch` would reject the header and quote the whole value in its error.
- */
-export function unquoteKey(
-  raw: string | undefined,
-  source = "OPENROUTER_API_KEY",
-): { value: string; quoted: boolean } | undefined {
-  const value = nonEmpty(raw)
-  if (!value) return undefined
-  const quoted = /^(["']).*\1$/s.test(value)
-  const key = quoted ? nonEmpty(value.slice(1, -1)) : value
-  if (!key) return undefined
-  if (/[^\x21-\x7e]/.test(key)) {
-    throw new DecisionsError(
-      "config-error",
-      `${source} contains a space, line break or other character an API key can't have; set it again`,
-    )
-  }
-  return { value: key, quoted }
-}
-
 function nonEmpty(value: string | undefined): string | undefined {
   return value === undefined || value.trim() === "" ? undefined : value.trim()
 }
+
+export { unquoteKey } from "./key.js"
