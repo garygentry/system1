@@ -205,3 +205,13 @@ Plan: `m11-adopt.md`, PR 5 (D3). Additive.
 - **No new error codes.** A missing capture is `source-error` (exit 2). An emulated baseline the repo hasn't allowed is `profile-not-allowed` (exit 2), raised before any call. A replay with no recording is `replay-miss` (exit 6). The spend guard covers both sides' calls together (`budget-exceeded`, exit 4).
 - **`winner` is `null` without labels**, always. With `.system1/labels/<spec>.jsonl`, the report gives accuracy with its `n` for each side.
 
+## M11: `decide runtime` and `opportunities set-status` (added 2026-10-01)
+
+Plan: `m11-adopt.md`, PR 6 (D7). Additive.
+
+- **`decide runtime --module <path> --root <dir> --max-usd-per-day <usd> [--model <id>] [--replay] [--timeout-ms N]`** is **outside this contract**, like `decide hook`. Its stdout is one policy result (`docs/runtime.md`), not the envelope, and it always exits 0.
+  - Its input is a JSON object on stdin (`decide schema runtime`).
+  - Its grant is the `--module` file's marked `EGRESS` line. No flag or variable can grant it.
+  - `decide runtime --protocol` prints `{protocol, version}`. `protocol` is 1, and changes only when the stdin/stdout shape does.
+- **`decide opportunities set-status <id> <status> [--reason <text>]`** returns `{file, id, status, previous, statusReason?}`. `rejected` without `--reason`, an unknown id or an unknown status is `invalid-request`, exit 2. Its input schema is `decide schema opportunities-set-status`.
+

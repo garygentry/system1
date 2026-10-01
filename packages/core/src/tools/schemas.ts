@@ -1,6 +1,6 @@
 import { type Static, Type } from "typebox"
 import { QuestionSchema } from "../model/schema.js"
-import { CandidateSchema } from "../opportunities/backlog.js"
+import { CandidateSchema, Status } from "../opportunities/backlog.js"
 
 /**
  * Tool inputs, defined once. The CLI builds these from argv. A future MCP or Pi
@@ -162,6 +162,17 @@ export const OpportunitiesListInput = Type.Object(
 
 export const OpportunitiesCheckInput = Type.Object({}, strict)
 
+export const OpportunitiesSetStatusInput = Type.Object(
+  {
+    /** The entry's id, `op-` and 12 hex digits. */
+    id: Type.String({ minLength: 1 }),
+    status: Status,
+    /** Why: required for `rejected`, kept for any status, replacing the old reason. */
+    reason: Type.Optional(Type.String({ minLength: 1 })),
+  },
+  strict,
+)
+
 export const RouteInput = Type.Object(
   {
     /** The user's prompt, as the harness hook received it. */
@@ -190,6 +201,21 @@ export const HookEvent = Type.Object(
   { additionalProperties: true },
 )
 
+/**
+ * What `decide runtime` reads on stdin: one request from an adopted Python
+ * module (plan m11-adopt D7). The runtime checks it and falls back with
+ * `internal` on anything else; this schema is for `decide schema runtime`.
+ */
+export const RuntimeRequest = Type.Object(
+  {
+    questions: Type.Record(Type.String(), QuestionSchema),
+    state: Type.Union([Type.String(), Type.Record(Type.String(), Type.Unknown())]),
+    /** Fixture namespace: the spec's name. */
+    namespace: Type.String({ minLength: 1 }),
+  },
+  strict,
+)
+
 export type AskInput = Static<typeof AskInput>
 export type ManyInput = Static<typeof ManyInput>
 export type UsageInput = Static<typeof UsageInput>
@@ -199,6 +225,7 @@ export type SpecLintInput = Static<typeof SpecLintInput>
 export type CompareInput = Static<typeof CompareInput>
 export type OpportunitiesAddInput = Static<typeof OpportunitiesAddInput>
 export type OpportunitiesListInput = Static<typeof OpportunitiesListInput>
+export type OpportunitiesSetStatusInput = Static<typeof OpportunitiesSetStatusInput>
 
 export const TOOL_SCHEMAS = {
   ask: AskInput,
@@ -210,7 +237,9 @@ export const TOOL_SCHEMAS = {
   "opportunities-add": OpportunitiesAddInput,
   "opportunities-list": OpportunitiesListInput,
   "opportunities-check": OpportunitiesCheckInput,
+  "opportunities-set-status": OpportunitiesSetStatusInput,
   route: RouteInput,
   hook: HookEvent,
+  runtime: RuntimeRequest,
 } as const
 export type ToolName = keyof typeof TOOL_SCHEMAS

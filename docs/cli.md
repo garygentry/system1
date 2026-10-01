@@ -21,14 +21,15 @@ decide <command> [options] [--format json|jsonl|brief]
 | `decide ask` | One item, one question set, one call |
 | `decide many` | One question set over many items, filtered in the engine to what matters |
 | `decide spec` | `list`, `show <name>`, `validate [name\|path]`, `lint [name\|path]`, `check <name\|path>` |
-| `decide opportunities` | The scout backlog: `add --file`, `list`, `check`. Local; sends nothing |
+| `decide opportunities` | The scout backlog: `add --file`, `list`, `set-status`, `check`. Local; sends nothing |
 | `decide compare` | Jev against a baseline (the current mechanism, or an emulated chat model) over a capture, as measured signals |
 | `decide usage` | Measured spend from the ledger |
 | `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent, `allow-profile\|deny-profile` for an emulated baseline |
 | `decide guard` | Opt-in hook checks: `list`, `status`, `enable <pack>`, `disable <pack>`. The user enables a pack |
 | `decide hook` | A guard pack on a harness hook event. Run by the plugin's hooks, not by hand |
+| `decide runtime` | One decision for an adopted Python module, which spawns it. Not for agents or by hand |
 | `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
-| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `compare`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route`, `hook` |
+| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `compare`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `opportunities-set-status`, `route`, `hook`, `runtime` |
 | `decide ping` | Check the endpoint is reachable. No key needed, no spend |
 | `decide doctor` | Check `decide` works from this shell, with the fix for each problem |
 | `decide version` | Print the version |
@@ -133,6 +134,7 @@ or what `spec check --strict` gates on, so an existing CI step behaves as before
 
 ```sh
 decide opportunities add --file <candidates.json>
+decide opportunities set-status <id> <new|stale|adopted|rejected> [--reason <text>]
 decide opportunities list [--keep '<field><op><value>']… [--sort <field>[:asc|desc]] [--limit N] [--fields a,b]
 decide opportunities check
 ```
@@ -157,6 +159,9 @@ counts as an opportunity; `decide` validates, merges and stores it. Nothing is s
   default sort is `projected:desc`, which only ranks `benefit=cost` entries meaningfully: filter
   by `benefit` first. Field and sub-field names are checked, so a typo is an error
   even on an empty backlog.
+- **`set-status`** sets one entry's status, for example `adopted` once `adopt` has wired it in.
+  `rejected` needs `--reason`. A new status replaces the old reason. An unknown id is
+  `invalid-request`, never an add.
 - **`check`** validates the file. A malformed backlog is `invalid-request`, exit 2, listing every
   problem, and `add` and `list` refuse it the same way. `decide` never repairs or overwrites it.
 
@@ -285,6 +290,19 @@ enabled with consent in this repo prints `{}` and sends nothing. An enabled pack
 (no network, a timeout, the spend cap) allows the stop and says why. `--harness` names the
 session (`claude:<id>` or `codex:<id>`) in the guard state and in the ledger, unless
 `SYSTEM1_SESSION` is set; without it, a Codex `turn_id` in the event means Codex. `decide schema hook` prints the event's schema.
+
+### `runtime`
+
+```sh
+decide runtime --module <path> --root <dir> --max-usd-per-day <usd> [--model <id>] [--replay] [--timeout-ms N] < request.json
+decide runtime --protocol
+```
+
+What an adopted Python module spawns for each decision; agents and skills never run it. It reads
+the request on stdin and prints one policy result, not the envelope, and **always exits 0**.
+Egress is on only when the module's one marked `EGRESS` line says `"on"`; there is no flag for
+it. A live call needs a writable `--root`. It loads no config. The details are in
+[runtime.md](runtime.md#from-python-decide-runtime).
 
 ### `schema`, `ping`, `doctor`, `version`
 

@@ -24,7 +24,7 @@ const Text = Type.String({ minLength: 1 })
 /** Bounded so the computed saving is always a finite number that survives JSON. */
 const Usd = Type.Number({ minimum: 0, maximum: 1e6 })
 
-const Status = Type.Union([
+export const Status = Type.Union([
   Type.Literal("new"),
   Type.Literal("stale"),
   Type.Literal("adopted"),
@@ -247,7 +247,7 @@ export function withBacklogLock<T>(file: string, body: () => T): T {
       busy: (lock) =>
         new DecisionsError(
           "invalid-request",
-          `${file} is locked by another \`decide opportunities add\` (${lock}). Retry, or delete the lock file if no add is running.`,
+          `${file} is locked by another \`decide opportunities\` write (${lock}). Retry, or delete the lock file if none is running.`,
           { file, lock },
         ),
     },

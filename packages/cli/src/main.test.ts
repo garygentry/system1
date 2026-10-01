@@ -126,6 +126,129 @@ describe("decide compare", () => {
   })
 })
 
+describe("decide runtime (D7)", () => {
+  const MARK = "system1: runtime egress (the user's to switch)"
+  const request = JSON.stringify({
+    questions: { urgent: { type: "noul", instructions: "Urgent." } },
+    state: "auth outage",
+    namespace: "triage",
+  })
+  const run = (io: Parameters<typeof main>[1], argv: string[], stdin = request) =>
+    main(["runtime", ...argv], { ...io, readStdin: () => stdin })
+
+  it("prints the protocol, and always exits 0 with one PolicyResult", async () => {
+    const { io, json } = rig({ "policy.py": `EGRESS = "off"  # ${MARK}\n` })
+    expect(await run(io, ["--protocol"])).toBe(0)
+    expect(json()).toEqual({ protocol: 1, version: expect.any(String) })
+    for (const argv of [
+      [],
+      ["--module", "missing.py", "--max-usd-per-day", "1"],
+      ["--nope"],
+      // Never the envelope or help text: one result, exit 0, whatever the arguments.
+      ["--format", "bogus"],
+      ["--root", "--help"],
+      ["--help"],
+    ]) {
+      expect(await run(io, argv)).toBe(0)
+      expect(json()).toMatchObject({ ok: false, reason: "internal" })
+    }
+  })
+
+  it("reads the grant only from the module's marked line", async () => {
+    const { cwd, io, json } = rig({
+      "off.py": `EGRESS = "off"  # ${MARK}\n`,
+      "on.py": `EGRESS = "on"  # ${MARK}\n`,
+    })
+    const cap = ["--max-usd-per-day", "1"]
+    expect(
+      await run(io, ["--module", join(cwd, "off.py"), "--root", join(cwd, "rt"), ...cap]),
+    ).toBe(0)
+    expect(json()).toMatchObject({
+      ok: false,
+      reason: "egress-off",
+      detail: expect.stringMatching(/EGRESS line is off/),
+    })
+    // On, but no root: the cap couldn't hold across spawns.
+    expect(await run(io, ["--module", join(cwd, "on.py"), ...cap])).toBe(0)
+    expect(json()).toMatchObject({
+      reason: "internal",
+      detail: expect.stringMatching(/needs --root/),
+    })
+    // On, with a writable root: a live answer, ledgered there, with no repo config read.
+    const env = { ...io.env, SYSTEM1_MODEL: "nope/model", SYSTEM1_REPLAY: "1" }
+    expect(
+      await run({ ...io, env }, [
+        "--module",
+        join(cwd, "on.py"),
+        "--root",
+        join(cwd, "rt"),
+        ...cap,
+      ]),
+    ).toBe(0)
+    expect(json()).toMatchObject({ ok: true, source: "live", ledger: "file" })
+    // Inside an agent session the grant may be an unreviewed file: refused, never granted.
+    for (const name of ["CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "PI_SESSION_ID"]) {
+      expect(
+        await run({ ...io, env: { ...io.env, [name]: "s1" } }, [
+          "--module",
+          join(cwd, "on.py"),
+          "--root",
+          join(cwd, "rt"),
+          ...cap,
+        ]),
+      ).toBe(0)
+      expect(json()).toMatchObject({
+        ok: false,
+        reason: "egress-off",
+        detail: expect.stringMatching(new RegExp(`agent session \\(${name}`)),
+      })
+    }
+    expect(readFileSync(join(cwd, "rt/usage.jsonl"), "utf8")).toMatch(/"tag":"runtime"/)
+    expect(
+      await run(io, ["--module", join(cwd, "on.py"), "--root", join(cwd, "rt"), ...cap], "[]"),
+    ).toBe(0)
+    expect(json()).toMatchObject({ reason: "internal", detail: expect.stringMatching(/stdin/) })
+  })
+})
+
+describe("decide opportunities set-status", () => {
+  it("sets a status, needs a reason to reject, and refuses an unknown id", async () => {
+    const candidate = {
+      mode: "code",
+      location: { path: "src/a.ts" },
+      mechanism: "regex",
+      shape: "single",
+      benefit: "quality",
+      evidence: "if (/fix/.test(msg))",
+      questions: { fix: { type: "noul", instructions: "A fix." } },
+      projected: {
+        volume: 1,
+        per: "day",
+        currentCostPerItemUsd: 0,
+        decisionCostPerItemUsd: 0.00003,
+      },
+      risk: { level: "low", note: "n" },
+      next: "adopt",
+      source: { sweep: "s", answers: "replay" },
+    }
+    const { io, json } = rig({ "c.json": JSON.stringify([candidate]) })
+    expect(await main(["opportunities", "add", "--file", "c.json"], io)).toBe(0)
+    const [id] = json().result.added
+    expect(await main(["opportunities", "set-status", id, "adopted"], io)).toBe(0)
+    expect(json().result).toMatchObject({ id, status: "adopted", previous: "new" })
+    expect(await main(["opportunities", "set-status", id, "rejected"], io)).toBe(2)
+    expect(
+      await main(["opportunities", "set-status", id, "rejected", "--reason", "regex is fine"], io),
+    ).toBe(0)
+    expect(json().result).toMatchObject({ status: "rejected", statusReason: "regex is fine" })
+    expect(await main(["opportunities", "set-status", id, "new"], io)).toBe(0)
+    expect(json().result.statusReason).toBeUndefined()
+    expect(await main(["opportunities", "set-status", "op-000000000000", "new"], io)).toBe(2)
+    expect(await main(["opportunities", "set-status", id, "done"], io)).toBe(2)
+    expect(await main(["opportunities", "check"], io)).toBe(0)
+  })
+})
+
 describe("decide many", () => {
   const files = {
     "src/auth.ts": "auth code",

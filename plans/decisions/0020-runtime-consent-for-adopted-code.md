@@ -59,6 +59,12 @@ Neither fits a deployed app. The app may have no `.git`, no repo config, a read-
 ## What we give up
 
 - **An agent can write the grant.** A user who approves a diff without reading it can ship egress on. The generated test, the validator and doctor's report of modules found with egress on (M11 §9) make this visible, not impossible.
+- **The grant is text in a file, and `decide runtime --module` reads any file** (found in PR 6's review, 2026-10-01). An agent could write a throwaway module that nobody reviews, holding one marked `"on"` line, and spawn `decide runtime` on it, with no repo consent checked (D7 loads no config).
+  - *Amendment (maintainer, 2026-10-01):* `decide runtime` refuses a live call with `egress-off` whenever a harness session variable is set (`CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID`, `CODEX_SESSION_ID`, `PI_SESSION_ID`, `AI_AGENT`, `CLAUDECODE`). These are set in the shells Claude Code, Codex and Pi run.
+  - **It deters; it doesn't prevent.** An agent can unset the variables, and other agents (Cursor, Copilot, Gemini) set none of them.
+  - The rule only ever denies, so "no variable grants egress" still holds.
+  - **Cost:** the adopted app can't make live calls when run from inside an agent session, Claude's `!` included. Replay still runs.
+  - **What's left:** an agent holding a key can always call the provider directly, or import `createPolicyRuntime` into code of its own. The grant guards reviewed code paths, not a determined agent; the key is the user's to withhold.
 - **The in-memory ledger resets on restart,** so a crash-looping process can exceed the daily cap. Give the runtime a writable `root` to have the cap survive restarts.
 - **Excludes don't reach runtime states** (§2): the module decides what goes into a state.
 - **The cap is approximate across processes** (§4).

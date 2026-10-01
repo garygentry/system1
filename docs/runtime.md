@@ -54,3 +54,25 @@ by its name only (`SyntaxError`, say), since its message could quote the content
 
 Thresholds from your spec are the module's job: it reads the answers and decides whether they
 clear them, and takes the fallback when they don't.
+
+## From Python: `decide runtime`
+
+A Python module can't import the TypeScript runtime, so it spawns `decide` once per call:
+
+```sh
+decide runtime --module <its own path> --root <dir> --max-usd-per-day <usd> [--model <id>] [--replay] [--timeout-ms N]
+decide runtime --protocol
+```
+
+- **Request and result:** the request `{questions, state, namespace}` goes to stdin as one JSON object (`decide schema runtime` prints its schema), and one result, as above, comes back on stdout. It is not the CLI's envelope, and **it always exits 0**: a bad flag (`--format` and `--help` included), an unreadable module or a malformed request is a fallback with `internal`.
+- **The grant is the module's own line.** `decide runtime` reads `--module` and looks for the line that carries the comment `system1: runtime egress`.
+  - Egress is on only when exactly one line carries it, and that line assigns the literal `"on"` to `EGRESS` at column 0 with nothing after it but that comment. For example: `EGRESS = "on"  # system1: runtime egress …`. A type annotation (`EGRESS: Final = "on"`) and `as const` or `satisfies` in TypeScript are fine.
+  - Anything else is off: two marked lines, an indented line (inside an `if` or a function), a value computed from the environment, `"on" if … else "off"`, an annotation hiding another statement (`EGRESS: str; X = "on"`), or another comment before the marker. The fallback's `detail` then says why.
+  - It reads the text, not what Python runs: a marked line inside a column-0 docstring, or an unmarked `EGRESS = "off"` after it, still reads on. So the generated module also checks its own `EGRESS` before it spawns `decide`, and both must say on.
+  - There is no egress flag and no variable for it.
+- **Not inside an agent session.** When `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID`, `CODEX_SESSION_ID`, `PI_SESSION_ID`, `AI_AGENT` or `CLAUDECODE` is set, a live call falls back with `egress-off`. This is a deterrent, not a control: an agent can unset them, and other agents set none of them. Inside an agent's shell the module could be a file the agent wrote and nobody reviewed ([0020](../plans/decisions/0020-runtime-consent-for-adopted-code.md#what-we-give-up)). Run the app outside the agent. Replay still works.
+- **A live call needs a writable `--root`.** Each call is a new process, so only a shared ledger file holds the daily cap across them. Without one, the result is `internal`. `--replay` answers from `--root`'s fixtures and needs no grant and no key.
+- **It loads no config.** It reads no repo or user config file and no `SYSTEM1_*` variable; it reads only `OPENROUTER_API_KEY`. `--model` picks a decision model (the default is `typesafe/jev-1.13`).
+- **Version check:** `--protocol` prints `{protocol, version}`. A module checks `protocol` once at startup, and falls back with `engine-unavailable` when it isn't the one it was generated for, or when `decide` isn't there. `protocol` changes only when the stdin/stdout shape does, so upgrading `decide` doesn't switch modules off.
+- **Cost:** every call pays for starting Node. `pnpm bench:startup` measures that overhead.
+

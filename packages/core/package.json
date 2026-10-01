@@ -51,6 +51,10 @@
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
+    },
+    "./runtime/grant": {
+      "types": "./dist/runtime/grant.d.ts",
+      "default": "./dist/runtime/grant.js"
     }
   },
   "files": [

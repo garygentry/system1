@@ -152,11 +152,13 @@ export type {
   OpportunitiesAddResult,
   OpportunitiesCheckResult,
   OpportunitiesListResult,
+  OpportunitiesSetStatusResult,
 } from "./tools/opportunities.js"
 export {
   runOpportunitiesAdd,
   runOpportunitiesCheck,
   runOpportunitiesList,
+  runOpportunitiesSetStatus,
 } from "./tools/opportunities.js"
 export type { RouteToolResult } from "./tools/route.js"
 export { runRoute } from "./tools/route.js"
