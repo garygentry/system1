@@ -23,4 +23,11 @@ consent_repo "$SMOKE/pi-guard"
 assert_marker pi:guard "$GUARD_MARKER" "$SMOKE/pi-guard.txt" || status=1
 assert_dormant pi:guard-dormant "$SMOKE/pi-guard" "$SMOKE/pi-guard-log/calls.txt" \
   '^guard enable' || status=1
+fixture_repo "$SMOKE/pi-adopt"
+# Pi prints only its reply, which may paraphrase: assert on the calls made.
+(log_decide "$SMOKE/pi-adopt-log"; drive "$SMOKE/pi-adopt" "/skill:adopt $ADOPT_PROMPT" "$SMOKE/pi-adopt.txt")
+assert_marker pi:adopt '^opportunities list' "$SMOKE/pi-adopt-log/calls.txt" || status=1
+fixture_repo "$SMOKE/pi-compare"
+drive "$SMOKE/pi-compare" "/skill:compare $COMPARE_PROMPT" "$SMOKE/pi-compare.txt"
+assert_marker pi:compare "$COMPARE_MARKER" "$SMOKE/pi-compare.txt" || status=1
 exit $status

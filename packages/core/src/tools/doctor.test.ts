@@ -43,6 +43,9 @@ describe("doctor", () => {
       route: "ok",
       guard: "ok",
       backlog: "ok",
+      adopted: "ok",
+      emulated: "ok",
+      captured: "ok",
       network: "ok",
     })
     expect(JSON.stringify(r)).not.toContain(SECRET)

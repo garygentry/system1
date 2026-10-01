@@ -67,6 +67,9 @@ decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · s
        fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, or through their agent prompt's shell escape (not as a chat message) with --confirm added
   ok   route: routing hints on: batch-judgement, pick-from-many, criteria-check, done-check, gate-check
   ok   backlog: no scout backlog yet
+  ok   adopted: no adopted modules
+  ok   emulated: no emulated baseline allowed
+  ok   captured: no shadow captures
   ok   network: typesafe/jev-1.13 reachable in 440 ms
 ```
 

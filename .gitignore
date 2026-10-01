@@ -17,3 +17,4 @@ packages/pi/skills/
 # Eval fixture that a global "*.log" ignore would otherwise hide.
 !tools/evals/fixture-repo/test-output.log
 __pycache__/
+.system1/compare/*/captured.jsonl
