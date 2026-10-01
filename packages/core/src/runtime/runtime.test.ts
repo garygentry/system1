@@ -1,5 +1,6 @@
 import { appendFileSync, chmodSync, existsSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import { pathToFileURL } from "node:url"
 import { describe, expect, it } from "vitest"
 import { createDecider } from "../decide.js"
 import { FixtureStore } from "../fixtures/store.js"
@@ -63,6 +64,8 @@ function provider(noul = 0.95, opts: ProviderOpts = {}) {
 function runtime(extra: Partial<PolicyRuntimeOptions> = {}, fetch = provider().fetch) {
   return createPolicyRuntime({
     egress: "on",
+    // The module lock has its own tests below.
+    module: "bundled",
     maxUsdPerDay: 1,
     apiKey: "sk-test",
     fetch,
@@ -81,6 +84,16 @@ async function record(root: string) {
     transport: createOpenRouterTransport({ apiKey: "sk-test", fetch: provider().fetch }),
     fixtures: new FixtureStore(join(root, "fixtures")),
   }).decide({ state: safe.state, questions, namespace: request.namespace })
+}
+
+/** A module file whose marked line sets EGRESS to `value`. */
+function moduleWith(value: string): string {
+  const file = join(temp(), "policy.ts")
+  writeFileSync(
+    file,
+    `export const EGRESS: "on" | "off" = "${value}" // system1: runtime egress\nconst x = 1\n`,
+  )
+  return file
 }
 
 const line = (ts: string, cost: unknown) => `${JSON.stringify({ ts, tag: "runtime", cost })}\n`
@@ -502,5 +515,99 @@ describe("the runtime's imports", () => {
     expect(
       all.filter((f) => /config\/(load|consent)\.ts$|sources\/read\.ts$|\/prepare\.ts$/.test(f)),
     ).toEqual([])
+  })
+})
+
+describe("createPolicyRuntime: the module lock (0020)", () => {
+  it("refuses a live call when egress is on but no module is given", async () => {
+    const { fetch, calls } = provider()
+    const r = await runtime({ module: undefined }, fetch).decide(request)
+    expect(r).toMatchObject({
+      ok: false,
+      reason: "egress-off",
+      detail: expect.stringMatching(/import\.meta\.url/),
+    })
+    expect(calls).toHaveLength(0)
+  })
+
+  it("refuses when the module's own marked line is off: a computed grant doesn't reach the provider", async () => {
+    const { fetch, calls } = provider()
+    const r = await runtime({ module: moduleWith("off") }, fetch).decide(request)
+    expect(r).toMatchObject({
+      ok: false,
+      reason: "egress-off",
+      detail: expect.stringMatching(/marked EGRESS line is off/),
+    })
+    expect(calls).toHaveLength(0)
+  })
+
+  it("answers when the module's line is on, given as a path, a file URL string or a URL", async () => {
+    const file = moduleWith("on")
+    for (const module of [file, pathToFileURL(file).href, pathToFileURL(file)]) {
+      const r = await runtime({ module }).decide(request)
+      expect(r, String(module)).toMatchObject({ ok: true, source: "live" })
+    }
+  })
+
+  it("refuses when the module can't be read, and names the opt-out", async () => {
+    const { fetch, calls } = provider()
+    const r = await runtime({ module: join(temp(), "gone.js") }, fetch).decide(request)
+    expect(r).toMatchObject({
+      ok: false,
+      reason: "egress-off",
+      detail: expect.stringMatching(/"bundled"/),
+    })
+    expect(calls).toHaveLength(0)
+  })
+
+  it("names the opt-out when the file has no single marked line, as a build without comments leaves it", async () => {
+    const file = join(temp(), "policy.js")
+    writeFileSync(file, 'export const EGRESS = "on";\n')
+    const r = await runtime({ module: file }).decide(request)
+    expect(r).toMatchObject({
+      ok: false,
+      reason: "egress-off",
+      detail: expect.stringMatching(/no single marked EGRESS line.*"bundled"/),
+    })
+  })
+
+  it("treats null as no module, and refuses a module that isn't a path or URL as internal", async () => {
+    expect(await runtime({ module: null as never }).decide(request)).toMatchObject({
+      reason: "egress-off",
+      detail: expect.stringMatching(/no module/),
+    })
+    for (const module of [42, {}, true])
+      expect(
+        await runtime({ module: module as never }).decide(request),
+        String(module),
+      ).toMatchObject({
+        reason: "internal",
+      })
+  })
+
+  it("resolves a relative path against the working directory, and reads the file once", async () => {
+    const file = moduleWith("on")
+    const cwd = process.cwd()
+    process.chdir(join(file, ".."))
+    try {
+      const rt = runtime({ module: "policy.ts" })
+      writeFileSync(file, "nothing marked here\n")
+      expect(await rt.decide(request)).toMatchObject({ ok: true })
+    } finally {
+      process.chdir(cwd)
+    }
+  })
+
+  it('"bundled" opts out: egress alone is the grant', async () => {
+    expect(await runtime({ module: "bundled" }).decide(request)).toMatchObject({ ok: true })
+  })
+
+  it("doesn't apply to replay, which sends nothing", async () => {
+    const root = temp()
+    await record(root)
+    const r = await runtime({ root, egress: "off", mode: "replay", module: undefined }).decide(
+      request,
+    )
+    expect(r).toMatchObject({ ok: true, source: "replay" })
   })
 })

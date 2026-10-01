@@ -12,7 +12,8 @@
  *   a fallback with a reason code the app can log or count.
  */
 import { closeSync, fstatSync, openSync, readSync } from "node:fs"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import { unquoteKey } from "../config/key.js"
 import { createDecider, type DecisionResult } from "../decide.js"
 import { scrubText } from "../egress/scrub.js"
@@ -28,6 +29,7 @@ import type { Answers, QuestionSet, State, Usage } from "../model/types.js"
 import { prepareState } from "../prepare-state.js"
 import { SpendLedger } from "../run/spend.js"
 import { createOpenRouterTransport, DEFAULT_TIMEOUT_MS } from "../transport/openrouter.js"
+import { readModuleGrant } from "./grant.js"
 
 /** Why a call fell back to the existing mechanism. Stable: apps count these. */
 export const REASON_CODES = [
@@ -53,6 +55,16 @@ export interface PolicyRuntimeOptions {
    * `"on"` is off. Replay needs no grant: it sends nothing.
    */
   egress: "on" | "off"
+  /**
+   * The module the grant is written in, read as a second lock (0020): pass
+   * `import.meta.url` (or its path). With `egress: "on"`, a live call needs
+   * that file's one marked line to say on too, so a grant computed in code
+   * (from the environment, say) doesn't reach the provider. `"bundled"` opts
+   * out, for a deployment whose source isn't on disk (a bundle that strips
+   * comments); then `egress` alone is the grant. Absent: live calls fall back
+   * with `egress-off`.
+   */
+  module?: string | URL
   /**
    * Measured spend a UTC day before every call falls back with `budget`: a
    * finite number, at least 0. Each call reserves its projected cost first, so
@@ -118,6 +130,8 @@ export interface PolicyRuntime {
 }
 
 interface Setup {
+  /** Why the module's line doesn't grant egress, or `undefined` when it does (or is opted out). */
+  lockedBy?: string
   profile: ModelProfile
   mode: "live" | "replay"
   cap: number
@@ -195,6 +209,8 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
     const { questions, state, namespace } = request ?? ({} as PolicyRequest)
     if (mode === "live" && opts.egress !== "on")
       return fallback("egress-off", "runtime egress is off (the module's EGRESS line)")
+    if (mode === "live" && setup.lockedBy !== undefined)
+      return fallback("egress-off", setup.lockedBy)
     if (mode === "live" && !apiKey)
       return fallback("no-key", "OPENROUTER_API_KEY is missing or malformed")
     if (mode === "replay" && !fixtures)
@@ -362,7 +378,43 @@ function validate(opts: Partial<PolicyRuntimeOptions>): Setup | string {
   } catch {
     apiKey = undefined // malformed: reported as no-key, never echoed
   }
-  return { profile, mode, cap, timeoutMs, ...(apiKey ? { apiKey } : {}) }
+  const module = opts.module ?? undefined
+  if (module !== undefined && typeof module !== "string" && !(module instanceof URL))
+    return 'module must be a path, a file: URL or "bundled"'
+  const lockedBy = opts.egress === "on" && mode === "live" ? moduleLock(module) : undefined
+  return {
+    profile,
+    mode,
+    cap,
+    timeoutMs,
+    ...(apiKey ? { apiKey } : {}),
+    ...(lockedBy !== undefined ? { lockedBy } : {}),
+  }
+}
+
+/**
+ * The second lock: why the module's own marked line doesn't grant egress, or
+ * `undefined` when it does or the caller opted out with `"bundled"`. Read once,
+ * when the runtime is built; `module` is already a string or a `URL`.
+ */
+function moduleLock(module: string | URL | undefined): string | undefined {
+  if (module === "bundled") return undefined
+  if (module === undefined)
+    return 'no module to read the grant from (pass module: import.meta.url, or "bundled")'
+  let path: string
+  try {
+    path =
+      module instanceof URL || module.startsWith("file:") ? fileURLToPath(module) : resolve(module)
+  } catch {
+    return "module is not a file path or a file: URL"
+  }
+  const grant = readModuleGrant(path)
+  if (!grant) return 'the module file can\'t be read (bundled? pass module: "bundled")'
+  if (grant.egress === "on") return undefined
+  // Off, or no single marked line to read: a build that drops comments.
+  return grant.why === "the module's EGRESS line is off"
+    ? "the module file's marked EGRESS line is off"
+    : 'the module file has no single marked EGRESS line (compiled without comments, or bundled? pass module: "bundled")'
 }
 
 /** How far out of order a shared ledger's lines may be (clock skew between processes). */

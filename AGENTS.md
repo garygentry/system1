@@ -65,7 +65,7 @@ Toolchain: Node ≥ 22, pnpm 10, TypeScript (NodeNext, `tsc -b`), vitest, biome.
   - Codex: `$system1:setup`. Codex names plugin skills `<plugin>:<skill>`, and hides a skill with `allow_implicit_invocation: false` from the model, but an explicit mention still loads it.
   - Pi: `/skill:setup`. This works in `-p` mode too.
 - **The Codex `prefix_rule` covers only commands that start with `decide`:** `a && decide …` is covered, but `… | decide …` stays offline. So skills pass content with `--file`, not pipes.
-- **Inside the Codex Linux sandbox,** a child process spawned by node exits 0 with empty stdout (even `node -e "console.log(1)"`).
+- **Inside the Codex Linux sandbox,** a child process spawned by node exits 0 with empty stdout (even `node -e "console.log(1)"`). A node spawned by Python does print (verified 2026-10-01, 0.155.1): adopt's Python template tests pass there, `decide runtime` included.
 - **Agents read `AGENTS.md` from parent directories.** Pi does so even from inside a nested git repo. Codex did from a workdir that wasn't a git repo. Smoke and eval workdirs therefore live outside this repo, under `~/.cache/system1-{smoke,evals}`.
 
 ## Harness notes (verified 2026-09-30, Claude Code 2.1.285)

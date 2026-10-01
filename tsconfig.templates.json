@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@garygentry/system1-core/runtime": ["./packages/core/dist/runtime/index.d.ts"]
+    }
+  },
+  "include": ["plugins/system1/skills/adopt/references/templates/ts/*.ts"]
+}

@@ -31,6 +31,16 @@ const USER_ONLY = ["--i-consent", "allow-profile", "allowProfiles"]
 const MODULE_ONLY = /\bdecide(?:\.mjs)?(?:["',\s\\]|\]\s*)+runtime\b/
 const TEMPLATES = /(^|\/)references\/templates\//
 
+/**
+ * A grant of runtime egress in a code template (0020, plan m11-adopt item 7):
+ * the same scan each generated module's test runs over the module as written,
+ * imported from the TS template so there is one TypeScript copy. The Python
+ * copy (`grants.py`) is checked against it in tools/templates.test.ts.
+ */
+import { grantProblems as templateGrants } from "../plugins/system1/skills/adopt/references/templates/ts/grants.js"
+
+export { templateGrants }
+
 export function checkSkill(dir: string, name: string, text: string): string[] {
   const problems: string[] = []
   const match = /^---\n([\s\S]*?)\n---\n/.exec(text)
@@ -82,10 +92,16 @@ export function consentFlag(dir: string, name: string): string[] {
         ...USER_ONLY.filter((word) => text.includes(word)).map(
           (word) => `${name}: ${path} must not contain ${word} (the user's to run)`,
         ),
-        ...(MODULE_ONLY.test(text) && !TEMPLATES.test(path)
+        ...(MODULE_ONLY.test(text) && !(name === "adopt" && TEMPLATES.test(path))
           ? [
-              `${name}: ${path} must not run decide runtime (an adopted module's, outside references/templates/)`,
+              `${name}: ${path} must not run decide runtime (an adopted module's, outside adopt's references/templates/)`,
             ]
+          : []),
+        // Source only: a README describes the grant, it can't make one.
+        ...(TEMPLATES.test(path) && /\.(?:[cm]?[jt]s|py)$/.test(path)
+          ? templateGrants(text, path.endsWith(".py")).map(
+              (p) => `${name}: ${path} grants runtime egress: ${p}`,
+            )
           : []),
       ]
     })

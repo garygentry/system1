@@ -21,6 +21,7 @@ describe("@garygentry/system1-core/runtime", () => {
   it("keeps the committed type shapes (checked by the typecheck)", () => {
     expectTypeOf<keyof PolicyRuntimeOptions>().toEqualTypeOf<
       | "egress"
+      | "module"
       | "maxUsdPerDay"
       | "root"
       | "model"
