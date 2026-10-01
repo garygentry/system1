@@ -338,3 +338,29 @@ describe("the emulated baseline is refused outside compare", () => {
     })
   })
 })
+
+describe("a paid baseline failure is counted (M11 gap B)", () => {
+  it("logs a 200 it can't read as billed unreported, and flags a retried answer", async () => {
+    const ledger = new SpendLedger(join(temp(), "usage.jsonl"))
+    const broken = (async () => Response.json("not an object")) as unknown as typeof fetch
+    await expect(
+      client({ fetch: broken, ledger }).answer({ state, questions }),
+    ).rejects.toMatchObject({
+      code: "malformed-response",
+      spent: { usage: { reported: false }, uncounted: 1 },
+    })
+    expect(ledger.summary()).toMatchObject({ liveCalls: 1, reported: false })
+    const { fetch } = chat({ same_incident: 0.9, severity: 2, team: "db" })
+    let first = true
+    const after504 = (async (url: string, init: RequestInit) => {
+      if (first) {
+        first = false
+        return new Response("", { status: 504 })
+      }
+      return fetch(url, init)
+    }) as unknown as typeof globalThis.fetch
+    const r = await client({ fetch: after504 }).answer({ state, questions })
+    expect(r.uncountedAttempts).toBe(1)
+    expect(r.usage).toMatchObject({ cost: 0.00049, reported: false })
+  })
+})

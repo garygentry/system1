@@ -3,6 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
 import { createDecider } from "./decide.js"
+import { ProviderError } from "./errors.js"
 import { FixtureStore } from "./fixtures/store.js"
 import { resolveProfile } from "./model/profiles.js"
 import { parseDecisionResponse } from "./model/validate.js"
@@ -290,5 +291,68 @@ describe("createDeciderFromEnv", () => {
     const request = sent[0] as { state: string; questions: { q: { instructions: string } } }
     expect(request.state).toContain("[REDACTED:github-token]")
     expect(request.questions.q.instructions).toContain("[REDACTED:github-token]")
+  })
+})
+
+describe("a paid failure is counted (M11 gap B)", () => {
+  it("logs a failed call's spend to the ledger before rethrowing", async () => {
+    const dir = tempDir()
+    const ledger = new SpendLedger(join(dir, "usage.jsonl"))
+    const spent = { usage: { input_tokens: 685, output_tokens: 0, cost: 0.00003 }, uncounted: 0 }
+    const transport: Transport = {
+      async decide() {
+        throw new ProviderError("malformed-response", "bad body", undefined, spent)
+      },
+    }
+    const decider = createDecider({ profile, egressConsent: true, transport, ledger, mode: "live" })
+    await expect(decider.decide({ state, questions })).rejects.toMatchObject({
+      code: "malformed-response",
+    })
+    expect(ledger.summary()).toMatchObject({ liveCalls: 1, cost: 0.00003, input_tokens: 685 })
+    // A failure that ran nothing logs nothing.
+    const refused: Transport = {
+      async decide() {
+        throw new ProviderError("provider-http", "401", 401)
+      },
+    }
+    await expect(
+      createDecider({
+        profile,
+        egressConsent: true,
+        transport: refused,
+        ledger,
+        mode: "live",
+      }).decide({ state, questions }),
+    ).rejects.toMatchObject({ code: "provider-http" })
+    expect(ledger.summary().liveCalls).toBe(1)
+  })
+
+  it("reports uncounted attempts on the result", async () => {
+    const transport: Transport = {
+      async decide(request) {
+        const response = parseDecisionResponse(
+          guardrailResponse(),
+          request.questions,
+          request.model,
+        )
+        return {
+          response: { ...response, usage: { ...response.usage, reported: false } },
+          latencyMs: 1,
+          attempts: 2,
+          uncounted: 1,
+        }
+      },
+    }
+    const result = await createDecider({
+      profile,
+      egressConsent: true,
+      transport,
+      mode: "live",
+    }).decide({ state, questions })
+    expect(result.uncountedAttempts).toBe(1)
+    expect(result.usage.reported).toBe(false)
+    expect(
+      (await rig("live").decider.decide({ state, questions })).uncountedAttempts,
+    ).toBeUndefined()
   })
 })

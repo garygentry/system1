@@ -54,7 +54,12 @@ These objects appear in several results.
 | `input_tokens` | number |
 | `output_tokens` | number |
 | `cost` | US dollars |
-| `reported` | *optional*. `false` when the provider reported no usage for at least one call, so the figures are a lower bound |
+| `reported` | *optional*. `false` when some attempt may have been billed at a cost nobody reported: the provider sent no usage, or a call was retried after a timeout or a server-side failure. The figures are then a lower bound |
+
+A provider failure that may have been billed (a 200 whose body was unreadable or invalid, or
+attempts that timed out) is still counted: its spend is logged, and the error envelope carries
+`error.details.spent` as `{usage, uncounted}`, where `uncounted` is the number of attempts billed
+at an unknown cost.
 
 **`projection`**: cost worked out before running, from the listed price. Never a measurement.
 
@@ -93,6 +98,7 @@ and how many items they were in.
 | `verdict` | *optional*, only with `keep` or `keepAny` (from the flags or the spec): `kept`, `dropped` or `undecided`. `undecided` when a `keep` question is undecided, or when no decided `keepAny` filter matches and one of them is undecided |
 | `usage` | see [Shared fields](#shared-fields) |
 | `latencyMs` | measured time for the call |
+| `uncountedAttempts` | *optional*. Attempts that may have been billed at a cost nobody reported (a retried timeout or server-side failure, or this answer when it had no usage). `usage` is then a lower bound |
 | `skipped` | see [Shared fields](#shared-fields) |
 | `redactions` | see [Shared fields](#shared-fields) |
 | `unsaved` | *optional*. `[{what, reason}]` when the spend line (`ledger`) or the recorded answer (`fixture`) couldn't be written, for example on a read-only disk. `reason` is the filesystem error code, such as `EROFS`, or else the error's message. The answer stands |

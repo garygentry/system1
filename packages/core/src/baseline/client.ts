@@ -21,7 +21,7 @@ import { chatModelOf, type ModelProfile } from "../model/profiles.js"
 import type { DecisionRequest, QuestionSet, State, Usage } from "../model/types.js"
 import { assertQuestionSet } from "../model/validate.js"
 import type { AnswerSource, SpendLedger } from "../run/spend.js"
-import { RETRY_STATUSES, untilAborted } from "../transport/openrouter.js"
+import { postJson, UNKNOWN_COST, withUncounted } from "../transport/post.js"
 import { type BaselineAnswers, BaselineParseError, parseBaseline } from "./parse.js"
 import { promptFor, schemaFor } from "./schema.js"
 
@@ -77,6 +77,8 @@ export interface BaselineResult {
   parseError?: string
   usage: Usage
   latencyMs: number
+  /** As `DecisionResult.uncountedAttempts`: attempts that may have been billed unreported. */
+  uncountedAttempts?: number
   fixtureKey: string
   unsaved?: Unsaved[]
 }
@@ -198,7 +200,19 @@ export function createBaselineClient(options: BaselineClientOptions): BaselineCl
       }
       assertConsent({ granted: options.egressConsent }, options.repoRoot ?? "this repo")
       if (mode === "record") fixtures?.path(namespace, key)
-      const { reply, latencyMs } = await post(options, profile, safeState, safeQuestions, signal)
+      let sent: Awaited<ReturnType<typeof post>>
+      try {
+        sent = await post(options, profile, safeState, safeQuestions, signal)
+      } catch (error) {
+        // A failure that may have been billed is counted before it is reported.
+        if (error instanceof ProviderError && error.spent) {
+          const unsaved: Unsaved[] = []
+          log("live", error.spent.usage, unsaved)
+          if (unsaved.length) error.details.unsaved = unsaved
+        }
+        throw error
+      }
+      const { reply, latencyMs, uncounted } = sent
       const unsaved: Unsaved[] = []
       if (mode === "record") {
         try {
@@ -215,6 +229,7 @@ export function createBaselineClient(options: BaselineClientOptions): BaselineCl
         ...read(reply, safeQuestions),
         usage: reply.usage,
         latencyMs,
+        ...(uncounted > 0 ? { uncountedAttempts: uncounted } : {}),
         fixtureKey: key,
         ...(unsaved.length ? { unsaved } : {}),
       }
@@ -229,7 +244,7 @@ async function post(
   state: State,
   questions: QuestionSet,
   signal?: AbortSignal,
-): Promise<{ reply: BaselineRecorded; latencyMs: number }> {
+): Promise<{ reply: BaselineRecorded; latencyMs: number; uncounted: number }> {
   const endpoint = options.endpoint ?? DEFAULT_CHAT_ENDPOINT
   const doFetch = options.fetch ?? fetch
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
@@ -249,59 +264,32 @@ async function post(
     usage: { include: true },
     provider: { data_collection: "deny" },
   })
-  const started = performance.now()
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const timeout = AbortSignal.timeout(timeoutMs)
-    const composite = signal ? AbortSignal.any([signal, timeout]) : timeout
-    const last = attempt === maxAttempts
-    const wait = () => untilAborted(sleep(backoffMs * 2 ** (attempt - 1)), signal)
-    let response: Response
-    try {
-      response = await doFetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${options.apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://github.com/garygentry/system1",
-          "X-Title": "system1",
-        },
-        body,
-        signal: composite,
-      })
-    } catch (error) {
-      if (signal?.aborted) throw error
-      if (last)
-        throw new ProviderError(
-          "provider-unreachable",
-          `Could not reach ${endpoint}: ${error instanceof Error ? error.name : "error"}`,
-        )
-      await wait()
-      continue
-    }
-    if (!response.ok) {
-      // The body isn't quoted: a chat endpoint may echo the prompt, and so the state.
-      await response.body?.cancel().catch(() => {})
-      if (!RETRY_STATUSES.has(response.status) || last)
-        throw new ProviderError(
-          "provider-http",
-          `${endpoint} returned ${response.status}`,
-          response.status,
-        )
-      await wait()
-      continue
-    }
-    let raw: unknown
-    try {
-      raw = await response.json()
-    } catch {
-      throw new ProviderError("malformed-response", `${endpoint} returned a body that is not JSON`)
-    }
-    return {
-      reply: chatReply(raw, profile, endpoint),
-      latencyMs: Math.round(performance.now() - started),
-    }
+  const { raw, latencyMs, uncounted } = await postJson({
+    endpoint,
+    apiKey: options.apiKey as string,
+    body,
+    timeoutMs,
+    maxAttempts,
+    backoffMs,
+    fetch: doFetch,
+    sleep,
+    signal,
+    quoteErrorBody: false,
+    describe: (error) => (error instanceof Error ? error.name : "error"),
+  })
+  let reply: BaselineRecorded
+  try {
+    reply = chatReply(raw, profile, endpoint)
+  } catch (error) {
+    // A 200 is paid for; a body too broken to read has an unknown cost.
+    if (!(error instanceof ProviderError)) throw error
+    throw new ProviderError("malformed-response", error.message, undefined, {
+      usage: UNKNOWN_COST,
+      uncounted: uncounted + 1,
+    })
   }
-  throw new ProviderError("provider-unreachable", `Could not reach ${endpoint}`)
+  const all = uncounted + (reply.usage.reported === false ? 1 : 0)
+  return { reply: { ...reply, usage: withUncounted(reply.usage, all) }, latencyMs, uncounted: all }
 }
 
 /**
