@@ -116,6 +116,29 @@ export const SpecLintInput = Type.Object(
   strict,
 )
 
+export const CompareInput = Type.Object(
+  {
+    /** Spec name (repo → user → bundled) or path: its questions, and the capture's directory. */
+    spec: Type.String({ minLength: 1 }),
+    /**
+     * What Jev is measured against: `current` (the captured answers of the
+     * mechanism in place, the default), or `emulated` / `emulated:<model>` (a
+     * chat model, which needs the repo's `allow-profile`).
+     */
+    baseline: Type.Optional(Type.String({ minLength: 1 })),
+    /** The decision model; the configured one by default. */
+    model: Type.Optional(Type.String()),
+    mode: Type.Optional(Mode),
+    /** Compare only the first N captured rows. */
+    limit: Type.Optional(Type.Integer({ minimum: 1 })),
+    /** Project the cost of both sides and stop: no calls, no consent needed. */
+    dryRun: Type.Optional(Type.Boolean()),
+    /** Proceed past the spend guard. */
+    confirm: Type.Optional(Type.Boolean()),
+  },
+  strict,
+)
+
 export const OpportunitiesAddInput = Type.Object(
   {
     /** Candidates to merge into `.system1/opportunities.json`. */
@@ -173,6 +196,7 @@ export type UsageInput = Static<typeof UsageInput>
 export type SpecCheckInput = Static<typeof SpecCheckInput>
 export type RouteInput = Static<typeof RouteInput>
 export type SpecLintInput = Static<typeof SpecLintInput>
+export type CompareInput = Static<typeof CompareInput>
 export type OpportunitiesAddInput = Static<typeof OpportunitiesAddInput>
 export type OpportunitiesListInput = Static<typeof OpportunitiesListInput>
 
@@ -182,6 +206,7 @@ export const TOOL_SCHEMAS = {
   usage: UsageInput,
   "spec-check": SpecCheckInput,
   "spec-lint": SpecLintInput,
+  compare: CompareInput,
   "opportunities-add": OpportunitiesAddInput,
   "opportunities-list": OpportunitiesListInput,
   "opportunities-check": OpportunitiesCheckInput,

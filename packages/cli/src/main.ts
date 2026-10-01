@@ -20,6 +20,7 @@ Commands:
   guard     list | status | enable <pack> | disable <pack>: opt-in hook checks (the user enables)
   spec      list | show <name> | validate [name|path] | lint [name|path] | check <name> [--live]
   opportunities  add --file <json> | list [--keep …] | check: the scout backlog (local)
+  compare   <spec> [--baseline current|emulated]: Jev against a baseline over a capture
   schema    Print the JSON Schema of a tool's input (\`decide schema\` lists them)
   route     Does a prompt call for the ask skill? (--text|--stdin|--hook; local, sends nothing)
   hook      <pack> [--harness claude|codex]: a guard pack on a harness hook event (stdin)
@@ -88,6 +89,8 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return (await import("./commands/spec.js")).runSpecCommand(rest, io, format)
     case "opportunities":
       return (await import("./commands/opportunities.js")).runOpportunitiesCommand(rest, io, format)
+    case "compare":
+      return (await import("./commands/compare.js")).runCompareCommand(rest, io, format)
     case "schema":
       return (await import("./commands/misc.js")).runSchemaCommand(rest, io, format)
     case "route":

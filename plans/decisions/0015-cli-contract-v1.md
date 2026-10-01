@@ -197,3 +197,11 @@ Plan: `m11-adopt.md`, "To verify" (gap B). Additive.
 - **A timeout while reading a 200's body** is `provider-unreachable`, no longer `malformed-response`. It is never retried, because a 200 is paid for.
 - **`uncountedAttempts`** is an optional result field on a decision (and on a baseline answer): the attempts that may have been billed unreported (a retry after a timeout or a server-side failure, or the answer itself when it had no usage). `usage.reported` is then `false`.
 
+## M11: `decide compare` (added 2026-10-01)
+
+Plan: `m11-adopt.md`, PR 5 (D3). Additive.
+
+- **`decide compare <spec> [--baseline current|emulated[:<model>]] [--live|--record|--replay] [--limit N] [--dry-run] [--confirm] [--model <id>]`**, a core tool (`decide schema compare`). It reads `.system1/compare/<spec>/captured.jsonl`, sends only each row's `state`, and writes the result to `.system1/compare/<spec>/report.json`. The result fields are in `docs/output.md`.
+- **No new error codes.** A missing capture is `source-error` (exit 2). An emulated baseline the repo hasn't allowed is `profile-not-allowed` (exit 2), raised before any call. A replay with no recording is `replay-miss` (exit 6). The spend guard covers both sides' calls together (`budget-exceeded`, exit 4).
+- **`winner` is `null` without labels**, always. With `.system1/labels/<spec>.jsonl`, the report gives accuracy with its `n` for each side.
+

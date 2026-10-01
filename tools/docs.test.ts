@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 import { DECIDE_OPTIONS } from "../packages/cli/src/args.js"
+import { COMPARE_OPTIONS } from "../packages/cli/src/commands/compare.js"
 import { CONFIG_OPTIONS } from "../packages/cli/src/commands/config.js"
 import { GUARD_OPTIONS } from "../packages/cli/src/commands/guard.js"
 import { HOOK_OPTIONS } from "../packages/cli/src/commands/hook.js"
@@ -67,6 +68,7 @@ describe("docs/cli.md", () => {
       ...Object.keys(DECIDE_OPTIONS),
       ...Object.keys(SPEC_OPTIONS),
       ...Object.keys(CONFIG_OPTIONS),
+      ...Object.keys(COMPARE_OPTIONS),
       ...Object.keys(GUARD_OPTIONS),
       ...Object.keys(HOOK_OPTIONS),
       ...Object.keys(USAGE_OPTIONS),

@@ -22,12 +22,13 @@ decide <command> [options] [--format json|jsonl|brief]
 | `decide many` | One question set over many items, filtered in the engine to what matters |
 | `decide spec` | `list`, `show <name>`, `validate [name\|path]`, `lint [name\|path]`, `check <name\|path>` |
 | `decide opportunities` | The scout backlog: `add --file`, `list`, `check`. Local; sends nothing |
+| `decide compare` | Jev against a baseline (the current mechanism, or an emulated chat model) over a capture, as measured signals |
 | `decide usage` | Measured spend from the ledger |
 | `decide config` | Show the resolved config; `config egress allow\|deny\|status` for consent, `allow-profile\|deny-profile` for an emulated baseline |
 | `decide guard` | Opt-in hook checks: `list`, `status`, `enable <pack>`, `disable <pack>`. The user enables a pack |
 | `decide hook` | A guard pack on a harness hook event. Run by the plugin's hooks, not by hand |
 | `decide route` | Does a prompt call for the ask skill? Local pattern matching; sends nothing |
-| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route`, `hook` |
+| `decide schema` | Print the JSON Schema of a tool's input: `ask`, `many`, `usage`, `spec-check`, `spec-lint`, `compare`, `opportunities-add`, `opportunities-list`, `opportunities-check`, `route`, `hook` |
 | `decide ping` | Check the endpoint is reachable. No key needed, no spend |
 | `decide doctor` | Check `decide` works from this shell, with the fix for each problem |
 | `decide version` | Print the version |
@@ -158,6 +159,42 @@ counts as an opportunity; `decide` validates, merges and stores it. Nothing is s
   even on an empty backlog.
 - **`check`** validates the file. A malformed backlog is `invalid-request`, exit 2, listing every
   problem, and `add` and `list` refuse it the same way. `decide` never repairs or overwrites it.
+
+### `compare`
+
+```sh
+decide compare <spec> [--baseline current|emulated|emulated:<model>] [--live|--record|--replay]
+               [--limit N] [--dry-run] [--confirm] [--model <id>]
+```
+
+Measures Jev against a baseline over the same states, captured from real inputs by the shadow
+harness that `adopt` generates, and writes `.system1/compare/<spec>/report.json`.
+
+- **The capture** is `.system1/compare/<spec>/captured.jsonl`, one JSON line per input:
+  `{id, state, current, output?, usage?, latencyMs?}`. `current` is the mechanism in place's
+  answer, already mapped into the spec's answer space (`{"<question>": <value>}`: an option key,
+  an integer level, or a probability). Only `state` is sent, scrubbed and size-checked; `current`,
+  `output` and `usage` stay on the machine. A bad line is left out and reported with its number.
+- **`--baseline current`** (the default) compares against the captured `current` answers: no
+  baseline call is made, and its cost and latency are what the harness recorded. A missing `usage`
+  is unknown, never zero. **`--baseline emulated`** asks a chat model (Claude Haiku 4.5, or
+  `emulated:<model>`) instead. That sends the states to a second vendor, so the repo must allow it
+  first (`decide config egress allow-profile`), or it is `profile-not-allowed` before any call.
+- **Live calls** need repo consent, and the spend guard covers both sides' calls together, so
+  `--dry-run` projects both and `--confirm` passes the guard. `--record` keeps the answers as
+  fixtures, so a later run replays them with no key. Both sides' spend is ledgered with the tag
+  `compare`.
+- **Signals:** cost per call and latency for each side, Jev's decisiveness and undecided share,
+  the baseline's parse rate (answers that fit the answer space strictly), and agreement by question
+  and by type. Two answers agree on the same option, the same rounded level, or the same side of
+  0.5. An undecided Jev answer is counted apart, not as a disagreement.
+- **Labels:** with `.system1/labels/<spec>.jsonl` (`{id, labels: {"<question>": <value>}}`, any
+  subset of questions), the report adds accuracy for each side, with the number of answers it rests
+  on. It names the side ahead only over the labelled answers both sides gave, so a side can't win
+  by declining the hard rows. **Without labels it names no winner**: agreement shows where the two
+  differ, not which is right.
+- **`--limit N`** compares the first N valid rows; invalid lines are still counted over the whole
+  file.
 
 ### `usage`
 

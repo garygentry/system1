@@ -2,6 +2,8 @@ import type {
   Answer,
   Answers,
   AskResult,
+  CompareResult,
+  CompareSide,
   LintFinding,
   ManyResult,
   Projection,
@@ -217,4 +219,64 @@ function fix(n: number): string {
 
 function firstLine(text: string): string {
   return text.split("\n")[0] ?? text
+}
+
+export function briefCompare(r: CompareResult): string {
+  if ("dryRun" in r) {
+    const p = r.projection
+    return [
+      `decide compare: ${r.spec} (dry run) · ${r.rows.captured} rows · baseline ${r.baselineKind}`,
+      `  jev: ${projected(p.jev)}`,
+      ...(p.baseline ? [`  baseline: ${projected(p.baseline)}`] : []),
+      `  total: ${projected(p.total)}`,
+      ...(r.rows.withheld.length ? [`  withheld: ${r.rows.withheld.length}`] : []),
+      ...(r.rows.invalidTotal ? [`  invalid lines: ${r.rows.invalidTotal}`] : []),
+    ].join("\n")
+  }
+  const pct = (x: number | null) => (x === null ? "n/a" : `${(x * 100).toFixed(1)}%`)
+  const usd = (c: CompareSide["cost"]) =>
+    c.perCall === null
+      ? "unknown"
+      : `$${c.perCall.toFixed(6)}/call${c.complete ? "" : " (incomplete: some cost unknown)"}`
+  const ms = (l: CompareSide["latency"]) =>
+    l.p50Ms === null ? "n/a" : `p50 ${l.p50Ms} ms · p95 ${l.p95Ms} ms`
+  const a = r.signals.agreement
+  const lines = [
+    `decide compare: ${r.spec} · ${r.rows.compared} of ${r.rows.captured} rows compared · baseline ${r.baseline.model}`,
+    `  cost:     jev ${usd(r.jev.cost)} · baseline ${usd(r.baseline.cost)}`,
+    `  latency:  jev ${ms(r.jev.latency)} · baseline ${ms(r.baseline.latency)}`,
+    `  agree:    ${pct(a.overall.rate)} of ${a.overall.n} decided answers`,
+    ...Object.entries(a.byQuestion).map(
+      ([name, q]) =>
+        `    ${name} (${q.type}): ${pct(q.rate)} of ${q.n}${q.jevUndecided ? ` · ${q.jevUndecided} jev undecided` : ""}`,
+    ),
+    `  undecided (jev): ${pct(r.signals.undecidedShare.rate)} · baseline parsed: ${pct(r.baseline.parsed.rate)} of ${r.baseline.parsed.n}`,
+  ]
+  if (r.labels) {
+    const acc = r.labels.accuracy
+    lines.push(
+      `  accuracy, each over what it answered: jev ${pct(acc.jev.overall.rate)} of ${acc.jev.overall.n} · baseline ${pct(acc.baseline.overall.rate)} of ${acc.baseline.overall.n} (${r.labels.matched} labelled rows)`,
+      `  head-to-head, over the ${r.labels.headToHead.n} answers both gave: jev ${r.labels.headToHead.jev} right · baseline ${r.labels.headToHead.baseline} right`,
+    )
+  }
+  lines.push(`  ${r.verdict}`)
+  if (r.disagreements.total)
+    lines.push(
+      `  disagreements: ${r.disagreements.total}`,
+      ...r.disagreements.sample
+        .slice(0, 10)
+        .map((d) => `    ${d.id} · ${d.question}: jev ${d.jev} · baseline ${d.baseline}`),
+    )
+  const failed = (f: CompareSide["failed"]) =>
+    Object.entries(f)
+      .map(([code, n]) => `${n} ${code}`)
+      .join(", ")
+  if (Object.keys(r.jev.failed).length) lines.push(`  jev failed: ${failed(r.jev.failed)}`)
+  if (Object.keys(r.baseline.failed).length)
+    lines.push(`  baseline failed: ${failed(r.baseline.failed)}`)
+  if (r.rows.withheld.length) lines.push(`  withheld: ${r.rows.withheld.length} (too large)`)
+  if (r.rows.invalidTotal) lines.push(`  invalid capture lines: ${r.rows.invalidTotal}`)
+  lines.push(`  spent: ${measured(r.usage)}`)
+  lines.push(r.reportUnsaved ? `  report NOT written (${r.reportUnsaved})` : `  report: ${r.file}`)
+  return lines.join("\n")
 }

@@ -94,6 +94,38 @@ describe("decide (general)", () => {
   })
 })
 
+describe("decide compare", () => {
+  const spec =
+    "description: Route.\nquestions:\n  auth: { type: noul, instructions: About logging in. }\n"
+  const captured = [
+    JSON.stringify({ id: "t1", state: "auth fails", current: { auth: 0.9 } }),
+    JSON.stringify({ id: "t2", state: "invoice", current: { auth: 0.8 } }),
+  ].join("\n")
+  const files = {
+    ".system1/specs/route.yaml": spec,
+    ".system1/compare/route/captured.jsonl": captured,
+  }
+
+  it("compares against the current answers and names no winner without labels", async () => {
+    const { io, json, out } = rig(files)
+    expect(await main(["compare", "route", "--record"], io)).toBe(0)
+    expect(json().result).toMatchObject({ winner: null, rows: { compared: 2 } })
+    expect(await main(["compare", "route", "--replay", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(/agree: {4}50\.0% of 2[\s\S]*no winner[\s\S]*report: /)
+  })
+
+  it("dry-runs both sides, and refuses bad usage", async () => {
+    const { io, json } = rig(files)
+    expect(await main(["compare", "route", "--baseline", "emulated", "--dry-run"], io)).toBe(0)
+    expect(json().result.projection.total.calls).toBe(4)
+    expect(await main(["compare"], io)).toBe(2)
+    expect(await main(["compare", "route", "--live", "--replay"], io)).toBe(2)
+    expect(await main(["compare", "route", "--limit", "0"], io)).toBe(2)
+    expect(await main(["compare", "route", "--baseline", "emulated"], io)).toBe(2)
+    expect(json().error.code).toBe("profile-not-allowed")
+  })
+})
+
 describe("decide many", () => {
   const files = {
     "src/auth.ts": "auth code",
