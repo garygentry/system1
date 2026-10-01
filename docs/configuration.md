@@ -64,7 +64,7 @@ so set a large number instead.
 | `budget.maxUsd` | `0.05` | number ≥ 0 | The spend guard: a request projected over this many US dollars needs `--confirm` |
 | `egress.consent` | `{granted: false}` | mapping | Whether this repo agreed to send content to the provider. Repo file only |
 | `egress.exclude` | `[]` | list of globs | Paths never to send, on top of the built-in excludes |
-| `egress.allowProfiles` | `[]` | list of profile ids | Emulated baselines `decide compare` may send this repo's content to (a second vendor). Set with `decide config egress allow-profile`. Repo file only |
+| `egress.allowProfiles` | `[]` | list of `{id, at?, by?}` (or bare ids) | Emulated baselines `decide compare` may send this repo's content to (a second vendor), with when and by whom each was allowed. Set with `decide config egress allow-profile`. Repo file only |
 | `profiles` | `[]` | list | Extra model profiles, or overrides of built-in ones by `id` |
 | `route.*` | see [Routing hints](#routing-hints) | mapping | The Claude Code routing hook |
 | `guard.packs.*` | see [Guard packs](#guard-packs) | mapping | Opt-in hook checks, such as `done-check`. `enabled` is read from the repo file only |

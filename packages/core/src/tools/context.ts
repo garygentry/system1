@@ -251,7 +251,7 @@ export function baselineFor(
   return createBaselineClient({
     profile,
     egressConsent: config.egress.consent.granted,
-    allowed: config.egress.allowProfiles.includes(profile.id),
+    allowed: config.egress.allowProfiles.some((g) => g.id === profile.id),
     repoRoot: config.repoRoot,
     ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     ...(ctx.fetch ? { fetch: ctx.fetch } : {}),

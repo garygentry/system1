@@ -186,4 +186,4 @@ Plan: `m11-adopt.md`, PR 2. Additive.
 Plan: `m11-adopt.md`, PR 4 (D2). Additive.
 
 - **`profile-not-allowed`, exit 2** (usage): an emulated baseline (`transport: openrouter-chat`) named for a decision (`ask`, `many`, `spec check`, a guard hook, the runtime), or one this repo hasn't allowed, inside `compare`.
-- **`decide config egress allow-profile <id> [--i-consent]` and `deny-profile <id>`:** add or remove an emulated baseline in `egress.allowProfiles`. `allow-profile` without a terminal and without `--i-consent` is `egress-refused`, exit 3, like `guard enable`; `--confirm` doesn't count. `status` gains `allowProfiles`.
+- **`decide config egress allow-profile <id> [--i-consent]` and `deny-profile <id>`:** add or remove an emulated baseline in `egress.allowProfiles`. `allow-profile` without a terminal and without `--i-consent` is `egress-refused`, exit 3, like `guard enable`; `--confirm` doesn't count. `status` and `show` gain `allowProfiles`: a list of `{id, at?, by?}`, recorded like consent (`--by`, else the route: `decide config` or `decide config --i-consent`). The loader also accepts a bare id, which has no `at`/`by`.
