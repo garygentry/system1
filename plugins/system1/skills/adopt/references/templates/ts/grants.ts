@@ -67,6 +67,9 @@ export function grantProblems(source: string, python = false): string[] {
   let depth = 0
   // Whether the open runtime call has named this file (module: import.meta.url).
   let callModule = false
+  // Open braces of the runtime call's options object, and whether it has closed.
+  let braces = 0
+  let objClosed = false
   const parens = (text: string) =>
     (text.match(/\(/g)?.length ?? 0) - (text.match(/\)/g)?.length ?? 0)
   for (const [i, line] of lines.entries()) {
@@ -86,11 +89,33 @@ export function grantProblems(source: string, python = false): string[] {
     const start = depth > 0 ? 0 : (OPENS.exec(code)?.index ?? -1)
     const inCall = start >= 0
     const left = inCall ? depth + parens(code.slice(start)) : 0
+    // Braces of the call's options object, before each character: `module` and
+    // the grant must sit at its top level, and its closing `}` must close the
+    // call, so no other object (a second argument, `|| {…}`) can stand in.
+    const opened = depth > 0 ? undefined : OPENS.exec(code)
+    const objStart = opened ? opened.index + opened[0].length - 1 : 0
+    const level: number[] = []
+    let b = inCall ? braces : 0
+    for (let k = 0; k < code.length; k++) {
+      level[k] = b
+      if (!inCall || k < objStart || objClosed) continue
+      if (code[k] === "{") b++
+      else if (code[k] === "}" && --b === 0) {
+        objClosed = true
+        const tail = code.slice(k + 1)
+        if (!/^\s*\)/.test(tail) && !(tail.trim() === "" && /^\s*\)/.test(nextCode(i))))
+          problems.push(`${at}: the runtime's options object ends before its call does`)
+      }
+    }
     // `module: import.meta.url` must sit right before the grant: anything between
     // (a spread, say) could replace it.
     if (inCall && (depth === 0 || !GRANT_STARTS.test(code))) callModule = false
     for (const m of code.matchAll(/\bmodule\s*:(?!:)/g)) {
       if (!inCall) continue
+      if (level[m.index ?? 0] !== 1) {
+        problems.push(`${at}: the runtime's module not at the top of its options object`)
+        continue
+      }
       const rest = code.slice((m.index ?? 0) + m[0].length)
       if (!/^\s*import\.meta\.url\b/.test(rest))
         problems.push(`${at}: the runtime's module given anything but import.meta.url`)
@@ -118,7 +143,7 @@ export function grantProblems(source: string, python = false): string[] {
         const closes =
           (given?.[1] !== undefined && left === 0) ||
           (tail.trim() === "" && left === 1 && /^\s*\}\s*\)/.test(nextCode(i)))
-        if (!given || !closes || !inCall)
+        if (!given || !closes || !inCall || level[m.index ?? 0] !== 1)
           problems.push(`${at}: the runtime given anything but ${E}, last in ${CREATE}({…})`)
         else if (!callModule)
           problems.push(
@@ -134,6 +159,8 @@ export function grantProblems(source: string, python = false): string[] {
     if (new RegExp(`\\b${E}\\b`).test(line) && ENV.test(line))
       problems.push(`${at}: ${E} read from the environment`)
     depth = Math.max(left, 0)
+    braces = depth > 0 ? b : 0
+    if (depth === 0) objClosed = false
   }
   return problems
 }

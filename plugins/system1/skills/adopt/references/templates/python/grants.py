@@ -92,6 +92,9 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
     depth = 0
     # Whether the open runtime call has named this file (module: import.meta.url).
     call_module = False
+    # Open braces of the runtime call's options object, and whether it has closed.
+    braces = 0
+    obj_closed = False
     for i, line in enumerate(lines):
         at = f"line {i + 1}"
         if MARKER in line:
@@ -111,12 +114,35 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
         start = 0 if depth > 0 else (opened.start() if opened else -1)
         in_call = start >= 0
         left = depth + parens(code[start:]) if in_call else 0
+        # Braces of the call's options object, before each character: `module` and
+        # the grant must sit at its top level, and its closing `}` must close the
+        # call, so no other object (a second argument, `|| {...}`) can stand in.
+        opened_call = None if depth > 0 else _OPENS.search(code)
+        obj_start = opened_call.end() - 1 if opened_call else 0
+        level: list[int] = []
+        b = braces if in_call else 0
+        for k, ch in enumerate(code):
+            level.append(b)
+            if not in_call or k < obj_start or obj_closed:
+                continue
+            if ch == "{":
+                b += 1
+            elif ch == "}":
+                b -= 1
+                if b == 0:
+                    obj_closed = True
+                    tail = code[k + 1:]
+                    if not re.match(r"\s*\)", tail) and not (tail.strip() == "" and re.match(r"\s*\)", next_code(i))):
+                        problems.append(f"{at}: the runtime's options object ends before its call does")
         # `module: import.meta.url` must sit right before the grant: anything between
         # (a spread, say) could replace it.
         if in_call and (depth == 0 or not _GRANT_STARTS.match(code)):
             call_module = False
         for m in re.finditer(r"\bmodule\s*:(?!:)", code, A):
             if not in_call:
+                continue
+            if level[m.start()] != 1:
+                problems.append(f"{at}: the runtime's module not at the top of its options object")
                 continue
             rest = code[m.end():]
             if not re.match(r"\s*import\.meta\.url\b", rest, A):
@@ -145,7 +171,7 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
                 closes = (given is not None and given.group(1) is not None and left == 0) or (
                     tail.strip() == "" and left == 1 and re.match(r"\s*\}\s*\)", next_code(i)) is not None
                 )
-                if not given or not closes or not in_call:
+                if not given or not closes or not in_call or level[m.start()] != 1:
                     problems.append(f"{at}: the runtime given anything but {E}, last in {CREATE}({{...}})")
                 elif not call_module:
                     problems.append(
@@ -164,6 +190,9 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
         if _NAME.search(line) and _ENV.search(line):
             problems.append(f"{at}: {E} read from the environment")
         depth = max(left, 0)
+        braces = b if depth > 0 else 0
+        if depth == 0:
+            obj_closed = False
     return problems
 
 

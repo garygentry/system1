@@ -115,6 +115,22 @@ export const GRANT_CASES: GrantCase[] = [
   { ok: false, text: `createPolicyRuntime(opts)` },
   {
     ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({ ...o }, { module: import.meta.url, egress: EGRESS })`,
+  },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({ ...o } || { module: import.meta.url, egress: EGRESS })`,
+  },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({ ...o } ?? {\n  module: import.meta.url,\n  egress: EGRESS,\n})`,
+  },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({ a: { module: import.meta.url, egress: EGRESS } })`,
+  },
+  {
+    ok: false,
     text: `${TS_OFF}\ncreatePolicyRuntime({\n  module: import.meta.url,\n  ...deployment,\n  egress: EGRESS,\n})`,
   },
   {
