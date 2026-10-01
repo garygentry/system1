@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decisions: compare"
+  short_description: "Measure an adopted decision-model policy against what it would replace"
+  default_prompt: "Use $compare to measure the adopted spec against the current mechanism."
+policy:
+  allow_implicit_invocation: false

@@ -243,6 +243,10 @@ Everything `decide` keeps for a repo lives in `<repo>/.system1/`:
 | `fixtures/<spec>/` | Recorded answers for a spec, one `<sha256>.json` per request | Yes, after reading them: each holds the exact text that was sent |
 | `fixtures/adhoc/` | Recorded answers for one-off questions | No: add it to `.gitignore` |
 | `usage.jsonl` | The spend ledger: one line per call, live or replayed | No: add it to `.gitignore` |
+| `compare/<spec>/captured.jsonl` | A shadow capture: the raw inputs the existing mechanism saw, with its answers | No: add `.system1/compare/` to `.gitignore` |
+| `compare/<spec>/report.json` | The last `decide compare` report | No, with the rest of `compare/` |
+| `compare/<spec>/fixtures/` | Answers `decide compare --record` kept: each holds a captured state | No, with the rest of `compare/` |
+| `labels/<spec>.jsonl` | Your labels for a spec's captured inputs, for `compare`'s accuracy | Yes, if the inputs may be shared |
 
 The user config directory can hold specs too, in `$XDG_CONFIG_HOME/system1/specs/`.
 

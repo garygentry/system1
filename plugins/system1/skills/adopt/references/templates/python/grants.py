@@ -6,7 +6,7 @@ user's edit. This is an allowlist for the name, read one line at a time:
 - the marked line is a `const` (TS) or `Final` (Python) set to "off";
 - every other use of the name in code is a comparison, an import, an
   assertion, a read, or the runtime's option given exactly the name, as the
-  last property of a `createPolicyRuntime({...})` literal that also names this
+  last property of the runtime call's object literal, which also names this
   file (`module: import.meta.url`, so the runtime reads the marked line too),
   in the file that declares it;
 - a Unicode line separator, or a backslash-u escape in TS code, is refused;

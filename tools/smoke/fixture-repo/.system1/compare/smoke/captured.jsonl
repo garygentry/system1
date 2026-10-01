@@ -1,0 +1,3 @@
+{"id":"charge","state":"export async function charge(customerId: string, cents: number) { return gateway.charge({ customerId, amount: cents }) }","current":{"moves_money":1},"usage":{"cost":0.0004},"latencyMs":812}
+{"id":"slug","state":"export function slugify(title: string) { return title.toLowerCase().replace(/\\s+/g, \"-\") }","current":{"moves_money":0},"usage":{"cost":0.0003},"latencyMs":640}
+{"id":"logger","state":"export function log(message: string) { console.log(new Date().toISOString(), message) }","current":{"moves_money":0},"latencyMs":590}

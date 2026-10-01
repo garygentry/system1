@@ -186,9 +186,11 @@ Keep these out of git. They are per-machine:
 ```gitignore
 .system1/fixtures/adhoc/
 .system1/usage.jsonl
+.system1/compare/
 ```
 
-`adhoc/` holds answers to one-off questions, and `usage.jsonl` is the spend ledger.
+`adhoc/` holds answers to one-off questions and `usage.jsonl` is the spend ledger. `compare/` holds
+the raw inputs `compare` measures: the capture, and the answers recorded for it.
 `.system1/config.yaml` holds the repo's consent. Committing it shares that consent with everyone
 who clones the repo, which is a team decision; see
 [ci-and-scripts.md](ci-and-scripts.md#run-live-in-ci).

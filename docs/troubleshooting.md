@@ -116,6 +116,38 @@ exist. A warning means the file doesn't validate, often because it was edited by
 opportunities check` lists every problem. Correct the file, or move it aside and re-run the
 sweep; `decide` never repairs or overwrites it.
 
+### doctor: `adopted`
+
+The policy modules `adopt` generated in this repo, found by their marked `EGRESS` line or a
+`createPolicyRuntime({…})` call (tests, templates and build output aren't counted). An advisory
+warning names each module where:
+
+- **runtime egress is on:** the marked line says `"on"`. Only you should make that edit
+  ([runtime consent](runtime.md)); if you didn't, review the module's diff.
+- **the module lock is opted out:** `module: "bundled"`, so `egress` alone is the grant. Right for
+  a build that drops comments ([the module lock and your build](runtime.md#the-module-lock-and-your-build)),
+  and also your edit to make.
+- **the runtime is called with no marked line:** the grant can't be read from the file, so the
+  module lock refuses a live call unless the call says `"bundled"`.
+
+Doctor looks only inside a git work tree.
+
+### doctor: `emulated`
+
+The emulated baselines this repo lets `decide compare` send its content to (`egress.allowProfiles`
+in `.system1/config.yaml`). It's informational: each one is a second vendor, granted with
+`decide config egress allow-profile <id>`, which only you can run.
+
+### doctor: `captured`
+
+Whether git has, or would commit, anything in `.system1/compare/`. It holds raw inputs: each shadow
+capture (`<spec>/captured.jsonl`), the answers `decide compare --record` kept for it
+(`<spec>/fixtures/`, each holding a captured state), and the probe states `adopt` reads. Add
+`.system1/compare/` to `.gitignore` (the setup skill suggests it). Ignoring a file git already
+tracks doesn't untrack it: `git rm -r --cached .system1/compare/` too, and remember it stays in
+history.
+Delete a capture once its comparison is done.
+
 ### doctor: `network`
 
 The model's endpoint couldn't be reached from this shell. The fix depends on where you are:

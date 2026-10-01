@@ -10,7 +10,8 @@ const from = join(here, "../../plugins/system1/skills")
 const to = join(here, "skills")
 if (existsSync(from)) {
   rmSync(to, { recursive: true, force: true })
-  cpSync(from, to, { recursive: true })
+  // Not Python bytecode a local test run left beside the templates.
+  cpSync(from, to, { recursive: true, filter: (src) => !src.includes("__pycache__") })
   console.log(`system1-pi: copied skills from ${from}`)
 } else if (existsSync(to)) {
   // Repacking an unpacked tarball: the skills are already beside this script.

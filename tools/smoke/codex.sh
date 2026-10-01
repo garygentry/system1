@@ -31,6 +31,12 @@ consent_repo "$SMOKE/codex-guard"
 assert_marker codex:guard "$GUARD_MARKER" "$SMOKE/codex-guard.txt" || status=1
 assert_dormant codex:guard-dormant "$SMOKE/codex-guard" "$SMOKE/codex-guard-log/calls.txt" \
   '^guard enable' || status=1
+fixture_repo "$SMOKE/codex-adopt-skill"
+drive "$SMOKE/codex-adopt-skill" "\$system1:adopt $ADOPT_PROMPT" "$SMOKE/codex-adopt-skill.txt"
+assert_marker codex:adopt "$ADOPT_MARKER" "$SMOKE/codex-adopt-skill.txt" || status=1
+fixture_repo "$SMOKE/codex-compare"
+drive "$SMOKE/codex-compare" "\$system1:compare $COMPARE_PROMPT" "$SMOKE/codex-compare.txt"
+assert_marker codex:compare "$COMPARE_MARKER" "$SMOKE/codex-compare.txt" || status=1
 # adopt's Python template: its tests spawn `decide runtime` (node) from Python
 # inside the sandbox, where a node child of node has printed nothing before.
 # workspace-write, so the tests can use a temp dir; replay, so nothing is sent.

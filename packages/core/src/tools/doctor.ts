@@ -18,6 +18,7 @@ import { ping } from "../ping.js"
 import { activeTriggers, route } from "../route/route.js"
 import { CLI_PACKAGE, VERSION } from "../version.js"
 import { type ContextOptions, createContext, type ToolContext } from "./context.js"
+import { adoptedCheck, capturedCheck, emulatedCheck } from "./doctor-adopt.js"
 
 export type CheckStatus = "ok" | "warn" | "fail"
 
@@ -33,6 +34,9 @@ export const DOCTOR_CHECKS = [
   "route",
   "guard",
   "backlog",
+  "adopted",
+  "emulated",
+  "captured",
   "network",
 ] as const
 
@@ -309,6 +313,11 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorResult> {
   checks.push(routeCheck(config.route))
   checks.push(guardCheck(config, env, options.home, options.cliPath))
   checks.push(backlogCheck(config.repoRoot))
+  checks.push(
+    adoptedCheck(config.repoRoot),
+    emulatedCheck(config.egress.allowProfiles),
+    capturedCheck(config.repoRoot),
+  )
 
   let reach: Awaited<ReturnType<typeof ping>>
   try {

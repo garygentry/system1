@@ -29,4 +29,15 @@ consent_repo "$SMOKE/claude-guard"
 assert_marker claude:guard "$GUARD_MARKER" "$SMOKE/claude-guard.txt" || status=1
 assert_dormant claude:guard-dormant "$SMOKE/claude-guard" "$SMOKE/claude-guard.txt" \
   '"command":"[^"]*guard enable' || status=1
+# adopt and compare: user-only, asserted on the transcript like scout.
+for skill in adopt compare; do
+  fixture_repo "$SMOKE/claude-$skill"
+  prompt=$( [ "$skill" = adopt ] && echo "$ADOPT_PROMPT" || echo "$COMPARE_PROMPT" )
+  marker=$( [ "$skill" = adopt ] && echo "$ADOPT_MARKER" || echo "$COMPARE_MARKER" )
+  (cd "$SMOKE/claude-$skill" && timeout "$TIMEOUT" claude -p "/system1:$skill $prompt" \
+    --plugin-dir "$REPO/plugins/system1" --output-format stream-json --verbose \
+    --allowedTools "Bash(decide *)" "Skill" --model "${SMOKE_CLAUDE_MODEL:-haiku}" </dev/null) \
+    >"$SMOKE/claude-$skill.txt" 2>&1 || true
+  assert_marker "claude:$skill" "$marker" "$SMOKE/claude-$skill.txt" || status=1
+done
 exit $status

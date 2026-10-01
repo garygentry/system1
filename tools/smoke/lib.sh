@@ -8,7 +8,11 @@
 #         (nothing sent: a dry run needs no key or consent)
 #   guard `decide guard list` via the user-only guard skill, asked outright to
 #         enable done-check in a repo with consent: the pack must stay dormant
-#   adopt (Codex) adopt's generated Python tests, which spawn `decide runtime`
+#   adopt `decide opportunities list` via the user-only adopt skill, invoked
+#         by name and stopped after its first step (it changes nothing)
+#   compare `decide compare smoke --dry-run` via the user-only compare skill,
+#         over the fixture repo's capture (nothing sent)
+#   adopt-python (Codex) adopt's generated Python tests, which spawn `decide runtime`
 #         from the sandbox, in replay
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
@@ -42,6 +46,13 @@ CODEX_HOOKS_MARKER="codex hooks: system1 session_start stop \\(untrusted\\)"
 # marker is read from the file the run writes, not from the agent's reply.
 ADOPT_PYTHON_PROMPT="Run exactly this command and nothing else: python3 -m unittest discover -s app >unittest.txt 2>&1. Then print the last line of unittest.txt verbatim."
 ADOPT_PYTHON_MARKER="^OK\$"
+# adopt and compare are user-only too. Both stop before anything is written
+# or sent; the markers are CLI output the skill text lacks.
+ADOPT_PROMPT="Do only the first step, loading the judgement: list the scout backlog, then stop. Make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
+# Brief or JSON (the skill asks for JSON); Claude's transcript escapes its quotes.
+ADOPT_MARKER='decide opportunities list: [0-9]+ shown|opportunities\.json\\?",\\?"total\\?":[0-9]+'
+COMPARE_PROMPT="smoke. Dry run only: stop after the projection, make no changes and ask no questions. Print the first line of every decide command you run, verbatim."
+COMPARE_MARKER="decide compare: smoke \\(dry run\\) · [0-9]+ rows"
 MANY_PROMPT="Use the ask skill from the system1 plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 
 # No run needs the key: ping is keyless and many replays. Keep it out of every

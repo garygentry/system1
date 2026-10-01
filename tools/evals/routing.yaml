@@ -83,3 +83,24 @@ guard:
     - 'Add a git pre-commit hook that runs the linter on staged files.'
     - 'Add a CI step that fails when TASK.md still has unticked boxes.'
     - 'You stopped last time before the README change was made. Pick it up and finish it.'
+
+adopt:
+  # User-only, like scout. It writes a policy module and wires it in, so
+  # loading it unasked is the failure to catch. These sit next to its topic:
+  # replacing an LLM call or a keyword rule, wiring a fallback.
+  positive: []
+  negative:
+    - 'Replace the regex in src/search/index.ts with something smarter.'
+    - 'Wrap the call in src/http/client.ts so it falls back to the cached value when it fails.'
+    - 'Add a feature flag that turns the new ranking off by default.'
+
+compare:
+  # User-only, like adopt. It sends captured states to the model, so loading
+  # it unasked is the failure to catch. These sit next to its topic: measuring
+  # one implementation against another.
+  positive: []
+  negative:
+    - 'Benchmark src/http/client.ts against src/http/legacy.ts and tell me which is faster.'
+    - 'Compare what src/search/search-0.ts and src/search/search-1.ts return for the same query.'
+    - 'How often would src/http/client.ts and src/http/legacy.ts give different results?'
+

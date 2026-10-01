@@ -49,7 +49,7 @@ The maintainer ruled on 1, 2, 6 and 8. The others are the agent's proposals, rev
 - **Opportunities:** `opportunities/backlog.ts` (`mergeCandidates`, `withBacklogLock`).
 - **Specs:** `spec/spec.ts` `loadSpec`, `specDirs`; the spec name is the fixture namespace.
 - **Skills and generation:** `plugins/system1/skills/<name>/` plus `agents/openai.yaml` (`allow_implicit_invocation: false`, `disable-model-invocation: true`). Discovery is by convention. Also `tools/validate.ts`, and `tools/evals/run.ts` `SKILLS` and `MINIMUMS`.
-- **Setup's `.gitignore` list:** `skills/setup/SKILL.md` § Housekeeping gains `.system1/compare/*/captured.jsonl`.
+- **Setup's `.gitignore` list:** `skills/setup/SKILL.md` § Housekeeping gains `.system1/compare/` (the capture, probes and compare's recorded answers).
 - **Smoke:** `tools/smoke/{lib,claude,codex,pi}.sh`.
 
 ## Work, as PRs (each green on `pnpm check`, with an adversarial review before merging)

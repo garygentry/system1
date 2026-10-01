@@ -96,9 +96,10 @@ If this repo has a `.system1/` directory, suggest adding these lines to `.gitign
 ```
 .system1/fixtures/adhoc/
 .system1/usage.jsonl
+.system1/compare/
 ```
 
-- **Why:** one-off answers and the spend ledger are per-machine.
+- **Why:** one-off answers and the spend ledger are per-machine, and `compare`'s capture and recorded answers hold raw inputs.
 - **Stays committed:** each saved spec's `.system1/fixtures/<spec>/` directory is its offline test data.
 - **Warn them:** a fixture contains the exact text that was sent to the provider. Committing one shares that text with everyone who has the repo, so it deserves the same look as any test fixture.
 - Edit `.gitignore` only after a yes.

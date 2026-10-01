@@ -248,7 +248,7 @@ export function gitIgnored(cwd: string, paths: readonly string[]): string[] {
   }
 }
 
-function insideGitWorkTree(cwd: string): boolean {
+export function insideGitWorkTree(cwd: string): boolean {
   try {
     return (
       execFileSync("git", ["-C", cwd, "rev-parse", "--is-inside-work-tree"], {

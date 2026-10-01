@@ -1163,6 +1163,9 @@ describe("decide doctor", () => {
       "route",
       "guard",
       "backlog",
+      "adopted",
+      "emulated",
+      "captured",
       "network",
     ])
     expect(await main(["doctor", "--format", "brief"], io)).toBe(0)
