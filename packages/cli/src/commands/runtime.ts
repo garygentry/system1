@@ -21,6 +21,15 @@ export const RUNTIME_OPTIONS = {
   protocol: { type: "boolean" },
 } as const
 
+/** Set by Claude Code, Codex and Pi in every shell they run (core/config/session.ts). */
+const HARNESS_SESSION_VARS = [
+  "CLAUDE_CODE_SESSION_ID",
+  "CODEX_THREAD_ID",
+  "CODEX_SESSION_ID",
+  "PI_SESSION_ID",
+  "AI_AGENT",
+] as const
+
 /** A request is a question set and one state; anything larger is not one. */
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024
 
@@ -75,6 +84,17 @@ async function respond(argv: string[], io: Io): Promise<PolicyResult | object> {
   if (timeoutMs !== undefined && (!Number.isInteger(timeoutMs) || timeoutMs < 1))
     return internal("decide runtime: --timeout-ms must be a whole number ≥ 1")
   const mode = values.replay ? "replay" : "live"
+  // Inside an agent's session, a module's grant may be a file the agent just
+  // wrote and nobody reviewed (0020, "What we give up"). It only ever denies:
+  // no variable grants egress. Replay sends nothing, so it still runs.
+  const harness = HARNESS_SESSION_VARS.find((name) => io.env[name])
+  if (mode === "live" && grant.egress === "on" && harness)
+    return {
+      ok: false,
+      reason: "egress-off",
+      detail: `decide runtime: live calls are refused inside an agent session (${harness} is set); run the app outside the agent`,
+      ledger: "memory",
+    } satisfies PolicyResult
   const root = values.root ? resolve(cwd, values.root) : undefined
   if (mode === "live" && grant.egress === "on" && !writable(root))
     return internal(

@@ -186,6 +186,23 @@ describe("decide runtime (D7)", () => {
       ]),
     ).toBe(0)
     expect(json()).toMatchObject({ ok: true, source: "live", ledger: "file" })
+    // Inside an agent session the grant may be an unreviewed file: refused, never granted.
+    for (const name of ["CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "PI_SESSION_ID"]) {
+      expect(
+        await run({ ...io, env: { ...io.env, [name]: "s1" } }, [
+          "--module",
+          join(cwd, "on.py"),
+          "--root",
+          join(cwd, "rt"),
+          ...cap,
+        ]),
+      ).toBe(0)
+      expect(json()).toMatchObject({
+        ok: false,
+        reason: "egress-off",
+        detail: expect.stringMatching(new RegExp(`agent session \\(${name}`)),
+      })
+    }
     expect(readFileSync(join(cwd, "rt/usage.jsonl"), "utf8")).toMatch(/"tag":"runtime"/)
     expect(
       await run(io, ["--module", join(cwd, "on.py"), "--root", join(cwd, "rt"), ...cap], "[]"),
