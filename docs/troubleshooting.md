@@ -140,10 +140,12 @@ in `.system1/config.yaml`). It's informational: each one is a second vendor, gra
 
 ### doctor: `captured`
 
-Whether git would commit a shadow capture. `.system1/compare/<spec>/captured.jsonl` holds the raw
-inputs the existing mechanism saw, so it must stay out of git: add
-`.system1/compare/*/captured.jsonl` to `.gitignore` (the setup skill suggests it). Delete a capture
-once its comparison is done.
+Whether git has, or would commit, raw inputs from `compare`: a shadow capture
+(`.system1/compare/<spec>/captured.jsonl`) or the answers `decide compare --record` kept for it
+(`.system1/fixtures/compare.<spec>/`, each holding a captured state). Add `.system1/compare/` and
+`.system1/fixtures/compare.*/` to `.gitignore` (the setup skill suggests both). Ignoring a file git
+already tracks doesn't untrack it: `git rm -r --cached` it too, and remember it stays in history.
+Delete a capture once its comparison is done.
 
 ### doctor: `network`
 

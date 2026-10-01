@@ -19,7 +19,7 @@ Commands:
   config    Show resolved config; \`config egress allow|deny|status\` for consent
   guard     list | status | enable <pack> | disable <pack>: opt-in hook checks (the user enables)
   spec      list | show <name> | validate [name|path] | lint [name|path] | check <name> [--live]
-  opportunities  add --file <json> | list [--keep …] | check: the scout backlog (local)
+  opportunities  add --file <json> | list [--keep …] | set-status <id> <status> | check: the scout backlog (local)
   compare   <spec> [--baseline current|emulated]: Jev against a baseline over a capture
   schema    Print the JSON Schema of a tool's input (\`decide schema\` lists them)
   route     Does a prompt call for the ask skill? (--text|--stdin|--hook; local, sends nothing)

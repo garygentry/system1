@@ -28,6 +28,6 @@ fixture_repo "$SMOKE/pi-adopt"
 (log_decide "$SMOKE/pi-adopt-log"; drive "$SMOKE/pi-adopt" "/skill:adopt $ADOPT_PROMPT" "$SMOKE/pi-adopt.txt")
 assert_marker pi:adopt '^opportunities list' "$SMOKE/pi-adopt-log/calls.txt" || status=1
 fixture_repo "$SMOKE/pi-compare"
-drive "$SMOKE/pi-compare" "/skill:compare $COMPARE_PROMPT" "$SMOKE/pi-compare.txt"
-assert_marker pi:compare "$COMPARE_MARKER" "$SMOKE/pi-compare.txt" || status=1
+(log_decide "$SMOKE/pi-compare-log"; drive "$SMOKE/pi-compare" "/skill:compare $COMPARE_PROMPT" "$SMOKE/pi-compare.txt")
+assert_marker pi:compare '^compare smoke.*--dry-run' "$SMOKE/pi-compare-log/calls.txt" || status=1
 exit $status

@@ -17,6 +17,7 @@ import {
   type BadLine,
   type CapturedRow,
   compareDir,
+  compareNamespace,
   labelsPath,
   readCaptured,
   readLabels,
@@ -254,15 +255,15 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
     checkBudget(total, ctx.config.budget, input.confirm ?? false)
   }
 
+  // Not the spec's own namespace: these fixtures hold the captured raw inputs.
+  const namespace = compareNamespace(spec.name)
   const settled = await mapWithConcurrency(
     ready,
     ctx.config.concurrency,
     async ({ row, state }) => {
       const [jev, base] = await Promise.allSettled([
-        decider.decide({ state, questions, namespace: spec.name }),
-        client
-          ? client.answer({ state, questions, namespace: spec.name })
-          : Promise.resolve(undefined),
+        decider.decide({ state, questions, namespace }),
+        client ? client.answer({ state, questions, namespace }) : Promise.resolve(undefined),
       ])
       return { row, jev, base }
     },

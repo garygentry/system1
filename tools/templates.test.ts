@@ -10,8 +10,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
+import { GRANT_CASES } from "./fixtures/grant-corpus.js"
 import { ROOT } from "./generate.js"
-import { GRANT_CASES } from "./grant-corpus.js"
 import { templateGrants } from "./validate.js"
 
 const DECIDE = join(ROOT, "packages/cli/dist/bundle/decide.mjs")

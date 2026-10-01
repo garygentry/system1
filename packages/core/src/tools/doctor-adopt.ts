@@ -12,18 +12,31 @@ import { EGRESS_MARKER, grantIn } from "../runtime/grant.js"
 import { gitIgnored, insideGitWorkTree } from "../sources/read.js"
 import type { DoctorCheck } from "./doctor.js"
 
-/** Tests, build output and skill templates: they mention the runtime, but aren't what an app runs. */
+/**
+ * Tests and skill templates: they hold grant lines to test or copy, not what
+ * an app runs. Only adopt's own `references/templates/`, so an app's
+ * `src/templates/` or `build/` is still looked at.
+ */
 const NOT_APP_CODE =
-  /(^|\/)(node_modules|dist|build|__tests__|tests?|fixtures|templates)\/|\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.py$/
+  /(^|\/)(node_modules|__tests__|tests?|fixtures)\/|(^|\/)references\/templates\/|\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.py$/
 /** Source an adopted module could be: TypeScript, JavaScript or Python. */
 const SOURCE = /\.(?:[cm]?[jt]sx?|py)$/
+/** A runtime call in code, not in a comment line. */
+const CALL = /^(?!\s*(?:\/\/|\/?\*|#)).*\bcreatePolicyRuntime\s*\(\s*\{/m
+const BUNDLED = /\bmodule\s*:\s*["']bundled["']/
+/** A module's grant line: `EGRESS` set at the start of the line that carries the marker. */
+const GRANT_LINE = new RegExp(
+  `^(?:export\\s+)?(?:(?:const|let|var)\\s+)?EGRESS\\b.*${EGRESS_MARKER}`,
+  "m",
+)
 
 /**
- * Files that hold a grant line or call the TS runtime. A Python module that
- * spawns `decide runtime` without the line is off anyway: it reads the file.
- * Found by `git grep` (tracked and untracked, not ignored).
+ * Files that hold a grant line or call the TS runtime, by `git grep` (tracked
+ * and untracked, not ignored), or why they couldn't be looked for. A Python
+ * module that spawns the CLI without the line is off anyway: it reads the file.
  */
-function runtimeFiles(repoRoot: string): string[] | undefined {
+function runtimeFiles(repoRoot: string): string[] | string {
+  if (!insideGitWorkTree(repoRoot)) return "not a git work tree: adopted modules not looked for"
   try {
     const out = execFileSync(
       "git",
@@ -32,13 +45,14 @@ function runtimeFiles(repoRoot: string): string[] | undefined {
         repoRoot,
         "grep",
         "-l",
+        "-z",
         "-I",
         "--untracked",
         "-E",
         "-e",
         EGRESS_MARKER,
         "-e",
-        "createPolicyRuntime\\s*\\(\\s*\\{",
+        "createPolicyRuntime[[:space:]]*\\([[:space:]]*\\{",
       ],
       {
         encoding: "utf8",
@@ -47,10 +61,11 @@ function runtimeFiles(repoRoot: string): string[] | undefined {
         killSignal: "SIGKILL",
       },
     )
-    return out.split("\n").filter((p) => p && SOURCE.test(p) && !NOT_APP_CODE.test(p))
+    return out.split("\0").filter((p) => p && SOURCE.test(p) && !NOT_APP_CODE.test(p))
   } catch (error) {
-    // Exit 1: no match. Anything else (not a work tree, no git): not looked for.
-    return (error as { status?: number }).status === 1 ? [] : undefined
+    // Exit 1: no match.
+    if ((error as { status?: number }).status === 1) return []
+    return `git grep failed${(error as { signal?: string }).signal === "SIGKILL" ? " (timed out)" : ""}: adopted modules not looked for`
   }
 }
 
@@ -61,22 +76,16 @@ const list = (paths: string[]) =>
 
 /**
  * Adopted modules and their runtime grant (0020). Egress on is the user's
- * edit, so it is reported, not failed: doctor makes it visible. So are a
- * `"bundled"` opt-out (one lock instead of two) and a runtime call with no
- * marked line to read.
+ * edit, so it is reported, not failed: doctor makes it visible. So is a
+ * `"bundled"` opt-out, where the value passed is the only lock. A runtime
+ * call with no marked line and no opt-out can't send: the module lock reads
+ * the file.
  */
 export function adoptedCheck(repoRoot: string): DoctorCheck {
   const files = runtimeFiles(repoRoot)
-  if (files === undefined)
-    return {
-      name: "adopted",
-      status: "ok",
-      detail: "not a git work tree: adopted modules not looked for",
-    }
-  if (files.length === 0) return { name: "adopted", status: "ok", detail: "no adopted modules" }
+  if (typeof files === "string") return { name: "adopted", status: "ok", detail: files }
   const on: string[] = []
   const bundled: string[] = []
-  const unmarked: string[] = []
   let modules = 0
   for (const path of files) {
     let source: string
@@ -85,16 +94,17 @@ export function adoptedCheck(repoRoot: string): DoctorCheck {
     } catch {
       continue
     }
-    const marked = source.includes(EGRESS_MARKER)
+    const marked = GRANT_LINE.test(source)
+    if (!marked && !CALL.test(source)) continue
     if (marked) modules++
     if (marked && grantIn(source).egress === "on") on.push(path)
-    if (/\bmodule\s*:\s*["']bundled["']/.test(source)) bundled.push(path)
-    if (!marked) unmarked.push(path)
+    if (BUNDLED.test(source)) bundled.push(path)
   }
+  if (modules === 0 && bundled.length === 0)
+    return { name: "adopted", status: "ok", detail: "no adopted modules" }
   const notes = [
     on.length ? `runtime egress ON in ${list(on)}` : "",
     bundled.length ? `module lock opted out ("bundled") in ${list(bundled)}` : "",
-    unmarked.length ? `runtime calls with no marked EGRESS line in ${list(unmarked)}` : "",
   ].filter(Boolean)
   const summary = `${modules} adopted module${modules === 1 ? "" : "s"}`
   if (notes.length === 0)
@@ -104,7 +114,7 @@ export function adoptedCheck(repoRoot: string): DoctorCheck {
     status: "warn",
     advisory: true,
     detail: `${summary}; ${notes.join("; ")}`,
-    fix: "egress on and \"bundled\" are your edits to make (docs/runtime.md); if you didn't make them, review the module's diff",
+    fix: "switching egress on and writing \"bundled\" are your edits (docs/runtime.md); if you didn't make them, review the module's diff",
   }
 }
 
@@ -120,43 +130,87 @@ export function emulatedCheck(allowProfiles: ProfileGrant[]): DoctorCheck {
   }
 }
 
-/** Shadow captures hold raw inputs: each must be ignored by git. */
+/**
+ * Raw inputs on disk: each shadow capture, and the answers `compare --record`
+ * kept for it (`fixtures/compare.<spec>/`, which hold every captured state).
+ * One file stands for each recorded directory.
+ */
+function rawInputFiles(repoRoot: string): string[] {
+  const files: string[] = []
+  const compare = join(stateDir(repoRoot), "compare")
+  if (existsSync(compare))
+    for (const e of readdirSync(compare, { withFileTypes: true }))
+      if (e.isDirectory() && existsSync(join(compare, e.name, "captured.jsonl")))
+        files.push(relative(repoRoot, join(compare, e.name, "captured.jsonl")))
+  const fixtures = join(stateDir(repoRoot), "fixtures")
+  if (existsSync(fixtures))
+    for (const e of readdirSync(fixtures, { withFileTypes: true })) {
+      if (!e.isDirectory() || !e.name.startsWith("compare.")) continue
+      const first = readdirSync(join(fixtures, e.name)).find((f) => f.endsWith(".json"))
+      if (first) files.push(relative(repoRoot, join(fixtures, e.name, first)))
+    }
+  return files
+}
+
+/** Which of `paths` git already tracks: ignoring them now won't take them out. */
+function gitTracked(repoRoot: string, paths: string[]): Set<string> {
+  const out = execFileSync("git", ["-C", repoRoot, "ls-files", "-z", "--", ...paths], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+    timeout: 10_000,
+    killSignal: "SIGKILL",
+  })
+  return new Set(out.split("\0").filter(Boolean))
+}
+
+/** Shadow captures and compare's recorded answers hold raw inputs: git must not have them. */
 export function capturedCheck(repoRoot: string): DoctorCheck {
-  const root = join(stateDir(repoRoot), "compare")
-  const files = existsSync(root)
-    ? readdirSync(root, { withFileTypes: true })
-        .filter((e) => e.isDirectory() && existsSync(join(root, e.name, "captured.jsonl")))
-        .map((e) => relative(repoRoot, join(root, e.name, "captured.jsonl")))
-    : []
+  const files = rawInputFiles(repoRoot)
   if (files.length === 0) return { name: "captured", status: "ok", detail: "no shadow captures" }
   if (!insideGitWorkTree(repoRoot))
     return {
       name: "captured",
       status: "ok",
-      detail: `${files.length} capture(s), not in a git work tree`,
+      detail: `${files.length} capture file(s), not in a git work tree`,
     }
+  let tracked: Set<string>
   let ignored: Set<string>
   try {
+    tracked = gitTracked(repoRoot, files)
     ignored = new Set(gitIgnored(repoRoot, files))
   } catch {
     return {
       name: "captured",
       status: "ok",
-      detail: `${files.length} capture(s); git couldn't say whether they are ignored`,
+      detail: `${files.length} capture file(s); git couldn't say whether they are ignored`,
     }
   }
-  const exposed = files.filter((f) => !ignored.has(f))
-  if (exposed.length === 0)
+  const committed = files.filter((f) => tracked.has(f))
+  const exposed = files.filter((f) => !tracked.has(f) && !ignored.has(f))
+  if (committed.length === 0 && exposed.length === 0)
     return {
       name: "captured",
       status: "ok",
-      detail: `${files.length} capture(s), all ignored by git`,
+      detail: `${files.length} capture file(s), all ignored by git`,
     }
+  const where = (f: string) => (f.includes("/fixtures/") ? f.slice(0, f.lastIndexOf("/") + 1) : f)
   return {
     name: "captured",
     status: "warn",
     advisory: true,
-    detail: `shadow captures hold raw inputs and git would commit them: ${list(exposed)}`,
-    fix: "add `.system1/compare/*/captured.jsonl` to .gitignore",
+    detail: [
+      committed.length ? `raw inputs already committed: ${list(committed.map(where))}` : "",
+      exposed.length ? `raw inputs git would commit: ${list(exposed.map(where))}` : "",
+    ]
+      .filter(Boolean)
+      .join("; "),
+    fix: [
+      "add `.system1/compare/` and `.system1/fixtures/compare.*/` to .gitignore",
+      committed.length
+        ? "then `git rm -r --cached` the committed ones; they stay in history until it is rewritten"
+        : "",
+    ]
+      .filter(Boolean)
+      .join("; "),
   }
 }

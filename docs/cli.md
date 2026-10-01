@@ -187,7 +187,8 @@ harness that `adopt` generates, and writes `.system1/compare/<spec>/report.json`
   first (`decide config egress allow-profile`), or it is `profile-not-allowed` before any call.
 - **Live calls** need repo consent, and the spend guard covers both sides' calls together, so
   `--dry-run` projects both and `--confirm` passes the guard. `--record` keeps the answers as
-  fixtures, so a later run replays them with no key. Both sides' spend is ledgered with the tag
+  fixtures in `.system1/fixtures/compare.<spec>/`, apart from the spec's own, so a later run
+  replays them with no key. They hold the captured states: keep them out of git. Both sides' spend is ledgered with the tag
   `compare`.
 - **Signals:** cost per call and latency for each side, Jev's decisiveness and undecided share,
   the baseline's parse rate (answers that fit the answer space strictly), and agreement by question

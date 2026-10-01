@@ -344,6 +344,9 @@ describe("runCompare against the emulated baseline", () => {
     // A replay measures no cost: unknown, not zero.
     expect(again.jev.cost.total).toBeNull()
     expect(existsSync(join(cwd, ".system1/compare/tickets/report.json"))).toBe(true)
+    // Recorded apart from the spec's committed example fixtures: these hold the captured inputs.
+    expect(existsSync(join(cwd, ".system1/fixtures/compare.tickets"))).toBe(true)
+    expect(existsSync(join(cwd, ".system1/fixtures/tickets"))).toBe(false)
   })
 
   it("refuses an unknown baseline", async () => {

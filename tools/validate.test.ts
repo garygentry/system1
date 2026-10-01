@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
+import { GRANT_CASES } from "./fixtures/grant-corpus.js"
 import { drift, loadCatalog, ROOT, render } from "./generate.js"
-import { GRANT_CASES } from "./grant-corpus.js"
 import {
   checkRepository,
   checkSkill,

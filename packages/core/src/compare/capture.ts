@@ -45,6 +45,15 @@ export function compareDir(repoRoot: string, spec: string): string {
   return join(stateDir(repoRoot), "compare", spec)
 }
 
+/**
+ * The fixture namespace `compare` records under: apart from the spec's own
+ * example fixtures (committed), because these hold every captured state, which
+ * are raw inputs and stay out of git (`.system1/fixtures/compare.<spec>/`).
+ */
+export function compareNamespace(spec: string): string {
+  return `compare.${spec}`
+}
+
 export function labelsPath(repoRoot: string, spec: string): string {
   return join(stateDir(repoRoot), "labels", `${spec}.jsonl`)
 }
