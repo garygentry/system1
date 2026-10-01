@@ -16,7 +16,7 @@ import { join } from "node:path"
 import { unquoteKey } from "../config/key.js"
 import { createDecider, type DecisionResult } from "../decide.js"
 import { scrubText } from "../egress/scrub.js"
-import { isDecisionsError, ProviderError } from "../errors.js"
+import { isDecisionsError, ProviderError, spentOf } from "../errors.js"
 import { FixtureStore } from "../fixtures/store.js"
 import {
   DEFAULT_MODEL_ID,
@@ -223,8 +223,9 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
       controller.signal.addEventListener("abort", () => resolve("timeout"), { once: true }),
     )
     let result: DecisionResult | "timeout"
+    let call: Promise<DecisionResult> | undefined
     try {
-      const call = createDecider({
+      call = createDecider({
         profile,
         egressConsent: opts.egress === "on",
         mode,
@@ -265,7 +266,18 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
       clearTimeout(timer)
     }
     if (result === "timeout") {
-      if (mode === "live") settle(dayKey, 0, { usd: projected })
+      if (mode === "live") {
+        settle(dayKey, 0, { usd: projected })
+        // The deadline answers first; the call rejects just after. When it was
+        // abandoned after retries that may have been billed, count each one
+        // beyond the projection already counted.
+        call?.catch((error: unknown) => {
+          const spent = spentOf(error)
+          if (!spent) return
+          const extra = knownCost(spent.usage) + projected * spent.uncounted - projected
+          if (extra > 0) settle(dayKey, extra, { usd: extra })
+        })
+      }
       return fallback("timeout", `no answer within ${timeoutMs} ms`)
     }
     if (mode === "live") {

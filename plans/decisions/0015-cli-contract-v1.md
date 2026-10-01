@@ -193,6 +193,7 @@ Plan: `m11-adopt.md`, PR 4 (D2). Additive.
 Plan: `m11-adopt.md`, "To verify" (gap B). Additive.
 
 - **`error.details.spent`** on `provider-unreachable`, `provider-http` and `malformed-response`, when the call may have been billed: `{usage, uncounted}`. `usage` is what a 200 reported (`reported: false` when incomplete). `uncounted` is the number of attempts billed at a cost nobody reported. The spend is logged to the ledger before the error is returned. Absent means nothing ran: a 4xx other than 408, a 503, a 529, or a connection that never opened.
+- **`many`'s `usage`** includes what failed items may have cost, so the total is marked `reported: false` when any of them is unknown. When every item fails, `error.details.spent` sums all of them.
 - **A timeout while reading a 200's body** is `provider-unreachable`, no longer `malformed-response`. It is never retried, because a 200 is paid for.
 - **`uncountedAttempts`** is an optional result field on a decision (and on a baseline answer): the attempts that may have been billed unreported (a retry after a timeout or a server-side failure, or the answer itself when it had no usage). `usage.reported` is then `false`.
 

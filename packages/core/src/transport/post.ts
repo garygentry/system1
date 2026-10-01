@@ -38,6 +38,25 @@ function neverSent(error: unknown): boolean {
 /** Nothing measured, and at least one attempt that may have been billed. */
 export const UNKNOWN_COST: Usage = { input_tokens: 0, output_tokens: 0, cost: 0, reported: false }
 
+/**
+ * A caller abort after attempts that may have been billed: still an
+ * `AbortError` to every caller, carrying `spent` so the cost is counted.
+ */
+export class AbortedAfterSpend extends Error {
+  override readonly name = "AbortError"
+  constructor(
+    reason: unknown,
+    readonly spent: Spent,
+  ) {
+    super(reason instanceof Error ? reason.message : "aborted", { cause: reason })
+  }
+}
+
+/** The abort `reason` as is when nothing may have been billed, else wrapped with `spent`. */
+function abortedAfter(reason: unknown, spent: Spent | undefined): unknown {
+  return spent ? new AbortedAfterSpend(reason, spent) : reason
+}
+
 /** `wait`, or the abort's reason as soon as `signal` aborts. */
 export function untilAborted(wait: Promise<void>, signal?: AbortSignal): Promise<void> {
   if (!signal) return wait
@@ -112,6 +131,8 @@ export async function postJson(o: PostOptions): Promise<PostResult> {
     // A backoff the caller's abort cuts short, so a deadline holds across retries.
     const wait = () => untilAborted(o.sleep(o.backoffMs * 2 ** (attempt - 1)), o.signal)
 
+    // Aborted before this attempt was sent: it cost nothing.
+    if (o.signal?.aborted) throw abortedAfter(o.signal.reason, spent())
     let response: Response
     try {
       response = await o.fetch(o.endpoint, {
@@ -126,8 +147,9 @@ export async function postJson(o: PostOptions): Promise<PostResult> {
         signal: composite,
       })
     } catch (error) {
-      // A caller abort means the answer is no longer wanted: not retried.
-      if (o.signal?.aborted) throw error
+      // A caller abort means the answer is no longer wanted: not retried. The
+      // request may have been sent, so it may have been billed.
+      if (o.signal?.aborted) throw abortedAfter(error, spent(1))
       // A request that may have reached the server may have been billed.
       if (!neverSent(error)) uncounted += 1
       if (last) {
@@ -138,7 +160,9 @@ export async function postJson(o: PostOptions): Promise<PostResult> {
           spent(),
         )
       }
-      await wait()
+      await wait().catch((error: unknown) => {
+        throw abortedAfter(error, spent())
+      })
       continue
     }
 
@@ -155,7 +179,9 @@ export async function postJson(o: PostOptions): Promise<PostResult> {
           spent(),
         )
       }
-      await wait()
+      await wait().catch((error: unknown) => {
+        throw abortedAfter(error, spent())
+      })
       continue
     }
 
@@ -165,13 +191,17 @@ export async function postJson(o: PostOptions): Promise<PostResult> {
     try {
       raw = await response.json()
     } catch (error) {
-      if (o.signal?.aborted) throw error
-      const timedOut = composite.aborted
+      if (o.signal?.aborted) throw abortedAfter(error, spent(1))
+      // Our timeout, or the connection dropping mid-body, is unreachable; a
+      // body that arrived whole but isn't JSON is malformed.
+      const notJson = error instanceof SyntaxError && !composite.aborted
       throw new ProviderError(
-        timedOut ? "provider-unreachable" : "malformed-response",
-        timedOut
-          ? `${o.endpoint} timed out sending its answer, after ${o.timeoutMs} ms`
-          : `${o.endpoint} returned a body that is not JSON`,
+        notJson ? "malformed-response" : "provider-unreachable",
+        notJson
+          ? `${o.endpoint} returned a body that is not JSON`
+          : composite.aborted
+            ? `${o.endpoint} timed out sending its answer, after ${o.timeoutMs} ms`
+            : `${o.endpoint} failed while sending its answer: ${o.describe(error)}`,
         undefined,
         spent(1),
       )

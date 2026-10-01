@@ -239,6 +239,24 @@ describe("createPolicyRuntime: the daily cap", () => {
     expect(retried.spentToday()).toBeCloseTo(0.00003 + projected, 8)
   })
 
+  it("counts each billed attempt a deadline cut short, not one projection (gap B)", async () => {
+    const probe = runtime({}, provider(0.95, { noUsage: true }).fetch)
+    await probe.decide(request)
+    const projected = probe.spentToday()
+    let n = 0
+    const fetch = (async (_url: string, init: RequestInit) => {
+      n += 1
+      if (n === 1) return new Response("", { status: 502 })
+      return new Promise((_, reject) =>
+        init.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
+      )
+    }) as unknown as typeof globalThis.fetch
+    const rt = runtime({ timeoutMs: 1500 }, fetch)
+    expect(await rt.decide(request)).toMatchObject({ ok: false, reason: "timeout" })
+    await new Promise((r) => setTimeout(r, 10))
+    expect(rt.spentToday()).toBeCloseTo(2 * projected, 10)
+  })
+
   it("counts a cost the provider doesn't report at its projection, not as free", async () => {
     const rt = runtime({}, provider(0.95, { noUsage: true }).fetch)
     expect((await rt.decide(request)).ok).toBe(true)

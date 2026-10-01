@@ -80,3 +80,12 @@ export class ProviderError extends DecisionsError {
 export function isDecisionsError(error: unknown): error is DecisionsError {
   return error instanceof DecisionsError
 }
+
+/**
+ * What a failed call may have cost, from a `ProviderError` or a caller abort
+ * that came after a billed attempt; `undefined` when nothing ran.
+ */
+export function spentOf(error: unknown): Spent | undefined {
+  const spent = (error as { spent?: unknown } | null | undefined)?.spent
+  return typeof spent === "object" && spent !== null ? (spent as Spent) : undefined
+}

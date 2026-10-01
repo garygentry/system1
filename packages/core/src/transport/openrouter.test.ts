@@ -196,6 +196,55 @@ describe("openrouter transport", () => {
       expect(r.response.usage.reported).toBeUndefined()
     })
 
+    it("carries spent on a caller abort after a billed attempt, still as an AbortError", async () => {
+      const controller = new AbortController()
+      let n = 0
+      const fetch = (async (_url: string, init: RequestInit) => {
+        n += 1
+        if (n === 1) return new Response("", { status: 502 })
+        return new Promise((_, reject) => {
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason))
+          controller.abort()
+        })
+      }) as unknown as typeof globalThis.fetch
+      await expect(
+        createOpenRouterTransport({ apiKey: "k", fetch, sleep: noSleep }).decide(
+          request,
+          controller.signal,
+        ),
+      ).rejects.toMatchObject({ name: "AbortError", spent: { uncounted: 2 } })
+      // An abort before anything was sent stays the bare reason.
+      const early = new AbortController()
+      early.abort()
+      const never = scripted(ok())
+      await expect(
+        createOpenRouterTransport({ apiKey: "k", fetch: never.fetch, sleep: noSleep }).decide(
+          request,
+          early.signal,
+        ),
+      ).rejects.toSatisfy((e: { spent?: unknown }) => e.spent === undefined)
+      expect(never.calls).toHaveLength(0)
+    })
+
+    it("reports a connection dropped mid-body as unreachable, not as a non-JSON body", async () => {
+      const fetch = (async () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new TypeError("terminated"))
+            },
+          }),
+          { status: 200 },
+        )) as unknown as typeof globalThis.fetch
+      await expect(
+        createOpenRouterTransport({ apiKey: "k", fetch, sleep: noSleep }).decide(request),
+      ).rejects.toMatchObject({
+        code: "provider-unreachable",
+        message: expect.stringMatching(/failed while sending its answer: terminated/),
+        spent: { uncounted: 1 },
+      })
+    })
+
     it("counts timeouts as billed unreported, but not a request that never left", async () => {
       const hang = ((_url: string, init: RequestInit) =>
         new Promise((_, reject) => {

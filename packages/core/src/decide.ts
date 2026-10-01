@@ -1,7 +1,7 @@
 import { assertConsent } from "./config/assert-consent.js"
 import { scrubQuestions, scrubState } from "./egress/scrub.js"
 import { assertStateFits } from "./egress/size.js"
-import { DecisionsError, ProviderError } from "./errors.js"
+import { DecisionsError, spentOf } from "./errors.js"
 import type { FixtureStore } from "./fixtures/store.js"
 import { fixtureKey } from "./fixtures/store.js"
 import { undecidedNames } from "./model/answers.js"
@@ -195,10 +195,11 @@ export function createDecider(options: DeciderOptions): Decider {
         sent = await (transport as Transport).decide(request, signal)
       } catch (error) {
         // A failure that may have been billed is counted before it is reported.
-        if (error instanceof ProviderError && error.spent) {
+        const spent = spentOf(error)
+        if (spent) {
           const unsaved: Unsaved[] = []
-          log("live", profile.id, error.spent.usage, unsaved)
-          if (unsaved.length) error.details.unsaved = unsaved
+          log("live", profile.id, spent.usage, unsaved)
+          if (unsaved.length && error instanceof DecisionsError) error.details.unsaved = unsaved
         }
         throw error
       }
