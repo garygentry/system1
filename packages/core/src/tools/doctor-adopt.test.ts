@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs"
+import { mkdirSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -95,6 +95,15 @@ describe("doctor: adopted", () => {
     )
   })
 
+  it("isn't fooled by a comment marker inside a string", () => {
+    const dir = gitRepo(temp(), {
+      "src/glob.ts":
+        'const g = "src/*.ts"\ncreatePolicyRuntime({ module: "bundled", egress: e })\n/** doc */\nfoo() // module: "bundled"\n',
+      "src/trailing.ts": 'foo() // module: "bundled"\n',
+    })
+    expect(adoptedCheck(dir).detail).toBe('module lock opted out ("bundled") in src/glob.ts')
+  })
+
   it("names no module count when only an opt-out is found", () => {
     const dir = gitRepo(temp(), { "src/apart.ts": 'f({ module: "bundled" })\n' })
     expect(adoptedCheck(dir).detail).toBe('module lock opted out ("bundled") in src/apart.ts')
@@ -129,6 +138,12 @@ describe("doctor: captured", () => {
       status: "ok",
       detail: ".system1/compare/ ignored by git",
     })
+  })
+
+  it("reports nothing for a compare directory holding only empty directories", () => {
+    const dir = gitRepo(temp(), { "a.ts": "x" })
+    mkdirSync(join(dir, ".system1/compare/triage/probe"), { recursive: true })
+    expect(capturedCheck(dir)).toMatchObject({ status: "ok", detail: "no shadow captures" })
   })
 
   it("warns when git would commit a capture, a probe or compare's recorded answers", () => {

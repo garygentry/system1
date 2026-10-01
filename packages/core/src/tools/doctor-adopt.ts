@@ -23,12 +23,36 @@ const NOT_APP_CODE =
 const SOURCE = /\.(?:[cm]?[jt]sx?|py)$/
 /** TypeScript or JavaScript: only these call the runtime in-process. */
 const SCRIPT = /\.(?:[cm]?[jt]sx?)$/
-const DEFINES = /\bfunction\s+createPolicyRuntime\s*\(/
+/** The runtime's own source, whose messages name the opt-out (this repo's engine). */
+const RUNTIME_SOURCE = /(^|\/)core\/src\/runtime\/runtime\.[jt]s$/
 const BUNDLED = /\bmodule\s*:\s*["']bundled["']/
 
-/** TS/JS source without its comments: block comments and whole-line `//` comments. */
-const code = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+/**
+ * TS/JS source without its comments. A small scanner, not a regex: a `/*` or
+ * `//` inside a string (a glob, a URL) is not a comment. Regex literals aren't
+ * parsed; one holding a quote or `/*` can still mislead it.
+ */
+function code(source: string): string {
+  let out = ""
+  let quote = ""
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i] as string
+    if (quote) {
+      out += c
+      if (c === "\\") out += source[++i] ?? ""
+      else if (c === quote) quote = ""
+    } else if (c === "/" && source[i + 1] === "*") {
+      const end = source.indexOf("*/", i + 2)
+      i = end < 0 ? source.length : end + 1
+    } else if (c === "/" && source[i + 1] === "/") {
+      while (i + 1 < source.length && source[i + 1] !== "\n") i++
+    } else {
+      if (c === '"' || c === "'" || c === "`") quote = c
+      out += c
+    }
+  }
+  return out
+}
 /** A module's grant line: `EGRESS` set at the start of the line that carries the marker. */
 const GRANT_LINE = new RegExp(
   `^(?:export\\s+)?(?:(?:const|let|var)\\s+)?EGRESS\\b.*${EGRESS_MARKER}`,
@@ -106,7 +130,8 @@ export function adoptedCheck(repoRoot: string): DoctorCheck {
     if (marked && grantIn(source).egress === "on") on.push(path)
     // The opt-out, wherever the options are built: in the call, or in an object passed to it.
     // Not the runtime's own source, whose messages name the opt-out.
-    if (SCRIPT.test(path) && !DEFINES.test(source) && BUNDLED.test(code(source))) bundled.push(path)
+    if (SCRIPT.test(path) && !RUNTIME_SOURCE.test(path) && BUNDLED.test(code(source)))
+      bundled.push(path)
   }
   if (modules === 0 && bundled.length === 0)
     return { name: "adopted", status: "ok", detail: "no adopted modules" }
@@ -169,7 +194,11 @@ function lsFiles(repoRoot: string, path: string, others: boolean): string[] {
  */
 export function capturedCheck(repoRoot: string): DoctorCheck {
   const dir = join(stateDir(repoRoot), "compare")
-  if (!existsSync(dir) || readdirSync(dir).length === 0)
+  const hasFile = (d: string): boolean =>
+    readdirSync(d, { withFileTypes: true }).some((e) =>
+      e.isDirectory() ? hasFile(join(d, e.name)) : true,
+    )
+  if (!existsSync(dir) || !hasFile(dir))
     return { name: "captured", status: "ok", detail: "no shadow captures" }
   if (!insideGitWorkTree(repoRoot))
     return { name: "captured", status: "ok", detail: "shadow captures, not in a git work tree" }
@@ -190,7 +219,12 @@ export function capturedCheck(repoRoot: string): DoctorCheck {
     return { name: "captured", status: "ok", detail: `${rel}/ ignored by git` }
   // By spec: `.system1/compare/<spec>/`.
   const specs = (files: string[]) => [
-    ...new Set(files.map((f) => f.split("/").slice(0, 3).join("/") + "/")),
+    ...new Set(
+      files.map((f) => {
+        const parts = f.split("/")
+        return parts.length > 3 ? `${parts.slice(0, 3).join("/")}/` : f
+      }),
+    ),
   ]
   return {
     name: "captured",
