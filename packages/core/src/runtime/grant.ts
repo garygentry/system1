@@ -22,12 +22,19 @@ export const RUNTIME_PROTOCOL = 1
 
 /**
  * `const EGRESS = "on"`, `export const EGRESS: Egress = 'on'`, `EGRESS = "on"`,
- * `EGRESS: str = "on"`: the literal `on` assigned to `EGRESS` at the start of
- * the line, followed only by the comment. So `"on" if os.environ… else "off"`
- * or `"on" || x` is no grant: consent is never computed, only written.
+ * `EGRESS: Final = "on"`, `const EGRESS = "on" as const`: the literal `on`
+ * assigned to `EGRESS`, followed only by the marker comment.
+ *
+ * - **At column 0**, where a module-level binding sits: an indented line (in
+ *   an `if`, a function or a docstring's body) is off. A template also checks
+ *   its own value before it spawns `decide`, so file and value must agree.
+ * - **A type annotation can't hold `=`, a quote-free comment opener or a
+ *   newline,** so `EGRESS: "= 'on' #" = "off"` can't pass for a grant.
+ * - **Nothing but the marker comment after it,** so `"on" if os.environ…` or
+ *   `"on" || x` is no grant: consent is never computed, only written.
  */
 const ON =
-  /^\s*(?:export\s+)?(?:(?:const|let|var)\s+)?EGRESS\s*(?::\s*[\w.[\]|"' ]+?\s*)?=\s*(["'])on\1\s*(?:as\s+const\s*)?;?\s*(?:\/\/|#)/
+  /^(?:export\s+)?(?:(?:const|let|var)\s+)?EGRESS\s*(?::\s*[^=#/\n]+?\s*)?=\s*(["'])on\1\s*(?:(?:as|satisfies)\s+[\w.]+\s*)?;?\s*(?:\/\/|#)\s*system1: runtime egress/
 
 export interface ModuleGrant {
   egress: "on" | "off"

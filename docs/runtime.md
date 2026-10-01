@@ -64,10 +64,11 @@ decide runtime --module <its own path> --root <dir> --max-usd-per-day <usd> [--m
 decide runtime --protocol
 ```
 
-- **Request and result:** the request `{questions, state, namespace}` goes to stdin as one JSON object (`decide schema runtime` prints its schema), and one result, as above, comes back on stdout. It is not the CLI's envelope, and **it always exits 0**: a bad flag, an unreadable module or a malformed request is a fallback with `internal`.
+- **Request and result:** the request `{questions, state, namespace}` goes to stdin as one JSON object (`decide schema runtime` prints its schema), and one result, as above, comes back on stdout. It is not the CLI's envelope, and **it always exits 0**: a bad flag (`--format` and `--help` included), an unreadable module or a malformed request is a fallback with `internal`.
 - **The grant is the module's own line.** `decide runtime` reads `--module` and looks for the line that carries the comment `system1: runtime egress`.
-  - Egress is on only when exactly one line carries it, and that line assigns the literal `"on"` to `EGRESS` with nothing after it but the comment. For example: `EGRESS = "on"  # system1: runtime egress …`.
-  - Anything else is off: two marked lines, a value computed from the environment, or `"on" if … else "off"`. The fallback's `detail` then says why.
+  - Egress is on only when exactly one line carries it, and that line assigns the literal `"on"` to `EGRESS` at column 0 with nothing after it but that comment. For example: `EGRESS = "on"  # system1: runtime egress …`. A type annotation (`EGRESS: Final = "on"`) and `as const` or `satisfies` in TypeScript are fine.
+  - Anything else is off: two marked lines, an indented line (inside an `if`, a function or a docstring), a value computed from the environment, `"on" if … else "off"`, or another comment before the marker. The fallback's `detail` then says why.
+  - It reads the text, not what Python runs, so the generated module also checks its own `EGRESS` before it spawns `decide`: both must say on.
   - There is no egress flag and no variable for it.
 - **A live call needs a writable `--root`.** Each call is a new process, so only a shared ledger file holds the daily cap across them. Without one, the result is `internal`. `--replay` answers from `--root`'s fixtures and needs no grant and no key.
 - **It loads no config.** It reads no repo or user config file and no `SYSTEM1_*` variable; it reads only `OPENROUTER_API_KEY`. `--model` picks a decision model (the default is `typesafe/jev-1.13`).

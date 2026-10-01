@@ -52,6 +52,11 @@ const DEFAULT_FORMAT: Format = "json"
 
 export async function main(argv: string[], io: Io): Promise<ExitCode> {
   const [command, ...args] = argv
+  // Spawned by hooks and adopted modules, which read exactly one JSON object
+  // and always exit 0: no --format, no help text, whatever the arguments say.
+  if (command === "hook") return (await import("./commands/hook.js")).runHookCommand(args, io)
+  if (command === "runtime")
+    return (await import("./commands/runtime.js")).runRuntimeCommand(args, io)
   let format: Format
   let rest: string[]
   let explicitFormat: boolean
@@ -96,10 +101,6 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return (await import("./commands/misc.js")).runSchemaCommand(rest, io, format)
     case "route":
       return (await import("./commands/route.js")).runRouteCommand(rest, io, format)
-    case "hook":
-      return (await import("./commands/hook.js")).runHookCommand(rest, io)
-    case "runtime":
-      return (await import("./commands/runtime.js")).runRuntimeCommand(rest, io)
     case "ping":
       return (await import("./commands/misc.js")).runPingCommand(io, format)
     case "doctor":

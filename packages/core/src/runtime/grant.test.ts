@@ -11,9 +11,11 @@ describe("the module grant (0020, D7)", () => {
       `const EGRESS = "on" // ${mark}`,
       `export const EGRESS: "on" | "off" = 'on'; // ${mark}`,
       `const EGRESS = "on" as const // ${mark}`,
+      `const EGRESS = "on" satisfies Egress // ${mark}`,
       `EGRESS = "on"  # ${mark}`,
       `EGRESS: str = "on"  # ${mark}`,
-      `    EGRESS = 'on' # ${mark}`,
+      `EGRESS: Final = 'on' # ${mark}`,
+      `EGRESS: Literal["on", "off"] = "on"  # ${mark}`,
     ])
       expect(grantIn(`x = 1\n${line}\ny = 2\n`), line).toEqual({ egress: "on" })
   })
@@ -29,6 +31,14 @@ describe("the module grant (0020, D7)", () => {
       `NOT_EGRESS = "on"  # ${mark}`,
       `EGRESS = "online"  # ${mark}`,
       `EGRESS == "on"  # ${mark}`,
+      // The annotation can't smuggle in an assignment: Python runs this as "off".
+      `EGRESS: "= 'on' #" = "off"  # ${mark}`,
+      `let EGRESS: "off" | "x = 'on' //" = "off" // ${mark}`,
+      // Indented: inside an if, a function or a docstring, not the module's binding.
+      `    EGRESS = "on"  # ${mark}`,
+      `\tEGRESS = "on"  # ${mark}`,
+      // A comment between the literal and the marker.
+      `EGRESS = "on"  # not the marker; ${mark}`,
     ])
       expect(grantIn(line).egress, line).toBe("off")
     expect(grantIn(`EGRESS = "on"\n`)).toEqual({

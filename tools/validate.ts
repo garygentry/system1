@@ -28,7 +28,7 @@ const USER_ONLY = ["--i-consent", "allow-profile", "allowProfiles"]
  * (plan m11-adopt D7): skills may ship it only inside the code templates
  * `adopt` copies into a repo.
  */
-const MODULE_ONLY = /\bdecide\s+runtime\b/
+const MODULE_ONLY = /\bdecide(?:\.mjs)?(?:["',\s\\]|\]\s*)+runtime\b/
 const TEMPLATES = /(^|\/)references\/templates\//
 
 export function checkSkill(dir: string, name: string, text: string): string[] {

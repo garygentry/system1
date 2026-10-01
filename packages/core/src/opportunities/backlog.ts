@@ -247,7 +247,7 @@ export function withBacklogLock<T>(file: string, body: () => T): T {
       busy: (lock) =>
         new DecisionsError(
           "invalid-request",
-          `${file} is locked by another \`decide opportunities add\` (${lock}). Retry, or delete the lock file if no add is running.`,
+          `${file} is locked by another \`decide opportunities\` write (${lock}). Retry, or delete the lock file if none is running.`,
           { file, lock },
         ),
     },

@@ -50,10 +50,16 @@ describe("consentFlag", () => {
       'subprocess.run(["decide", "runtime", "--module", __file__])\n# decide runtime --module\n',
     )
     expect(consentFlag(dir, "adopt")).toEqual([])
-    writeFileSync(join(dir, "references/run.md"), "Then run `decide  runtime --module x`.\n")
-    expect(consentFlag(dir, "adopt")).toEqual([
-      "adopt: references/run.md must not run decide runtime (an adopted module's, outside references/templates/)",
-    ])
+    for (const text of [
+      "Then run `decide  runtime --module x`.\n",
+      'spawn(["decide", "runtime"])\n',
+      "decide \\\n  runtime --module x\n",
+    ]) {
+      writeFileSync(join(dir, "references/run.md"), text)
+      expect(consentFlag(dir, "adopt"), text).toEqual([
+        "adopt: references/run.md must not run decide runtime (an adopted module's, outside references/templates/)",
+      ])
+    }
   })
 
   it("finds the emulated baseline's opt-in, which only the user may grant", () => {

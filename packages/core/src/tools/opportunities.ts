@@ -86,6 +86,8 @@ export function runOpportunitiesList(
   }
 }
 
+const STATUSES: readonly string[] = ["new", "stale", "adopted", "rejected"]
+
 export interface OpportunitiesSetStatusResult {
   file: string
   id: string
@@ -103,20 +105,29 @@ export function runOpportunitiesSetStatus(
   ctx: ToolContext,
   rawInput: unknown,
 ): OpportunitiesSetStatusResult {
+  const status = (rawInput as { status?: unknown } | null)?.status
+  if (typeof status === "string" && !STATUSES.includes(status))
+    throw new DecisionsError(
+      "invalid-request",
+      `Unknown status "${status}". Use: ${STATUSES.join(", ")}`,
+    )
   const input = checkInput<OpportunitiesSetStatusInput>("opportunities-set-status", rawInput)
   if (input.status === "rejected" && !input.reason)
     throw new DecisionsError("invalid-request", "A rejected opportunity needs --reason")
   const file = backlogPath(ctx.config.repoRoot)
+  const unknown = () =>
+    new DecisionsError(
+      "invalid-request",
+      `No opportunity ${input.id} in ${file}. \`decide opportunities list --fields status\` lists the ids.`,
+      { id: input.id },
+    )
+  // No backlog: nothing to set, and nothing to create on the way.
+  if (!existsSync(file)) throw unknown()
   return withBacklogLock(file, () => {
     const backlog = readBacklog(file)
     const at = backlog.opportunities.findIndex((o) => o.id === input.id)
     const before = backlog.opportunities[at]
-    if (!before)
-      throw new DecisionsError(
-        "invalid-request",
-        `No opportunity ${input.id} in ${file}. \`decide opportunities list --fields status\` lists the ids.`,
-        { id: input.id },
-      )
+    if (!before) throw unknown()
     const { statusReason: _old, ...rest } = before
     const after: Opportunity = {
       ...rest,

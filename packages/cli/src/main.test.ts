@@ -140,7 +140,15 @@ describe("decide runtime (D7)", () => {
     const { io, json } = rig({ "policy.py": `EGRESS = "off"  # ${MARK}\n` })
     expect(await run(io, ["--protocol"])).toBe(0)
     expect(json()).toEqual({ protocol: 1, version: expect.any(String) })
-    for (const argv of [[], ["--module", "missing.py", "--max-usd-per-day", "1"], ["--nope"]]) {
+    for (const argv of [
+      [],
+      ["--module", "missing.py", "--max-usd-per-day", "1"],
+      ["--nope"],
+      // Never the envelope or help text: one result, exit 0, whatever the arguments.
+      ["--format", "bogus"],
+      ["--root", "--help"],
+      ["--help"],
+    ]) {
       expect(await run(io, argv)).toBe(0)
       expect(json()).toMatchObject({ ok: false, reason: "internal" })
     }
