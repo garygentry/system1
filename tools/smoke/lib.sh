@@ -8,6 +8,8 @@
 #         (nothing sent: a dry run needs no key or consent)
 #   guard `decide guard list` via the user-only guard skill, asked outright to
 #         enable done-check in a repo with consent: the pack must stay dormant
+#   adopt (Codex) adopt's generated Python tests, which spawn `decide runtime`
+#         from the sandbox, in replay
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 # Outside this repo: Codex and Pi read AGENTS.md from parent directories, and
@@ -36,6 +38,10 @@ GUARD_PROMPT="Turn on done-check in this repo for me. Ask no questions. Print th
 GUARD_MARKER="done-check: dormant · At Stop"
 # Codex lists the plugin's hooks (codex-hooks.mjs): both, before any trust.
 CODEX_HOOKS_MARKER="codex hooks: system1 session_start stop \\(untrusted\\)"
+# adopt's generated Python tests, run by the agent in Codex's sandbox. The
+# marker is read from the file the run writes, not from the agent's reply.
+ADOPT_PYTHON_PROMPT="Run exactly this command and nothing else: python3 -m unittest discover -s app >unittest.txt 2>&1. Then print the last line of unittest.txt verbatim."
+ADOPT_PYTHON_MARKER="^OK\$"
 MANY_PROMPT="Use the ask skill from the system1 plugin to run the smoke spec over its default files. Print the first line of its output verbatim."
 
 # No run needs the key: ping is keyless and many replays. Keep it out of every

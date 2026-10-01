@@ -1,5 +1,8 @@
+import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { resolveProfile } from "../model/profiles.js"
+import { createPolicyRuntime } from "../runtime/runtime.js"
+import { loadSpec } from "../spec/spec.js"
 import { fakeDecisionsFetch } from "../testkit/fake-model.js"
 import { useTempDirs } from "../testkit/tmp.js"
 import { createContext } from "./context.js"
@@ -186,5 +189,33 @@ examples:
     const { ctx } = rig(spec)
     const r = await runSpecCheck(ctx, { spec: "authy", mode: "record" })
     expect(r.examples[0]?.failures).toEqual([{ question: "a", expected: ">=0.9" }])
+  })
+
+  // adopt's generated tests replay what `spec check --live` recorded for the
+  // spec's examples, through the runtime: the two must key a string state alike.
+  it("records fixtures the runtime replays for the same string state", async () => {
+    const spec = `description: Triage.
+questions:
+  urgent: { type: noul, instructions: The ticket needs a reply within the hour. }
+examples:
+  - { id: outage, state: "Subject: Down\\n\\nEvery page returns a 500 error.\\n" }
+  - { id: plain, state: "  billing question  " }
+`
+    const { ctx, cwd } = rig(spec)
+    await runSpecCheck(ctx, { spec: "authy", mode: "record" })
+    const { questions } = loadSpec("authy", ctx.specDirs, cwd)
+    const runtime = createPolicyRuntime({
+      egress: "off",
+      maxUsdPerDay: 1,
+      mode: "replay",
+      root: join(cwd, ".system1"),
+    })
+    for (const state of [
+      "Subject: Down\n\nEvery page returns a 500 error.\n",
+      "  billing question  ",
+    ]) {
+      const result = await runtime.decide({ questions, state, namespace: "authy" })
+      expect(result, JSON.stringify(state)).toMatchObject({ ok: true, source: "replay" })
+    }
   })
 })

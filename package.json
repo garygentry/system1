@@ -19,7 +19,7 @@
   },
   "scripts": {
     "build": "tsc -b && pnpm -F @garygentry/system1 exec node bundle.mjs",
-    "typecheck": "tsc -b && tsc -p tsconfig.tools.json",
+    "typecheck": "tsc -b && tsc -p tsconfig.tools.json && tsc -p tsconfig.templates.json",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",

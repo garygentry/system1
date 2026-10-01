@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decisions: adopt"
+  short_description: "Replace a closed judgement in this code with a decision-model policy module"
+  default_prompt: "Use $adopt to adopt a scouted decision-model opportunity."
+policy:
+  allow_implicit_invocation: false

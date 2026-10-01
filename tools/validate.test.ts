@@ -2,8 +2,15 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { drift, loadCatalog, render } from "./generate.js"
-import { checkRepository, checkSkill, consentFlag, noRootManifest } from "./validate.js"
+import { drift, loadCatalog, ROOT, render } from "./generate.js"
+import { GRANT_CASES } from "./grant-corpus.js"
+import {
+  checkRepository,
+  checkSkill,
+  consentFlag,
+  noRootManifest,
+  templateGrants,
+} from "./validate.js"
 
 const skill = (front: string) => `---\n${front}\n---\n\n# Body\n`
 
@@ -57,7 +64,7 @@ describe("consentFlag", () => {
     ]) {
       writeFileSync(join(dir, "references/run.md"), text)
       expect(consentFlag(dir, "adopt"), text).toEqual([
-        "adopt: references/run.md must not run decide runtime (an adopted module's, outside references/templates/)",
+        "adopt: references/run.md must not run decide runtime (an adopted module's, outside adopt's references/templates/)",
       ])
     }
   })
@@ -75,6 +82,38 @@ describe("consentFlag", () => {
     writeFileSync(join(dir, "notes.md"), "Add it to egress.allowProfiles in .system1/config.yaml\n")
     expect(consentFlag(dir, "compare")).toEqual([
       "compare: notes.md must not contain allowProfiles (the user's to run)",
+    ])
+  })
+})
+
+describe("templateGrants", () => {
+  const MARK = "system1: runtime egress"
+  it("allows what the templates do and finds every grant in the corpus", () => {
+    for (const { text, ok, python } of GRANT_CASES)
+      expect(templateGrants(text, python).length === 0, text).toBe(ok)
+  })
+
+  it("scans every file under references/templates/, and the shipped ones pass", () => {
+    const dir = mkdtempSync(join(tmpdir(), "skill-"))
+    mkdirSync(join(dir, "references/templates/ts"), { recursive: true })
+    writeFileSync(join(dir, "SKILL.md"), skill("name: adopt\ndescription: x"))
+    writeFileSync(
+      join(dir, "references/templates/ts/policy.ts"),
+      `const EGRESS = "on" // ${MARK}\n`,
+    )
+    expect(consentFlag(dir, "adopt")).toEqual([
+      'adopt: references/templates/ts/policy.ts grants runtime egress: line 1: the marked line isn\'t a constant EGRESS set to "off"',
+    ])
+    expect(consentFlag(join(ROOT, "plugins/system1/skills/adopt"), "adopt")).toEqual([])
+  })
+
+  it("exempts only adopt's templates from the decide runtime rule", () => {
+    const dir = mkdtempSync(join(tmpdir(), "skill-"))
+    mkdirSync(join(dir, "references/templates"), { recursive: true })
+    writeFileSync(join(dir, "SKILL.md"), skill("name: ask\ndescription: x"))
+    writeFileSync(join(dir, "references/templates/run.sh"), "decide runtime --module x\n")
+    expect(consentFlag(dir, "ask")).toEqual([
+      "ask: references/templates/run.sh must not run decide runtime (an adopted module's, outside adopt's references/templates/)",
     ])
   })
 })
