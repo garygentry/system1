@@ -1,18 +1,13 @@
 import { ProviderError } from "../errors.js"
 import type { DecisionRequest, DecisionResponse } from "../model/types.js"
-import { parseDecisionResponse } from "../model/validate.js"
+import { parseDecisionResponse, responseUsage } from "../model/validate.js"
+import { postJson, withUncounted } from "./post.js"
+
+export { RETRY_STATUSES, untilAborted } from "./post.js"
 
 export const DEFAULT_ENDPOINT = "https://openrouter.ai/api/alpha/decisions"
 
 export const DEFAULT_TIMEOUT_MS = 5_000
-
-/**
- * Statuses worth another attempt: timeouts, rate limits and upstream hiccups.
- * 529 is the provider's `system_overloaded`, seen on 2.9% of a 385-item sweep.
- */
-export const RETRY_STATUSES: ReadonlySet<number> = new Set([
-  408, 429, 500, 502, 503, 504, 520, 521, 522, 524, 529,
-])
 
 export interface TransportOptions {
   /** OpenRouter's decisions endpoint. An alpha path, so overridable. */
@@ -37,6 +32,12 @@ export interface TransportResult {
   /** Measured round trip across all attempts. */
   latencyMs: number
   attempts: number
+  /**
+   * Attempts that may have been billed at a cost nobody reported: earlier ones
+   * (see `postJson`), and this one when its usage was unreadable. Optional so a
+   * custom transport needn't track it.
+   */
+  uncounted?: number
 }
 
 export interface Transport {
@@ -45,107 +46,49 @@ export interface Transport {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
-/** `wait`, or the abort's reason as soon as `signal` aborts. */
-export function untilAborted(wait: Promise<void>, signal?: AbortSignal): Promise<void> {
-  if (!signal) return wait
-  if (signal.aborted) return Promise.reject(signal.reason)
-  return new Promise<void>((resolve, reject) => {
-    const abort = () => reject(signal.reason)
-    signal.addEventListener("abort", abort, { once: true })
-    wait.then(
-      () => {
-        signal.removeEventListener("abort", abort)
-        resolve()
-      },
-      (error: unknown) => {
-        signal.removeEventListener("abort", abort)
-        reject(error)
-      },
-    )
-  })
-}
-
 /**
  * The `openrouter-decisions` transport: POSTs one decision request, with retry,
  * exponential backoff, a timeout per attempt and caller abort, and validates
- * the body strictly before anything downstream trusts it.
+ * the body strictly before anything downstream trusts it. A body that fails
+ * validation is still paid for: its usage travels on the error (`spent`).
  */
 export function createOpenRouterTransport(options: TransportOptions): Transport {
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  const maxAttempts = Math.max(1, options.maxAttempts ?? 3)
-  const backoffMs = options.backoffMs ?? 400
-  const doFetch = options.fetch ?? fetch
-  const sleep = options.sleep ?? defaultSleep
-
   return {
     async decide(request, signal) {
-      const startedAt = performance.now()
-      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-        // One timeout per attempt, linked to the caller's signal so an abort
-        // cancels the in-flight fetch rather than being ignored.
-        const timeout = AbortSignal.timeout(timeoutMs)
-        const composite = signal ? AbortSignal.any([signal, timeout]) : timeout
-        const last = attempt === maxAttempts
-        // A backoff the caller's abort cuts short, so a deadline holds across retries.
-        const wait = () => untilAborted(sleep(backoffMs * 2 ** (attempt - 1)), signal)
-
-        let response: Response
-        try {
-          response = await doFetch(endpoint, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${options.apiKey}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://github.com/garygentry/system1",
-              "X-Title": "system1",
-            },
-            body: JSON.stringify(request),
-            signal: composite,
-          })
-        } catch (error) {
-          // A caller abort means the answer is no longer wanted: not retried.
-          if (signal?.aborted) throw error
-          if (last) {
-            throw new ProviderError(
-              "provider-unreachable",
-              `Could not reach ${endpoint}: ${describe(error)}`,
-            )
-          }
-          await wait()
-          continue
-        }
-
-        if (!response.ok) {
-          const detail = (await response.text()).slice(0, 500)
-          if (!RETRY_STATUSES.has(response.status) || last) {
-            throw new ProviderError(
-              "provider-http",
-              `${endpoint} returned ${response.status}: ${detail}`,
-              response.status,
-            )
-          }
-          await wait()
-          continue
-        }
-
-        let raw: unknown
-        try {
-          raw = await response.json()
-        } catch {
-          throw new ProviderError(
-            "malformed-response",
-            `${endpoint} returned a body that is not JSON`,
-          )
-        }
-        return {
-          response: parseDecisionResponse(raw, request.questions, request.model),
-          latencyMs: Math.round(performance.now() - startedAt),
-          attempts: attempt,
-        }
+      const { raw, latencyMs, attempts, uncounted } = await postJson({
+        endpoint,
+        apiKey: options.apiKey,
+        body: JSON.stringify(request),
+        timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        maxAttempts: Math.max(1, options.maxAttempts ?? 3),
+        backoffMs: options.backoffMs ?? 400,
+        fetch: options.fetch ?? fetch,
+        sleep: options.sleep ?? defaultSleep,
+        signal,
+        quoteErrorBody: true,
+        describe,
+      })
+      let response: DecisionResponse
+      try {
+        response = parseDecisionResponse(raw, request.questions, request.model)
+      } catch (error) {
+        if (!(error instanceof ProviderError)) throw error
+        // The 200 itself counts as uncounted when its usage is unreadable too.
+        const usage = responseUsage(raw)
+        const all = uncounted + (usage.reported === false ? 1 : 0)
+        throw new ProviderError(error.code as "malformed-response", error.message, undefined, {
+          usage: withUncounted(usage, all),
+          uncounted: all,
+        })
       }
-      // Unreachable: the last attempt always returns or throws.
-      throw new ProviderError("provider-unreachable", `Could not reach ${endpoint}`)
+      const all = uncounted + (response.usage.reported === false ? 1 : 0)
+      return {
+        response: { ...response, usage: withUncounted(response.usage, all) },
+        latencyMs,
+        attempts,
+        uncounted: all,
+      }
     },
   }
 }

@@ -207,6 +207,73 @@ describe("createPolicyRuntime: the daily cap", () => {
     expect(calls.length - before).toBe(5)
   })
 
+  it("counts a paid failure's reported cost, and each retry billed unreported (gap B)", async () => {
+    const probe = runtime({}, provider(0.95, { noUsage: true }).fetch)
+    await probe.decide(request)
+    const projected = probe.spentToday()
+    // A 200 that fails validation reported its cost: that, not the projection.
+    const badBody = (async () =>
+      Response.json({
+        answers: {},
+        usage: { input_tokens: 9, output_tokens: 0, cost: 0.00001 },
+      })) as unknown as typeof fetch
+    const rt = runtime({}, badBody)
+    expect((await rt.decide(request)).ok).toBe(false)
+    expect(rt.spentToday()).toBeCloseTo(0.00001, 8)
+    // A refusal ran nothing.
+    const refused = runtime({}, provider(0.95, { status: 401 }).fetch)
+    await refused.decide(request)
+    expect(refused.spentToday()).toBe(0)
+    // A 504 then an answer: the answer's cost plus one projection.
+    const ok = provider(0.95, { cost: 0.00003 }).fetch
+    let first = true
+    const after504 = (async (url: string, init: RequestInit) => {
+      if (first) {
+        first = false
+        return new Response("", { status: 504 })
+      }
+      return ok(url, init)
+    }) as unknown as typeof fetch
+    const retried = runtime({}, after504)
+    expect((await retried.decide(request)).ok).toBe(true)
+    expect(retried.spentToday()).toBeCloseTo(0.00003 + projected, 8)
+  })
+
+  it("counts each billed attempt a deadline cut short, not one projection (gap B)", async () => {
+    const probe = runtime({}, provider(0.95, { noUsage: true }).fetch)
+    await probe.decide(request)
+    const projected = probe.spentToday()
+    let n = 0
+    const fetch = (async (_url: string, init: RequestInit) => {
+      n += 1
+      if (n === 1) return new Response("", { status: 502 })
+      return new Promise((_, reject) =>
+        init.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
+      )
+    }) as unknown as typeof globalThis.fetch
+    const rt = runtime({ timeoutMs: 1500 }, fetch)
+    expect(await rt.decide(request)).toMatchObject({ ok: false, reason: "timeout" })
+    await new Promise((r) => setTimeout(r, 10))
+    expect(rt.spentToday()).toBeCloseTo(2 * projected, 10)
+  })
+
+  it("counts an answer that arrives after the deadline, from a fetch that ignored the abort", async () => {
+    const fetch = (async (_url: string, init: RequestInit) => {
+      await new Promise((r) => setTimeout(r, 300))
+      const body = JSON.parse(String(init.body)) as { questions: Record<string, unknown> }
+      return Response.json({
+        answers: Object.fromEntries(
+          Object.keys(body.questions).map((q) => [q, { type: "noul", noul: 0.9 }]),
+        ),
+        usage: { input_tokens: 9, output_tokens: 0, cost: 0.4 },
+      })
+    }) as unknown as typeof globalThis.fetch
+    const rt = runtime({ timeoutMs: 100 }, fetch)
+    expect(await rt.decide(request)).toMatchObject({ ok: false, reason: "timeout" })
+    await new Promise((r) => setTimeout(r, 400))
+    expect(rt.spentToday()).toBeCloseTo(0.4, 8)
+  })
+
   it("counts a cost the provider doesn't report at its projection, not as free", async () => {
     const rt = runtime({}, provider(0.95, { noUsage: true }).fetch)
     expect((await rt.decide(request)).ok).toBe(true)

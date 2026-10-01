@@ -110,6 +110,42 @@ describe("many", () => {
     expect(r.failed[0]).toMatchObject({ id: "b.ts", code: "provider-http" })
   })
 
+  it("counts a failed item's paid spend in the total, marked incomplete (gap B)", async () => {
+    const cwd = temp({ ".system1/config.yaml": CONSENT, "a.ts": "auth", "b.ts": "broken" })
+    const model = fakeDecisionsFetch()
+    // b.ts gets a paid 200 that fails validation: its reported cost still counts.
+    const fetch = (async (url: string, init: RequestInit) =>
+      String(init.body).includes("broken")
+        ? Response.json({ answers: 7, usage: { input_tokens: 9, output_tokens: 0, cost: 0.5 } })
+        : model.fetch(url, init)) as unknown as typeof globalThis.fetch
+    const ctx = createContext({ cwd, home: temp(), env: { OPENROUTER_API_KEY: "k" }, fetch })
+    const r = await runMany(ctx, { questions, sources: [{ kind: "glob", patterns: ["*.ts"] }] })
+    expect(r.counts).toMatchObject({ failed: 1 })
+    expect(r.usage.cost).toBeGreaterThan(0.5)
+    // A 200 with no readable usage is billed at an unknown cost: the total says so.
+    const bare = (async (url: string, init: RequestInit) =>
+      String(init.body).includes("broken")
+        ? Response.json({ answers: 7 })
+        : model.fetch(url, init)) as unknown as typeof globalThis.fetch
+    const both = await runMany(
+      createContext({ cwd, home: temp(), env: { OPENROUTER_API_KEY: "k" }, fetch: bare }),
+      { questions, sources: [{ kind: "glob", patterns: ["*.ts"] }] },
+    )
+    expect(both.usage.reported).toBe(false)
+    // Every item failing sums every item's spend, not the first one's.
+    const all = (async () =>
+      Response.json({
+        answers: 7,
+        usage: { input_tokens: 1, output_tokens: 0, cost: 0.25 },
+      })) as unknown as typeof globalThis.fetch
+    await expect(
+      runMany(createContext({ cwd, home: temp(), env: { OPENROUTER_API_KEY: "k" }, fetch: all }), {
+        questions,
+        sources: [{ kind: "glob", patterns: ["*.ts"] }],
+      }),
+    ).rejects.toMatchObject({ details: { failed: 2, spent: { usage: { cost: 0.5 } } } })
+  })
+
   it("raises the shared error when every item fails the same way", async () => {
     const { ctx } = repo({ "a.ts": "explode", "b.ts": "explode" })
     await expect(

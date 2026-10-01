@@ -203,7 +203,7 @@ export function projected(p: Projection): string {
 
 function measured(u: Usage): string {
   return u.reported === false
-    ? `$${u.cost.toFixed(6)} measured (incomplete: the provider reported no usage for at least one call)`
+    ? `$${u.cost.toFixed(6)} measured (incomplete: at least one attempt was billed at a cost the provider didn't report)`
     : `$${u.cost.toFixed(6)} measured`
 }
 

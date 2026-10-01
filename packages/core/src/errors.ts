@@ -1,3 +1,5 @@
+import type { Usage } from "./model/types.js"
+
 /**
  * Every failure the engine reports on purpose carries a stable `code`.
  *
@@ -47,18 +49,43 @@ export class DecisionsError extends Error {
   }
 }
 
+/**
+ * What a failed call may have cost: `usage` as reported (by a 200 whose body
+ * failed validation), a lower bound (`reported: false`) when `uncounted`
+ * attempts, the 200 included if its usage was unreadable, may have been billed
+ * at a cost nobody reported.
+ */
+export interface Spent {
+  usage: Usage
+  uncounted: number
+}
+
 /** A failure on the provider's side, as distinct from a bad question set. */
 export class ProviderError extends DecisionsError {
   constructor(
     code: "provider-unreachable" | "provider-http" | "malformed-response",
     message: string,
     readonly status?: number,
+    /** Present when the call may have been billed: count it, never drop it. */
+    readonly spent?: Spent,
   ) {
-    super(code, message, status === undefined ? {} : { status })
+    super(code, message, {
+      ...(status === undefined ? {} : { status }),
+      ...(spent ? { spent } : {}),
+    })
     this.name = "ProviderError"
   }
 }
 
 export function isDecisionsError(error: unknown): error is DecisionsError {
   return error instanceof DecisionsError
+}
+
+/**
+ * What a failed call may have cost, from a `ProviderError` or a caller abort
+ * that came after a billed attempt; `undefined` when nothing ran.
+ */
+export function spentOf(error: unknown): Spent | undefined {
+  const spent = (error as { spent?: unknown } | null | undefined)?.spent
+  return typeof spent === "object" && spent !== null ? (spent as Spent) : undefined
 }

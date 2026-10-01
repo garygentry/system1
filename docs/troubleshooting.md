@@ -219,7 +219,8 @@ here only if it persists, so wait and retry. The message carries the status.
 
 ### `malformed-response` · exit 5
 
-The provider answered, but not with a valid decision for the request. Retry once. If it
+The provider answered, but not with a valid decision for the request. The answer was paid
+for, so its cost is still logged, and `error.details.spent` carries it. Retry once. If it
 persists, report it with the envelope.
 
 ### `error` · exit 1

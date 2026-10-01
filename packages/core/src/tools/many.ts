@@ -1,6 +1,6 @@
 import { assertConsent } from "../config/consent.js"
-import type { DecisionResult } from "../decide.js"
-import { DecisionsError, type ErrorCode, isDecisionsError } from "../errors.js"
+import type { DecisionResult, Unsaved } from "../decide.js"
+import { DecisionsError, type ErrorCode, isDecisionsError, spentOf } from "../errors.js"
 import type { Answers, Usage } from "../model/types.js"
 import { prepare } from "../prepare.js"
 import { project } from "../project/project.js"
@@ -137,7 +137,14 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
   const [first] = failed
   if (done.length === 0 && first && failed.every((f) => f.code === first.code)) {
     const { error } = settled.find((s) => "error" in s) as { error: Error }
-    const details = isDecisionsError(error) ? error.details : {}
+    // What every failed item may have cost, not just the first one.
+    const spents = settled.flatMap((s) => ("error" in s ? (spentOf(s.error) ?? []) : []))
+    const { spent: _first, ...details } = isDecisionsError(error) ? error.details : {}
+    if (spents.length)
+      details.spent = {
+        usage: sumUsage(spents.map((s) => s.usage)),
+        uncounted: spents.reduce((n, s) => n + s.uncounted, 0),
+      }
     throw new DecisionsError(
       first.code === "error" ? "invalid-request" : first.code,
       failed.length === 1 ? error.message : `All ${failed.length} items failed: ${error.message}`,
@@ -179,13 +186,25 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
     kept: projected.kept.map(strip),
     undecided: projected.undecided.map(({ row, questions }) => ({ ...strip(row), questions })),
     failed,
-    usage: sumUsage(done.map((d) => d.result.usage)),
+    // Failed items that may have been billed count too, so the total is honest.
+    usage: sumUsage([
+      ...done.map((d) => d.result.usage),
+      ...settled.flatMap((s) => ("error" in s ? (spentOf(s.error)?.usage ?? []) : [])),
+    ]),
     wallClockMs: Math.round(performance.now() - started),
-    ...unsavedOf(done.map((d) => d.result)),
+    // A failed item's spend line can be unsaved too (decide puts it on the error).
+    ...unsavedOf([
+      ...done.map((d) => d.result),
+      ...settled.flatMap((s) =>
+        "error" in s && isDecisionsError(s.error) && Array.isArray(s.error.details.unsaved)
+          ? [{ unsaved: s.error.details.unsaved as Unsaved[] }]
+          : [],
+      ),
+    ]),
   }
 }
 
-function unsavedOf(results: DecisionResult[]): Pick<ManyResult, "unsaved"> {
+function unsavedOf(results: Array<Pick<DecisionResult, "unsaved">>): Pick<ManyResult, "unsaved"> {
   const all = results.flatMap((r) => r.unsaved ?? [])
   const [first] = all
   if (!first) return {}

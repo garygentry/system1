@@ -16,7 +16,7 @@ import { join } from "node:path"
 import { unquoteKey } from "../config/key.js"
 import { createDecider, type DecisionResult } from "../decide.js"
 import { scrubText } from "../egress/scrub.js"
-import { isDecisionsError } from "../errors.js"
+import { isDecisionsError, ProviderError, spentOf } from "../errors.js"
 import { FixtureStore } from "../fixtures/store.js"
 import {
   DEFAULT_MODEL_ID,
@@ -154,7 +154,11 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
     day = { key, usd: ledger ? todayFromFile(ledger.file, `${key}T00:00:00.000Z`) : 0 }
   }
   /** Count `usd` against the day the call reserved on, and record it. */
-  const settle = (dayKey: string, delta: number, entry?: { usd: number; usage?: Usage }) => {
+  const settle = (
+    dayKey: string,
+    delta: number,
+    entry?: { usd: number; usage?: Usage; calls?: number },
+  ) => {
     if (day.key === dayKey && Number.isFinite(delta)) day.usd += delta
     if (!entry || !ledger || typeof setup === "string") return
     try {
@@ -163,7 +167,7 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
         tag: RUNTIME_TAG,
         model: setup.profile.id,
         source: "live",
-        calls: 1,
+        calls: entry.calls ?? 1,
         input_tokens: entry.usage?.input_tokens ?? 0,
         output_tokens: entry.usage?.output_tokens ?? 0,
         cost: entry.usd,
@@ -223,8 +227,9 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
       controller.signal.addEventListener("abort", () => resolve("timeout"), { once: true }),
     )
     let result: DecisionResult | "timeout"
+    let call: Promise<DecisionResult> | undefined
     try {
-      const call = createDecider({
+      call = createDecider({
         profile,
         egressConsent: opts.egress === "on",
         mode,
@@ -246,33 +251,52 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
     } catch (error) {
       if (controller.signal.aborted) result = "timeout"
       else {
-        // A request refused before it ran (a 4xx other than 408 or 429) isn't
-        // billed. Anything else may have been: keep the projection, the safe
-        // side of a cap, and record it so a restart counts it too.
-        const status = (error as { status?: number })?.status
-        const unbilled =
-          typeof status === "number" &&
-          status >= 400 &&
-          status < 500 &&
-          status !== 408 &&
-          status !== 429
-        if (mode === "live")
-          settle(dayKey, unbilled ? -projected : 0, unbilled ? undefined : { usd: projected })
+        // The transport says what a failure may have cost (`spent`): the cost a
+        // 200 reported, plus the projection for each attempt billed unreported.
+        // No `spent` on a provider error means nothing ran. Anything else keeps
+        // the projection, the safe side of a cap; recorded so a restart counts it.
+        if (mode === "live") {
+          const counted =
+            error instanceof ProviderError
+              ? error.spent
+                ? knownCost(error.spent.usage) + projected * error.spent.uncounted
+                : 0
+              : projected
+          settle(dayKey, counted - projected, counted > 0 ? { usd: counted } : undefined)
+        }
         return fallback(reasonFor(error), describe(error))
       }
     } finally {
       clearTimeout(timer)
     }
     if (result === "timeout") {
-      if (mode === "live") settle(dayKey, 0, { usd: projected })
+      if (mode === "live") {
+        settle(dayKey, 0, { usd: projected })
+        // The deadline answers first; the call settles later. Count what it
+        // turns out to have cost beyond the projection already counted: an
+        // answer that arrived anyway (a fetch that ignored the abort), or the
+        // retries abandoned after they may have been billed. The extra line
+        // adds cost, not a call.
+        const late = (usage: Usage, unreported: number) => {
+          const extra = knownCost(usage) + projected * unreported - projected
+          if (extra > 0) settle(dayKey, extra, { usd: extra, usage, calls: 0 })
+        }
+        call?.then(
+          (r) => late(r.usage, r.uncountedAttempts ?? (r.usage.reported === false ? 1 : 0)),
+          (error: unknown) => {
+            const spent = spentOf(error)
+            if (spent) late(spent.usage, spent.uncounted)
+          },
+        )
+      }
       return fallback("timeout", `no answer within ${timeoutMs} ms`)
     }
     if (mode === "live") {
       // Swap the reservation for what was counted: the reported cost, never
-      // below zero; an unreported one stays at its projection.
-      const reported = result.usage.reported === false ? undefined : result.usage.cost
-      const counted =
-        reported !== undefined && Number.isFinite(reported) ? Math.max(0, reported) : projected
+      // below zero, plus the projection for each attempt billed unreported (a
+      // custom transport that doesn't say counts an unreported answer as one).
+      const unreported = result.uncountedAttempts ?? (result.usage.reported === false ? 1 : 0)
+      const counted = knownCost(result.usage) + projected * unreported
       settle(dayKey, counted - projected, { usd: counted, usage: result.usage })
     }
     if (result.undecided.length > 0)
@@ -441,4 +465,9 @@ function describe(error: unknown): string {
   return scrubText(
     (text.split("\n")[0] ?? "").replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]"),
   ).slice(0, 200)
+}
+
+/** The cost a usage block reported, never below zero; zero when none was. */
+function knownCost(usage: Usage): number {
+  return Number.isFinite(usage.cost) ? Math.max(0, usage.cost) : 0
 }

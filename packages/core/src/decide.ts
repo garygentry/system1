@@ -1,7 +1,7 @@
 import { assertConsent } from "./config/assert-consent.js"
 import { scrubQuestions, scrubState } from "./egress/scrub.js"
 import { assertStateFits } from "./egress/size.js"
-import { DecisionsError } from "./errors.js"
+import { DecisionsError, spentOf } from "./errors.js"
 import type { FixtureStore } from "./fixtures/store.js"
 import { fixtureKey } from "./fixtures/store.js"
 import { undecidedNames } from "./model/answers.js"
@@ -69,6 +69,13 @@ export interface DecisionResult {
   /** Measured for live calls; zero for replays (nothing was spent). */
   usage: Usage
   latencyMs: number
+  /**
+   * Attempts that may have been billed at a cost nobody reported: a retried
+   * timeout or server-side failure, or this answer when its usage was
+   * unreadable. Present only when some were; `usage` is then a lower bound
+   * (`reported: false`) and its `cost` covers only what was reported.
+   */
+  uncountedAttempts?: number
   fixtureKey: string
   recordedAt?: string
   /** Present when the ledger line or the fixture couldn't be written. */
@@ -183,7 +190,20 @@ export function createDecider(options: DeciderOptions): Decider {
       assertConsent({ granted: options.egressConsent }, options.repoRoot ?? "this repo")
       // A bad namespace is a caller's bug: refuse it before the call is paid for.
       if (mode === "record") fixtures?.path(namespace, key)
-      const { response, latencyMs } = await (transport as Transport).decide(request, signal)
+      let sent: Awaited<ReturnType<Transport["decide"]>>
+      try {
+        sent = await (transport as Transport).decide(request, signal)
+      } catch (error) {
+        // A failure that may have been billed is counted before it is reported.
+        const spent = spentOf(error)
+        if (spent) {
+          const unsaved: Unsaved[] = []
+          log("live", profile.id, spent.usage, unsaved)
+          if (unsaved.length && error instanceof DecisionsError) error.details.unsaved = unsaved
+        }
+        throw error
+      }
+      const { response, latencyMs, uncounted = 0 } = sent
       // The call is paid for: from here on, nothing may throw it away.
       const unsaved: Unsaved[] = []
       let recorded: ReturnType<FixtureStore["record"]> | undefined
@@ -203,6 +223,7 @@ export function createDecider(options: DeciderOptions): Decider {
         undecided: undecidedNames(response.answers, profile.undecidedFloor),
         usage: response.usage,
         latencyMs,
+        ...(uncounted > 0 ? { uncountedAttempts: uncounted } : {}),
         fixtureKey: key,
         ...(recorded ? { recordedAt: recorded.recordedAt } : {}),
         ...(unsaved.length ? { unsaved } : {}),

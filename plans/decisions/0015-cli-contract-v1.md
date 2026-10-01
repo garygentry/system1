@@ -187,3 +187,13 @@ Plan: `m11-adopt.md`, PR 4 (D2). Additive.
 
 - **`profile-not-allowed`, exit 2** (usage): an emulated baseline (`transport: openrouter-chat`) named for a decision (`ask`, `many`, `spec check`, a guard hook, the runtime), or one this repo hasn't allowed, inside `compare`.
 - **`decide config egress allow-profile <id> [--i-consent]` and `deny-profile <id>`:** add or remove an emulated baseline in `egress.allowProfiles`. `allow-profile` without a terminal and without `--i-consent` is `egress-refused`, exit 3, like `guard enable`; `--confirm` doesn't count. `status` and `show` gain `allowProfiles`: a list of `{id, at?, by?}`, recorded like consent (`--by`, else the route: `decide config` or `decide config --i-consent`). The loader also accepts a bare id, which has no `at`/`by`.
+
+## M11: a paid failure is counted (added 2026-10-01)
+
+Plan: `m11-adopt.md`, "To verify" (gap B). Additive.
+
+- **`error.details.spent`** on `provider-unreachable`, `provider-http` and `malformed-response`, when the call may have been billed: `{usage, uncounted}`. `usage` is what a 200 reported (`reported: false` when incomplete). `uncounted` is the number of attempts billed at a cost nobody reported. The spend is logged to the ledger before the error is returned. Absent means nothing ran: a 4xx other than 408, a 503, a 529, or a connection that never opened.
+- **`many`'s `usage`** includes what failed items may have cost, so the total is marked `reported: false` when any of them is unknown. When every item fails, `error.details.spent` sums all of them.
+- **A timeout while reading a 200's body** is `provider-unreachable`, no longer `malformed-response`. It is never retried, because a 200 is paid for.
+- **`uncountedAttempts`** is an optional result field on a decision (and on a baseline answer): the attempts that may have been billed unreported (a retry after a timeout or a server-side failure, or the answer itself when it had no usage). `usage.reported` is then `false`.
+

@@ -146,6 +146,16 @@ function checkAnswer(name: string, a: Record<string, unknown>, raw: unknown): An
   }
 }
 
+/**
+ * The `usage` of a decision body, read even when the rest fails validation:
+ * a 200 is paid for, so its reported cost is kept. Unknown when unreadable.
+ */
+export function responseUsage(raw: unknown): Usage {
+  return isObject(raw) && isObject(raw.usage)
+    ? checkUsage(raw.usage)
+    : { input_tokens: 0, output_tokens: 0, cost: 0, reported: false }
+}
+
 function checkUsage(u: Record<string, unknown>): Usage {
   // A missing or unreadable cost is unknown, not zero: an upstream change
   // would otherwise look like free service.
