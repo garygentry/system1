@@ -536,7 +536,7 @@ describe("createPolicyRuntime: the module lock (0020)", () => {
     expect(r).toMatchObject({
       ok: false,
       reason: "egress-off",
-      detail: expect.stringMatching(/marked line is off/),
+      detail: expect.stringMatching(/marked EGRESS line is off/),
     })
     expect(calls).toHaveLength(0)
   })
@@ -558,6 +558,44 @@ describe("createPolicyRuntime: the module lock (0020)", () => {
       detail: expect.stringMatching(/"bundled"/),
     })
     expect(calls).toHaveLength(0)
+  })
+
+  it("names the opt-out when the file has no single marked line, as a build without comments leaves it", async () => {
+    const file = join(temp(), "policy.js")
+    writeFileSync(file, 'export const EGRESS = "on";\n')
+    const r = await runtime({ module: file }).decide(request)
+    expect(r).toMatchObject({
+      ok: false,
+      reason: "egress-off",
+      detail: expect.stringMatching(/no single marked EGRESS line.*"bundled"/),
+    })
+  })
+
+  it("treats null as no module, and refuses a module that isn't a path or URL as internal", async () => {
+    expect(await runtime({ module: null as never }).decide(request)).toMatchObject({
+      reason: "egress-off",
+      detail: expect.stringMatching(/no module/),
+    })
+    for (const module of [42, {}, true])
+      expect(
+        await runtime({ module: module as never }).decide(request),
+        String(module),
+      ).toMatchObject({
+        reason: "internal",
+      })
+  })
+
+  it("resolves a relative path against the working directory, and reads the file once", async () => {
+    const file = moduleWith("on")
+    const cwd = process.cwd()
+    process.chdir(join(file, ".."))
+    try {
+      const rt = runtime({ module: "policy.ts" })
+      writeFileSync(file, "nothing marked here\n")
+      expect(await rt.decide(request)).toMatchObject({ ok: true })
+    } finally {
+      process.chdir(cwd)
+    }
   })
 
   it('"bundled" opts out: egress alone is the grant', async () => {

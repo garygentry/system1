@@ -12,7 +12,7 @@
  *   a fallback with a reason code the app can log or count.
  */
 import { closeSync, fstatSync, openSync, readSync } from "node:fs"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { unquoteKey } from "../config/key.js"
 import { createDecider, type DecisionResult } from "../decide.js"
@@ -378,7 +378,10 @@ function validate(opts: Partial<PolicyRuntimeOptions>): Setup | string {
   } catch {
     apiKey = undefined // malformed: reported as no-key, never echoed
   }
-  const lockedBy = opts.egress === "on" && mode === "live" ? moduleLock(opts.module) : undefined
+  const module = opts.module ?? undefined
+  if (module !== undefined && typeof module !== "string" && !(module instanceof URL))
+    return 'module must be a path, a file: URL or "bundled"'
+  const lockedBy = opts.egress === "on" && mode === "live" ? moduleLock(module) : undefined
   return {
     profile,
     mode,
@@ -392,24 +395,26 @@ function validate(opts: Partial<PolicyRuntimeOptions>): Setup | string {
 /**
  * The second lock: why the module's own marked line doesn't grant egress, or
  * `undefined` when it does or the caller opted out with `"bundled"`. Read once,
- * when the runtime is built.
+ * when the runtime is built; `module` is already a string or a `URL`.
  */
-function moduleLock(module: unknown): string | undefined {
+function moduleLock(module: string | URL | undefined): string | undefined {
   if (module === "bundled") return undefined
   if (module === undefined)
     return 'no module to read the grant from (pass module: import.meta.url, or "bundled")'
   let path: string
   try {
     path =
-      module instanceof URL || (typeof module === "string" && module.startsWith("file:"))
-        ? fileURLToPath(module)
-        : String(module)
+      module instanceof URL || module.startsWith("file:") ? fileURLToPath(module) : resolve(module)
   } catch {
-    return "module is not a file path or file URL"
+    return "module is not a file path or a file: URL"
   }
   const grant = readModuleGrant(path)
-  if (!grant) return "the module's source can't be read (a bundle? pass module: \"bundled\")"
-  return grant.egress === "on" ? undefined : `the module's marked line is off: ${grant.why}`
+  if (!grant) return 'the module file can\'t be read (bundled? pass module: "bundled")'
+  if (grant.egress === "on") return undefined
+  // Off, or no single marked line to read: a build that drops comments.
+  return grant.why === "the module's EGRESS line is off"
+    ? "the module file's marked EGRESS line is off"
+    : 'the module file has no single marked EGRESS line (compiled without comments, or bundled? pass module: "bundled")'
 }
 
 /** How far out of order a shared ledger's lines may be (clock skew between processes). */

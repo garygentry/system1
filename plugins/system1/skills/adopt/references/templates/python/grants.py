@@ -52,6 +52,8 @@ _ENV = re.compile(r"process\.env|os\.environ|getenv", A)
 _REFLECTION = re.compile(
     r"\bsetattr\s*\(|\bglobals\s*\(|\b__dict__\b|Object\.defineProperty|Reflect\.set", A
 )
+_GRANT_STARTS = re.compile(r"^\s*" + e + r"\s*:", A)
+_MODULE_THEN_GRANT = re.compile(r"^\s*import\.meta\.url\s*(?:,\s*(?:" + e + r"\s*:.*)?)?$", A)
 _CALLS = re.compile(r"\b" + CREATE + r"\s*\(", A)
 _OPENS = re.compile(r"\b" + CREATE + r"\s*\(\s*\{", A)
 #: Strings, left to right. A template literal keeps only its `${...}` code.
@@ -109,15 +111,18 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
         start = 0 if depth > 0 else (opened.start() if opened else -1)
         in_call = start >= 0
         left = depth + parens(code[start:]) if in_call else 0
-        if in_call and depth == 0:
+        # `module: import.meta.url` must sit right before the grant: anything between
+        # (a spread, say) could replace it.
+        if in_call and (depth == 0 or not _GRANT_STARTS.match(code)):
             call_module = False
         for m in re.finditer(r"\bmodule\s*:(?!:)", code, A):
             if not in_call:
                 continue
-            if re.match(r"\s*import\.meta\.url\s*(?:[,})]|$)", code[m.end():], A):
-                call_module = True
-            else:
+            rest = code[m.end():]
+            if not re.match(r"\s*import\.meta\.url\b", rest, A):
                 problems.append(f"{at}: the runtime's module given anything but import.meta.url")
+            else:
+                call_module = _MODULE_THEN_GRANT.match(rest) is not None
         for m in _NAME.finditer(code):
             before, after = code[: m.start()], code[m.end():]
             allowed = (
@@ -143,7 +148,9 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
                 if not given or not closes or not in_call:
                     problems.append(f"{at}: the runtime given anything but {E}, last in {CREATE}({{...}})")
                 elif not call_module:
-                    problems.append(f"{at}: the runtime call doesn't name this file (module: import.meta.url)")
+                    problems.append(
+                        f"{at}: the runtime call doesn't name this file right before the grant (module: import.meta.url)"
+                    )
                 elif not declares:
                     problems.append(f"{at}: the runtime given a {E} this file doesn't declare")
             elif re.match(r"\s*[,})]", rest):

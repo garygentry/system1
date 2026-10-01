@@ -145,7 +145,8 @@ export async function triage(
     state: toState(ticket),
     namespace: SPEC,
   })
-  if (!result.ok) {
+  // `=== false`, not `!`: it narrows the union without strictNullChecks too.
+  if (result.ok === false) {
     trace.push({ step: "model", detail: result.reason })
     return fallBack(result.reason, result.detail)
   }

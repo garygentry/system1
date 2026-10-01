@@ -113,6 +113,18 @@ export const GRANT_CASES: GrantCase[] = [
   { ok: false, text: `${TS_OFF}\nf(\n  {\n    egress: EGRESS,\n  },\n  overrides,\n)` },
   { ok: false, text: `${TS_OFF}\nconst r = createPolicyRuntime({\n  egress: EGRESS,\n  ...o,\n})` },
   { ok: false, text: `createPolicyRuntime(opts)` },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({\n  module: import.meta.url,\n  ...deployment,\n  egress: EGRESS,\n})`,
+  },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({ module: import.meta.url, ...d, egress: EGRESS })`,
+  },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({\n  module: import.meta.url, ...d,\n  egress: EGRESS,\n})`,
+  },
   { ok: false, text: `${TS_OFF}\ncreatePolicyRuntime({ mode, egress: EGRESS })` },
   { ok: false, text: `${TS_OFF}\ncreatePolicyRuntime({ module: "bundled", egress: EGRESS })` },
   {

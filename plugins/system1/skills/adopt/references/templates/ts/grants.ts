@@ -39,6 +39,8 @@ const BY_NAME = new RegExp(`\\.${e}\\b|\\b${e}\\s*\\(`)
 const CONSENT = new RegExp(`${e}Consent`, "i")
 const ENV = /process\.env|os\.environ|getenv/
 const REFLECTION = /\bsetattr\s*\(|\bglobals\s*\(|\b__dict__\b|Object\.defineProperty|Reflect\.set/
+const GRANT_STARTS = new RegExp(`^\\s*${e}\\s*:`)
+const MODULE_THEN_GRANT = new RegExp(`^\\s*import\\.meta\\.url\\s*(?:,\\s*(?:${e}\\s*:.*)?)?$`)
 const CALLS = new RegExp(`\\b${CREATE}\\s*\\(`)
 const OPENS = new RegExp(`\\b${CREATE}\\s*\\(\\s*\\{`)
 /** Strings, left to right. A template literal keeps only its `${…}` code. */
@@ -84,12 +86,15 @@ export function grantProblems(source: string, python = false): string[] {
     const start = depth > 0 ? 0 : (OPENS.exec(code)?.index ?? -1)
     const inCall = start >= 0
     const left = inCall ? depth + parens(code.slice(start)) : 0
-    if (inCall && depth === 0) callModule = false
+    // `module: import.meta.url` must sit right before the grant: anything between
+    // (a spread, say) could replace it.
+    if (inCall && (depth === 0 || !GRANT_STARTS.test(code))) callModule = false
     for (const m of code.matchAll(/\bmodule\s*:(?!:)/g)) {
       if (!inCall) continue
-      if (/^\s*import\.meta\.url\s*(?:[,})]|$)/.test(code.slice((m.index ?? 0) + m[0].length)))
-        callModule = true
-      else problems.push(`${at}: the runtime's module given anything but import.meta.url`)
+      const rest = code.slice((m.index ?? 0) + m[0].length)
+      if (!/^\s*import\.meta\.url\b/.test(rest))
+        problems.push(`${at}: the runtime's module given anything but import.meta.url`)
+      else callModule = MODULE_THEN_GRANT.test(rest)
     }
     for (const m of code.matchAll(NAME)) {
       const before = code.slice(0, m.index)
@@ -116,7 +121,9 @@ export function grantProblems(source: string, python = false): string[] {
         if (!given || !closes || !inCall)
           problems.push(`${at}: the runtime given anything but ${E}, last in ${CREATE}({…})`)
         else if (!callModule)
-          problems.push(`${at}: the runtime call doesn't name this file (module: import.meta.url)`)
+          problems.push(
+            `${at}: the runtime call doesn't name this file right before the grant (module: import.meta.url)`,
+          )
         else if (!declares)
           problems.push(`${at}: the runtime given a ${E} this file doesn't declare`)
       } else if (/^\s*[,})]/.test(rest)) problems.push(`${at}: the grant passed as a variable`)

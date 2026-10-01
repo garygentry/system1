@@ -25,13 +25,22 @@ against, so an upgrade is always your change.
 | Option | Default | Meaning |
 |---|---|---|
 | `egress` | required | Exactly `"on"` turns egress on; anything else is off. A generated module passes its one marked `EGRESS` line here, and `adopt` only ever writes `"off"`. With `module`, that file's marked line must say on too. No config file or environment variable turns egress on, and a key alone never does |
-| `module` | none | The file holding the grant: pass `import.meta.url` (a path or file URL works too). With `egress: "on"`, a live call also needs this file's one marked line to say on, so a grant computed in code never reaches the provider. `"bundled"` opts out, for a deployment whose source isn't on disk (bundlers strip comments); then `egress` alone is the grant. Without `module`, a live call falls back with `egress-off`. Replay ignores it |
+| `module` | none | The file holding the grant: pass `import.meta.url`, or an absolute path (a relative one resolves against the working directory when the runtime is built). With `egress: "on"`, a live call also needs that file's one marked line to say on, so a grant computed in code never reaches the provider. The file is read once, when the runtime is built. Without `module`, a live call falls back with `egress-off`; anything but a path, a file URL or `"bundled"` is `internal`. Replay ignores it. See "The module lock and your build" below |
 | `maxUsdPerDay` | required | Measured spend per UTC day before every call falls back with `budget`. It must be a finite number of at least 0; anything else makes every call fall back as `internal`, never uncapped. Each call reserves its projected cost before it waits, so concurrent calls can't race past the cap. A call's measured cost can still pass it by the difference from its projection. A cost the provider doesn't report counts at its projection, never as free, and a negative one counts as zero. A call that fails after a 200 counts the cost that 200 reported. Each attempt that may have been billed without a reported cost (a timeout, a server-side 5xx, an unreadable body), retries included, counts at the projection. A call refused before it ran (a 4xx other than 408, a 503 or 529, a connection refused) gives its reservation back. A deadline that cuts a call short keeps its projection, or one per attempt that may have been billed when it cut short a retry |
 | `root` | none | The directory for `usage.jsonl` and `fixtures/`. The runtime never searches for one, and creates it if it's missing. Without it, or when it can't be written, spend is counted in memory for the process and each result says `ledger: "memory"`. The runtime writes a line per live call with the cost it counted. With a readable `root`, today's runtime spend there is read once a day (from the end of the file, so a long history costs nothing) and the cap survives a restart. Processes sharing a `root` start from the same day's total, then each counts its own calls |
 | `model` | `typesafe/jev-1.13` | The model profile |
 | `mode` | `live` | `live` or `replay`. `replay` answers from `root`'s fixtures, sends nothing and writes nothing, so it needs no grant and no key: this is how generated tests run offline |
 | `apiKey` | `OPENROUTER_API_KEY` | A key alone never grants egress |
 | `timeoutMs` | 5000 | The whole call, retries and backoff included; at most 600000 |
+
+## The module lock and your build
+
+The lock reads the file that is running, so it holds only where that file keeps the marked comment:
+
+- **Holds:** the source run by tsx, ts-node or Node's type stripping; vitest; `tsc` with default settings (it keeps the comment: `export const EGRESS = "on"; // system1: runtime egress …`).
+- **Needs `module: "bundled"`:** `tsc` with `removeComments` (on in NestJS's default config), per-file transpilers that drop comments (esbuild, tsup), and every bundle. A bundle that inlines the runtime also carries the marker text from the engine itself, so it can never read as a single marked line.
+
+`"bundled"` gives up the second lock: `egress` alone is the grant, as before 0020's amendment, and a grant computed in code is caught only by review and the generated test's scan. Without it, such a build falls back with `egress-off`, saying the file has no single marked line. `adopt` writes `import.meta.url`; switching to `"bundled"` is your edit, and the generated test flags it until you update the test in the same change.
 
 ## Results
 

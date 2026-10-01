@@ -49,7 +49,7 @@ function repo(lang: "ts" | "python"): { dir: string; src: string } {
 }
 
 function runTs(dir: string) {
-  return spawnSync(process.execPath, ["--test", "src/policy.test.ts"], {
+  return spawnSync(process.execPath, ["--test", "--test-reporter=tap", "src/policy.test.ts"], {
     cwd: dir,
     encoding: "utf8",
     env: cleanEnv(),
