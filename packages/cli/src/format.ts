@@ -255,7 +255,8 @@ export function briefCompare(r: CompareResult): string {
   if (r.labels) {
     const acc = r.labels.accuracy
     lines.push(
-      `  accuracy: jev ${pct(acc.jev.overall.rate)} of ${acc.jev.overall.n} · baseline ${pct(acc.baseline.overall.rate)} of ${acc.baseline.overall.n} (${r.labels.matched} labelled rows)`,
+      `  accuracy, each over what it answered: jev ${pct(acc.jev.overall.rate)} of ${acc.jev.overall.n} · baseline ${pct(acc.baseline.overall.rate)} of ${acc.baseline.overall.n} (${r.labels.matched} labelled rows)`,
+      `  head-to-head, over the ${r.labels.headToHead.n} answers both gave: jev ${r.labels.headToHead.jev} right · baseline ${r.labels.headToHead.baseline} right`,
     )
   }
   lines.push(`  ${r.verdict}`)

@@ -335,7 +335,7 @@ The envelope's `command` is `compare`. The same object is written to
 | `usage` | measured spend of this run's calls, both sides |
 | `unsaved`, `reportUnsaved` | *optional*. Spend lines or fixtures that couldn't be written; the error code when `report.json` couldn't be |
 
-With `--dry-run`: `{spec, dryRun: true, baselineKind, rows: {captured, invalid, withheld},
+With `--dry-run`: `{spec, dryRun: true, baselineKind, rows: {captured, invalid, invalidTotal, withheld},
 projection: {jev, baseline, total}}`, where `baseline` is `null` for `current`.
 
 ## Other commands

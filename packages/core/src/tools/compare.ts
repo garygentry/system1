@@ -371,6 +371,7 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
     }
     const h = labels.headToHead
     const j = acc.jev.overall
+    const bu = acc.baseline.overall.unanswered
     if (h.n === 0) {
       verdict =
         "Labels exist, but no labelled question was answered by both sides (Jev decided): no winner."
@@ -380,8 +381,8 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
       verdict =
         `On the ${h.n} labelled answers both sides gave, Jev was right on ${pct(h.jev)} and the ` +
         `${baselineKind} baseline on ${pct(h.baseline)} (${winner === "tie" ? "a tie" : `${winner} ahead`}). ` +
-        (j.unanswered > 0
-          ? `Jev left ${j.unanswered} labelled answers undecided or failed, which this leaves out. `
+        (j.unanswered + bu > 0
+          ? `Left out: ${j.unanswered} labelled answers Jev didn't give (undecided or failed) and ${bu} the baseline didn't (failed or unparsed). `
           : "") +
         "Small samples move a lot: read n before acting."
     }

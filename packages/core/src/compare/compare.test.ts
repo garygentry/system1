@@ -270,6 +270,8 @@ describe("runCompare against the current mechanism", () => {
     expect(r.winner).toBe("jev")
     expect(r.labels?.headToHead).toEqual({ n: 2, jev: 2, baseline: 1 })
     expect(r.verdict).toMatch(/2 labelled answers both sides gave.*100\.0%.*50\.0%/)
+    // Nothing labelled was left out by either side here.
+    expect(r.verdict).not.toMatch(/Left out/)
   })
 
   it("dry run projects without calls or consent", async () => {
