@@ -6,8 +6,9 @@ user's edit. This is an allowlist for the name, read one line at a time:
 - the marked line is a `const` (TS) or `Final` (Python) set to "off";
 - every other use of the name in code is a comparison, an import, an
   assertion, a read, or the runtime's option given exactly the name, as the
-  last property of a `createPolicyRuntime({...})` literal, in the file that
-  declares it;
+  last property of a `createPolicyRuntime({...})` literal that also names this
+  file (`module: import.meta.url`, so the runtime reads the marked line too),
+  in the file that declares it;
 - a Unicode line separator, or a backslash-u escape in TS code, is refused;
 - `--module` is this file, so `decide runtime` reads this file's marked line.
 
@@ -87,6 +88,8 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
 
     # Parentheses still open in the runtime call, from its `(`; 0 outside it.
     depth = 0
+    # Whether the open runtime call has named this file (module: import.meta.url).
+    call_module = False
     for i, line in enumerate(lines):
         at = f"line {i + 1}"
         if MARKER in line:
@@ -106,6 +109,15 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
         start = 0 if depth > 0 else (opened.start() if opened else -1)
         in_call = start >= 0
         left = depth + parens(code[start:]) if in_call else 0
+        if in_call and depth == 0:
+            call_module = False
+        for m in re.finditer(r"\bmodule\s*:(?!:)", code, A):
+            if not in_call:
+                continue
+            if re.match(r"\s*import\.meta\.url\s*(?:[,})]|$)", code[m.end():], A):
+                call_module = True
+            else:
+                problems.append(f"{at}: the runtime's module given anything but import.meta.url")
         for m in _NAME.finditer(code):
             before, after = code[: m.start()], code[m.end():]
             allowed = (
@@ -130,6 +142,8 @@ def grant_problems(source: str, python: bool = True) -> list[str]:
                 )
                 if not given or not closes or not in_call:
                     problems.append(f"{at}: the runtime given anything but {E}, last in {CREATE}({{...}})")
+                elif not call_module:
+                    problems.append(f"{at}: the runtime call doesn't name this file (module: import.meta.url)")
                 elif not declares:
                     problems.append(f"{at}: the runtime given a {E} this file doesn't declare")
             elif re.match(r"\s*[,})]", rest):

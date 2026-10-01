@@ -7,8 +7,9 @@
  * - the marked line is a `const` (TS) or `Final` (Python) set to "off";
  * - every other use of the name in code is a comparison, an import, an
  *   assertion, a read, or the runtime's option given exactly the name, as the
- *   last property of a `createPolicyRuntime({…})` literal, in the file that
- *   declares it;
+ *   last property of a `createPolicyRuntime({…})` literal that also names
+ *   this file (`module: import.meta.url`, so the runtime reads the marked
+ *   line too), in the file that declares it;
  * - a Unicode line separator, or a backslash-u escape in TS code, is refused.
  *
  * Comments and string contents are skipped. It reads text, not what runs: a
@@ -62,6 +63,8 @@ export function grantProblems(source: string, python = false): string[] {
   const nextCode = (i: number) => codes.slice(i + 1).find((c) => c.trim() !== "") ?? ""
   // Parentheses still open in the runtime call, from its `(`; 0 outside it.
   let depth = 0
+  // Whether the open runtime call has named this file (module: import.meta.url).
+  let callModule = false
   const parens = (text: string) =>
     (text.match(/\(/g)?.length ?? 0) - (text.match(/\)/g)?.length ?? 0)
   for (const [i, line] of lines.entries()) {
@@ -81,6 +84,13 @@ export function grantProblems(source: string, python = false): string[] {
     const start = depth > 0 ? 0 : (OPENS.exec(code)?.index ?? -1)
     const inCall = start >= 0
     const left = inCall ? depth + parens(code.slice(start)) : 0
+    if (inCall && depth === 0) callModule = false
+    for (const m of code.matchAll(/\bmodule\s*:(?!:)/g)) {
+      if (!inCall) continue
+      if (/^\s*import\.meta\.url\s*(?:[,})]|$)/.test(code.slice((m.index ?? 0) + m[0].length)))
+        callModule = true
+      else problems.push(`${at}: the runtime's module given anything but import.meta.url`)
+    }
     for (const m of code.matchAll(NAME)) {
       const before = code.slice(0, m.index)
       const after = code.slice((m.index ?? 0) + m[0].length)
@@ -105,6 +115,8 @@ export function grantProblems(source: string, python = false): string[] {
           (tail.trim() === "" && left === 1 && /^\s*\}\s*\)/.test(nextCode(i)))
         if (!given || !closes || !inCall)
           problems.push(`${at}: the runtime given anything but ${E}, last in ${CREATE}({…})`)
+        else if (!callModule)
+          problems.push(`${at}: the runtime call doesn't name this file (module: import.meta.url)`)
         else if (!declares)
           problems.push(`${at}: the runtime given a ${E} this file doesn't declare`)
       } else if (/^\s*[,})]/.test(rest)) problems.push(`${at}: the grant passed as a variable`)

@@ -78,7 +78,8 @@ async function respond(argv: string[], io: Io): Promise<PolicyResult | object> {
   if (!values.module)
     return internal("decide runtime: --module <path> is required (the grant is read from it)")
   const cwd = io.cwd ?? process.cwd()
-  const grant = readModuleGrant(resolve(cwd, values.module))
+  const modulePath = resolve(cwd, values.module)
+  const grant = readModuleGrant(modulePath)
   if (!grant) return internal("decide runtime: --module can't be read")
   const cap =
     values["max-usd-per-day"] === undefined ? Number.NaN : Number(values["max-usd-per-day"])
@@ -121,6 +122,8 @@ async function respond(argv: string[], io: Io): Promise<PolicyResult | object> {
   const apiKey = io.env.OPENROUTER_API_KEY
   const runtime = createPolicyRuntime({
     egress: grant.egress,
+    // The same file again: the runtime's own lock reads it too (0020).
+    module: modulePath,
     maxUsdPerDay: cap,
     mode,
     ...(root ? { root } : {}),

@@ -204,6 +204,9 @@ function runtimeFor(options: PolicyOptions): PolicyRuntime {
       mode,
       ...(options.root ? { root: options.root } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      // The runtime reads this file's EGRESS line too: both must say on. A
+      // bundle without this source on disk needs "bundled", your edit.
+      module: import.meta.url,
       // Last, so nothing spread above can override it.
       egress: EGRESS,
     })

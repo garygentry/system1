@@ -19,12 +19,15 @@ export const GRANT_CASES: GrantCase[] = [
   { ok: true, text: `${TS_OFF}\nif (mode === "live" && EGRESS !== "on") x()` },
   {
     ok: true,
-    text: `${TS_OFF}\nconst r = createPolicyRuntime({\n  mode,\n  ...(root ? { root } : {}),\n  // Last.\n  egress: EGRESS,\n})`,
+    text: `${TS_OFF}\nconst r = createPolicyRuntime({\n  mode,\n  ...(root ? { root } : {}),\n  module: import.meta.url,\n  // Last.\n  egress: EGRESS,\n})`,
   },
-  { ok: true, text: `${TS_OFF}\ncreatePolicyRuntime({ mode, egress: EGRESS })` },
   {
     ok: true,
-    text: `${TS_OFF}\nconst r = createPolicyRuntime({\n  mode,\n  egress: EGRESS, // last\n})`,
+    text: `${TS_OFF}\ncreatePolicyRuntime({ mode, module: import.meta.url, egress: EGRESS })`,
+  },
+  {
+    ok: true,
+    text: `${TS_OFF}\nconst r = createPolicyRuntime({\n  mode,\n  module: import.meta.url,\n  egress: EGRESS, // last\n})`,
   },
   { ok: true, text: `expect(EGRESS).toBe("off")\nassert.equal(EGRESS, "off", "msg")` },
   { ok: true, text: `assert.equal(policy.EGRESS, "off")` },
@@ -110,6 +113,12 @@ export const GRANT_CASES: GrantCase[] = [
   { ok: false, text: `${TS_OFF}\nf(\n  {\n    egress: EGRESS,\n  },\n  overrides,\n)` },
   { ok: false, text: `${TS_OFF}\nconst r = createPolicyRuntime({\n  egress: EGRESS,\n  ...o,\n})` },
   { ok: false, text: `createPolicyRuntime(opts)` },
+  { ok: false, text: `${TS_OFF}\ncreatePolicyRuntime({ mode, egress: EGRESS })` },
+  { ok: false, text: `${TS_OFF}\ncreatePolicyRuntime({ module: "bundled", egress: EGRESS })` },
+  {
+    ok: false,
+    text: `${TS_OFF}\ncreatePolicyRuntime({\n  module: process.argv[1],\n  egress: EGRESS,\n})`,
+  },
   { ok: false, text: `/* @__PURE__ */ createPolicyRuntime({ mode, egress: "on" })` },
   { ok: false, text: `/** @type {X} */ const opts = { mode, egress: "on" }` },
   { ok: false, text: `const x = 2\n  * 1; createPolicyRuntime({ mode, egress: "on" })` },
