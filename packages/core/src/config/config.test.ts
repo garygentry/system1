@@ -495,6 +495,27 @@ describe("the emulated baseline in config (M11 D2)", () => {
     }
   })
 
+  it("treats a null at/by as absent, and fails a rewrite that would break an alias as config-error", () => {
+    const id = "emulated:anthropic/claude-haiku-4.5"
+    const nulls = setup(`egress:\n  allowProfiles:\n    - { id: ${id}, at: , by: ~ }\n`)
+    expect(loadConfig({ cwd: nulls.repo, env: {}, home: nulls.home }).egress.allowProfiles).toEqual(
+      [{ id }],
+    )
+    const anchored = setup(`egress:\n  allowProfiles: [ &h ${id} ]\n  exclude: [*h]\n`)
+    expect(() => setAllowProfile(anchored.repo, id, false)).toThrow(
+      expect.objectContaining({ code: "config-error" }),
+    )
+  })
+
+  it("writes grants as a block list, even into an emptied or flow list", () => {
+    const { repo } = setup("egress:\n  allowProfiles: [emulated:a/b]\n")
+    setAllowProfile(repo, "emulated:a/b", false)
+    setAllowProfile(repo, "emulated:c/d", true, "me", new Date(0))
+    expect(readFileSync(join(repo, ".system1/config.yaml"), "utf8")).toMatch(
+      /allowProfiles:\n\s+- id: emulated:c\/d\n/,
+    )
+  })
+
   it("never takes an emulated profile from the user file, and checks transports", () => {
     const chat =
       "profiles:\n  - { id: emulated:openai/gpt-x, transport: openrouter-chat, maxStateTokens: 1000, usdPerInputToken: 0.000001, undecidedFloor: 0.3 }\n"

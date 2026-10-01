@@ -391,7 +391,8 @@ export function profileGrant(entry: unknown): ProfileGrant | undefined {
   if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return undefined
   const { id, at, by } = entry as Record<string, unknown>
   if (typeof id !== "string" || !id.trim()) return undefined
-  if ((at !== undefined && typeof at !== "string") || (by !== undefined && typeof by !== "string"))
+  // A null `at`/`by` (`at:` left empty) counts as absent.
+  if ((at != null && typeof at !== "string") || (by != null && typeof by !== "string"))
     return undefined
   return {
     id,

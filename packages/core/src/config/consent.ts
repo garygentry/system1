@@ -118,11 +118,25 @@ export function setAllowProfile(
   const kept = (isSeq(current) ? current.items : []).filter((item) => loaded(item)?.id !== id)
   const grant: ProfileGrant = { id, at: now.toISOString(), ...(by ? { by } : {}) }
   const next = allowed ? [...kept, doc.createNode(grant)] : kept
-  // Edit the list in place, so comments on it survive.
-  if (isSeq(current)) current.items = next
-  else doc.setIn(["egress", "allowProfiles"], doc.createNode(next))
+  // Edit the list in place, so comments on it survive; as a block list, since
+  // a grant is a mapping.
+  if (isSeq(current)) {
+    current.items = next
+    current.flow = false
+  } else doc.setIn(["egress", "allowProfiles"], doc.createNode(next))
+  let text: string
+  try {
+    text = doc.toString()
+  } catch (error) {
+    // e.g. a removed entry held an anchor that another key still aliases.
+    throw new DecisionsError(
+      "config-error",
+      `${file}: could not rewrite egress.allowProfiles (${error instanceof Error ? error.message : String(error)}). Correct it by hand, then run the command again`,
+      { file },
+    )
+  }
   mkdirSync(dirname(file), { recursive: true })
-  writeFileSync(file, doc.toString())
+  writeFileSync(file, text)
   return next.flatMap((item) => loaded(item) ?? [])
 }
 
