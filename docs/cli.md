@@ -190,8 +190,11 @@ harness that `adopt` generates, and writes `.system1/compare/<spec>/report.json`
   0.5. An undecided Jev answer is counted apart, not as a disagreement.
 - **Labels:** with `.system1/labels/<spec>.jsonl` (`{id, labels: {"<question>": <value>}}`, any
   subset of questions), the report adds accuracy for each side, with the number of answers it rests
-  on, and names the side ahead. **Without labels it names no winner**: agreement shows where the two
+  on. It names the side ahead only over the labelled answers both sides gave, so a side can't win
+  by declining the hard rows. **Without labels it names no winner**: agreement shows where the two
   differ, not which is right.
+- **`--limit N`** compares the first N valid rows; invalid lines are still counted over the whole
+  file.
 
 ### `usage`
 

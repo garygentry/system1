@@ -31,6 +31,8 @@ import {
   type Disagreement,
   decisivenessByType,
   disagreements,
+  type HeadToHead,
+  headToHead,
   type LatencySignal,
   latencySignal,
   type Rate,
@@ -91,8 +93,10 @@ export interface CompareReport {
     captured: number
     /** Rows both sides answered. */
     compared: number
-    /** Capture lines left out, with why. */
+    /** Capture lines left out, with why: the first 20. */
     invalid: BadLine[]
+    /** How many capture lines were left out, in the whole file. */
+    invalidTotal: number
     /** States never sent: too large for the model, or not a valid state. */
     withheld: Array<{ id: string; reason: string }>
   }
@@ -109,10 +113,15 @@ export interface CompareReport {
     /** Label ids with no compared row. */
     unmatched: number
     invalid: BadLine[]
+    invalidTotal: number
+    /** Each side's accuracy over what it answered: rates on different sets. */
     accuracy: { jev: Accuracy; baseline: Accuracy }
+    /** Both sides over the same labelled answers: what `winner` is decided on. */
+    headToHead: HeadToHead
   }
   /**
-   * With labels: the side with the higher overall accuracy, or `tie`. Null
+   * With labels: the side right more often over the labelled answers both
+   * gave (`labels.headToHead`), or `tie`; null when there are none. Null
    * without labels, always: agreement can't say who is right.
    */
   winner: "jev" | "baseline" | "tie" | null
@@ -130,7 +139,12 @@ export interface CompareDryRun {
   spec: string
   dryRun: true
   baselineKind: "current" | "emulated"
-  rows: { captured: number; invalid: BadLine[]; withheld: Array<{ id: string; reason: string }> }
+  rows: {
+    captured: number
+    invalid: BadLine[]
+    invalidTotal: number
+    withheld: Array<{ id: string; reason: string }>
+  }
   projection: { jev: Projection; baseline: Projection | null; total: Projection }
 }
 
@@ -212,7 +226,7 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
       spec: spec.name,
       dryRun: true,
       baselineKind,
-      rows: { captured: rows.length, invalid, withheld },
+      rows: { captured: rows.length, invalid, invalidTotal: read.bad.length, withheld },
       projection: { jev: jevProjection, baseline: baseProjection, total },
     }
   }
@@ -351,18 +365,25 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
       matched: answered.filter((a) => a.label).length,
       unmatched: [...labelled.byId.keys()].filter((id) => !ids.has(id)).length,
       invalid: labelled.bad.slice(0, 20),
+      invalidTotal: labelled.bad.length,
       accuracy: acc,
+      headToHead: headToHead(questions, answered),
     }
+    const h = labels.headToHead
     const j = acc.jev.overall
-    const b = acc.baseline.overall
-    if (j.rate === null || b.rate === null) {
-      verdict = "Labels exist, but no labelled question was answered by both sides: no winner."
-    } else {
-      winner = j.rate > b.rate ? "jev" : b.rate > j.rate ? "baseline" : "tie"
-      const pct = (r: Rate) => `${((r.rate ?? 0) * 100).toFixed(1)}% of ${r.n}`
+    if (h.n === 0) {
       verdict =
-        `On the labelled rows, Jev was right on ${pct(j)} and the ${baselineKind} baseline on ${pct(b)} ` +
-        `(${winner === "tie" ? "a tie" : `${winner} ahead`}). Small samples move a lot: read n before acting.`
+        "Labels exist, but no labelled question was answered by both sides (Jev decided): no winner."
+    } else {
+      winner = h.jev > h.baseline ? "jev" : h.baseline > h.jev ? "baseline" : "tie"
+      const pct = (hits: number) => `${((hits / h.n) * 100).toFixed(1)}%`
+      verdict =
+        `On the ${h.n} labelled answers both sides gave, Jev was right on ${pct(h.jev)} and the ` +
+        `${baselineKind} baseline on ${pct(h.baseline)} (${winner === "tie" ? "a tie" : `${winner} ahead`}). ` +
+        (j.unanswered > 0
+          ? `Jev left ${j.unanswered} labelled answers undecided or failed, which this leaves out. `
+          : "") +
+        "Small samples move a lot: read n before acting."
     }
   } else {
     verdict =
@@ -392,7 +413,13 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
       failed: baseFailed,
       parsed: { n: parsedOf, hits: parsedOk, rate: parsedOf > 0 ? parsedOk / parsedOf : null },
     },
-    rows: { captured: rows.length, compared: compared.length, invalid, withheld },
+    rows: {
+      captured: rows.length,
+      compared: compared.length,
+      invalid,
+      invalidTotal: read.bad.length,
+      withheld,
+    },
     signals,
     labels,
     winner,

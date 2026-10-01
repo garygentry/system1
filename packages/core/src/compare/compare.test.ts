@@ -7,7 +7,14 @@ import { useTempDirs } from "../testkit/tmp.js"
 import { type CompareReport, runCompare } from "../tools/compare.js"
 import { createContext } from "../tools/context.js"
 import { readCaptured, readLabels } from "./capture.js"
-import { accuracy, agreement, costSignal, latencySignal, type RowAnswers } from "./signals.js"
+import {
+  accuracy,
+  agreement,
+  costSignal,
+  headToHead,
+  latencySignal,
+  type RowAnswers,
+} from "./signals.js"
 
 const temp = useTempDirs()
 
@@ -117,6 +124,21 @@ describe("compare signals", () => {
     })
   })
 
+  it("decides a winner only over answers both sides gave, never rewarding abstention", () => {
+    // Jev decided once and was right; undecided on nine the baseline mostly got right.
+    const many: RowAnswers[] = Array.from({ length: 10 }, (_, i) => ({
+      id: `r${i}`,
+      jev: {
+        answers: { auth: { type: "noul", noul: i === 0 ? 0.9 : 0.5 } },
+        undecided: i === 0 ? [] : ["auth"],
+      },
+      baseline: { auth: { type: "noul", noul: i === 9 ? 0.1 : 0.9 } },
+      label: { auth: { type: "noul", noul: 1 } },
+    }))
+    expect(accuracy(q, many, "jev").overall).toMatchObject({ n: 1, rate: 1, unanswered: 9 })
+    expect(headToHead(q, many)).toEqual({ n: 1, jev: 1, baseline: 1 })
+  })
+
   it("reports cost as unknown, never zero, and flags an incomplete total", () => {
     expect(costSignal([undefined, undefined])).toEqual({
       calls: 2,
@@ -164,6 +186,7 @@ describe("reading a capture and labels", () => {
     const { rows, bad } = readCaptured(join(dir, "c.jsonl"), questions)
     expect(rows.map((r) => r.id)).toEqual(["a", "c"])
     expect(bad.map((b) => b.line)).toEqual([2, 3, 4, 5])
+    expect(rows.length + bad.length).toBe(6)
     expect(rows[1]).toMatchObject({ currentError: expect.stringMatching(/auth/) })
     expect(rows[1]?.usage).toBeUndefined()
     const labels = readLabels(join(dir, "l.jsonl"), questions)
@@ -245,7 +268,8 @@ describe("runCompare against the current mechanism", () => {
     expect(r.labels?.accuracy.jev.overall).toMatchObject({ n: 2, hits: 2 })
     expect(r.labels?.accuracy.baseline.overall).toMatchObject({ n: 2, hits: 1 })
     expect(r.winner).toBe("jev")
-    expect(r.verdict).toMatch(/100\.0% of 2.*50\.0% of 2/)
+    expect(r.labels?.headToHead).toEqual({ n: 2, jev: 2, baseline: 1 })
+    expect(r.verdict).toMatch(/2 labelled answers both sides gave.*100\.0%.*50\.0%/)
   })
 
   it("dry run projects without calls or consent", async () => {

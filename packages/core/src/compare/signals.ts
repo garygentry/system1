@@ -261,3 +261,31 @@ export function disagreements(questions: QuestionSet, rows: readonly RowAnswers[
     }
   return out
 }
+
+export interface HeadToHead {
+  /** Labelled questions both sides answered, Jev decided: the only fair ground for a winner. */
+  n: number
+  jev: number
+  baseline: number
+}
+
+/**
+ * Both sides scored over the same answers: each labelled question that both
+ * answered (Jev decided). Per-side accuracy leaves out what a side didn't
+ * answer, so its rates rest on different sets; comparing those would reward
+ * a side for declining the hard rows.
+ */
+export function headToHead(questions: QuestionSet, rows: readonly RowAnswers[]): HeadToHead {
+  const out: HeadToHead = { n: 0, jev: 0, baseline: 0 }
+  for (const row of rows)
+    for (const name of Object.keys(questions)) {
+      const label = row.label?.[name]
+      const a = row.jev && !row.jev.undecided.includes(name) ? row.jev.answers[name] : undefined
+      const b = row.baseline?.[name]
+      if (!label || !a || !b) continue
+      out.n += 1
+      if (agrees(a, label)) out.jev += 1
+      if (agrees(b, label)) out.baseline += 1
+    }
+  return out
+}

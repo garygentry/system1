@@ -230,7 +230,7 @@ export function briefCompare(r: CompareResult): string {
       ...(p.baseline ? [`  baseline: ${projected(p.baseline)}`] : []),
       `  total: ${projected(p.total)}`,
       ...(r.rows.withheld.length ? [`  withheld: ${r.rows.withheld.length}`] : []),
-      ...(r.rows.invalid.length ? [`  invalid lines: ${r.rows.invalid.length}`] : []),
+      ...(r.rows.invalidTotal ? [`  invalid lines: ${r.rows.invalidTotal}`] : []),
     ].join("\n")
   }
   const pct = (x: number | null) => (x === null ? "n/a" : `${(x * 100).toFixed(1)}%`)
@@ -274,7 +274,7 @@ export function briefCompare(r: CompareResult): string {
   if (Object.keys(r.baseline.failed).length)
     lines.push(`  baseline failed: ${failed(r.baseline.failed)}`)
   if (r.rows.withheld.length) lines.push(`  withheld: ${r.rows.withheld.length} (too large)`)
-  if (r.rows.invalid.length) lines.push(`  invalid capture lines: ${r.rows.invalid.length}`)
+  if (r.rows.invalidTotal) lines.push(`  invalid capture lines: ${r.rows.invalidTotal}`)
   lines.push(`  spent: ${measured(r.usage)}`)
   lines.push(r.reportUnsaved ? `  report NOT written (${r.reportUnsaved})` : `  report: ${r.file}`)
   return lines.join("\n")
