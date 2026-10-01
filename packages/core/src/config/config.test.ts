@@ -3,7 +3,7 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { JEV_CALL_OVERHEAD_TOKENS, resolveProfile } from "../model/profiles.js"
 import { useTempDirs, writeTree } from "../testkit/tmp.js"
-import { assertConsent, setConsent } from "./consent.js"
+import { assertConsent, setAllowProfile, setConsent } from "./consent.js"
 import { allProfiles, findRepoRoot, loadConfig } from "./load.js"
 
 const temp = useTempDirs()
@@ -430,13 +430,90 @@ describe("the emulated baseline in config (M11 D2)", () => {
     const repoSide = setup(allow)
     expect(
       loadConfig({ cwd: repoSide.repo, env: {}, home: repoSide.home }).egress.allowProfiles,
-    ).toEqual(["emulated:anthropic/claude-haiku-4.5"])
+    ).toEqual([{ id: "emulated:anthropic/claude-haiku-4.5" }])
     const userSide = setup(undefined, allow)
     const config = loadConfig({ cwd: userSide.repo, env: {}, home: userSide.home })
     expect(config.egress.allowProfiles).toEqual([])
     expect(config.warnings).toEqual([
       expect.stringMatching(/egress\.allowProfiles is read only from the repo file/),
     ])
+  })
+
+  it("reads a grant's at and by, beside bare ids (Gap A: the audit trail)", () => {
+    const { repo, home } = setup(
+      "egress:\n  allowProfiles:\n    - emulated:old/model\n    - { id: emulated:new/model, at: 2026-10-01T00:00:00.000Z, by: me, extra: 1 }\n",
+    )
+    expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toEqual([
+      { id: "emulated:old/model" },
+      { id: "emulated:new/model", at: "2026-10-01T00:00:00.000Z", by: "me" },
+    ])
+  })
+
+  it("setAllowProfile records at and by, keeps other entries and comments, and revokes", () => {
+    const { repo, home } = setup(
+      "# keep me\negress:\n  consent: { granted: true }\n  allowProfiles:\n    - emulated:old/model # bare\n",
+    )
+    const now = new Date("2026-10-01T01:02:03.000Z")
+    const id = "emulated:anthropic/claude-haiku-4.5"
+    expect(setAllowProfile(repo, id, true, "gary", now)).toEqual([
+      { id: "emulated:old/model" },
+      { id, at: now.toISOString(), by: "gary" },
+    ])
+    const text = readFileSync(join(repo, ".system1/config.yaml"), "utf8")
+    expect(text).toMatch(/# keep me/)
+    expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toEqual([
+      { id: "emulated:old/model" },
+      { id, at: now.toISOString(), by: "gary" },
+    ])
+    // Allowing again records the new act once; a bare entry is replaced by a recorded one.
+    const later = new Date("2026-10-02T00:00:00.000Z")
+    expect(setAllowProfile(repo, id, true, undefined, later)).toEqual([
+      { id: "emulated:old/model" },
+      { id, at: later.toISOString() },
+    ])
+    expect(setAllowProfile(repo, "emulated:old/model", true, "x", later)[1]).toEqual({
+      id: "emulated:old/model",
+      at: later.toISOString(),
+      by: "x",
+    })
+    expect(setAllowProfile(repo, id, false)).toEqual([
+      { id: "emulated:old/model", at: later.toISOString(), by: "x" },
+    ])
+    expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toHaveLength(1)
+  })
+
+  it("setAllowProfile revokes an aliased entry, and keeps comments on the list", () => {
+    const id = "emulated:anthropic/claude-haiku-4.5"
+    for (const list of ["[ *h ]", "[ { id: *h } ]"]) {
+      const { repo, home } = setup(
+        `x: &h ${id}\negress:\n  consent: { granted: true }\n  allowProfiles: ${list} # mine\n`,
+      )
+      expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toEqual([{ id }])
+      expect(setAllowProfile(repo, id, false)).toEqual([])
+      expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toEqual([])
+      expect(readFileSync(join(repo, ".system1/config.yaml"), "utf8")).toMatch(/# mine/)
+    }
+  })
+
+  it("treats a null at/by as absent, and fails a rewrite that would break an alias as config-error", () => {
+    const id = "emulated:anthropic/claude-haiku-4.5"
+    const nulls = setup(`egress:\n  allowProfiles:\n    - { id: ${id}, at: , by: ~ }\n`)
+    expect(loadConfig({ cwd: nulls.repo, env: {}, home: nulls.home }).egress.allowProfiles).toEqual(
+      [{ id }],
+    )
+    const anchored = setup(`egress:\n  allowProfiles: [ &h ${id} ]\n  exclude: [*h]\n`)
+    expect(() => setAllowProfile(anchored.repo, id, false)).toThrow(
+      expect.objectContaining({ code: "config-error" }),
+    )
+  })
+
+  it("writes grants as a block list, even into an emptied or flow list", () => {
+    const { repo } = setup("egress:\n  allowProfiles: [emulated:a/b]\n")
+    setAllowProfile(repo, "emulated:a/b", false)
+    setAllowProfile(repo, "emulated:c/d", true, "me", new Date(0))
+    expect(readFileSync(join(repo, ".system1/config.yaml"), "utf8")).toMatch(
+      /allowProfiles:\n\s+- id: emulated:c\/d\n/,
+    )
   })
 
   it("never takes an emulated profile from the user file, and checks transports", () => {
@@ -461,8 +538,21 @@ describe("the emulated baseline in config (M11 D2)", () => {
     )
     const scalar = setup("egress:\n  allowProfiles: emulated:x\n")
     expect(() => loadConfig({ cwd: scalar.repo, env: {}, home: scalar.home })).toThrow(
-      /must be a list of profile ids/,
+      /must be a list of profile ids or \{id, at\?, by\?\}/,
     )
+    for (const entry of [
+      "{ at: x }",
+      "{ id: '' }",
+      "[a]",
+      "''",
+      "{ id: x, at: 1 }",
+      "{ id: x, by: [y] }",
+    ]) {
+      const malformed = setup(`egress:\n  allowProfiles: [${entry}]\n`)
+      expect(() => loadConfig({ cwd: malformed.repo, env: {}, home: malformed.home })).toThrow(
+        /must be a list of profile ids/,
+      )
+    }
     const bad = setup(chat.replace("openrouter-chat", "carrier-pigeon"))
     expect(() => loadConfig({ cwd: bad.repo, env: {}, home: bad.home })).toThrow(
       /transport must be one of/,

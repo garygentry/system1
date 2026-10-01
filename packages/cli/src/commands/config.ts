@@ -5,6 +5,7 @@ import {
   DEFAULT_EXCLUDES,
   DecisionsError,
   loadConfig,
+  type ProfileGrant,
   repoConfigPath,
   setAllowProfile,
   setConsent,
@@ -36,7 +37,9 @@ export function runConfigCommand(argv: string[], io: Io, format: Format): Promis
 
 type ConfigResult =
   | ReturnType<typeof show>
-  | { egress: { consent: unknown; allowProfiles?: string[]; file: string; changed?: boolean } }
+  | {
+      egress: { consent: unknown; allowProfiles?: ProfileGrant[]; file: string; changed?: boolean }
+    }
 
 /** Flags of `config`. Exported so `docs/cli.md` can be checked against them. */
 export const CONFIG_OPTIONS = {
@@ -74,11 +77,11 @@ function body(argv: string[], io: Io): ConfigResult {
     case "allow-profile":
     case "deny-profile": {
       // A stale grant (its profile since removed) can always be revoked.
-      if (action === "deny-profile" && target && config.egress.allowProfiles.includes(target)) {
+      if (action === "deny-profile" && config.egress.allowProfiles.some((g) => g.id === target)) {
         return {
           egress: {
             consent: config.egress.consent,
-            allowProfiles: setAllowProfile(config.repoRoot, target, false),
+            allowProfiles: setAllowProfile(config.repoRoot, target as string, false),
             file,
             changed: true,
           },
@@ -111,7 +114,13 @@ function body(argv: string[], io: Io): ConfigResult {
       return {
         egress: {
           consent: config.egress.consent,
-          allowProfiles: setAllowProfile(config.repoRoot, profile.id, action === "allow-profile"),
+          // Record which route allowed it, as consent does.
+          allowProfiles: setAllowProfile(
+            config.repoRoot,
+            profile.id,
+            action === "allow-profile",
+            values.by || (io.interactive ? "decide config" : "decide config --i-consent"),
+          ),
           file,
           changed: true,
         },
@@ -169,6 +178,7 @@ function show(io: Io, cwd: string) {
     egress: {
       consent: config.egress.consent,
       exclude: config.egress.exclude,
+      allowProfiles: config.egress.allowProfiles,
       defaultExcludes: DEFAULT_EXCLUDES.length,
     },
     apiKey: config.apiKey ? `present (${config.apiKeySource})` : "absent (replay only)",
@@ -191,7 +201,10 @@ function show(io: Io, cwd: string) {
 function brief(r: ConfigResult): string {
   if (!("repoRoot" in r)) {
     const c = r.egress.consent as { granted: boolean; at?: string }
-    return `egress consent: ${c.granted ? `granted${c.at ? ` ${c.at}` : ""}` : "not granted"} (${r.egress.file})`
+    return [
+      `egress consent: ${c.granted ? `granted${c.at ? ` ${c.at}` : ""}` : "not granted"} (${r.egress.file})`,
+      ...(r.egress.allowProfiles?.length ? [`allowed: ${grantsLine(r.egress.allowProfiles)}`] : []),
+    ].join("\n")
   }
   const c = r.egress.consent
   return [
@@ -201,12 +214,25 @@ function brief(r: ConfigResult): string {
     `egress consent: ${c.granted ? `granted ${c.at ?? ""}`.trim() : "not granted (the user grants it; see `decide doctor`)"}`,
     `excludes: ${r.egress.defaultExcludes} default${r.egress.exclude.length ? ` + ${r.egress.exclude.join(", ")}` : ""}`,
     `budget: ${r.budget.maxCalls} calls / $${r.budget.maxUsd} per request · concurrency ${r.concurrency} · timeout ${r.timeoutMs} ms`,
+    ...(r.egress.allowProfiles.length
+      ? [`allowed baselines: ${grantsLine(r.egress.allowProfiles)}`]
+      : []),
     ...(r.profiles.length ? [`profiles: ${r.profiles.map((p) => p.id).join(", ")}`] : []),
     `route: ${routeLine(r.route)}`,
     `guard: ${guardLine(r.guard, c.granted)}`,
     `session: ${r.session ? `${r.session} (${r.sessionOrigin === "env" ? "SYSTEM1_SESSION" : `detected from ${r.sessionOrigin}`})` : "none"}`,
     ...(r.warnings.length ? [`ignored: ${r.warnings.join("; ")}`] : []),
   ].join("\n")
+}
+
+/** Each grant with when and by whom, where recorded. */
+function grantsLine(grants: ProfileGrant[]): string {
+  return grants
+    .map((g) => {
+      const detail = [g.at, g.by && `by ${g.by}`].filter(Boolean).join(" ")
+      return detail ? `${g.id} (${detail})` : g.id
+    })
+    .join(", ")
 }
 
 function guardLine(guard: ReturnType<typeof show>["guard"], consent: boolean): string {

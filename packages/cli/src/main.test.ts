@@ -441,17 +441,32 @@ describe("decide guard", () => {
 describe("decide config egress", () => {
   it("allows an emulated baseline only on the user's word: a terminal or --i-consent, not --confirm", async () => {
     const id = "emulated:anthropic/claude-haiku-4.5"
-    const { cwd, io, json } = rig()
+    const { cwd, io, out, json } = rig()
     expect(await main(["config", "egress", "allow-profile", id], io)).toBe(3)
     expect(json().error.message).toMatch(/second vendor.*an agent must not allow it/s)
     expect(await main(["config", "egress", "allow-profile", id, "--confirm"], io)).toBe(3)
     expect(await main(["config", "egress", "allow-profile", id, "--i-consent"], io)).toBe(0)
-    expect(json().result.egress.allowProfiles).toEqual([id])
+    // Recorded like consent: when, and by which route (or --by).
+    const grant = { id, at: expect.any(String), by: "decide config --i-consent" }
+    expect(json().result.egress.allowProfiles).toEqual([grant])
     expect(readFileSync(join(cwd, ".system1/config.yaml"), "utf8")).toMatch(
-      /allowProfiles:\n\s+- emulated:anthropic\/claude-haiku-4\.5/,
+      /allowProfiles:\n\s+- id: emulated:anthropic\/claude-haiku-4\.5\n\s+at: /,
     )
     expect(await main(["config", "egress", "status"], io)).toBe(0)
-    expect(json().result.egress.allowProfiles).toEqual([id])
+    expect(json().result.egress.allowProfiles).toEqual([grant])
+    expect(await main(["config", "egress", "status", "--format", "brief"], io)).toBe(0)
+    expect(out.at(-1)).toMatch(
+      /allowed: emulated:anthropic\/claude-haiku-4\.5 \(\S+ by decide config --i-consent\)/,
+    )
+    expect(
+      await main(["config", "egress", "allow-profile", id, "--i-consent", "--by", "gary"], io),
+    ).toBe(0)
+    expect(json().result.egress.allowProfiles).toEqual([{ ...grant, by: "gary" }])
+    // An empty --by falls back to the route rather than recording no one.
+    expect(
+      await main(["config", "egress", "allow-profile", id, "--i-consent", "--by", ""], io),
+    ).toBe(0)
+    expect(json().result.egress.allowProfiles).toEqual([grant])
     // Denying needs no terminal: it only stops content being sent.
     expect(await main(["config", "egress", "deny-profile", id], io)).toBe(0)
     expect(json().result.egress.allowProfiles).toEqual([])

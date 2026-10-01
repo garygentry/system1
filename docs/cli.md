@@ -175,7 +175,7 @@ decide config [show]
 decide config egress status
 decide config egress allow [--by <who>] [--confirm]
 decide config egress deny
-decide config egress allow-profile <id> [--i-consent]
+decide config egress allow-profile <id> [--by <who>] [--i-consent]
 decide config egress deny-profile <id>
 ```
 
@@ -187,11 +187,12 @@ how a user grants it where there's no terminal, such as Claude Code's `!` prompt
 granted it; without it, the record says `decide config` or `decide config --confirm`.
 
 `allow-profile <id>` lets `decide compare` send this repo's content to an emulated baseline such
-as `emulated:anthropic/claude-haiku-4.5`, a chat model on a second vendor. It adds the id to
-`egress.allowProfiles`. Like `guard enable`, it needs an interactive terminal, or
-`--i-consent` where there's none; `--confirm` doesn't count. Agents must not run it.
-`deny-profile <id>` removes it and needs neither. `status` reports both consent and the allowed
-profiles.
+as `emulated:anthropic/claude-haiku-4.5`, a chat model on a second vendor. It records
+`{id, at, by}` in `egress.allowProfiles`, as consent records its grant: `--by` says who allowed
+it, and without it the record says `decide config` or `decide config --i-consent`. Allowing it again
+records the new grant. Like `guard enable`, it needs an interactive terminal, or `--i-consent`
+where there's none; `--confirm` doesn't count. Agents must not run it. `deny-profile <id>` removes
+the entry and needs neither. `status` and `show` report both consent and the allowed profiles.
 
 ### `guard`
 

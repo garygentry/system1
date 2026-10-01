@@ -19,6 +19,7 @@ export type {
   Consent,
   DecisionsConfig,
   LoadOptions,
+  ProfileGrant,
   ResolvedConfig,
 } from "./config/load.js"
 export {

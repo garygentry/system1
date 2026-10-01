@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
-import { type Document, isMap, isScalar, parseDocument } from "yaml"
+import { type Document, isMap, isNode, isScalar, isSeq, parseDocument } from "yaml"
 import { DecisionsError } from "../errors.js"
 import type { PackName } from "../guard/packs.js"
-import { type Consent, repoConfigPath } from "./load.js"
+import { type Consent, type ProfileGrant, profileGrant, repoConfigPath } from "./load.js"
 
 const HEADER = `# decisions — per-repo configuration. See https://github.com/garygentry/system1
 # egress.consent records that this repo agreed to send content to the decision
@@ -99,22 +99,45 @@ export function setGuardEnabled(
 /**
  * Allow (or stop allowing) an emulated baseline to receive this repo's content
  * in `compare`: `egress.allowProfiles` in `<repo>/.system1/config.yaml`. It is
- * the user's decision, like consent itself; the CLI checks for it.
+ * the user's decision, like consent itself; the CLI checks for it. A grant
+ * records `at` and `by` as consent does; allowing again records the new act.
  */
-export function setAllowProfile(repoRoot: string, id: string, allowed: boolean): string[] {
+export function setAllowProfile(
+  repoRoot: string,
+  id: string,
+  allowed: boolean,
+  by?: string,
+  now = new Date(),
+): ProfileGrant[] {
   const file = repoConfigPath(repoRoot)
   const doc = editable(file, ["egress"])
-  const current = doc.getIn(["egress", "allowProfiles"])
-  const list: string[] = Array.isArray((current as { toJSON?: () => unknown })?.toJSON?.())
-    ? ((current as { toJSON: () => unknown[] })
-        .toJSON()
-        .filter((v) => typeof v === "string") as string[])
-    : []
-  const next = allowed ? [...new Set([...list, id])] : list.filter((p) => p !== id)
-  doc.setIn(["egress", "allowProfiles"], next)
+  const current = doc.getIn(["egress", "allowProfiles"], true)
+  // Match on what loading will read, aliases resolved, so a revoke never
+  // reports an entry gone that still grants the profile.
+  const loaded = (item: unknown) => profileGrant(isNode(item) ? item.toJS(doc) : item)
+  const kept = (isSeq(current) ? current.items : []).filter((item) => loaded(item)?.id !== id)
+  const grant: ProfileGrant = { id, at: now.toISOString(), ...(by ? { by } : {}) }
+  const next = allowed ? [...kept, doc.createNode(grant)] : kept
+  // Edit the list in place, so comments on it survive; as a block list, since
+  // a grant is a mapping.
+  if (isSeq(current)) {
+    current.items = next
+    current.flow = false
+  } else doc.setIn(["egress", "allowProfiles"], doc.createNode(next))
+  let text: string
+  try {
+    text = doc.toString()
+  } catch (error) {
+    // e.g. a removed entry held an anchor that another key still aliases.
+    throw new DecisionsError(
+      "config-error",
+      `${file}: could not rewrite egress.allowProfiles (${error instanceof Error ? error.message : String(error)}). Correct it by hand, then run the command again`,
+      { file },
+    )
+  }
   mkdirSync(dirname(file), { recursive: true })
-  writeFileSync(file, doc.toString())
-  return next
+  writeFileSync(file, text)
+  return next.flatMap((item) => loaded(item) ?? [])
 }
 
 export { assertConsent } from "./assert-consent.js"

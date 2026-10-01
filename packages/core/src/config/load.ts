@@ -36,6 +36,19 @@ export interface Consent {
   by?: string
 }
 
+/**
+ * One emulated baseline this repo allowed `compare` to send content to, with
+ * when and by whom, as consent records them. A bare id (a hand-written or
+ * pre-0.6 entry) loads with no `at`/`by`.
+ */
+export interface ProfileGrant {
+  id: string
+  /** ISO timestamp of the grant. */
+  at?: string
+  /** Free text, e.g. who allowed it or through which route. */
+  by?: string
+}
+
 export interface Budget {
   /** Above this many calls, a request needs explicit confirmation. */
   maxCalls: number
@@ -60,7 +73,7 @@ export interface DecisionsConfig {
      * Emulated baselines this repo lets `compare` send content to: a second
      * vendor, so a second opt-in. Only ever taken from the repo layer.
      */
-    allowProfiles: string[]
+    allowProfiles: ProfileGrant[]
   }
   /** Extra model profiles, on top of the built-in ones. */
   profiles: ModelProfile[]
@@ -354,19 +367,38 @@ function readConsent(repo: Layer, file: string): Consent {
   }
 }
 
-function readAllowProfiles(repo: Layer, file: string): string[] {
+function readAllowProfiles(repo: Layer, file: string): ProfileGrant[] {
   const value = (repo?.egress as Record<string, unknown> | undefined)?.allowProfiles
   if (value === undefined || value === null) return []
-  if (!Array.isArray(value) || !value.every((v) => typeof v === "string" && v.trim())) {
+  const grants = Array.isArray(value) ? value.map(profileGrant) : undefined
+  if (!grants?.every((g) => g !== undefined)) {
     throw new DecisionsError(
       "config-error",
-      `${file}: egress.allowProfiles must be a list of profile ids`,
-      {
-        file,
-      },
+      `${file}: egress.allowProfiles must be a list of profile ids or {id, at?, by?}`,
+      { file },
     )
   }
-  return value
+  return grants as ProfileGrant[]
+}
+
+/**
+ * One `allowProfiles` entry as loaded, or `undefined` when malformed: a bare
+ * id, or `{id, at?, by?}` whose `at`/`by`, when present, are strings. The
+ * writer reads entries through this too, so it reports what loading will see.
+ */
+export function profileGrant(entry: unknown): ProfileGrant | undefined {
+  if (typeof entry === "string") return entry.trim() ? { id: entry } : undefined
+  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return undefined
+  const { id, at, by } = entry as Record<string, unknown>
+  if (typeof id !== "string" || !id.trim()) return undefined
+  // A null `at`/`by` (`at:` left empty) counts as absent.
+  if ((at != null && typeof at !== "string") || (by != null && typeof by !== "string"))
+    return undefined
+  return {
+    id,
+    ...(typeof at === "string" ? { at } : {}),
+    ...(typeof by === "string" ? { by } : {}),
+  }
 }
 
 function stringList(layer: Layer, path: string, file: string): string[] {
