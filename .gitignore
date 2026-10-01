@@ -18,4 +18,3 @@ packages/pi/skills/
 !tools/evals/fixture-repo/test-output.log
 __pycache__/
 .system1/compare/
-.system1/fixtures/compare.*/

@@ -9,7 +9,7 @@ import { join, relative } from "node:path"
 import type { ProfileGrant } from "../config/load.js"
 import { stateDir } from "../config/load.js"
 import { EGRESS_MARKER, grantIn } from "../runtime/grant.js"
-import { gitIgnored, insideGitWorkTree } from "../sources/read.js"
+import { insideGitWorkTree } from "../sources/read.js"
 import type { DoctorCheck } from "./doctor.js"
 
 /**
@@ -21,9 +21,14 @@ const NOT_APP_CODE =
   /(^|\/)(node_modules|__tests__|tests?|fixtures)\/|(^|\/)references\/templates\/|\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.py$/
 /** Source an adopted module could be: TypeScript, JavaScript or Python. */
 const SOURCE = /\.(?:[cm]?[jt]sx?|py)$/
-/** A runtime call in code, not in a comment line. */
-const CALL = /^(?!\s*(?:\/\/|\/?\*|#)).*\bcreatePolicyRuntime\s*\(\s*\{/m
+/** TypeScript or JavaScript: only these call the runtime in-process. */
+const SCRIPT = /\.(?:[cm]?[jt]sx?)$/
+const DEFINES = /\bfunction\s+createPolicyRuntime\s*\(/
 const BUNDLED = /\bmodule\s*:\s*["']bundled["']/
+
+/** TS/JS source without its comments: block comments and whole-line `//` comments. */
+const code = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
 /** A module's grant line: `EGRESS` set at the start of the line that carries the marker. */
 const GRANT_LINE = new RegExp(
   `^(?:export\\s+)?(?:(?:const|let|var)\\s+)?EGRESS\\b.*${EGRESS_MARKER}`,
@@ -52,7 +57,9 @@ function runtimeFiles(repoRoot: string): string[] | string {
         "-e",
         EGRESS_MARKER,
         "-e",
-        "createPolicyRuntime[[:space:]]*\\([[:space:]]*\\{",
+        "createPolicyRuntime",
+        "-e",
+        "module[[:space:]]*:[[:space:]]*[\"']bundled[\"']",
       ],
       {
         encoding: "utf8",
@@ -95,10 +102,11 @@ export function adoptedCheck(repoRoot: string): DoctorCheck {
       continue
     }
     const marked = GRANT_LINE.test(source)
-    if (!marked && !CALL.test(source)) continue
     if (marked) modules++
     if (marked && grantIn(source).egress === "on") on.push(path)
-    if (BUNDLED.test(source)) bundled.push(path)
+    // The opt-out, wherever the options are built: in the call, or in an object passed to it.
+    // Not the runtime's own source, whose messages name the opt-out.
+    if (SCRIPT.test(path) && !DEFINES.test(source) && BUNDLED.test(code(source))) bundled.push(path)
   }
   if (modules === 0 && bundled.length === 0)
     return { name: "adopted", status: "ok", detail: "no adopted modules" }
@@ -109,11 +117,12 @@ export function adoptedCheck(repoRoot: string): DoctorCheck {
   const summary = `${modules} adopted module${modules === 1 ? "" : "s"}`
   if (notes.length === 0)
     return { name: "adopted", status: "ok", detail: `${summary}, runtime egress off in all` }
+  const lead = modules > 0 ? `${summary}; ` : ""
   return {
     name: "adopted",
     status: "warn",
     advisory: true,
-    detail: `${summary}; ${notes.join("; ")}`,
+    detail: `${lead}${notes.join("; ")}`,
     fix: "switching egress on and writing \"bundled\" are your edits (docs/runtime.md); if you didn't make them, review the module's diff",
   }
 }
@@ -130,84 +139,73 @@ export function emulatedCheck(allowProfiles: ProfileGrant[]): DoctorCheck {
   }
 }
 
+/** `git ls-files` under `path`, NUL-separated. */
+function lsFiles(repoRoot: string, path: string, others: boolean): string[] {
+  const out = execFileSync(
+    "git",
+    [
+      "-C",
+      repoRoot,
+      "ls-files",
+      "-z",
+      ...(others ? ["--others", "--exclude-standard"] : []),
+      "--",
+      path,
+    ],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: 10_000,
+      killSignal: "SIGKILL",
+    },
+  )
+  return out.split("\0").filter(Boolean)
+}
+
 /**
- * Raw inputs on disk: each shadow capture, and the answers `compare --record`
- * kept for it (`fixtures/compare.<spec>/`, which hold every captured state).
- * One file stands for each recorded directory.
+ * Everything `compare` keeps in `.system1/compare/` is raw inputs: the shadow
+ * capture, the probe states `adopt` reads, and the answers `--record` kept
+ * (each holds a captured state). Git must hold none of it.
  */
-function rawInputFiles(repoRoot: string): string[] {
-  const files: string[] = []
-  const compare = join(stateDir(repoRoot), "compare")
-  if (existsSync(compare))
-    for (const e of readdirSync(compare, { withFileTypes: true }))
-      if (e.isDirectory() && existsSync(join(compare, e.name, "captured.jsonl")))
-        files.push(relative(repoRoot, join(compare, e.name, "captured.jsonl")))
-  const fixtures = join(stateDir(repoRoot), "fixtures")
-  if (existsSync(fixtures))
-    for (const e of readdirSync(fixtures, { withFileTypes: true })) {
-      if (!e.isDirectory() || !e.name.startsWith("compare.")) continue
-      const first = readdirSync(join(fixtures, e.name)).find((f) => f.endsWith(".json"))
-      if (first) files.push(relative(repoRoot, join(fixtures, e.name, first)))
-    }
-  return files
-}
-
-/** Which of `paths` git already tracks: ignoring them now won't take them out. */
-function gitTracked(repoRoot: string, paths: string[]): Set<string> {
-  const out = execFileSync("git", ["-C", repoRoot, "ls-files", "-z", "--", ...paths], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-    timeout: 10_000,
-    killSignal: "SIGKILL",
-  })
-  return new Set(out.split("\0").filter(Boolean))
-}
-
-/** Shadow captures and compare's recorded answers hold raw inputs: git must not have them. */
 export function capturedCheck(repoRoot: string): DoctorCheck {
-  const files = rawInputFiles(repoRoot)
-  if (files.length === 0) return { name: "captured", status: "ok", detail: "no shadow captures" }
+  const dir = join(stateDir(repoRoot), "compare")
+  if (!existsSync(dir) || readdirSync(dir).length === 0)
+    return { name: "captured", status: "ok", detail: "no shadow captures" }
   if (!insideGitWorkTree(repoRoot))
-    return {
-      name: "captured",
-      status: "ok",
-      detail: `${files.length} capture file(s), not in a git work tree`,
-    }
-  let tracked: Set<string>
-  let ignored: Set<string>
+    return { name: "captured", status: "ok", detail: "shadow captures, not in a git work tree" }
+  const rel = relative(repoRoot, dir)
+  let committed: string[]
+  let exposed: string[]
   try {
-    tracked = gitTracked(repoRoot, files)
-    ignored = new Set(gitIgnored(repoRoot, files))
+    committed = lsFiles(repoRoot, rel, false)
+    exposed = lsFiles(repoRoot, rel, true)
   } catch {
     return {
       name: "captured",
       status: "ok",
-      detail: `${files.length} capture file(s); git couldn't say whether they are ignored`,
+      detail: "shadow captures; git couldn't say whether they are ignored",
     }
   }
-  const committed = files.filter((f) => tracked.has(f))
-  const exposed = files.filter((f) => !tracked.has(f) && !ignored.has(f))
   if (committed.length === 0 && exposed.length === 0)
-    return {
-      name: "captured",
-      status: "ok",
-      detail: `${files.length} capture file(s), all ignored by git`,
-    }
-  const where = (f: string) => (f.includes("/fixtures/") ? f.slice(0, f.lastIndexOf("/") + 1) : f)
+    return { name: "captured", status: "ok", detail: `${rel}/ ignored by git` }
+  // By spec: `.system1/compare/<spec>/`.
+  const specs = (files: string[]) => [
+    ...new Set(files.map((f) => f.split("/").slice(0, 3).join("/") + "/")),
+  ]
   return {
     name: "captured",
     status: "warn",
     advisory: true,
     detail: [
-      committed.length ? `raw inputs already committed: ${list(committed.map(where))}` : "",
-      exposed.length ? `raw inputs git would commit: ${list(exposed.map(where))}` : "",
+      committed.length ? `raw inputs already committed in ${list(specs(committed))}` : "",
+      exposed.length ? `raw inputs git would commit in ${list(specs(exposed))}` : "",
     ]
       .filter(Boolean)
       .join("; "),
     fix: [
-      "add `.system1/compare/` and `.system1/fixtures/compare.*/` to .gitignore",
+      "add `.system1/compare/` to .gitignore",
       committed.length
-        ? "then `git rm -r --cached` the committed ones; they stay in history until it is rewritten"
+        ? "then `git rm -r --cached .system1/compare/`; the files stay in history until it is rewritten"
         : "",
     ]
       .filter(Boolean)

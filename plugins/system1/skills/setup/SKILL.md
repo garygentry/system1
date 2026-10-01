@@ -97,7 +97,6 @@ If this repo has a `.system1/` directory, suggest adding these lines to `.gitign
 .system1/fixtures/adhoc/
 .system1/usage.jsonl
 .system1/compare/
-.system1/fixtures/compare.*/
 ```
 
 - **Why:** one-off answers and the spend ledger are per-machine, and `compare`'s capture and recorded answers hold raw inputs.

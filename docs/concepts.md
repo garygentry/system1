@@ -52,6 +52,8 @@ ask first", never "if `safe ≥ 0.9`, skip the review".
   call. Measured costs come from the provider's usage report.
 - **Record** (`--record`, or `decide spec check --live`): live, and the answer is also saved in
   `.system1/fixtures/<namespace>/`. A spec's namespace is its name; one-off questions use `adhoc`.
+  `decide compare --record` keeps its answers beside its capture instead, in
+  `.system1/compare/<spec>/fixtures/`, since they hold raw inputs.
 - **Replay:** the answer comes from a saved fixture, keyed by the exact text and questions. It
   needs no key, no consent and no network, and costs nothing. It's what `decide` does when no key
   is set, and what `--replay` or `SYSTEM1_REPLAY=1` forces.

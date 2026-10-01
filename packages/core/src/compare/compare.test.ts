@@ -345,7 +345,7 @@ describe("runCompare against the emulated baseline", () => {
     expect(again.jev.cost.total).toBeNull()
     expect(existsSync(join(cwd, ".system1/compare/tickets/report.json"))).toBe(true)
     // Recorded apart from the spec's committed example fixtures: these hold the captured inputs.
-    expect(existsSync(join(cwd, ".system1/fixtures/compare.tickets"))).toBe(true)
+    expect(existsSync(join(cwd, ".system1/compare/tickets/fixtures/tickets"))).toBe(true)
     expect(existsSync(join(cwd, ".system1/fixtures/tickets"))).toBe(false)
   })
 

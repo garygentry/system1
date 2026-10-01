@@ -8,7 +8,7 @@ existing mechanism over sampled inputs and appends one row per input to
 sets its answers beside `current`. The engine never runs this code.
 
 - The file holds raw inputs (each ticket's text). Keep it out of git:
-  `.system1/compare/*/captured.jsonl` belongs in `.gitignore`.
+  `.system1/compare/` belongs in `.gitignore` (compare's recorded answers go there too).
 - The existing mechanism runs for real here. If it is a model call, every row
   costs what it costs and sends what it sends, outside system1's checks.
 - A row without `usage` means its cost is unknown, never zero.

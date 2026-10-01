@@ -81,6 +81,25 @@ describe("doctor: adopted", () => {
     expect(detail).toMatch(/src\/new\.ts/)
   })
 
+  it("finds a bundled opt-out however the call is written, and not one in a comment or docstring", () => {
+    const dir = gitRepo(temp(), {
+      "src/split.ts": 'createPolicyRuntime(\n  { module: "bundled", egress: g },\n)\n',
+      "src/generic.ts": 'createPolicyRuntime<X>({ module: "bundled", egress: g })\n',
+      "src/apart.ts": 'const o = { module: "bundled", egress: g }\ncreatePolicyRuntime(o)\n',
+      "src/commented.ts": `${module("off")}// never pass module: "bundled"\n/* module: "bundled" */\n`,
+      "app/doc.py": '"""\ncreatePolicyRuntime({ module: "bundled" })\n"""\n',
+    })
+    const { detail } = adoptedCheck(dir)
+    expect(detail).toMatch(
+      /^1 adopted module; module lock opted out \("bundled"\) in src\/apart\.ts, src\/generic\.ts, src\/split\.ts$/,
+    )
+  })
+
+  it("names no module count when only an opt-out is found", () => {
+    const dir = gitRepo(temp(), { "src/apart.ts": 'f({ module: "bundled" })\n' })
+    expect(adoptedCheck(dir).detail).toBe('module lock opted out ("bundled") in src/apart.ts')
+  })
+
   it("says it didn't look outside a git work tree", () => {
     expect(adoptedCheck(temp({ "a.ts": module("on") })).detail).toMatch(/not a git work tree/)
   })
@@ -99,44 +118,39 @@ describe("doctor: emulated", () => {
 })
 
 describe("doctor: captured", () => {
-  it("is fine with no captures, and with ignored ones", () => {
+  it("is fine with no captures, and with an ignored compare directory", () => {
     expect(capturedCheck(gitRepo(temp(), { "a.ts": "x" }))).toMatchObject({ status: "ok" })
-    const dir = gitRepo(temp(), {
-      ".gitignore": ".system1/compare/\n.system1/fixtures/compare.*/\n",
-    })
+    const dir = gitRepo(temp(), { ".gitignore": ".system1/compare/\n" })
     writeTree(dir, {
       ".system1/compare/triage/captured.jsonl": "{}\n",
-      ".system1/fixtures/compare.triage/abc.json": "{}\n",
-      ".system1/fixtures/triage/def.json": "{}\n",
+      ".system1/compare/triage/fixtures/triage/abc.json": "{}\n",
     })
     expect(capturedCheck(dir)).toMatchObject({
       status: "ok",
-      detail: "2 capture file(s), all ignored by git",
+      detail: ".system1/compare/ ignored by git",
     })
   })
 
-  it("warns when git would commit a capture, or compare's recorded answers", () => {
+  it("warns when git would commit a capture, a probe or compare's recorded answers", () => {
     const dir = gitRepo(temp(), { "a.ts": "x" })
-    writeTree(dir, {
-      ".system1/compare/triage/captured.jsonl": "{}\n",
-      ".system1/fixtures/compare.triage/abc.json": "{}\n",
-    })
+    writeTree(dir, { ".system1/compare/triage/fixtures/triage/abc.json": "{}\n" })
     const check = capturedCheck(dir)
     expect(check).toMatchObject({ status: "warn", advisory: true })
-    expect(check.detail).toMatch(
-      /git would commit: \.system1\/compare\/triage\/captured\.jsonl, \.system1\/fixtures\/compare\.triage\//,
-    )
+    expect(check.detail).toBe("raw inputs git would commit in .system1/compare/triage/")
     expect(check.fix).toMatch(/\.gitignore/)
     expect(check.fix).not.toMatch(/rm/)
   })
 
-  it("says a committed capture needs more than an ignore line", () => {
-    const dir = gitRepo(temp(), { ".system1/compare/triage/captured.jsonl": "{}\n" })
-    // Ignored only after it was committed.
-    writeTree(dir, { ".gitignore": ".system1/compare/*/captured.jsonl\n" })
+  it("finds a committed file under an ignored directory, beside untracked ones", () => {
+    const dir = gitRepo(temp(), { ".system1/compare/triage/fixtures/triage/bbb.json": "{}\n" })
+    // Ignored only after one was committed.
+    writeTree(dir, {
+      ".gitignore": ".system1/compare/\n",
+      ".system1/compare/triage/fixtures/triage/aaa.json": "{}\n",
+    })
     const check = capturedCheck(dir)
     expect(check).toMatchObject({ status: "warn" })
-    expect(check.detail).toMatch(/already committed: \.system1\/compare\/triage\/captured\.jsonl/)
+    expect(check.detail).toBe("raw inputs already committed in .system1/compare/triage/")
     expect(check.fix).toMatch(/git rm -r --cached/)
   })
 })

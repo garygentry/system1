@@ -20,7 +20,7 @@ Argument: the spec's name, and optionally `--baseline emulated` or `emulated:<mo
 
 - Run `decide doctor --format brief`. Live calls need a key and this repo's egress consent. Without them you can still dry-run (step 2 sends nothing), so the user sees the projection; then stop and suggest the `setup` skill. Never grant consent yourself.
 - **The capture must exist:** `.system1/compare/<spec>/captured.jsonl`. The shadow harness `adopt` generated writes it. If it's missing, ask the user to run the harness. Don't run it yourself: it runs the existing mechanism for real, which may spend money and send data outside system1's checks.
-- If doctor's `captured` check warns, git would commit raw inputs: the capture, or answers recorded from it. Offer to add `.system1/compare/` and `.system1/fixtures/compare.*/` to `.gitignore` (and `git rm -r --cached` what's already committed). It doesn't block a dry run.
+- If doctor's `captured` check warns, git has or would commit raw inputs: the capture, or answers recorded from it. Offer to add `.system1/compare/` to `.gitignore` (and `git rm -r --cached .system1/compare/` if any is already committed). It doesn't block a dry run.
 
 ## 1. Pick the baseline
 
@@ -49,7 +49,7 @@ Above the spend guard, the real run refuses without `--confirm`. Pass `--confirm
 decide compare <spec> [--baseline …] --record --format brief
 ```
 
-`--record` keeps the answers in `.system1/fixtures/compare.<spec>/`, so the report can be rebuilt offline (`--replay`) later at no cost. Those files hold every captured state, so they stay out of git like the capture. If invalid lines are reported, say how many and the first few reasons; those rows aren't compared.
+`--record` keeps the answers in `.system1/compare/<spec>/fixtures/`, beside the capture, so the report can be rebuilt offline (`--replay`) later at no cost. Those files hold every captured state, so they stay out of git with the capture. If invalid lines are reported, say how many and the first few reasons; those rows aren't compared.
 
 ## 4. Write it up
 

@@ -17,7 +17,7 @@ import {
   type BadLine,
   type CapturedRow,
   compareDir,
-  compareNamespace,
+  compareFixturesDir,
   labelsPath,
   readCaptured,
   readLabels,
@@ -233,9 +233,14 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
   }
 
   const mode = input.mode ?? "auto"
-  const decider = deciderFor(ctx, jevProfile, mode, { tag: COMPARE_TAG })
+  // Beside the capture, not with the spec's committed fixtures: these hold its raw inputs.
+  const recorded = {
+    tag: COMPARE_TAG,
+    fixturesDir: compareFixturesDir(ctx.config.repoRoot, spec.name),
+  }
+  const decider = deciderFor(ctx, jevProfile, mode, recorded)
   const client: BaselineClient | undefined = emulated
-    ? baselineFor(ctx, emulated, mode, { tag: COMPARE_TAG })
+    ? baselineFor(ctx, emulated, mode, recorded)
     : undefined
   const live = decider.mode !== "replay" || (client && client.mode !== "replay")
   if (live) {
@@ -255,8 +260,7 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
     checkBudget(total, ctx.config.budget, input.confirm ?? false)
   }
 
-  // Not the spec's own namespace: these fixtures hold the captured raw inputs.
-  const namespace = compareNamespace(spec.name)
+  const namespace = spec.name
   const settled = await mapWithConcurrency(
     ready,
     ctx.config.concurrency,
@@ -335,7 +339,7 @@ export async function runCompare(ctx: ToolContext, rawInput: unknown): Promise<C
   if (misses > 0)
     throw new DecisionsError(
       "replay-miss",
-      `${misses} answers for "${spec.name}" have no recording. Run \`decide compare ${spec.name}\` live (a key, repo consent${emulated ? ", and the allowed baseline" : ""}) to record them.`,
+      `${misses} answers for "${spec.name}" have no recording. Run \`decide compare ${spec.name} --record\` (a key, repo consent${emulated ? ", and the allowed baseline" : ""}) to record them.`,
       { misses },
     )
 

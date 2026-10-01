@@ -41,17 +41,17 @@ Write down three things:
 
 Follow the `design` skill to write `.system1/specs/<name>.yaml`, then:
 - run `decide spec lint <name> --format brief` and fix every finding;
-- run `decide spec check <name> --live --format brief` to record answers for the examples.
+- run `decide spec check <name> --live --model <MODEL> --format brief` to record answers for the examples (see below for `<MODEL>`).
 
 Two rules here keep the generated tests working:
 - **Each example's `state` is a plain string, exactly as the module will build it** from an input (the template's `toState`). Replay matches a state character for character, so a reformatted state misses.
-- **The module records and replays under one model:** run `decide spec check <name> --live --model <MODEL> --format brief`, with the module's `MODEL` (the template's is `typesafe/jev-1.13`). Answers recorded under another model miss in replay.
+- **The module records and replays under one model:** `<MODEL>` is the module's `MODEL` (the template's is `typesafe/jev-1.13`). Answers recorded under another model miss in replay.
 
 ## 3. Read real answers and revise
 
 Run the spec over a handful of real inputs, built as states the same way, and read the distributions, not just the verdicts.
 - Write each state to its own file under `.system1/compare/<name>/probe/`. Real inputs stay out of git there, once `.system1/compare/` is ignored (step 6), so offer that line first. A file outside the repo is withheld, not sent.
-- Run `decide ask --spec <name> --file <path> --format brief` for each file. `ask` shows every answer, where `many` would hide the ones the spec's `keep` drops.
+- Run `decide ask --spec <name> --file <path> --split file --model <MODEL> --format brief` for each file. Write each file without a trailing newline, so it holds exactly what `toState` returns. `ask` shows every answer, where `many` would hide the ones the spec's `keep` drops.
 - Delete the probe files when you're done.
 
 Revise the questions or thresholds where answers are undecided or wrong, then record again (step 2). Show the user the thresholds and why each one is set where it is.
@@ -96,7 +96,7 @@ Behaviour must be unchanged while it's off. Run the repo's existing tests to sho
 Copy `shadow` from the same template. Point its samples at real inputs the user names, such as a log, a fixture set or a database query, and its `current` at the existing mechanism. It writes its file relative to the working directory, so it must run from the repo root; anchor the path if the app runs from elsewhere. Then tell the user, in these words or close to them:
 
 - the harness runs the existing mechanism on every sample, so it costs what that mechanism costs, and sends what it sends;
-- `.system1/compare/<name>/captured.jsonl` holds the raw inputs, and so will compare's recorded answers. Both must stay out of git: offer to add `.system1/compare/` and `.system1/fixtures/compare.*/` to `.gitignore`;
+- `.system1/compare/<name>/captured.jsonl` holds the raw inputs, and so will compare's recorded answers. Both live in `.system1/compare/`, which must stay out of git: offer to add `.system1/compare/` to `.gitignore`;
 - they run it, then run the `compare` skill.
 
 ## 7. Mark it adopted

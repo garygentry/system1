@@ -210,7 +210,7 @@ export function deciderFor(
   ctx: ToolContext,
   profile: ModelProfile,
   mode: DecideMode = "auto",
-  extra: { tag?: string } = {},
+  extra: { tag?: string; fixturesDir?: string } = {},
 ): Decider {
   const { config } = ctx
   const dir = stateDir(config.repoRoot)
@@ -228,7 +228,7 @@ export function deciderFor(
           }),
         }
       : {}),
-    fixtures: new FixtureStore(join(dir, "fixtures")),
+    fixtures: new FixtureStore(extra.fixturesDir ?? join(dir, "fixtures")),
     ledger: new SpendLedger(join(dir, "usage.jsonl")),
     mode: config.replay ? "replay" : mode,
     ...(config.session ? { session: config.session } : {}),
@@ -244,7 +244,7 @@ export function baselineFor(
   ctx: ToolContext,
   profile: ModelProfile,
   mode: DecideMode = "auto",
-  extra: { tag?: string } = {},
+  extra: { tag?: string; fixturesDir?: string } = {},
 ): BaselineClient {
   const { config } = ctx
   const dir = stateDir(config.repoRoot)
@@ -255,7 +255,7 @@ export function baselineFor(
     repoRoot: config.repoRoot,
     ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     ...(ctx.fetch ? { fetch: ctx.fetch } : {}),
-    fixtures: new FixtureStore(join(dir, "fixtures")),
+    fixtures: new FixtureStore(extra.fixturesDir ?? join(dir, "fixtures")),
     ledger: new SpendLedger(join(dir, "usage.jsonl")),
     mode: config.replay ? "replay" : mode,
     ...(config.session ? { session: config.session } : {}),
