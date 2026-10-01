@@ -314,6 +314,30 @@ The envelope's `command` is `opportunities`. Each entry in the backlog:
 matched, basis: "projected", opportunities}`, where `matched` counts entries before `--limit`.
 **`check`**: `{file, exists, entries, byStatus}`.
 
+## `compare`
+
+The envelope's `command` is `compare`. The same object is written to
+`.system1/compare/<spec>/report.json`.
+
+| Field | |
+|---|---|
+| `spec`, `file`, `captured`, `generatedAt` | the spec, where the report was written, the capture it read, and when |
+| `baselineKind` | `current` or `emulated` |
+| `jev`, `baseline` | each `{model, source, cost, latency, failed}`. `source` is `live`, `replay` or, for `current`, `captured`. `cost` is `{calls, total, perCall, complete}`: `total` is `null` when nothing was reported (unknown, never zero), and `complete: false` makes it a lower bound. Replayed answers measure no cost or latency. `latency` is `{n, meanMs, p50Ms, p95Ms}`. `failed` counts failed calls by error code. `baseline` also has `parsed`, `{n, hits, rate}`: answers that fit the answer space strictly |
+| `rows` | `{captured, compared, invalid, withheld}`. `invalid` lists capture lines left out (`{line, reason}`, the first 20); `withheld` lists states too large to send |
+| `signals.agreement` | `{byQuestion, byType, overall}`, each `{n, hits, rate}`. `byQuestion` adds `type` and `jevUndecided`, the rows where Jev was undecided, left out of `n` |
+| `signals.decisiveness` | by question type, `{jev, baseline}`, 0–1: Jev's mean confidence (a noul's distance from 0.5). `null` for a baseline choice or score: a single value has no spread |
+| `signals.undecidedShare` | `{n, hits, rate}` over Jev's answers |
+| `labels` | `null` without a labels file; else `{file, matched, unmatched, invalid, accuracy: {jev, baseline}}`. Each accuracy is `{byQuestion, overall}`, each `{n, hits, rate, unanswered}`: a labelled question a side didn't answer is `unanswered`, not wrong |
+| `winner` | `null` without labels, always. With labels, `jev`, `baseline` or `tie` on overall accuracy |
+| `verdict` | one sentence saying the above |
+| `disagreements` | `{total, sample}`, the first 50 as `{id, question, jev, baseline}`. Never the state |
+| `usage` | measured spend of this run's calls, both sides |
+| `unsaved`, `reportUnsaved` | *optional*. Spend lines or fixtures that couldn't be written; the error code when `report.json` couldn't be |
+
+With `--dry-run`: `{spec, dryRun: true, baselineKind, rows: {captured, invalid, withheld},
+projection: {jev, baseline, total}}`, where `baseline` is `null` for `current`.
+
 ## Other commands
 
 **`spec list`**: `{specs: [...]}`, each `{name, origin, file, description?, error?, shadowed?}`.

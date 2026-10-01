@@ -135,6 +135,13 @@ export type { SplitSpec } from "./split/split.js"
 export { parseSplit, split } from "./split/split.js"
 export type { AskResult } from "./tools/ask.js"
 export { runAsk } from "./tools/ask.js"
+export type {
+  CompareDryRun,
+  CompareReport,
+  CompareResult,
+  CompareSide,
+} from "./tools/compare.js"
+export { COMPARE_TAG, runCompare } from "./tools/compare.js"
 export type { ContextOptions, ToolContext } from "./tools/context.js"
 export { baselineFor, createContext, deciderFor } from "./tools/context.js"
 export type { CheckStatus, DoctorCheck, DoctorOptions, DoctorResult } from "./tools/doctor.js"
