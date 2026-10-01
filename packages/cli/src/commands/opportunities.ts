@@ -6,9 +6,11 @@ import {
   type OpportunitiesAddResult,
   type OpportunitiesCheckResult,
   type OpportunitiesListResult,
+  type OpportunitiesSetStatusResult,
   runOpportunitiesAdd,
   runOpportunitiesCheck,
   runOpportunitiesList,
+  runOpportunitiesSetStatus,
 } from "@garygentry/system1-core"
 import { typedParse } from "../args.js"
 import type { Format } from "../envelope.js"
@@ -23,10 +25,11 @@ export const OPPORTUNITIES_OPTIONS = {
   sort: { type: "string" },
   limit: { type: "string" },
   fields: { type: "string" },
+  reason: { type: "string" },
 } as const
 
 const USAGE =
-  "Usage: decide opportunities add --file <candidates.json> | list [--keep …] [--sort …] [--limit N] [--fields a,b] | check"
+  "Usage: decide opportunities add --file <candidates.json> | list [--keep …] [--sort …] [--limit N] [--fields a,b] | set-status <id> <status> [--reason <text>] | check"
 
 /**
  * `decide opportunities add|list|check`: the scout backlog in
@@ -79,6 +82,35 @@ export function runOpportunitiesCommand(argv: string[], io: Io, format: Format):
           })
         },
         (r, f) => (f === "brief" ? briefList(r) : undefined),
+      )
+    case "set-status":
+      return emit<OpportunitiesSetStatusResult>(
+        io,
+        "opportunities",
+        format,
+        () => {
+          const { values, positionals } = typedParse({
+            args: rest,
+            allowPositionals: true,
+            strict: true,
+            options: { reason: OPPORTUNITIES_OPTIONS.reason },
+          })
+          const [id, status, extra] = positionals
+          if (!id || !status || extra !== undefined)
+            throw new DecisionsError(
+              "invalid-request",
+              "Usage: decide opportunities set-status <id> <new|stale|adopted|rejected> [--reason <text>]",
+            )
+          return runOpportunitiesSetStatus(ctx(), {
+            id,
+            status,
+            ...(values.reason ? { reason: values.reason } : {}),
+          })
+        },
+        (r, f) =>
+          f === "brief"
+            ? `decide opportunities set-status: ${r.id} ${r.previous} → ${r.status}${r.statusReason ? ` (${r.statusReason})` : ""}`
+            : undefined,
       )
     case "check":
       return emit<OpportunitiesCheckResult>(

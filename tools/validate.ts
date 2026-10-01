@@ -23,6 +23,14 @@ const SKILL_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/
  */
 const USER_ONLY = ["--i-consent", "allow-profile", "allowProfiles"]
 
+/**
+ * `decide runtime` is what an adopted Python module spawns, never an agent
+ * (plan m11-adopt D7): skills may ship it only inside the code templates
+ * `adopt` copies into a repo.
+ */
+const MODULE_ONLY = /\bdecide\s+runtime\b/
+const TEMPLATES = /(^|\/)references\/templates\//
+
 export function checkSkill(dir: string, name: string, text: string): string[] {
   const problems: string[] = []
   const match = /^---\n([\s\S]*?)\n---\n/.exec(text)
@@ -70,9 +78,16 @@ export function consentFlag(dir: string, name: string): string[] {
     .map((entry) => relative(dir, join(entry.parentPath, entry.name)))
     .flatMap((path) => {
       const text = readFileSync(join(dir, path), "utf8")
-      return USER_ONLY.filter((word) => text.includes(word)).map(
-        (word) => `${name}: ${path} must not contain ${word} (the user's to run)`,
-      )
+      return [
+        ...USER_ONLY.filter((word) => text.includes(word)).map(
+          (word) => `${name}: ${path} must not contain ${word} (the user's to run)`,
+        ),
+        ...(MODULE_ONLY.test(text) && !TEMPLATES.test(path)
+          ? [
+              `${name}: ${path} must not run decide runtime (an adopted module's, outside references/templates/)`,
+            ]
+          : []),
+      ]
     })
 }
 

@@ -24,7 +24,7 @@ const Text = Type.String({ minLength: 1 })
 /** Bounded so the computed saving is always a finite number that survives JSON. */
 const Usd = Type.Number({ minimum: 0, maximum: 1e6 })
 
-const Status = Type.Union([
+export const Status = Type.Union([
   Type.Literal("new"),
   Type.Literal("stale"),
   Type.Literal("adopted"),

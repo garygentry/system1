@@ -54,3 +54,23 @@ by its name only (`SyntaxError`, say), since its message could quote the content
 
 Thresholds from your spec are the module's job: it reads the answers and decides whether they
 clear them, and takes the fallback when they don't.
+
+## From Python: `decide runtime`
+
+A Python module can't import the TypeScript runtime, so it spawns `decide` once per call:
+
+```sh
+decide runtime --module <its own path> --root <dir> --max-usd-per-day <usd> [--model <id>] [--replay] [--timeout-ms N]
+decide runtime --protocol
+```
+
+- **Request and result:** the request `{questions, state, namespace}` goes to stdin as one JSON object (`decide schema runtime` prints its schema), and one result, as above, comes back on stdout. It is not the CLI's envelope, and **it always exits 0**: a bad flag, an unreadable module or a malformed request is a fallback with `internal`.
+- **The grant is the module's own line.** `decide runtime` reads `--module` and looks for the line that carries the comment `system1: runtime egress`.
+  - Egress is on only when exactly one line carries it, and that line assigns the literal `"on"` to `EGRESS` with nothing after it but the comment. For example: `EGRESS = "on"  # system1: runtime egress …`.
+  - Anything else is off: two marked lines, a value computed from the environment, or `"on" if … else "off"`. The fallback's `detail` then says why.
+  - There is no egress flag and no variable for it.
+- **A live call needs a writable `--root`.** Each call is a new process, so only a shared ledger file holds the daily cap across them. Without one, the result is `internal`. `--replay` answers from `--root`'s fixtures and needs no grant and no key.
+- **It loads no config.** It reads no repo or user config file and no `SYSTEM1_*` variable; it reads only `OPENROUTER_API_KEY`. `--model` picks a decision model (the default is `typesafe/jev-1.13`).
+- **Version check:** `--protocol` prints `{protocol, version}`. A module checks `protocol` once at startup, and falls back with `engine-unavailable` when it isn't the one it was generated for, or when `decide` isn't there. `protocol` changes only when the stdin/stdout shape does, so upgrading `decide` doesn't switch modules off.
+- **Cost:** every call pays for starting Node. `pnpm bench:startup` measures that overhead.
+

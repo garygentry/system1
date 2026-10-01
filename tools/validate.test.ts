@@ -41,6 +41,21 @@ describe("consentFlag", () => {
     ])
   })
 
+  it("lets only the adopt templates spawn decide runtime", () => {
+    const dir = mkdtempSync(join(tmpdir(), "skill-"))
+    mkdirSync(join(dir, "references/templates/python"), { recursive: true })
+    writeFileSync(join(dir, "SKILL.md"), skill("name: adopt\ndescription: x"))
+    writeFileSync(
+      join(dir, "references/templates/python/policy.py"),
+      'subprocess.run(["decide", "runtime", "--module", __file__])\n# decide runtime --module\n',
+    )
+    expect(consentFlag(dir, "adopt")).toEqual([])
+    writeFileSync(join(dir, "references/run.md"), "Then run `decide  runtime --module x`.\n")
+    expect(consentFlag(dir, "adopt")).toEqual([
+      "adopt: references/run.md must not run decide runtime (an adopted module's, outside references/templates/)",
+    ])
+  })
+
   it("finds the emulated baseline's opt-in, which only the user may grant", () => {
     const dir = mkdtempSync(join(tmpdir(), "skill-"))
     writeFileSync(join(dir, "SKILL.md"), skill("name: compare\ndescription: x"))

@@ -312,7 +312,8 @@ The envelope's `command` is `opportunities`. Each entry in the backlog:
 
 **`add`**: `{file, added, updated, staled, total}`, each list of ids. **`list`**: `{file, total,
 matched, basis: "projected", opportunities}`, where `matched` counts entries before `--limit`.
-**`check`**: `{file, exists, entries, byStatus}`.
+**`check`**: `{file, exists, entries, byStatus}`. **`set-status`**: `{file, id, status, previous,
+statusReason?}`.
 
 ## `compare`
 

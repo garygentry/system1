@@ -16,7 +16,11 @@ import {
   writeBacklog,
 } from "../opportunities/backlog.js"
 import { checkInput, type ToolContext } from "./context.js"
-import type { OpportunitiesAddInput, OpportunitiesListInput } from "./schemas.js"
+import type {
+  OpportunitiesAddInput,
+  OpportunitiesListInput,
+  OpportunitiesSetStatusInput,
+} from "./schemas.js"
 
 export interface OpportunitiesAddResult {
   file: string
@@ -80,6 +84,55 @@ export function runOpportunitiesList(
     basis: "projected",
     opportunities: shown.map((o) => pick(o, input.fields)),
   }
+}
+
+export interface OpportunitiesSetStatusResult {
+  file: string
+  id: string
+  status: OpportunityStatus
+  previous: OpportunityStatus
+  statusReason?: string
+}
+
+/**
+ * Set one entry's status, such as `adopted` once `adopt` has wired it in.
+ * Local only. A `rejected` entry needs a reason; a new status replaces the old
+ * reason, as a re-sweep's does. An unknown id is an error, never an add.
+ */
+export function runOpportunitiesSetStatus(
+  ctx: ToolContext,
+  rawInput: unknown,
+): OpportunitiesSetStatusResult {
+  const input = checkInput<OpportunitiesSetStatusInput>("opportunities-set-status", rawInput)
+  if (input.status === "rejected" && !input.reason)
+    throw new DecisionsError("invalid-request", "A rejected opportunity needs --reason")
+  const file = backlogPath(ctx.config.repoRoot)
+  return withBacklogLock(file, () => {
+    const backlog = readBacklog(file)
+    const at = backlog.opportunities.findIndex((o) => o.id === input.id)
+    const before = backlog.opportunities[at]
+    if (!before)
+      throw new DecisionsError(
+        "invalid-request",
+        `No opportunity ${input.id} in ${file}. \`decide opportunities list --fields status\` lists the ids.`,
+        { id: input.id },
+      )
+    const { statusReason: _old, ...rest } = before
+    const after: Opportunity = {
+      ...rest,
+      status: input.status,
+      ...(input.reason ? { statusReason: input.reason } : {}),
+    }
+    backlog.opportunities[at] = after
+    writeBacklog(file, backlog)
+    return {
+      file,
+      id: after.id,
+      status: after.status,
+      previous: before.status,
+      ...(after.statusReason ? { statusReason: after.statusReason } : {}),
+    }
+  })
 }
 
 export interface OpportunitiesCheckResult {

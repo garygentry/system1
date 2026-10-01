@@ -24,6 +24,7 @@ Commands:
   schema    Print the JSON Schema of a tool's input (\`decide schema\` lists them)
   route     Does a prompt call for the ask skill? (--text|--stdin|--hook; local, sends nothing)
   hook      <pack> [--harness claude|codex]: a guard pack on a harness hook event (stdin)
+  runtime   --module <path> --root <dir> --max-usd-per-day <usd>: one decision for adopted Python (stdin)
   ping      Check the endpoint is reachable (no key, no spend)
   doctor    Check decide works from this shell; prints the fix for each problem
   version   Print the version
@@ -97,6 +98,8 @@ export async function main(argv: string[], io: Io): Promise<ExitCode> {
       return (await import("./commands/route.js")).runRouteCommand(rest, io, format)
     case "hook":
       return (await import("./commands/hook.js")).runHookCommand(rest, io)
+    case "runtime":
+      return (await import("./commands/runtime.js")).runRuntimeCommand(rest, io)
     case "ping":
       return (await import("./commands/misc.js")).runPingCommand(io, format)
     case "doctor":

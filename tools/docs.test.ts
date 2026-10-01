@@ -10,6 +10,7 @@ import { HOOK_OPTIONS } from "../packages/cli/src/commands/hook.js"
 import { USAGE_OPTIONS } from "../packages/cli/src/commands/misc.js"
 import { OPPORTUNITIES_OPTIONS } from "../packages/cli/src/commands/opportunities.js"
 import { ROUTE_OPTIONS } from "../packages/cli/src/commands/route.js"
+import { RUNTIME_OPTIONS } from "../packages/cli/src/commands/runtime.js"
 import { SPEC_OPTIONS } from "../packages/cli/src/commands/spec.js"
 import { BY_CODE, EXIT } from "../packages/cli/src/exit-codes.js"
 import { HELP } from "../packages/cli/src/main.js"
@@ -73,6 +74,7 @@ describe("docs/cli.md", () => {
       ...Object.keys(HOOK_OPTIONS),
       ...Object.keys(USAGE_OPTIONS),
       ...Object.keys(ROUTE_OPTIONS),
+      ...Object.keys(RUNTIME_OPTIONS),
       ...Object.keys(OPPORTUNITIES_OPTIONS),
       "format",
     ]
