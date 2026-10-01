@@ -462,6 +462,11 @@ describe("decide config egress", () => {
       await main(["config", "egress", "allow-profile", id, "--i-consent", "--by", "gary"], io),
     ).toBe(0)
     expect(json().result.egress.allowProfiles).toEqual([{ ...grant, by: "gary" }])
+    // An empty --by falls back to the route rather than recording no one.
+    expect(
+      await main(["config", "egress", "allow-profile", id, "--i-consent", "--by", ""], io),
+    ).toBe(0)
+    expect(json().result.egress.allowProfiles).toEqual([grant])
     // Denying needs no terminal: it only stops content being sent.
     expect(await main(["config", "egress", "deny-profile", id], io)).toBe(0)
     expect(json().result.egress.allowProfiles).toEqual([])

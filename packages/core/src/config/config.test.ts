@@ -482,6 +482,19 @@ describe("the emulated baseline in config (M11 D2)", () => {
     expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toHaveLength(1)
   })
 
+  it("setAllowProfile revokes an aliased entry, and keeps comments on the list", () => {
+    const id = "emulated:anthropic/claude-haiku-4.5"
+    for (const list of ["[ *h ]", "[ { id: *h } ]"]) {
+      const { repo, home } = setup(
+        `x: &h ${id}\negress:\n  consent: { granted: true }\n  allowProfiles: ${list} # mine\n`,
+      )
+      expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toEqual([{ id }])
+      expect(setAllowProfile(repo, id, false)).toEqual([])
+      expect(loadConfig({ cwd: repo, env: {}, home }).egress.allowProfiles).toEqual([])
+      expect(readFileSync(join(repo, ".system1/config.yaml"), "utf8")).toMatch(/# mine/)
+    }
+  })
+
   it("never takes an emulated profile from the user file, and checks transports", () => {
     const chat =
       "profiles:\n  - { id: emulated:openai/gpt-x, transport: openrouter-chat, maxStateTokens: 1000, usdPerInputToken: 0.000001, undecidedFloor: 0.3 }\n"
@@ -506,7 +519,14 @@ describe("the emulated baseline in config (M11 D2)", () => {
     expect(() => loadConfig({ cwd: scalar.repo, env: {}, home: scalar.home })).toThrow(
       /must be a list of profile ids or \{id, at\?, by\?\}/,
     )
-    for (const entry of ["{ at: x }", "{ id: '' }", "[a]", "''"]) {
+    for (const entry of [
+      "{ at: x }",
+      "{ id: '' }",
+      "[a]",
+      "''",
+      "{ id: x, at: 1 }",
+      "{ id: x, by: [y] }",
+    ]) {
       const malformed = setup(`egress:\n  allowProfiles: [${entry}]\n`)
       expect(() => loadConfig({ cwd: malformed.repo, env: {}, home: malformed.home })).toThrow(
         /must be a list of profile ids/,

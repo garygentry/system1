@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
-import { type Document, isMap, isScalar, isSeq, parseDocument } from "yaml"
+import { type Document, isMap, isNode, isScalar, isSeq, parseDocument } from "yaml"
 import { DecisionsError } from "../errors.js"
 import type { PackName } from "../guard/packs.js"
-import { type Consent, type ProfileGrant, repoConfigPath } from "./load.js"
+import { type Consent, type ProfileGrant, profileGrant, repoConfigPath } from "./load.js"
 
 const HEADER = `# decisions — per-repo configuration. See https://github.com/garygentry/system1
 # egress.consent records that this repo agreed to send content to the decision
@@ -111,35 +111,19 @@ export function setAllowProfile(
 ): ProfileGrant[] {
   const file = repoConfigPath(repoRoot)
   const doc = editable(file, ["egress"])
-  const current = doc.getIn(["egress", "allowProfiles"])
-  const kept = (isSeq(current) ? current.items : []).filter((item) => grantId(item) !== id)
+  const current = doc.getIn(["egress", "allowProfiles"], true)
+  // Match on what loading will read, aliases resolved, so a revoke never
+  // reports an entry gone that still grants the profile.
+  const loaded = (item: unknown) => profileGrant(isNode(item) ? item.toJS(doc) : item)
+  const kept = (isSeq(current) ? current.items : []).filter((item) => loaded(item)?.id !== id)
   const grant: ProfileGrant = { id, at: now.toISOString(), ...(by ? { by } : {}) }
   const next = allowed ? [...kept, doc.createNode(grant)] : kept
-  doc.setIn(["egress", "allowProfiles"], doc.createNode(next))
+  // Edit the list in place, so comments on it survive.
+  if (isSeq(current)) current.items = next
+  else doc.setIn(["egress", "allowProfiles"], doc.createNode(next))
   mkdirSync(dirname(file), { recursive: true })
   writeFileSync(file, doc.toString())
-  return readGrants(next)
-}
-
-/** The id an `allowProfiles` entry names: a bare id, or a mapping's `id`. */
-function grantId(item: unknown): unknown {
-  if (isScalar(item)) return item.value
-  if (isMap(item)) return item.get("id")
-  return undefined
-}
-
-/** The entries as the loader reads them; anything malformed is left for it to report. */
-function readGrants(items: unknown[]): ProfileGrant[] {
-  return items.flatMap((item): ProfileGrant[] => {
-    const id = grantId(item)
-    if (typeof id !== "string") return []
-    if (!isMap(item)) return [{ id }]
-    const at = item.get("at")
-    const by = item.get("by")
-    return [
-      { id, ...(typeof at === "string" ? { at } : {}), ...(typeof by === "string" ? { by } : {}) },
-    ]
-  })
+  return next.flatMap((item) => loaded(item) ?? [])
 }
 
 export { assertConsent } from "./assert-consent.js"

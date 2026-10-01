@@ -381,11 +381,18 @@ function readAllowProfiles(repo: Layer, file: string): ProfileGrant[] {
   return grants as ProfileGrant[]
 }
 
-function profileGrant(entry: unknown): ProfileGrant | undefined {
+/**
+ * One `allowProfiles` entry as loaded, or `undefined` when malformed: a bare
+ * id, or `{id, at?, by?}` whose `at`/`by`, when present, are strings. The
+ * writer reads entries through this too, so it reports what loading will see.
+ */
+export function profileGrant(entry: unknown): ProfileGrant | undefined {
   if (typeof entry === "string") return entry.trim() ? { id: entry } : undefined
   if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return undefined
   const { id, at, by } = entry as Record<string, unknown>
   if (typeof id !== "string" || !id.trim()) return undefined
+  if ((at !== undefined && typeof at !== "string") || (by !== undefined && typeof by !== "string"))
+    return undefined
   return {
     id,
     ...(typeof at === "string" ? { at } : {}),

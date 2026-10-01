@@ -119,7 +119,7 @@ function body(argv: string[], io: Io): ConfigResult {
             config.repoRoot,
             profile.id,
             action === "allow-profile",
-            values.by ?? (io.interactive ? "decide config" : "decide config --i-consent"),
+            values.by || (io.interactive ? "decide config" : "decide config --i-consent"),
           ),
           file,
           changed: true,
