@@ -54,7 +54,7 @@ describe("consentFlag", () => {
     writeFileSync(join(dir, "SKILL.md"), skill("name: adopt\ndescription: x"))
     writeFileSync(
       join(dir, "references/templates/python/policy.py"),
-      'subprocess.run(["decide", "runtime", "--module", __file__])\n# decide runtime --module\n',
+      'subprocess.run(["decide", "runtime", "--module", os.path.abspath(__file__)])\n# decide runtime --module\n',
     )
     expect(consentFlag(dir, "adopt")).toEqual([])
     for (const text of [
@@ -102,7 +102,7 @@ describe("templateGrants", () => {
       `const EGRESS = "on" // ${MARK}\n`,
     )
     expect(consentFlag(dir, "adopt")).toEqual([
-      'adopt: references/templates/ts/policy.ts grants runtime egress: line 1: the marked line isn\'t a constant EGRESS set to "off"',
+      'adopt: references/templates/ts/policy.ts grants runtime egress: line 1: the marked line isn\'t a constant set to "off"',
     ])
     expect(consentFlag(join(ROOT, "plugins/system1/skills/adopt"), "adopt")).toEqual([])
   })

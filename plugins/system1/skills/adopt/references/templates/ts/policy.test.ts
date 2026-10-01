@@ -39,8 +39,8 @@ import { captureShadow } from "./shadow.ts"
 /** ADOPT: the repo's `.system1` directory, which holds `fixtures/ticket-triage/`. */
 const SYSTEM1_DIR = fileURLToPath(new URL("../.system1", import.meta.url))
 /** ADOPT: the module files `adopt` wrote, checked for a grant below. */
-const MODULE_FILES = ["policy.ts", "mapping.ts", "shadow.ts", "grants.ts"].map((name) =>
-  fileURLToPath(new URL(`./${name}`, import.meta.url)),
+const MODULE_FILES = ["policy.ts", "mapping.ts", "shadow.ts", "grants.ts", "policy.test.ts"].map(
+  (name) => fileURLToPath(new URL(`./${name}`, import.meta.url)),
 )
 
 // ADOPT: the spec's examples, as tickets. The first has a recorded answer.

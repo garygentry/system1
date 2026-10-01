@@ -30,7 +30,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 #: ADOPT: the repo's `.system1` directory, which holds `fixtures/ticket-triage/`.
 SYSTEM1_DIR = os.path.join(HERE, "..", ".system1")
 #: ADOPT: the module files `adopt` wrote, checked for a grant below.
-MODULE_FILES = [os.path.join(HERE, name) for name in ("policy.py", "mapping.py", "shadow.py", "grants.py")]
+MODULE_FILES = [
+    os.path.join(HERE, name)
+    for name in ("policy.py", "mapping.py", "shadow.py", "grants.py", "test_policy.py")
+]
 #: The comment on the one grant line, assembled so this file carries none.
 MARKER = "".join(["system1", ": runtime ", "egr", "ess"])
 

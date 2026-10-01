@@ -32,98 +32,14 @@ const MODULE_ONLY = /\bdecide(?:\.mjs)?(?:["',\s\\]|\]\s*)+runtime\b/
 const TEMPLATES = /(^|\/)references\/templates\//
 
 /**
- * A grant of runtime egress in a code template (0020, plan m11-adopt item 7).
- * `adopt` copies these files into a repo, and its output must never turn
- * egress on: the one marked `EGRESS` line says "off", and switching it is the
- * user's edit. Each generated module's own test runs the same scan over the
- * module as written.
- *
- * An allowlist for the name, read one line at a time:
- * - the marked line is a `const` (TS) or `Final` (Python) set to "off";
- * - every other `EGRESS` in code is a comparison, a one-line import, an
- *   `(EGRESS, "off")` assertion, or the runtime's `egress: EGRESS` as the last
- *   property, closing its object, in the file that declares it;
- * - a Unicode line separator is refused, since TypeScript ends a line there.
- *
- * Comment lines and string contents are skipped. It reads text, not what
- * runs: a computed key or code it doesn't parse can still pass it, so the
- * user's review of the diff is the control (0020).
+ * A grant of runtime egress in a code template (0020, plan m11-adopt item 7):
+ * the same scan each generated module's test runs over the module as written,
+ * imported from the TS template so there is one TypeScript copy. The Python
+ * copy (`grants.py`) is checked against it in tools/templates.test.ts.
  */
-export function templateGrants(text: string, python = false): string[] {
-  const problems: string[] = []
-  if (/[\u2028\u2029]/.test(text)) problems.push("a Unicode line separator (U+2028/U+2029)")
-  const lines = text.split(/\r\n|[\r\n\u2028\u2029]/)
-  const marked = lines.filter((line) => line.includes(MARKER))
-  if (marked.length > 1) problems.push(`${marked.length} lines carry the egress marker, not one`)
-  const declares = marked.length === 1 && OFF_LINE.test(marked[0] as string)
-  const comment = python ? /^\s*#/ : /^\s*(?:\/\/|\/\*|\*)/
-  for (const [i, line] of lines.entries()) {
-    const at = `line ${i + 1}`
-    if (line.includes(MARKER)) {
-      if (!OFF_LINE.test(line))
-        problems.push(`${at}: the marked line isn't a constant EGRESS set to "off"`)
-      continue
-    }
-    if (comment.test(line)) continue
-    const code = line
-      .replace(/(?<![fF])"(?:[^"\\]|\\.)*"|(?<![fF])'(?:[^'\\]|\\.)*'/g, '""')
-      .replace(/`EGRESS`/g, "")
-    for (const m of code.matchAll(/\bEGRESS\b/g)) {
-      const before = code.slice(0, m.index)
-      const after = code.slice((m.index ?? 0) + m[0].length)
-      const allowed =
-        /^\s*[!=]==?(?!=)/.test(after) ||
-        /[!=]==?\s*$/.test(before) ||
-        /^\s*(?:import\s*(?:type\s*)?\{[^}]*\}\s*from\s|from\s+[\w.]+\s+import\s+[\w\s,]*$)/.test(
-          code,
-        ) ||
-        (/\(\s*$/.test(before) && /^\s*,\s*""\s*\)/.test(after)) ||
-        inImportList(lines, i) ||
-        /\begress\s*:\s*$/.test(before)
-      if (!allowed) problems.push(`${at}: EGRESS used other than as allowed`)
-    }
-    for (const m of code.matchAll(/\begress\b(?!-)/g)) {
-      const rest = code.slice((m.index ?? 0) + m[0].length)
-      if (/^\s*[:=](?!=)/.test(rest)) {
-        const closes = /^\s*:\s*EGRESS\s*[})]/.test(rest)
-        const last =
-          /^\s*:\s*EGRESS\s*,?\s*$/.test(rest) &&
-          /^\s*\}/.test(lines.slice(i + 1).find((l) => l.trim() !== "") ?? "")
-        if (!closes && !last)
-          problems.push(`${at}: egress given anything but EGRESS, last, closing its object`)
-        else if (!declares) problems.push(`${at}: egress given an EGRESS this file doesn't declare`)
-      } else if (/^\s*[,})]/.test(rest)) problems.push(`${at}: egress passed as a variable`)
-    }
-    if (/["']egress["']|\.egress\b/.test(line)) problems.push(`${at}: egress set by name`)
-    if (/egressConsent/i.test(line)) problems.push(`${at}: an egress consent option`)
-    if (/\bsetattr\s*\(|\bglobals\s*\(|\b__dict__\b|Object\.defineProperty|Reflect\.set/.test(code))
-      problems.push(`${at}: a binding set by reflection`)
-    if (/\bEGRESS\b/.test(line) && /process\.env|os\.environ|getenv/.test(line))
-      problems.push(`${at}: EGRESS read from the environment`)
-  }
-  return problems
-}
+import { grantProblems as templateGrants } from "../plugins/system1/skills/adopt/references/templates/ts/grants.js"
 
-/** Is line `i` a bare `EGRESS,` item of a multi-line import (TS `import {…} from`, Python `from … import (…)`)? */
-function inImportList(lines: string[], i: number): boolean {
-  if (!/^\s*EGRESS\s*,?\s*$/.test(lines[i] as string)) return false
-  const item = /^\s*(?:type\s+)?\w+(?:\s+as\s+\w+)?\s*,?\s*$/
-  let start = i - 1
-  while (start >= 0 && item.test(lines[start] as string)) start--
-  let end = i + 1
-  while (end < lines.length && item.test(lines[end] as string)) end++
-  const open = lines[start] ?? ""
-  const close = lines[end] ?? ""
-  return (
-    (/^\s*import\s*(?:type\s*)?\{\s*$/.test(open) && /^\s*\}\s*from\s/.test(close)) ||
-    (/^\s*from\s+[\w.]+\s+import\s*\(\s*$/.test(open) && /^\s*\)\s*$/.test(close))
-  )
-}
-
-const MARKER = "system1: runtime egress"
-/** The one form the marked line may take in a template: a constant, "off". */
-const OFF_LINE =
-  /^(?:(?:export\s+)?const\s+EGRESS\s*(?::\s*[\w.[\]|,"' ]+?\s*)?=\s*(["'])off\1\s*(?:(?:as|satisfies)\s+[\w.]+\s*)?;?\s*\/\/|EGRESS\s*:\s*Final\s*=\s*(["'])off\2\s*#)\s*system1: runtime egress/
+export { templateGrants }
 
 export function checkSkill(dir: string, name: string, text: string): string[] {
   const problems: string[] = []
@@ -181,8 +97,8 @@ export function consentFlag(dir: string, name: string): string[] {
               `${name}: ${path} must not run decide runtime (an adopted module's, outside adopt's references/templates/)`,
             ]
           : []),
-        // Code only: a README describes the grant, it can't make one.
-        ...(TEMPLATES.test(path) && !path.endsWith(".md")
+        // Source only: a README describes the grant, it can't make one.
+        ...(TEMPLATES.test(path) && /\.(?:[cm]?[jt]s|py)$/.test(path)
           ? templateGrants(text, path.endsWith(".py")).map(
               (p) => `${name}: ${path} grants runtime egress: ${p}`,
             )
