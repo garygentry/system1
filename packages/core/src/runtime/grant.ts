@@ -26,15 +26,19 @@ export const RUNTIME_PROTOCOL = 1
  * assigned to `EGRESS`, followed only by the marker comment.
  *
  * - **At column 0**, where a module-level binding sits: an indented line (in
- *   an `if`, a function or a docstring's body) is off. A template also checks
- *   its own value before it spawns `decide`, so file and value must agree.
- * - **A type annotation can't hold `=`, a quote-free comment opener or a
- *   newline,** so `EGRESS: "= 'on' #" = "off"` can't pass for a grant.
+ *   an `if` or a function) is off.
+ * - **A type annotation holds type characters only** (words, dots, brackets,
+ *   `|`, commas, quotes, spaces): no `=`, `;`, `#` or parentheses, so
+ *   `EGRESS: "= 'on' #" = "off"` or `EGRESS: str; Z = "on"` is no grant.
+ *
+ * It reads text, not what runs: a marked line in a column-0 docstring, or an
+ * unmarked `EGRESS = "off"` after it, still reads on. The generated module
+ * checks its own `EGRESS` value before it spawns `decide`, so both must say on.
  * - **Nothing but the marker comment after it,** so `"on" if os.environ…` or
  *   `"on" || x` is no grant: consent is never computed, only written.
  */
 const ON =
-  /^(?:export\s+)?(?:(?:const|let|var)\s+)?EGRESS\s*(?::\s*[^=#/\n]+?\s*)?=\s*(["'])on\1\s*(?:(?:as|satisfies)\s+[\w.]+\s*)?;?\s*(?:\/\/|#)\s*system1: runtime egress/
+  /^(?:export\s+)?(?:(?:const|let|var)\s+)?EGRESS\s*(?::\s*[\w.[\]|,"' ]+?\s*)?=\s*(["'])on\1\s*(?:(?:as|satisfies)\s+[\w.]+\s*)?;?\s*(?:\/\/|#)\s*system1: runtime egress/
 
 export interface ModuleGrant {
   egress: "on" | "off"
@@ -48,7 +52,8 @@ export interface ModuleGrant {
  * marked lines, no marked line, or any other value, is off.
  */
 export function grantIn(source: string): ModuleGrant {
-  const marked = source.split(/\r?\n/).filter((line) => line.includes(EGRESS_MARKER))
+  // A lone CR ends a line for Python too: it can't hide a second statement.
+  const marked = source.split(/\r\n|\r|\n/).filter((line) => line.includes(EGRESS_MARKER))
   if (marked.length === 0) return { egress: "off", why: "the module has no marked EGRESS line" }
   if (marked.length > 1)
     return { egress: "off", why: `the module has ${marked.length} marked EGRESS lines, not one` }

@@ -21,13 +21,17 @@ export const RUNTIME_OPTIONS = {
   protocol: { type: "boolean" },
 } as const
 
-/** Set by Claude Code, Codex and Pi in every shell they run (core/config/session.ts). */
+/**
+ * Set by Claude Code, Codex and Pi in the shells they run (core/config/session.ts).
+ * A deterrent, not a control: an agent can unset them, and other agents set none.
+ */
 const HARNESS_SESSION_VARS = [
   "CLAUDE_CODE_SESSION_ID",
   "CODEX_THREAD_ID",
   "CODEX_SESSION_ID",
   "PI_SESSION_ID",
   "AI_AGENT",
+  "CLAUDECODE",
 ] as const
 
 /** A request is a question set and one state; anything larger is not one. */

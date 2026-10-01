@@ -37,6 +37,10 @@ describe("the module grant (0020, D7)", () => {
       // Indented: inside an if, a function or a docstring, not the module's binding.
       `    EGRESS = "on"  # ${mark}`,
       `\tEGRESS = "on"  # ${mark}`,
+      // An annotation that hides a statement: EGRESS is never assigned.
+      `EGRESS: str; Z = "on"  # ${mark}`,
+      `let EGRESS: string; const Z = "on" // ${mark}`,
+      `EGRESS: print("x"); EGRESS = "on"  # ${mark}`,
       // A comment between the literal and the marker.
       `EGRESS = "on"  # not the marker; ${mark}`,
     ])
@@ -45,6 +49,8 @@ describe("the module grant (0020, D7)", () => {
       egress: "off",
       why: "the module has no marked EGRESS line",
     })
+    // A lone CR is a line break to Python: the marked line is cut short of a grant.
+    expect(grantIn(`EGRESS = "on"\rX = 1  # ${mark}`).egress).toBe("off")
     // Two marked lines are ambiguous: off.
     expect(grantIn(`EGRESS = "on"  # ${mark}\nEGRESS = "on"  # ${mark}\n`)).toMatchObject({
       egress: "off",
