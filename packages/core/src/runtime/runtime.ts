@@ -154,7 +154,11 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
     day = { key, usd: ledger ? todayFromFile(ledger.file, `${key}T00:00:00.000Z`) : 0 }
   }
   /** Count `usd` against the day the call reserved on, and record it. */
-  const settle = (dayKey: string, delta: number, entry?: { usd: number; usage?: Usage }) => {
+  const settle = (
+    dayKey: string,
+    delta: number,
+    entry?: { usd: number; usage?: Usage; calls?: number },
+  ) => {
     if (day.key === dayKey && Number.isFinite(delta)) day.usd += delta
     if (!entry || !ledger || typeof setup === "string") return
     try {
@@ -163,7 +167,7 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
         tag: RUNTIME_TAG,
         model: setup.profile.id,
         source: "live",
-        calls: 1,
+        calls: entry.calls ?? 1,
         input_tokens: entry.usage?.input_tokens ?? 0,
         output_tokens: entry.usage?.output_tokens ?? 0,
         cost: entry.usd,
@@ -268,15 +272,22 @@ export function createPolicyRuntime(options: PolicyRuntimeOptions): PolicyRuntim
     if (result === "timeout") {
       if (mode === "live") {
         settle(dayKey, 0, { usd: projected })
-        // The deadline answers first; the call rejects just after. When it was
-        // abandoned after retries that may have been billed, count each one
-        // beyond the projection already counted.
-        call?.catch((error: unknown) => {
-          const spent = spentOf(error)
-          if (!spent) return
-          const extra = knownCost(spent.usage) + projected * spent.uncounted - projected
-          if (extra > 0) settle(dayKey, extra, { usd: extra })
-        })
+        // The deadline answers first; the call settles later. Count what it
+        // turns out to have cost beyond the projection already counted: an
+        // answer that arrived anyway (a fetch that ignored the abort), or the
+        // retries abandoned after they may have been billed. The extra line
+        // adds cost, not a call.
+        const late = (usage: Usage, unreported: number) => {
+          const extra = knownCost(usage) + projected * unreported - projected
+          if (extra > 0) settle(dayKey, extra, { usd: extra, usage, calls: 0 })
+        }
+        call?.then(
+          (r) => late(r.usage, r.uncountedAttempts ?? (r.usage.reported === false ? 1 : 0)),
+          (error: unknown) => {
+            const spent = spentOf(error)
+            if (spent) late(spent.usage, spent.uncounted)
+          },
+        )
       }
       return fallback("timeout", `no answer within ${timeoutMs} ms`)
     }

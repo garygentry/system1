@@ -257,6 +257,23 @@ describe("createPolicyRuntime: the daily cap", () => {
     expect(rt.spentToday()).toBeCloseTo(2 * projected, 10)
   })
 
+  it("counts an answer that arrives after the deadline, from a fetch that ignored the abort", async () => {
+    const fetch = (async (_url: string, init: RequestInit) => {
+      await new Promise((r) => setTimeout(r, 300))
+      const body = JSON.parse(String(init.body)) as { questions: Record<string, unknown> }
+      return Response.json({
+        answers: Object.fromEntries(
+          Object.keys(body.questions).map((q) => [q, { type: "noul", noul: 0.9 }]),
+        ),
+        usage: { input_tokens: 9, output_tokens: 0, cost: 0.4 },
+      })
+    }) as unknown as typeof globalThis.fetch
+    const rt = runtime({ timeoutMs: 100 }, fetch)
+    expect(await rt.decide(request)).toMatchObject({ ok: false, reason: "timeout" })
+    await new Promise((r) => setTimeout(r, 400))
+    expect(rt.spentToday()).toBeCloseTo(0.4, 8)
+  })
+
   it("counts a cost the provider doesn't report at its projection, not as free", async () => {
     const rt = runtime({}, provider(0.95, { noUsage: true }).fetch)
     expect((await rt.decide(request)).ok).toBe(true)

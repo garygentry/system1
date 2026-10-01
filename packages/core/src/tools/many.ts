@@ -1,5 +1,5 @@
 import { assertConsent } from "../config/consent.js"
-import type { DecisionResult } from "../decide.js"
+import type { DecisionResult, Unsaved } from "../decide.js"
 import { DecisionsError, type ErrorCode, isDecisionsError, spentOf } from "../errors.js"
 import type { Answers, Usage } from "../model/types.js"
 import { prepare } from "../prepare.js"
@@ -192,11 +192,19 @@ export async function runMany(ctx: ToolContext, rawInput: unknown): Promise<Many
       ...settled.flatMap((s) => ("error" in s ? (spentOf(s.error)?.usage ?? []) : [])),
     ]),
     wallClockMs: Math.round(performance.now() - started),
-    ...unsavedOf(done.map((d) => d.result)),
+    // A failed item's spend line can be unsaved too (decide puts it on the error).
+    ...unsavedOf([
+      ...done.map((d) => d.result),
+      ...settled.flatMap((s) =>
+        "error" in s && isDecisionsError(s.error) && Array.isArray(s.error.details.unsaved)
+          ? [{ unsaved: s.error.details.unsaved as Unsaved[] }]
+          : [],
+      ),
+    ]),
   }
 }
 
-function unsavedOf(results: DecisionResult[]): Pick<ManyResult, "unsaved"> {
+function unsavedOf(results: Array<Pick<DecisionResult, "unsaved">>): Pick<ManyResult, "unsaved"> {
   const all = results.flatMap((r) => r.unsaved ?? [])
   const [first] = all
   if (!first) return {}
