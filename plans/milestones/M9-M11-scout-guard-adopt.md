@@ -277,7 +277,7 @@
 - [ ] Generated TS and Python modules pass their own offline tests, take the fallback on undecided, provider error and refusal, and are inert until the user enables them.
 - [ ] The output→answer mapping is generated and tested; missing baseline cost is reported as unknown.
 - [ ] `compare` never names a winner without labels; with labels it reports accuracy with sample size.
-- [ ] One TS and one Python opportunity taken through the whole chain, with measured cost and agreement recorded.
+- [ ] One TS and one Python opportunity taken through the whole chain, with measured cost and agreement recorded. *TS done (PR 9, 2026-10-06): `route.ts`, see Results; Python is PR 10.*
 - [ ] Routing: `adopt` and `compare` load on explicit invocation in all three harnesses; the `ask` set does not regress.
 - [ ] `pnpm check`, `pnpm smoke` (including the Codex Python-test smoke), `pnpm eval:routing all` green.
 - [ ] **0.6.0 released** through the gates; tagged `v0.6.0`. M12 (design partners) unblocked.
@@ -305,6 +305,36 @@
 ## Results
 
 *(Filled in per milestone as each closes.)*
+
+### M11 PR 9: dogfood, TypeScript: `route.ts` through adopt → capture → compare (2026-10-06)
+
+- **The target:** `packages/core/src/route/route.ts`, the regex prompt router behind the routing hook ([0018](../decisions/0018-claude-routing-hook.md)), as D8 named it. Its benefit was expected to be quality (recall), not cost.
+- **The build:** route.ts ships inside the esbuild-bundled `decide`, where the module lock can't hold, and 0018 promises the hook sends nothing. So the module (`tools/route-policy/`) is a shadow, run from source by vitest and tsx, with no cutover and no `"bundled"` (the maintainer's choice: option A). It is the worked case of `docs/runtime.md` § "The module lock and your build".
+- **The spec:** `.system1/specs/route-hint.yaml`. `hint` is the only question the policy acts on. One noul per built-in trigger only names the hint. Three live recordings ($0.00097 in all) took it to 7/7 examples, with one captured:
+  - The first `hint` folded in the opt-out ("without using decide"). That is an exact phrase, so the module vetoes it in code, as route.ts's `BUILTIN_IGNORE` does, and never asks.
+  - It missed "check each step before a risky action".
+  - The pick-from-many example still reads 0.64, between the bars. It was recorded and left there, not tuned away.
+  - The captured near miss ("is the PR description complete…") gets `hint` 0.06, as it should, but `done-check` 0.77 and `criteria-check` 0.45 (undecided). The trigger questions read the words, so they only name a hint and never decide one.
+- **Capture and labels:** the 72 `ask` prompts of the three routing sets. Each row's `current` is the regex's answer, at a measured $0. The label `hint` is 1 for a positive and 0 for a negative.
+- **`decide compare route-hint --record`** (live, $0.0029 measured):
+  - **Cost and latency:** Jev $0.000041 a call, p50 204 ms, p95 413 ms. The regex is $0 and under 1 ms.
+  - **Agreement:** 90.9% of 417 decided answers; on `hint`, 86.4% of 66.
+  - **Undecided:** 3.5% of Jev's answers.
+  - **Accuracy on `hint`:** Jev 90.9% of 66 (6 undecided), the regex 91.7% of 72. Head-to-head over the 66 both gave: Jev 60, the regex 63, **baseline ahead**.
+- **The policy as it would run** (`tools/route-policy/evaluate.ts`, replaying compare's answers; two bars, and the regex's answer when it can't act):
+
+  | Set | n | Regex | Policy | Model decided |
+  |---|---|---|---|---|
+  | `routing.yaml` (the triggers were written against it) | 16 | 16 | 16 | 15 |
+  | `routing-holdout.yaml` (the triggers' second version was tuned on it) | 24 | 24 | 22 | 20 |
+  | `routing-holdout-2.yaml` (written blind; spent since, ROADMAP) | 32 | 26 | 27 | 25 |
+  | all | 72 | 66 (91.7%) | 65 (90.3%) | 60 |
+
+  The policy won 2 prompts and lost 3. It lost "am i done? TASK.md…", "about to open a PR… does test-output.log show…" and "pull out the tickets where…". It won a "split the reviews into piles" positive and the negative "is the build done yet? tail test-output.log".
+- **Verdict: no quality gain, so no cutover.** Over these 72 prompts the decision model is no better than the regex, and every prompt would pay about 200 ms and $0.00004 and send its text to the provider. The one set the regex wasn't tuned on (32 prompts) moves by one, which says nothing either way. That set has also been read, by whoever wrote `hint` among others, so it is no longer blind for either side. The routing hook stays the regex, and the module stays a measured shadow. With n this small this is a lean, not a result; a bigger blind set is what would change it.
+- **Found on the way:**
+  - The runtime falls back with `undecided` when *any* question is undecided. Diagnostic questions (here, the five trigger nouls) took the fallbacks from 6 to 13. The module acts on a decided `hint` alone. The template and `docs/runtime.md` should say this (PR 11).
+  - The capture's rounded `latencyMs` reads 0 for a sub-millisecond mechanism.
 
 ### M10 §1 spike: Stop hooks from a plugin (2026-09-27)
 

@@ -80,7 +80,7 @@ The maintainer ruled on 1, 2, 6 and 8. The others are the agent's proposals, rev
    - Setup's `.gitignore` list.
    - Doctor checks for runtime consent in adopted modules, found by the marker and by any `createPolicyRuntime(` call or `decide runtime` spawn, for the emulated allow-list, and for captured files not ignored.
    - Routing sets and `MINIMUMS`; the Pi package contents.
-9. **Dogfood, TypeScript:** `route.ts` through adopt → capture → compare, with the numbers recorded in the spec's Results.
+9. **Dogfood, TypeScript:** `route.ts` through adopt → capture → compare, with the numbers recorded in the spec's Results. *Done (2026-10-06): a shadow in `tools/route-policy/`, no cutover; no quality gain over the regex at n=72.*
 10. **Dogfood, Python:** choose the target (D8), then take it through the whole chain.
 11. **Docs:** the chain, the policy module, runtime consent and environment, the emulated profile and its opt-in, and the report format. Update `docs/architecture/`, whose README still says 0.3.1. Then the 0.6.0 release.
 
