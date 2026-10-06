@@ -12,9 +12,14 @@
  *   labelled; the trigger questions get agreement, not accuracy.
  *
  * Ids name the set they come from: `tuned:` is routing.yaml, which the
- * triggers were written against; `holdout:` and `holdout2:` were not.
+ * triggers were written against; the second version was also tuned on
+ * `holdout:` (routing-holdout.yaml), and `holdout2:` was written blind but has
+ * been read since (ROADMAP: "spent as a blind set").
+ *
+ * Ids are positions, so the capture is written afresh each run: a row kept
+ * from an earlier run could sit under an id whose label is now another prompt's.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse } from "yaml"
@@ -56,10 +61,12 @@ export function samples(repo = REPO): Sample[] {
 
 async function main() {
   const all = samples()
+  const file = join(REPO, CAPTURE_FILE)
+  rmSync(file, { force: true })
   const summary = await captureShadow(
     all,
     async (prompt) => ({ output: route(prompt, ROUTE_DEFAULTS), usage: { cost: 0 } }),
-    { file: join(REPO, CAPTURE_FILE) },
+    { file },
   )
   const labels = join(REPO, ".system1", "labels", `${SPEC}.jsonl`)
   mkdirSync(dirname(labels), { recursive: true })

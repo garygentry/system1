@@ -182,6 +182,26 @@ describe("inert by default", () => {
     )
     assert.equal(asked, false)
   })
+
+  it("honours the user's route config before any call", async () => {
+    const runtime = {
+      decide: async () => {
+        throw new Error("not reached")
+      },
+    }
+    const base = { enabled: true, mode: "replay" as const, runtime }
+    fellBack(
+      await routeHint(BATCH, existing, { ...base, config: { ...ROUTE_DEFAULTS, enabled: false } }),
+      "disabled",
+    )
+    fellBack(
+      await routeHint(BATCH, existing, {
+        ...base,
+        config: { ...ROUTE_DEFAULTS, ignore: ["alerts\\.jsonl"] },
+      }),
+      "vetoed",
+    )
+  })
 })
 
 describe("answers from recorded fixtures (replay)", () => {
@@ -292,6 +312,22 @@ describe("thresholds", () => {
     const no = await routeHint(BATCH, existing, answered(0.3, 0.9))
     assert.equal(no.by, "model")
     assert.equal(no.value.matched, false)
+  })
+
+  it("names only the triggers the config leaves on, in the config's message", async () => {
+    const outcome = await routeHint(BATCH, existing, {
+      ...answered(0.9, 0.9),
+      config: { ...ROUTE_DEFAULTS, disable: ["gate-check"], message: "use ask ({triggers})" },
+    })
+    assert.equal(outcome.by, "model")
+    assert.ok(!outcome.value.triggers.some((t) => t.name === "gate-check"))
+    assert.equal(outcome.value.triggers.length, TRIGGER_QUESTIONS.length - 1)
+    assert.match(outcome.value.message ?? "", /^use ask \(batch-judgement/)
+  })
+
+  it("records the mode when it acts on a result the runtime called undecided", async () => {
+    const outcome = await routeHint(BATCH, existing, undecided(["gate-check"], 0.9))
+    assert.match(outcome.trace[0]?.detail ?? "", /^replay: undecided/)
   })
 
   it("reads answers of the wrong shape as below the bar", () => {

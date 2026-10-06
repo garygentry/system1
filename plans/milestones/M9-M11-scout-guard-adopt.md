@@ -314,6 +314,7 @@
   - The first `hint` folded in the opt-out ("without using decide"). That is an exact phrase, so the module vetoes it in code, as route.ts's `BUILTIN_IGNORE` does, and never asks.
   - It missed "check each step before a risky action".
   - The pick-from-many example still reads 0.64, between the bars. It was recorded and left there, not tuned away.
+  - The captured near miss ("is the PR description complete…") gets `hint` 0.06, as it should, but `done-check` 0.77 and `criteria-check` 0.45 (undecided). The trigger questions read the words, so they only name a hint and never decide one.
 - **Capture and labels:** the 72 `ask` prompts of the three routing sets. Each row's `current` is the regex's answer, at a measured $0. The label `hint` is 1 for a positive and 0 for a negative.
 - **`decide compare route-hint --record`** (live, $0.0029 measured):
   - **Cost and latency:** Jev $0.000041 a call, p50 204 ms, p95 413 ms. The regex is $0 and under 1 ms.
@@ -325,12 +326,12 @@
   | Set | n | Regex | Policy | Model decided |
   |---|---|---|---|---|
   | `routing.yaml` (the triggers were written against it) | 16 | 16 | 16 | 15 |
-  | `routing-holdout.yaml` | 24 | 24 | 22 | 20 |
-  | `routing-holdout-2.yaml` (blind) | 32 | 26 | 27 | 25 |
+  | `routing-holdout.yaml` (the triggers' second version was tuned on it) | 24 | 24 | 22 | 20 |
+  | `routing-holdout-2.yaml` (written blind; spent since, ROADMAP) | 32 | 26 | 27 | 25 |
   | all | 72 | 66 (91.7%) | 65 (90.3%) | 60 |
 
   The policy won 2 prompts and lost 3. It lost "am i done? TASK.md…", "about to open a PR… does test-output.log show…" and "pull out the tickets where…". It won a "split the reviews into piles" positive and the negative "is the build done yet? tail test-output.log".
-- **Verdict: no quality gain, so no cutover.** Over these 72 prompts the decision model is no better than the regex, and every prompt would pay about 200 ms and $0.00004 and send its text to the provider. The one set the regex wasn't tuned on (32 prompts) moves by one, which says nothing either way. The routing hook stays the regex, and the module stays a measured shadow. With n this small this is a lean, not a result; a bigger blind set is what would change it.
+- **Verdict: no quality gain, so no cutover.** Over these 72 prompts the decision model is no better than the regex, and every prompt would pay about 200 ms and $0.00004 and send its text to the provider. The one set the regex wasn't tuned on (32 prompts) moves by one, which says nothing either way. That set has also been read, by whoever wrote `hint` among others, so it is no longer blind for either side. The routing hook stays the regex, and the module stays a measured shadow. With n this small this is a lean, not a result; a bigger blind set is what would change it.
 - **Found on the way:**
   - The runtime falls back with `undecided` when *any* question is undecided. Diagnostic questions (here, the five trigger nouls) took the fallbacks from 6 to 13. The module acts on a decided `hint` alone. The template and `docs/runtime.md` should say this (PR 11).
   - The capture's rounded `latencyMs` reads 0 for a sub-millisecond mechanism.
