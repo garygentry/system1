@@ -192,7 +192,8 @@ export async function routeHint(
   )
   if (!config.enabled) return fallBack("disabled", "route.enabled is false")
   // The model stands in for the built-in triggers only.
-  if (!config.builtin) return fallBack("disabled", "route.builtin is false")
+  if (!config.builtin || activeTriggers(config).every((t) => t.source !== "builtin"))
+    return fallBack("disabled", "no built-in route trigger is on")
   // An opt-out is an exact phrase, so it is matched here, with the user's own
   // `route.ignore`, as route.ts does, and never costs a call.
   if (ignore.some((re) => re.test(prompt)))
@@ -261,6 +262,9 @@ export function fromAnswers(
       triggers.push({ name, source: "builtin", text: `model ${a.noul.toFixed(2)}` })
   }
   trace.push({ step: "triggers", detail: triggers.map((t) => t.name).join(", ") || "none" })
+  // With some built-ins disabled, `hint` alone would still cover their
+  // categories: act only when a trigger still on clears its bar.
+  if (config.disable.length > 0 && triggers.length === 0) return undefined
   // A hint with no trigger over its bar still names where it came from.
   const names = triggers.map((t) => t.name).join(", ") || "hint"
   return {

@@ -205,6 +205,13 @@ describe("inert by default", () => {
       await routeHint(BATCH, existing, { ...base, config: { ...ROUTE_DEFAULTS, builtin: false } }),
       "disabled",
     )
+    fellBack(
+      await routeHint(BATCH, existing, {
+        ...base,
+        config: { ...ROUTE_DEFAULTS, disable: [...TRIGGER_QUESTIONS] },
+      }),
+      "disabled",
+    )
   })
 
   it("throws on a bad route config before any call, whatever the model would say", async () => {
@@ -345,6 +352,29 @@ describe("thresholds", () => {
     assert.ok(!outcome.value.triggers.some((t) => t.name === "gate-check"))
     assert.equal(outcome.value.triggers.length, TRIGGER_QUESTIONS.length - 1)
     assert.match(outcome.value.message ?? "", /^use ask \(batch-judgement/)
+  })
+
+  it("keeps the existing path when only disabled triggers would name the hint", async () => {
+    const only = (name: string) => ({
+      enabled: true,
+      mode: "replay" as const,
+      config: { ...ROUTE_DEFAULTS, disable: ["gate-check"] },
+      runtime: {
+        decide: async () => ({
+          ok: true as const,
+          source: "replay" as const,
+          answers: {
+            hint: noul(0.9),
+            ...Object.fromEntries(TRIGGER_QUESTIONS.map((n) => [n, noul(n === name ? 0.9 : 0.1)])),
+          },
+          usage: { input_tokens: 0, output_tokens: 0, cost: 0 },
+          latencyMs: 1,
+          ledger: "memory" as const,
+        }),
+      },
+    })
+    fellBack(await routeHint(BATCH, existing, only("gate-check")), "below-threshold")
+    assert.equal((await routeHint(BATCH, existing, only("batch-judgement"))).by, "model")
   })
 
   it("records the mode when it acts on a result the runtime called undecided", async () => {
