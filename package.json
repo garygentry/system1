@@ -39,7 +39,7 @@
     "release:check": "node tools/release-check.mjs",
     "release:verify": "node tools/release-verify.mjs",
     "release:publish": "node tools/release-publish.mjs",
-    "release:approve": "node tools/release-approve.mjs"
+    "release:summary": "node tools/release-summary.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

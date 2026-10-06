@@ -2,23 +2,23 @@
 
 Take a version from a catalog bump to published, tagged and verified in all three harnesses.
 
-1. You push a signed `vX.Y.Z` tag, and nothing else.
-2. The `release` workflow checks the tag and stages the three packages on npm.
-3. You approve the staged packages with npm 2FA (`pnpm release:approve`), and only then push
-   `main`.
+1. A signed `vX.Y.Z` tag is pushed, and nothing else.
+2. The `release` workflow's `verify` job checks the tag, runs the gates and writes a release
+   summary on the run page.
+3. The maintainer approves the `release` environment **once**, on the web or in GitHub Mobile.
+   The `publish` job then publishes all three packages live, with provenance.
+4. Once npm serves them (the job waits for that), `main` is pushed.
 
-No npm token exists anywhere: CI authenticates through npm trusted publishing (OIDC), and a staged
-version can't go live without your 2FA. The design and its threat model are in
-[0022](../../plans/decisions/0022-ci-publish-trusted-staged.md). How the pieces fit is in
+An agent can do every step except the approval. Its GitHub identity can't approve the
+environment or change its rules. The maintainer also signs the tag (step 3), because
+`release:verify` checks the signature. No npm token exists anywhere: CI authenticates through
+npm trusted publishing (OIDC). The design and its threat model are in
+[0022](../../plans/decisions/0022-ci-publish-trusted-staged.md) and its Amendment 1. How the pieces fit is in
 [../architecture/deployment.md](../architecture/deployment.md).
 
 ## Before you start
 
 - You are on an up-to-date `main` with a clean working tree, and CI is green on it.
-- npm is 11.15 or newer (`npm --version`; `npm i -g npm@latest`), for `npm stage`. After
-  upgrading, run `hash -r` (zsh) and check `npm --version` again: an older system npm can still
-  win on the cached path. `npm whoami` shows an account that can publish to the `@garygentry`
-  scope, and it has 2FA.
 - Git signs tags with your SSH key (`gpg.format ssh`, `tag.gpgsign true`, and a
   `user.signingkey`), and that key is in `.github/allowed_signers`. The workflow checks tags
   against that file as it is on `main`. Tags from `v0.2.0` on are SSH-signed; `v0.1.0` is annotated
@@ -62,20 +62,25 @@ pnpm eval:routing all   # see the bar below
   regressed.
 - **Startup.** If the release touches `main.ts`, the bundle or the route path, run
   `pnpm bench:startup` too (under 150 ms of overhead).
-- **Dry run.** Once the bump is committed (step 3), `node tools/release-publish.mjs --stage
-  --dry-run` runs every guard and `npm stage publish --dry-run` for each package, just as CI will.
-  Read the file lists. npm's correction to the `bin` path is expected.
+- **Dry run.** Once the bump is committed (step 3), `pnpm release:publish --dry-run` runs every
+  guard and `npm publish --dry-run` for each package, as CI will (CI also passes `--provenance`,
+  which only works there). Read the file lists. npm's correction to the `bin` path is expected.
 
 ## 3. Commit, tag, and push the tag only
 
+Release-prep changes such as fixes and docs land through PRs as usual. The version bump does
+not: it is one commit on top of `origin/main`, and it reaches GitHub through the tag. `main`
+fast-forwards to it once npm serves the release (step 5).
+
 The tags are annotated, signed, and sit on the bump commit (`v0.3.1` is on `59cdfc6`). Their message
 is the version and a one-line summary, for example `0.3.1: routing hook works for plugin-only Claude
-installs`.
+installs`. The message heads the release summary.
 
 ```sh
 git commit -am "Release X.Y.Z: version bump (not yet published)"
-git tag -s vX.Y.Z -m "X.Y.Z: <what this release is>"
+git tag -s vX.Y.Z -m "X.Y.Z: <what this release is>"   # the maintainer: signed with their key
 pnpm release:verify vX.Y.Z           # the checks CI runs first; "npm does not serve" must pass
+pnpm release:summary vX.Y.Z          # preview what the approver will read
 git push origin vX.Y.Z               # the tag only
 ```
 
@@ -84,7 +89,7 @@ serve the plugin from `main`. A pushed bump with no package behind it gives a pl
 user a shim that can't find its CLI. Pushing the tag uploads the bump commit without moving
 `main`.
 
-## 4. CI stages the release
+## 4. CI verifies, and waits for one approval
 
 The tag starts `.github/workflows/release.yml`:
 
@@ -94,42 +99,40 @@ The tag starts `.github/workflows/release.yml`:
   - it builds on `origin/main`;
   - npm doesn't serve that version yet.
 
-  Then it runs `pnpm check` and `pnpm release:check`.
-- **`stage`** runs in the `npm-publish` environment with `id-token: write`, on Node 24 and a
-  pinned npm 11. It runs `node tools/release-publish.mjs --stage --skip-check`. Each package's
-  `npm stage publish` swaps the OIDC token for a credential that is valid for this run only. The
-  run page's summary lists the three stage ids.
+  Then it runs `pnpm check` and `pnpm release:check`. Last, `tools/release-summary.mjs` writes the
+  release summary to the run page. The summary has the packages, the tag message, the commits and
+  the `git diff --stat` since the previous tag, plus a **CAUTION** block naming any file changed
+  under `.github/`.
+- **`publish`** runs in the `release` environment with `id-token: write`, on Node 24 and a
+  pinned npm 11. It waits until the maintainer approves the environment. Then it runs
+  `node tools/release-publish.mjs --provenance --skip-check`. Each package's `npm publish` swaps
+  the OIDC token for a credential that is valid for this run only. The job then waits, up to
+  3 minutes, until npm serves all three. The registry lags a publish by about 40 s (0.4.0).
+
+**The approval.** Before approving, the maintainer reads the summary on the run page. Pay
+particular attention to the CAUTION block: a tag runs the workflow as the tagged commit wrote it.
+Then approve under "Review deployments", on the web or in GitHub Mobile. An agent can't approve
+it. It can watch the run (`gh run watch`) and tell the maintainer it is waiting.
 
 It publishes with npm, not pnpm, as every release has: the CLI's published `devDependencies` still
 read `workspace:*`, which pnpm would rewrite. That is harmless, because consumers never install
 devDependencies. Each package's `prepublishOnly` (`tools/prepublish-check.mjs`) runs its `build`
 and `prepack` and refuses to publish if any `bin`, `exports` or `files` entry is missing.
 
-If `verify` fails, nothing was staged. Fix the cause and either re-run the job or, if the fix
+If `verify` fails, nothing was published. Fix the cause and either re-run the job or, if the fix
 changes the commit, move the tag: `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`, which
-needs your ruleset bypass, then tag again. Only move a tag while nothing at that version is staged
-or live. If `stage` fails partway, run `npm stage list <name>` and approve or reject what is there
-before re-running it. A package that is already live is skipped.
+needs the maintainer's ruleset bypass, then tag again. Only move a tag while nothing at that
+version is live. If `publish` fails partway, re-run the job (a new approval). A package that is
+already live is skipped.
 
-## 5. Approve, then push `main`
+## 5. Push `main`
+
+When `publish` is green, npm serves all three. Confirm, then push:
 
 ```sh
-pnpm release:approve X.Y.Z
+npm view @garygentry/system1@X.Y.Z version   # and -core, -pi
 git push origin main
 ```
-
-`release:approve` works through the three packages in order:
-
-1. It finds exactly one stage of `X.Y.Z` for each package that isn't live yet. It stops if one is
-   missing or duplicated. Reject extra stages with `npm stage reject <id>`.
-2. It downloads each staged tarball and prints its file list and sizes. Read them: this review is
-   the gate.
-3. After you confirm, it runs `npm stage approve <id>` for core, the CLI and Pi. npm asks for 2FA.
-4. It waits, up to 3 minutes, until npm serves all three. The registry lags a publish by about
-   40 s (0.4.0).
-
-You can approve on npmjs.com instead (the Staged Packages tab). Wait until `npm view <name>@X.Y.Z
-version` answers for all three before pushing `main`.
 
 ## 6. Verify from the published artifacts
 
@@ -187,7 +190,7 @@ If verification finds a bug, fix it and cut a patch release from step 1, as 0.3.
 
 ## Break-glass: publish from your machine
 
-If CI can't stage, publish with your own npm login. That is interactive 2FA, which "Require
+If CI can't publish, publish with your own npm login. That is interactive 2FA, which "Require
 two-factor authentication and disallow tokens" still allows. It needs no token.
 
 ```sh
@@ -199,27 +202,35 @@ git push origin vX.Y.Z main             # tag and main together, after npm serve
 It refuses to start unless the working tree is clean, every package is at the same version, and
 `release:check` passes. A package npm already serves is skipped, so after an expired OTP you can
 run it again. Pushing the tag afterwards still starts the workflow. Its `verify` job then stops at
-"npm does not serve this version yet", so it stages nothing.
+"npm does not serve this version yet", so it publishes nothing.
 
-A new package has to go this way once: `npm stage publish` can't create a package. Add its trusted
-publisher afterwards.
+A new package has to go this way once, because a trusted publisher can only be added to a package
+that already exists. Add its trusted publisher afterwards.
 
 ## One-time setup
 
-This has already been done for the three packages; the record is in
-[the plan](../../plans/ci-publish.md) (phase B).
-Redo it if the repository, the workflow file name or the environment ever changes: npm trusts that
-exact triple.
+Redo this if the repository, the workflow file name or the environment ever changes: npm trusts
+that exact triple. The 2026-10-06 switch from `npm-publish` (stage-only) to `release` (publish) is
+recorded in [0022](../../plans/decisions/0022-ci-publish-trusted-staged.md) Amendment 1.
 
-```sh
-for p in @garygentry/system1-core @garygentry/system1 @garygentry/system1-pi; do
-  npm trust github "$p" --repo garygentry/system1 --file release.yml --env npm-publish --allow-stage-publish --yes
-done
-npm trust list @garygentry/system1
-```
+- **GitHub:** an environment `release` with:
+  - the maintainer as a required reviewer;
+  - "prevent self-review" **off** (runs an agent starts count as the maintainer's own);
+  - no admin bypass;
+  - deployments only from tags matching `v*`.
 
-- **GitHub:** create an environment `npm-publish` that deploys only from tags matching `v*`. Add
-  rulesets that stop `v*` tags being updated or deleted, and stop `main` being force-pushed or
+  Add rulesets that stop `v*` tags being updated or deleted, and stop `main` being force-pushed or
   deleted, with an admin bypass on both.
-- **npm, for each package:** set Settings → Publishing access to *Require two-factor
-  authentication and disallow tokens*, and revoke any old publish tokens.
+- **npm, for each package:** open Settings → Trusted publishing and set GitHub Actions,
+  `garygentry/system1`, workflow `release.yml`, environment `release`, permission **publish**.
+  On the CLI that is:
+
+  ```sh
+  for p in @garygentry/system1-core @garygentry/system1 @garygentry/system1-pi; do
+    npm trust github "$p" --repo garygentry/system1 --file release.yml --env release --yes
+  done
+  npm trust list @garygentry/system1
+  ```
+
+  Set Settings → Publishing access to *Require two-factor authentication and disallow tokens*,
+  and revoke any old publish tokens.

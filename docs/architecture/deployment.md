@@ -146,19 +146,22 @@ at least three `SKILL.md` files. On failure it keeps the scratch directory and p
 
 ### Release workflow
 
-`.github/workflows/release.yml` runs on a pushed `vX.Y.Z` tag and stages the release on npm; a
-maintainer approves it with npm 2FA ([0022](../../plans/decisions/0022-ci-publish-trusted-staged.md),
-steps in [release.md](../contributing/release.md#4-ci-stages-the-release)).
+`.github/workflows/release.yml` runs on a pushed `vX.Y.Z` tag. It verifies the tag and summarises
+the release, then publishes to npm once the maintainer approves the `release` environment
+([0022](../../plans/decisions/0022-ci-publish-trusted-staged.md) Amendment 1, steps in
+[release.md](../contributing/release.md#4-ci-verifies-and-waits-for-one-approval)). It is the
+only workflow that publishes.
 
 | Job | Permissions | Runs |
 |---|---|---|
-| `verify` | `contents: read` | `tools/release-verify.mjs` (tag = version, signed by `.github/allowed_signers` on `main`, builds on `main`, not yet on npm), `pnpm check`, `pnpm release:check` |
-| `stage` | `contents: read`, `id-token: write`; environment `npm-publish` | `tools/release-publish.mjs --stage --skip-check`: `npm stage publish` per package through npm trusted publishing (OIDC), Node 24, pinned npm 11 |
+| `verify` | `contents: read` | `tools/release-verify.mjs` (tag = version, signed by `.github/allowed_signers` on `main`, builds on `main`, not yet on npm), `pnpm check`, `pnpm release:check`, then `tools/release-summary.mjs` writes the release summary (packages, tag message, commits and diff stat since the last tag, a flag on any `.github/` change) to the run page |
+| `publish` | `contents: read`, `id-token: write`; environment `release` (required reviewer) | `tools/release-publish.mjs --provenance --skip-check`: `npm publish --provenance` per package through npm trusted publishing (OIDC), Node 24, pinned npm 11, then waits until npm serves all three |
 
-npm trusts the workflow by its file name, the repository and the environment, and only to stage.
+npm trusts the workflow by its file name, the repository and the environment.
 No npm token is stored anywhere. Every action in both workflows is pinned to a commit SHA;
 `.github/dependabot.yml` proposes updates weekly.
 
-What CI does not cover: approving a release (that is the maintainer's npm 2FA), the harnesses
+What CI does not cover: approving a release (that is the maintainer, approving the `release`
+environment; no agent identity can), the harnesses
 themselves (smoke and the routing evals are local only, and smoke needs GNU `timeout`), and live
 calls.

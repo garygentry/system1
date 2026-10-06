@@ -9,8 +9,8 @@
 // main, and that npm does not serve that version yet.
 //
 // The signature check catches a mistaken tag, not a hostile writer: the
-// workflow a tag runs is the tagged commit's own. Staging is the security gate
-// (nothing goes live without a maintainer's npm 2FA).
+// workflow a tag runs is the tagged commit's own. The security gate is the
+// `release` environment's required reviewer (no agent can approve it).
 import { spawnSync } from "node:child_process"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"

@@ -1,14 +1,15 @@
-# Stage a release on npm from a signed vX.Y.Z tag (decision 0022).
+# Publish a release to npm from a signed vX.Y.Z tag, after one approval
+# (decision 0022, amended for ADR 0046 A4).
 #
-# Push the tag only; main follows once the release is live:
-#   git push origin vX.Y.Z   →  this workflow stages all three packages
-#   pnpm release:approve X.Y.Z   →  npm 2FA, per package; the version goes live
-#   git push origin main
+#   git push origin vX.Y.Z   →  verify runs, and writes the release summary
+#   approve the `release` environment (GitHub web or Mobile)   →  publish runs
+#   npm serves all three  →  git push origin main
 #
-# npm trusts this file by name (trusted publishing, stage-only, environment
-# npm-publish): renaming it breaks publishing. No npm token exists anywhere;
-# the stage job's OIDC token is exchanged by npm itself, and a stage can't go
-# live without a maintainer's 2FA. See docs/contributing/release.md.
+# This is the only workflow that publishes. npm trusts it by file name and
+# environment (trusted publishing, environment `release`): renaming it breaks
+# publishing. No npm token exists anywhere; the publish job's OIDC token is
+# exchanged by npm itself, and the job can't start until the environment's
+# required reviewer approves it. See docs/contributing/release.md.
 name: release
 on:
   push:
@@ -43,13 +44,17 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm release:check
+      # What the approver reads on the run page: packages, tag message, commits,
+      # files, and a loud flag if .github/ changed since the last release.
+      - run: node tools/release-summary.mjs "${GITHUB_REF_NAME}"
 
-  # The only job that can reach npm, and only to stage.
-  stage:
+  # The only job that can reach npm. It waits for the `release` environment's
+  # required reviewer, which no agent can satisfy.
+  publish:
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: npm-publish
+    environment: release
     permissions:
       contents: read
       id-token: write
@@ -63,7 +68,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
-      # Trusted, stage-only publishing needs npm ≥ 11.15.0; pinned so a new npm can't change this job unseen.
+      # Trusted publishing needs npm ≥ 11.5.1; pinned so a new npm can't change this job unseen.
       - run: npm install -g npm@11.20.0
       - run: pnpm install --frozen-lockfile
-      - run: node tools/release-publish.mjs --stage --skip-check
+      - run: node tools/release-publish.mjs --provenance --skip-check

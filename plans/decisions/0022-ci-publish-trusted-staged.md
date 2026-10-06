@@ -1,6 +1,6 @@
 # 0022. Publish from CI: trusted publishing, staged, approved with npm 2FA
 
-- **Status:** accepted, in force since 0.4.1 (2026-09-25): the first CI release, then all three packages set to "Require two-factor authentication and disallow tokens", and the publish tokens revoked
+- **Status:** accepted, in force since 0.4.1 (2026-09-25): the first CI release, then all three packages set to "Require two-factor authentication and disallow tokens", and the publish tokens revoked. **Amended 2026-10-06** ([Amendment 1](#amendment-1-2026-10-06-one-approval-in-github-replaces-stage--2fa)): a live publish behind the GitHub environment `release` replaces staging and per-package npm 2FA. Decision items 1, 2 and 4 and the threat model below are superseded where the amendment says so
 - **Date:** 2026-09-25
 - **Amends:** the M6 release procedure (publishing from the maintainer's machine). **Plan:** [`../ci-publish.md`](../ci-publish.md). **How-to:** [`docs/contributing/release.md`](../../docs/contributing/release.md).
 
@@ -53,3 +53,46 @@ npm now offers:
   - `npm stage list` needs a valid npm login. The 0.4.0 token had expired and it answered E401, so the maintainer's first approval included an `npm login`.
   - A release took one web 2FA prompt per approval (three) plus one for the login.
 - **Still open:** how long a stage lives before it expires, and what staging an already-staged version does. Neither came up on 0.4.1.
+
+## Amendment 1 (2026-10-06): one approval in GitHub replaces stage + 2FA
+
+Applies the estate release-gate policy, [ADR 0046 Amendment 4](https://github.com/garygentry/gnet-lg/blob/main/docs/decisions/0046-estate-github-access-policy.md) item 13 (gnet-lg#163), here through system1#52. The aim is **one human approval per release, which no agent can give itself**. Under the original decision a release needed three npm 2FA prompts plus several CLI steps (`release:approve`).
+
+**Changes:**
+
+1. **Gate.** The `publish` job (was `stage`) runs in the GitHub environment **`release`** (was `npm-publish`). The environment has a required reviewer (the maintainer), deploys only from `v*` tags, and doesn't allow an admin bypass. "Prevent self-review" is off: runs an agent starts count as the operator's own, so with it on they could never be approved. The agent's GitHub App has Actions: write, which lets it dispatch, re-run and cancel workflows. It has no Deployments or Administration write, so it can neither approve the gate nor change it.
+2. **Credential.** The trusted publisher on each package is GitHub Actions, `garygentry/system1`, `release.yml`, environment `release`, with permission **publish** (was stage). The job runs `node tools/release-publish.mjs --provenance --skip-check`, which is a live `npm publish --provenance` per package. npm stays pinned at 11.20.0, with no `registry-url` and no token. Still no npm token, anywhere.
+3. **Release summary.** `verify` (no credentials) now also runs `tools/release-summary.mjs` and writes the result to `$GITHUB_STEP_SUMMARY`:
+   - the version and the three packages;
+   - the tag message (this repo has no changelog);
+   - `git log` and `git diff --stat` since the previous `v*` tag;
+   - a `[!CAUTION]` block naming every file changed under `.github/` since that tag.
+
+   The approver reads this on the run page before approving.
+4. **Ordering.** Push the tag only, and push `main` once the `publish` job has succeeded. That job waits until npm serves all three packages, so its success means they are live. The M6 rule still holds: the shim on `main` must never point at a CLI that npm doesn't serve. The agent can push `main` as soon as the job is green, and doesn't need to wait for the operator.
+5. **Removed:** `pnpm release:approve`, `release-publish.mjs --stage` and the stage helpers (`stageIdFrom`, `stagedFor`, `atLeast`, `STAGE_NPM`). The break-glass path (item 5) is unchanged.
+6. **Who does what.**
+   - The agent does everything up to the gate: the release-prep PR, merging it, `release:verify`, `release:summary`, and pushing the tag. After the release it verifies with `npm view` and `smoke:published`.
+   - The operator approves the environment once, on the web or in GitHub Mobile.
+   - The tag is still signed by a key in `.github/allowed_signers`, and `release:verify` still checks it. Signing is the operator's step for now. Dropping the check, so that an agent can push an unsigned annotated tag, was proposed and is left open.
+7. **No GitHub Release and no `actions/attest-build-provenance`.** The only build artifacts are the three npm tarballs, and npm already signs SLSA provenance for those, made by this exact job. Attesting the same tarballs again would add `attestations: write` and nothing new.
+
+**Accepted residual risk (ADR 0046 A4).** GitHub, not npm, is now the single factor:
+- whoever controls the maintainer's GitHub account, or the environment's protection rules, can publish;
+- npm 2FA no longer stands between a hostile tag and a live version.
+
+What stays:
+- no long-lived credential exists;
+- the agent identity can't approve or reconfigure the gate (`gnet keys github` fails if it ever gains that permission);
+- every publish carries provenance tying it to this workflow and commit;
+- the `.github/` flag makes an edited workflow visible to the approver.
+
+The "What this protects against" section above describes the original design. Read "the maintainer's npm 2FA" there as "the `release` environment's required reviewer".
+
+**Operator steps, last** (the old path works until they are done):
+1. For each package on npmjs.com, open Settings → Trusted publishing and set environment `release` with permission publish.
+2. Keep "Require two-factor authentication and disallow tokens".
+3. Cut a release through the gate, and check that all three packages are live with provenance.
+4. Delete the `npm-publish` environment.
+
+Until step 1 is done, the `publish` job fails at the OIDC exchange and publishes nothing.
