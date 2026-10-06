@@ -201,6 +201,28 @@ describe("inert by default", () => {
       }),
       "vetoed",
     )
+    fellBack(
+      await routeHint(BATCH, existing, { ...base, config: { ...ROUTE_DEFAULTS, builtin: false } }),
+      "disabled",
+    )
+  })
+
+  it("throws on a bad route config before any call, whatever the model would say", async () => {
+    let asked = false
+    const runtime = {
+      decide: async () => {
+        asked = true
+        throw new Error("not reached")
+      },
+    }
+    const base = { enabled: true, mode: "replay" as const, runtime }
+    for (const config of [
+      { ...ROUTE_DEFAULTS, disable: ["nope"] },
+      { ...ROUTE_DEFAULTS, triggers: [{ name: "mine", pattern: "(" }] },
+      { ...ROUTE_DEFAULTS, ignore: ["("] },
+    ])
+      await assert.rejects(routeHint(BATCH, existing, { ...base, config }), /route/)
+    assert.equal(asked, false)
   })
 })
 

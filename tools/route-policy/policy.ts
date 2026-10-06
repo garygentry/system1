@@ -163,9 +163,11 @@ export interface PolicyOptions {
 
 /**
  * Route a prompt with the decision model, falling back to `existing` (the
- * regex router) when the policy is off, the prompt opts out in words, or the
- * model's answer doesn't clear the spec's thresholds. It never throws because
- * of the model; `existing` may.
+ * regex router) when the policy is off, `route.enabled` or `route.builtin` is
+ * false, the prompt matches an ignore pattern (built-in or `route.ignore`), or
+ * the model's answer doesn't clear the spec's thresholds. A bad `route:`
+ * config throws before any call, as route.ts does; it never throws because of
+ * the model, though `existing` may.
  */
 export async function routeHint(
   prompt: string,
@@ -182,11 +184,18 @@ export async function routeHint(
   }
   if (options.enabled !== true) return fallBack("disabled", "the policy is not enabled")
   const config = options.config ?? ROUTE_DEFAULTS
+  // Check the whole config before anything runs, as route.ts does, so a bad
+  // name or pattern throws here, never after a paid call.
+  for (const t of activeTriggers(config)) compilePattern(t.pattern, `route trigger "${t.name}"`)
+  const ignore = [...(config.builtin ? BUILTIN_IGNORE : []), ...config.ignore].map((p) =>
+    compilePattern(p, "route.ignore"),
+  )
   if (!config.enabled) return fallBack("disabled", "route.enabled is false")
+  // The model stands in for the built-in triggers only.
+  if (!config.builtin) return fallBack("disabled", "route.builtin is false")
   // An opt-out is an exact phrase, so it is matched here, with the user's own
   // `route.ignore`, as route.ts does, and never costs a call.
-  const ignore = [...(config.builtin ? BUILTIN_IGNORE : []), ...config.ignore]
-  if (ignore.some((p) => compilePattern(p, "route.ignore").test(prompt)))
+  if (ignore.some((re) => re.test(prompt)))
     return fallBack("vetoed", "the prompt matches a route ignore pattern")
   const mode = options.mode ?? "live"
   // The runtime refuses too; checking here keeps an off module from loading anything.
