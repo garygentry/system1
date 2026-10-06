@@ -11,6 +11,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.5.14
         version: 2.5.14
+      '@garygentry/system1-core':
+        specifier: workspace:*
+        version: link:packages/core
       '@types/node':
         specifier: ^22.10.5
         version: 22.20.4

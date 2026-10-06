@@ -1,0 +1,95 @@
+{
+  "v": 1,
+  "key": "af51773120c10345421076dd622cc9eca1845a7958f2f30d618784d5a52d0f47",
+  "recordedAt": "2026-10-06T21:39:30.541Z",
+  "request": {
+    "model": "typesafe/jev-1.13",
+    "state": "Before we deploy tonight, look at migrate.sh and tell me if any step could lose data.",
+    "questions": {
+      "hint": {
+        "type": "noul",
+        "instructions": "The user's message asks the agent for closed verdicts over text that it would otherwise read and judge piece by piece: a label, yes/no or score for each of many items (tickets, reviews, commits, failures, log lines, rows, commands, files), the one best match out of a long list of candidates (packages, files, helpers, options), one verdict per rule or acceptance criterion over a diff, a log or test output, or a verdict on each step or command before an action that is hard to undo.",
+        "criteria": {
+          "true": "The message asks for such verdicts, over a batch of items, a choice among many candidates, each rule or criterion held against evidence, or each step of something about to run.",
+          "false": "The message asks the agent to do something (write, fix, edit, run, commit, rename, explain, summarise), asks for an exact fact (a count, a list of matches, a date, whether a command succeeded), or asks one question about one small thing."
+        }
+      },
+      "batch-judgement": {
+        "type": "noul",
+        "instructions": "The message asks for a verdict, label or score on each of many items of text, or asks which of many items match a description.",
+        "criteria": {
+          "true": "It names a batch (a file of tickets, reviews, commits, failures, rows or commands, or \"every\", \"each\", \"all of\") and asks for a judgement on each item.",
+          "false": "It asks about one item, asks for an exact list or count, or asks for no judgement at all."
+        }
+      },
+      "pick-from-many": {
+        "type": "noul",
+        "instructions": "The message asks for the single best match out of many candidates (packages, libraries, files, helpers, options) listed somewhere.",
+        "criteria": {
+          "true": "There are many candidates and the user wants one of them picked.",
+          "false": "There are only a few options, or no pick is asked for."
+        }
+      },
+      "criteria-check": {
+        "type": "noul",
+        "instructions": "The message asks whether something meets a set of rules, criteria, requirements, a checklist, a policy or conventions.",
+        "criteria": {
+          "true": "A rule set is named or listed, and the user wants to know whether the work, diff or output meets it.",
+          "false": "No rule set is involved, or the user asks to write or change the rules rather than check against them."
+        }
+      },
+      "done-check": {
+        "type": "noul",
+        "instructions": "The message asks whether a task or change is done, complete, or ready to merge, ship or commit, judged from evidence such as a diff, test output or a task file.",
+        "criteria": {
+          "true": "The user asks for a verdict on whether the work is finished or ready.",
+          "false": "The user asks for work to be done, or asks a factual question such as whether a command succeeded."
+        }
+      },
+      "gate-check": {
+        "type": "noul",
+        "instructions": "Before an action that is hard to undo (commit, merge, push, deploy, release, running a script), the message asks whether it is safe, destructive or against the rules.",
+        "criteria": {
+          "true": "An action is about to happen and the user wants a safety or rules verdict first.",
+          "false": "No such action is pending, or no verdict is asked for before it."
+        }
+      }
+    }
+  },
+  "response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "hint": {
+        "type": "noul",
+        "noul": 0.83
+      },
+      "batch-judgement": {
+        "type": "noul",
+        "noul": 0.19
+      },
+      "pick-from-many": {
+        "type": "noul",
+        "noul": 0.06
+      },
+      "criteria-check": {
+        "type": "noul",
+        "noul": 0.33
+      },
+      "done-check": {
+        "type": "noul",
+        "noul": 0.13
+      },
+      "gate-check": {
+        "type": "noul",
+        "noul": 0.97
+      }
+    },
+    "usage": {
+      "input_tokens": 973,
+      "output_tokens": 109,
+      "cost": 0.000040866
+    },
+    "id": "gen-dec-1791322770-lmq43APTDQPZFFXXB8lY",
+    "provider": "TypeSafe"
+  }
+}
