@@ -1,0 +1,1781 @@
+diff --git a/.gitignore b/.gitignore
+index 9e7e720..dbecbde 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -173,4 +173,8 @@ cython_debug/
+ # PyPI configuration file
+ .pypirc
+ 
+-TODO
+\ No newline at end of file
++TODO
++# system1 (dogfood)
++.system1/config.yaml
++.system1/usage.jsonl
++.system1/compare/
+diff --git a/.system1/fixtures/spam/439ba6a5e9b3b0aff871f0bc2ddf624cb34846217fd9580e6f37954f2981c327.json b/.system1/fixtures/spam/439ba6a5e9b3b0aff871f0bc2ddf624cb34846217fd9580e6f37954f2981c327.json
+new file mode 100644
+index 0000000..4c39b6c
+--- /dev/null
++++ b/.system1/fixtures/spam/439ba6a5e9b3b0aff871f0bc2ddf624cb34846217fd9580e6f37954f2981c327.json
+@@ -0,0 +1,35 @@
++{
++  "v": 1,
++  "key": "439ba6a5e9b3b0aff871f0bc2ddf624cb34846217fd9580e6f37954f2981c327",
++  "recordedAt": "2026-10-06T23:46:24.526Z",
++  "request": {
++    "model": "typesafe/jev-1.13",
++    "state": "I make $500 a day working from home, go to www.easy-cash-now.example and see how",
++    "questions": {
++      "spam": {
++        "type": "noul",
++        "instructions": "The text is spam: unsolicited promotion or bait posted to reach an audience rather than to take part in the conversation.",
++        "criteria": {
++          "true": "It advertises or asks people to visit, follow, subscribe to, buy or click something (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is a scam, a chain message or a link dropped with no relevance.",
++          "false": "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a well-known site or person in passing."
++        }
++      }
++    }
++  },
++  "response": {
++    "model": "typesafe/jev-1.13-20260917",
++    "answers": {
++      "spam": {
++        "type": "noul",
++        "noul": 0.97
++      }
++    },
++    "usage": {
++      "input_tokens": 436,
++      "output_tokens": 20,
++      "cost": 0.000018312
++    },
++    "id": "gen-dec-1791330384-uZ18Wqq6h3y8ROYv4l4F",
++    "provider": "TypeSafe"
++  }
++}
+diff --git a/.system1/fixtures/spam/43b0def6e46fa0bc7ddb600b97326fc606b641320811ab1117de6767adf41e70.json b/.system1/fixtures/spam/43b0def6e46fa0bc7ddb600b97326fc606b641320811ab1117de6767adf41e70.json
+new file mode 100644
+index 0000000..22f0317
+--- /dev/null
++++ b/.system1/fixtures/spam/43b0def6e46fa0bc7ddb600b97326fc606b641320811ab1117de6767adf41e70.json
+@@ -0,0 +1,35 @@
++{
++  "v": 1,
++  "key": "43b0def6e46fa0bc7ddb600b97326fc606b641320811ab1117de6767adf41e70",
++  "recordedAt": "2026-10-06T23:46:24.869Z",
++  "request": {
++    "model": "typesafe/jev-1.13",
++    "state": "WORST VIDEO EVER, WHO EVEN LIKES THIS",
++    "questions": {
++      "spam": {
++        "type": "noul",
++        "instructions": "The text is spam: unsolicited promotion or bait posted to reach an audience rather than to take part in the conversation.",
++        "criteria": {
++          "true": "It advertises or asks people to visit, follow, subscribe to, buy or click something (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is a scam, a chain message or a link dropped with no relevance.",
++          "false": "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a well-known site or person in passing."
++        }
++      }
++    }
++  },
++  "response": {
++    "model": "typesafe/jev-1.13-20260917",
++    "answers": {
++      "spam": {
++        "type": "noul",
++        "noul": 0.04
++      }
++    },
++    "usage": {
++      "input_tokens": 424,
++      "output_tokens": 20,
++      "cost": 0.000017808
++    },
++    "id": "gen-dec-1791330384-ue46rQrlPCDkBPsXtVyn",
++    "provider": "TypeSafe"
++  }
++}
+diff --git a/.system1/fixtures/spam/4c1d01283e12e4b1561f11fd0700e817eaf7c5d06c69be59dc07310387ac56ac.json b/.system1/fixtures/spam/4c1d01283e12e4b1561f11fd0700e817eaf7c5d06c69be59dc07310387ac56ac.json
+new file mode 100644
+index 0000000..8ae91a8
+--- /dev/null
++++ b/.system1/fixtures/spam/4c1d01283e12e4b1561f11fd0700e817eaf7c5d06c69be59dc07310387ac56ac.json
+@@ -0,0 +1,35 @@
++{
++  "v": 1,
++  "key": "4c1d01283e12e4b1561f11fd0700e817eaf7c5d06c69be59dc07310387ac56ac",
++  "recordedAt": "2026-10-06T23:46:24.702Z",
++  "request": {
++    "model": "typesafe/jev-1.13",
++    "state": "This song never gets old, still listening in 2015",
++    "questions": {
++      "spam": {
++        "type": "noul",
++        "instructions": "The text is spam: unsolicited promotion or bait posted to reach an audience rather than to take part in the conversation.",
++        "criteria": {
++          "true": "It advertises or asks people to visit, follow, subscribe to, buy or click something (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is a scam, a chain message or a link dropped with no relevance.",
++          "false": "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a well-known site or person in passing."
++        }
++      }
++    }
++  },
++  "response": {
++    "model": "typesafe/jev-1.13-20260917",
++    "answers": {
++      "spam": {
++        "type": "noul",
++        "noul": 0.03
++      }
++    },
++    "usage": {
++      "input_tokens": 427,
++      "output_tokens": 20,
++      "cost": 0.000017934
++    },
++    "id": "gen-dec-1791330384-aEADieFee5gcxM3YuJjY",
++    "provider": "TypeSafe"
++  }
++}
+diff --git a/.system1/fixtures/spam/750f6f80f6d73f3e51d712e641cfd04627db02a05853ac1c739ea971eec75c03.json b/.system1/fixtures/spam/750f6f80f6d73f3e51d712e641cfd04627db02a05853ac1c739ea971eec75c03.json
+new file mode 100644
+index 0000000..81b46f6
+--- /dev/null
++++ b/.system1/fixtures/spam/750f6f80f6d73f3e51d712e641cfd04627db02a05853ac1c739ea971eec75c03.json
+@@ -0,0 +1,35 @@
++{
++  "v": 1,
++  "key": "750f6f80f6d73f3e51d712e641cfd04627db02a05853ac1c739ea971eec75c03",
++  "recordedAt": "2026-10-06T23:46:25.250Z",
++  "request": {
++    "model": "typesafe/jev-1.13",
++    "state": "Like this comment if you are watching in 2014!",
++    "questions": {
++      "spam": {
++        "type": "noul",
++        "instructions": "The text is spam: unsolicited promotion or bait posted to reach an audience rather than to take part in the conversation.",
++        "criteria": {
++          "true": "It advertises or asks people to visit, follow, subscribe to, buy or click something (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is a scam, a chain message or a link dropped with no relevance.",
++          "false": "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a well-known site or person in passing."
++        }
++      }
++    }
++  },
++  "response": {
++    "model": "typesafe/jev-1.13-20260917",
++    "answers": {
++      "spam": {
++        "type": "noul",
++        "noul": 0.5
++      }
++    },
++    "usage": {
++      "input_tokens": 427,
++      "output_tokens": 20,
++      "cost": 0.000017934
++    },
++    "id": "gen-dec-1791330385-rlpmFxaG0GtgG3iIk6xG",
++    "provider": "TypeSafe"
++  }
++}
+diff --git a/.system1/fixtures/spam/7a1ff044c40ee3c7bf394252d1f0b9e21b12445ead236a8732556a510dd613f2.json b/.system1/fixtures/spam/7a1ff044c40ee3c7bf394252d1f0b9e21b12445ead236a8732556a510dd613f2.json
+new file mode 100644
+index 0000000..856d7d1
+--- /dev/null
++++ b/.system1/fixtures/spam/7a1ff044c40ee3c7bf394252d1f0b9e21b12445ead236a8732556a510dd613f2.json
+@@ -0,0 +1,35 @@
++{
++  "v": 1,
++  "key": "7a1ff044c40ee3c7bf394252d1f0b9e21b12445ead236a8732556a510dd613f2",
++  "recordedAt": "2026-10-06T23:46:24.363Z",
++  "request": {
++    "model": "typesafe/jev-1.13",
++    "state": "Hey everyone, check out my channel, I make covers of this song!! Subscribe pls",
++    "questions": {
++      "spam": {
++        "type": "noul",
++        "instructions": "The text is spam: unsolicited promotion or bait posted to reach an audience rather than to take part in the conversation.",
++        "criteria": {
++          "true": "It advertises or asks people to visit, follow, subscribe to, buy or click something (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is a scam, a chain message or a link dropped with no relevance.",
++          "false": "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a well-known site or person in passing."
++        }
++      }
++    }
++  },
++  "response": {
++    "model": "typesafe/jev-1.13-20260917",
++    "answers": {
++      "spam": {
++        "type": "noul",
++        "noul": 0.97
++      }
++    },
++    "usage": {
++      "input_tokens": 430,
++      "output_tokens": 20,
++      "cost": 0.00001806
++    },
++    "id": "gen-dec-1791330384-yZdHAUEJoB2RxMfHfIHV",
++    "provider": "TypeSafe"
++  }
++}
+diff --git a/.system1/fixtures/spam/d73abceb6f89aaf38afa905bf6087bc67ccf10cfd45e50b34bfe743b67871dd9.json b/.system1/fixtures/spam/d73abceb6f89aaf38afa905bf6087bc67ccf10cfd45e50b34bfe743b67871dd9.json
+new file mode 100644
+index 0000000..06ab1b3
+--- /dev/null
++++ b/.system1/fixtures/spam/d73abceb6f89aaf38afa905bf6087bc67ccf10cfd45e50b34bfe743b67871dd9.json
+@@ -0,0 +1,35 @@
++{
++  "v": 1,
++  "key": "d73abceb6f89aaf38afa905bf6087bc67ccf10cfd45e50b34bfe743b67871dd9",
++  "recordedAt": "2026-10-06T23:46:25.028Z",
++  "request": {
++    "model": "typesafe/jev-1.13",
++    "state": "I first heard this on the radio, then found it on YouTube the same night",
++    "questions": {
++      "spam": {
++        "type": "noul",
++        "instructions": "The text is spam: unsolicited promotion or bait posted to reach an audience rather than to take part in the conversation.",
++        "criteria": {
++          "true": "It advertises or asks people to visit, follow, subscribe to, buy or click something (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is a scam, a chain message or a link dropped with no relevance.",
++          "false": "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a well-known site or person in passing."
++        }
++      }
++    }
++  },
++  "response": {
++    "model": "typesafe/jev-1.13-20260917",
++    "answers": {
++      "spam": {
++        "type": "noul",
++        "noul": 0.03
++      }
++    },
++    "usage": {
++      "input_tokens": 431,
++      "output_tokens": 20,
++      "cost": 0.000018102
++    },
++    "id": "gen-dec-1791330384-5BBAkDEDVSZlr6swonJq",
++    "provider": "TypeSafe"
++  }
++}
+diff --git a/.system1/labels/spam.jsonl b/.system1/labels/spam.jsonl
+new file mode 100644
+index 0000000..0aeec1c
+--- /dev/null
++++ b/.system1/labels/spam.jsonl
+@@ -0,0 +1,200 @@
++{"id": "Youtube03:z12lxhrqdkyusbkji04cihtrvn3jvxnqszg0k", "labels": {"spam": 0}}
++{"id": "Youtube02:z12kj5iz2obvunpm222oynsjrnmvjhkvj", "labels": {"spam": 1}}
++{"id": "Youtube03:z121szzyozr4vpqqc04cdn5g4zjhutdosdw", "labels": {"spam": 1}}
++{"id": "Youtube03:z13bx3dxkuqafjtdo22dszzq4wy0sxxkq", "labels": {"spam": 0}}
++{"id": "Youtube02:z13ax5sicvvxsx3lx23vuf45tye4etl1g", "labels": {"spam": 1}}
++{"id": "Youtube01:z12eex1wzu2ky35en22wfpswwxjqynsus", "labels": {"spam": 0}}
++{"id": "Youtube05:z12zcxyjxof0ihx4w04cf1gojz3zwnty4ts0k", "labels": {"spam": 1}}
++{"id": "Youtube03:z12pfhgg3vrnuhme122ixxdx5zyyit5ac04", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFsMrQMk1vC-RxTxjmpFlt5sKz8Vo1_wIas", "labels": {"spam": 1}}
++{"id": "Youtube02:z13uhfazpsvxed2x004chpwjayudxpvhv3o", "labels": {"spam": 0}}
++{"id": "Youtube04:z13gwzgyuqaruxcg304ch5lwdwb0wtiztaw", "labels": {"spam": 0}}
++{"id": "Youtube03:z13kyvhzivqmhjq1w220jnaxquu3grwkt", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFvpsz7rRi--uuuhcXD8DdMabES0ZpcLQlQ", "labels": {"spam": 1}}
++{"id": "Youtube05:z12jd30zok2te1ghh04cdphgcqmshld5ncg", "labels": {"spam": 0}}
++{"id": "Youtube01:z13qhxcb2ybzszosx22rh5hwhmmccpjx404", "labels": {"spam": 1}}
++{"id": "Youtube05:z13lvdcijuj5znbge04cc1iawv3eezsbbjo", "labels": {"spam": 0}}
++{"id": "Youtube01:z13zy52aayqxsx5nr23curipvrretdy35", "labels": {"spam": 1}}
++{"id": "Youtube04:z124ixlgtxrxeliqw04ccr5auumhzbezcbo", "labels": {"spam": 0}}
++{"id": "Youtube02:z12ntdriqpfni1mtf23zwb0b0p34fnyak04", "labels": {"spam": 1}}
++{"id": "Youtube01:z123gh5o1pibgntf222einrisrfasnha104", "labels": {"spam": 0}}
++{"id": "Youtube02:z12ohzkgtoreyzoqw04ccxgzxmnag3nhq5s", "labels": {"spam": 1}}
++{"id": "Youtube05:z12zujgautikhxpn122mixwjkwavuldmd", "labels": {"spam": 0}}
++{"id": "Youtube02:z12twzjoszz0xxuo304civmjxyjiv3hg5rw0k", "labels": {"spam": 0}}
++{"id": "Youtube01:LZQPQhLyRh80UYxNuaDWhIGQYNQ96IuCg-AYWqNPjpU", "labels": {"spam": 1}}
++{"id": "Youtube01:z123vd4i3laosnv4b04ci3pwunuvytarigs", "labels": {"spam": 0}}
++{"id": "Youtube05:z13uw5rqqwu4ufqli224fvzryy2vwlyk4", "labels": {"spam": 0}}
++{"id": "Youtube03:z132t3fhixrdghdhu04ciz2i4ovhezcgnrc0k", "labels": {"spam": 1}}
++{"id": "Youtube02:z12lcb0rxw3qtlsqm04cebpbjkqjtdza1xs0k", "labels": {"spam": 0}}
++{"id": "Youtube04:LneaDw26bFtnG00TCBv-OKXOFCWEyHF4LFGUJv7VHNc", "labels": {"spam": 1}}
++{"id": "Youtube03:z13rfjuxmtm3vd2eb23qi1brgq3ic5nxv04", "labels": {"spam": 0}}
++{"id": "Youtube02:z12qf5rimw3pfbw1w22pyruxovawz1dkq", "labels": {"spam": 1}}
++{"id": "Youtube05:z13eupqxoyr2jf4xm04cetijyrjezfxovgw", "labels": {"spam": 1}}
++{"id": "Youtube03:z122s1rwjlvzv3ybs04cglcyrnfatry5ku00k", "labels": {"spam": 0}}
++{"id": "Youtube04:z12fcjxowubrsnwx104cftlgcpfzw5uwbug0k", "labels": {"spam": 0}}
++{"id": "Youtube01:z125zbmwryjwxzx4504cfjzwbtztuvkif3c", "labels": {"spam": 1}}
++{"id": "Youtube01:z13uzhdomzvbffvwa04cgplq2zewfz2hm2k", "labels": {"spam": 1}}
++{"id": "Youtube03:z12lxpco5rekcfhem23zgptr3lijs3njg04", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc6-adCzTDLAhqNVQ5hFYcjPyPI5m7pHY4BY", "labels": {"spam": 1}}
++{"id": "Youtube03:z13jwbvxvoqje10yg04ccbx5lna5w5rr0tg0k", "labels": {"spam": 0}}
++{"id": "Youtube02:z13sfvhiwxmqz3xad04cddehoyr5g1i5c0s", "labels": {"spam": 1}}
++{"id": "Youtube05:z13oxvzqrzvyit00322jwtjo2tzqylhof04", "labels": {"spam": 0}}
++{"id": "Youtube01:z12wvpdwfzzkfrerq04civhigpqrcxmxjzc0k", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFu3Z1dDKWlNsmVswLAes4eWImEetoNbAKI", "labels": {"spam": 1}}
++{"id": "Youtube04:z131c34acoqgwfkz304ccjertpfugxbrezw0k", "labels": {"spam": 0}}
++{"id": "Youtube05:z12qufrhtzvrzztje04chhmadyu3glopkm00k", "labels": {"spam": 0}}
++{"id": "Youtube03:z12jzdjxvvmxz3ymb23fwhyg4ub0xdju2", "labels": {"spam": 1}}
++{"id": "Youtube03:z132e5zqwlbmjrich234epwa2kiwehdmd", "labels": {"spam": 1}}
++{"id": "Youtube01:z130dbmz2ourjtupz04chhjrpunwcr4yjrs0k", "labels": {"spam": 0}}
++{"id": "Youtube03:z12avxpx4t3xib0fq225jvlbdnqfh320y", "labels": {"spam": 0}}
++{"id": "Youtube03:z13ms12adsbdjbdds23nctrqsq2qhtose", "labels": {"spam": 1}}
++{"id": "Youtube01:z12kyn0qjzzzur2ai04cg5szenjxdrorp4w", "labels": {"spam": 1}}
++{"id": "Youtube03:z125ynbaple1d13c322isreomnqfwlbpm04", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc68tZfiBq8O7pExj1MmWcnorsu-kyc0Jz8Q", "labels": {"spam": 1}}
++{"id": "Youtube01:z13vc32olxm2znkjz04cd35gnozjebqhlig", "labels": {"spam": 0}}
++{"id": "Youtube04:z130wpnwwnyuetxcn23xf5k5ynmkdpjrj04", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc6-TMFClPlfFIBHdy_HbPbLyMhBsuEz5Lj8", "labels": {"spam": 0}}
++{"id": "Youtube03:z12expkpjuvlf1b0q23rcjwhlum4s5xym04", "labels": {"spam": 1}}
++{"id": "Youtube05:z13lhxc4yoidt5hdn23jydg5nkuehblxs04", "labels": {"spam": 0}}
++{"id": "Youtube01:z13zjbvbeszjcvdsx22ww5cgcrydzlf5u04", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFuYQhgPVcKoJxOS7aSiV7l-Ce25QwQEabw", "labels": {"spam": 1}}
++{"id": "Youtube04:z13xg5zjtp3sfxm4a04cf1bolmzvu154bto0k", "labels": {"spam": 0}}
++{"id": "Youtube03:z13twftbwk3qxl3gp04cgnob4ueot3pglok0k", "labels": {"spam": 0}}
++{"id": "Youtube04:LneaDw26bFsHGo2NsZjHkppLdvkxCkgu3s2nWi99Oa8", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc6-h3o48aXYmI_xInBcH9saCmEK627IQm68", "labels": {"spam": 1}}
++{"id": "Youtube04:z13sy3uphtayfrujz04citigxpnfj5c4gk00k", "labels": {"spam": 0}}
++{"id": "Youtube03:z133wlxihmr0xzicr224gfj53tnhxlxmg", "labels": {"spam": 0}}
++{"id": "Youtube04:z13agbcrkp34wjdgl04cefs5lvvcxzeoj0s", "labels": {"spam": 1}}
++{"id": "Youtube04:z12ai5agdlawczj5x04cfhbr2vuezzvox1s", "labels": {"spam": 0}}
++{"id": "Youtube01:z13fcn1wfpb5e51xe04chdxakpzgchyaxzo0k", "labels": {"spam": 0}}
++{"id": "Youtube02:z12zttujlvi5iptyo04cfnyq4rqeip0bpt40k", "labels": {"spam": 0}}
++{"id": "Youtube03:z12kvdhbglbuyzmrh04cjzbronnafhhqayw0k", "labels": {"spam": 1}}
++{"id": "Youtube04:z12wyxvyuyiach5og04cclng3ujizpmbtg0", "labels": {"spam": 0}}
++{"id": "Youtube01:z125vpqb2rb1jbxun234evvr1patybvww04", "labels": {"spam": 0}}
++{"id": "Youtube03:z13ctjchczaqerw3i23aw3cbzqidflbb304", "labels": {"spam": 0}}
++{"id": "Youtube03:z12sub0pnwzlgnz0r23pwvaqtuveyxr1z", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc6-r7fiKCYAGotgCULCIx695QCHaAZDKHBM", "labels": {"spam": 1}}
++{"id": "Youtube03:z12jjrfyukjlw5wyl04cddbo5pysslphbqs0k", "labels": {"spam": 0}}
++{"id": "Youtube03:z13kwxlguqubw5aeo22gxx3a1zfvux4a304", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc6-_SpDzX8DwHaw3bUkE-owmcb7eOEPPurs", "labels": {"spam": 0}}
++{"id": "Youtube04:z13xx5w52svttd3lt23kijvwqtvph5m3l", "labels": {"spam": 0}}
++{"id": "Youtube02:z13qehwbnsfyvpaa004cdt0yqzqiy5mo2bk", "labels": {"spam": 1}}
++{"id": "Youtube02:z122hzpj5v3kgf5zu04chv4xaqalhdr4flw0k", "labels": {"spam": 1}}
++{"id": "Youtube01:z13neh044nq2wn0o404citkh2taufzqxuz40k", "labels": {"spam": 1}}
++{"id": "Youtube03:z13djfvhftzqdxlql04chviyzoroz52wroo0k", "labels": {"spam": 0}}
++{"id": "Youtube02:z13ncdbb1urrxdhcs22gfp35gkqiuhgcr", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFv3qdtt-_26444mTK_vLq39DRUsyxXMKkQ", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFuADByLeh7RnEltROTIUCqeYYXmt51DT2g", "labels": {"spam": 1}}
++{"id": "Youtube01:z12dzlpo0ueie1go404cfjjwsxf1g1lrtdo", "labels": {"spam": 0}}
++{"id": "Youtube02:z133uthy3uvscvxox04cfr1bjw2idvehcxw0k", "labels": {"spam": 0}}
++{"id": "Youtube04:z13mwrzgekanfjbnw23pgfwzwzf4wxgwv04", "labels": {"spam": 0}}
++{"id": "Youtube03:z13yydnzzta0frsum23rx31imxmdfn4t3", "labels": {"spam": 0}}
++{"id": "Youtube03:z13zvnepkwvgirzi104cdf1pyyyecthieew", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc689wLmW6MeEZ9rga7i5ZYz1G3IZmSHeWEQ", "labels": {"spam": 0}}
++{"id": "Youtube03:z133dbir3vbttld3122mdjtjyq3dc35z504", "labels": {"spam": 0}}
++{"id": "Youtube02:z13wzf2p0vmxyxgpq04cj1qaqvn3j5uigwg0k", "labels": {"spam": 1}}
++{"id": "Youtube02:z12fzrxbvl3xjlmyi04chleb0uexczkjquk0k", "labels": {"spam": 1}}
++{"id": "Youtube02:z13jhj1wdzmiwjdjn04ccx2gfpynuzyjo4w", "labels": {"spam": 0}}
++{"id": "Youtube01:z13zhhualofpyz22z22pydei0oeyt5abc04", "labels": {"spam": 0}}
++{"id": "Youtube01:z13xslra3myri3jsn22hs1wxbyuvxplr004", "labels": {"spam": 1}}
++{"id": "Youtube02:z13tf12gvt2owtxpl04ceprwxmqnxx5a2gs", "labels": {"spam": 1}}
++{"id": "Youtube01:z130vjpadznpiv44x04cgd1ooljghlzg0es", "labels": {"spam": 0}}
++{"id": "Youtube02:z12zu5v4qlruc11zc04cg5rrnzjehpzwv3g", "labels": {"spam": 1}}
++{"id": "Youtube02:z13jtfwiuwrvy1tng23gid4hesqwxl4cm", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFssNuHM19vJZwZIDvIkQHDPSkv7woLXuO0", "labels": {"spam": 1}}
++{"id": "Youtube03:z13pdz0imlendr3es23zsv5iflbewhedb", "labels": {"spam": 0}}
++{"id": "Youtube01:z12gwldoxpvgjru4004cj3fxyvvvwffjqjg", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFvwhMGEs3mKR9qcJjIwC7L04F9DEGkLQfY", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFsXWfdCYFbqrDwjflNnbdxcinzjRtW2rzw", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc6-uO31Z6WO5RUUpcrJ43ISst2uruk4y6TI", "labels": {"spam": 0}}
++{"id": "Youtube03:z12zu1eg2s2pfpfud23hj1ejcreptjntw", "labels": {"spam": 1}}
++{"id": "Youtube03:z130drwgasjgevh0n234ht3gfrmugfguz", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFuM4VU33XXogBzYQDxO-q19BsZLZRAklss", "labels": {"spam": 1}}
++{"id": "Youtube04:z12uxxzoxvexs1mdr23yvddbpl33gr4mf", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc6-pgdb3FeyKxBCq6-zYy7OAn_tWkX5Xgz4", "labels": {"spam": 0}}
++{"id": "Youtube01:z12gy5tb2kase1nix04cipry3mf1wh5grko0k", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc6-grcnVFTtwnhvC9tpgVG33p5a0AZHKlLI", "labels": {"spam": 1}}
++{"id": "Youtube02:z13ndjiobv24y14tp230gvzjeovuup1vf", "labels": {"spam": 1}}
++{"id": "Youtube03:z13butni2oehuf10e22nslhgcxydyv4cj", "labels": {"spam": 1}}
++{"id": "Youtube01:LZQPQhLyRh9-wNRtlZDM90f1k0BrdVdJyN_YsaSwfxc", "labels": {"spam": 1}}
++{"id": "Youtube03:z12ojfkgxxrxurgvz23vxxjg2rabwlikn", "labels": {"spam": 1}}
++{"id": "Youtube01:z13pejoiuozwxtdu323dspopnri4xts0f", "labels": {"spam": 1}}
++{"id": "Youtube01:LZQPQhLyRh9U7Lv_DKpJ7lawpBCotxfgHzBy93Tk028", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc6-NqqHR40AwZGnQV7in6y6YrSbMW9wRZXM", "labels": {"spam": 1}}
++{"id": "Youtube03:z13eulmg4uqsitk4a04cfjxzhpiqj3pycrg0k", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFvA7_ot-Z3kQHP4GTE3g_Zc2fsfdZ4COpI", "labels": {"spam": 1}}
++{"id": "Youtube02:z122sdu5jnnwsr0kf23aghaz5rnkijtkl", "labels": {"spam": 0}}
++{"id": "Youtube03:z12ohnbxzqihgdywx04cdnkxpkzxfd5ie20", "labels": {"spam": 1}}
++{"id": "Youtube01:z13fib54ilj0ix3ln23cy5h41xi0hduex", "labels": {"spam": 1}}
++{"id": "Youtube01:z133xzqp3ubgyf2ko22osxkrfzvbd5b2y", "labels": {"spam": 0}}
++{"id": "Youtube01:z121znjjloycwtjf2233dfo5esfggn3lj", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc69vjtRxop92H6OWpxKYZu4Mokxff2OzDKE", "labels": {"spam": 0}}
++{"id": "Youtube03:z12kcnk5hsyvuv5sm22kfvapdk2of5poa04", "labels": {"spam": 0}}
++{"id": "Youtube04:LneaDw26bFu6m-EpCDatW1lzUgnvB4uHV9oZhaYe89A", "labels": {"spam": 1}}
++{"id": "Youtube01:z122dfb5htjxgpbot04cdj1aikatybbjsb0", "labels": {"spam": 0}}
++{"id": "Youtube01:z13phfyxhovav1hl122bf5iidumufzbel", "labels": {"spam": 1}}
++{"id": "Youtube01:z130zd5b3titudkoe04ccbeohojxuzppvbg", "labels": {"spam": 1}}
++{"id": "Youtube03:z12hy3mipnupwbelu23bxloz0uyutfhql04", "labels": {"spam": 0}}
++{"id": "Youtube04:z12bwpz4rlrjxzkuo22rfpbhfpz1xdluj", "labels": {"spam": 0}}
++{"id": "Youtube04:LneaDw26bFtwg5A1ijrcWVqI_5EptEDoyiygIJl5Xp4", "labels": {"spam": 1}}
++{"id": "Youtube01:z121jvbjakmbehsys04ce5yj1y3hxx0hzsk0k", "labels": {"spam": 1}}
++{"id": "Youtube04:z13rj3tohue0exbkz22iyr3w2rntsfqcm", "labels": {"spam": 0}}
++{"id": "Youtube03:z13xjvjgxqbcgdeni22wxfroqsvutpyb004", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc69AVbPU2gXuoLiAOr6muFqsr7sm17CjhX4", "labels": {"spam": 1}}
++{"id": "Youtube03:z12mzfsy0mypfvcy404ccdvqmyq5gzqazow0k", "labels": {"spam": 0}}
++{"id": "Youtube01:z12mx3zj3pqigd3nb23xtpzwnriczf0zo04", "labels": {"spam": 0}}
++{"id": "Youtube01:z12iircxtsjpwvqbd04chjzbemjtj5kohxg0k", "labels": {"spam": 0}}
++{"id": "Youtube04:z13uutbriumnuj3rq04ccbvqlwjuj1srhyk0k", "labels": {"spam": 0}}
++{"id": "Youtube03:z13my12oyyrxdzfj204chp5pnryfe11wrbk", "labels": {"spam": 1}}
++{"id": "Youtube01:z12ftpab5svihfffz23kf3iiymiwjzesi", "labels": {"spam": 0}}
++{"id": "Youtube04:z125w1ejhpqzinkmb23jej34rlabtjbkz", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc698fLCQzZmRt1CqPhf0L6mchwWG5gsUlzk", "labels": {"spam": 1}}
++{"id": "Youtube01:z13qgpqwlqbgj5jqy04cgnjqruv0gpdaino0k", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc6_1RPym_S70n6Rv617-TI9Z8GVhGlwXs_I", "labels": {"spam": 1}}
++{"id": "Youtube01:z13axbnqtxfrc3ncc23xxp2wivqbgx43o", "labels": {"spam": 0}}
++{"id": "Youtube03:z13phzg4gtbxtdo1o225ivwglz2wyf3vm", "labels": {"spam": 1}}
++{"id": "Youtube05:z13pihfbwlv5hv4ap04ceh3hvonuhvnxueg", "labels": {"spam": 0}}
++{"id": "Youtube04:z12yvpqranrjy3gzk04cf1qbrxrpiforz34", "labels": {"spam": 1}}
++{"id": "Youtube03:z13ledpiwqidu5iu022vy1yy3zntxnniz04", "labels": {"spam": 0}}
++{"id": "Youtube03:z125etvpxve3yvow004cd3bzmqfkfxohvgk", "labels": {"spam": 1}}
++{"id": "Youtube04:z13kyh3gdnnzdvxjt04ch5xzwlvjyfujpik", "labels": {"spam": 1}}
++{"id": "Youtube02:z12iup4axsfpz50rz04cgr3xiuakujcwvb0", "labels": {"spam": 0}}
++{"id": "Youtube01:z13zj1grjzqhhxzlj23gdpzaovunwnn0f", "labels": {"spam": 1}}
++{"id": "Youtube04:LneaDw26bFtY8pq4RbqsCPRkV04NOObMB3THlsTf9og", "labels": {"spam": 1}}
++{"id": "Youtube04:z12phhz5snysw5yn122xtjtiennhtlqc5", "labels": {"spam": 0}}
++{"id": "Youtube03:z125tbogfxjjivxv523vwpkyaznetaic", "labels": {"spam": 1}}
++{"id": "Youtube02:z12wc1vj2mytepiki22lf5bggrynfloa304", "labels": {"spam": 0}}
++{"id": "Youtube04:z12zgrw5furdsn0sc233hfwavnznyhicq", "labels": {"spam": 1}}
++{"id": "Youtube04:z13mchmibkr2irldm235xnn5umjruplia04", "labels": {"spam": 0}}
++{"id": "Youtube03:z13qfx0atsepgjsjn04cdniyxw21y3qqarg0k", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc69GH3FQl348HonbRxpbmtsR5CUei0zkJog", "labels": {"spam": 1}}
++{"id": "Youtube05:z13gut2zbtidsnbew23sylmaxrfxhrimv", "labels": {"spam": 0}}
++{"id": "Youtube05:z13rg14qosy3uvqz204cf1eaotyyjbyx1ec", "labels": {"spam": 0}}
++{"id": "Youtube05:z130g5myrnncvnns3225s5jqjkqwi5de2", "labels": {"spam": 0}}
++{"id": "Youtube03:z12ycjvh3nbqulnmr23tyv45pubiexurd04", "labels": {"spam": 0}}
++{"id": "Youtube02:z12pdlwxuwmktfmoq04civd5ypmzv5np0os0k", "labels": {"spam": 0}}
++{"id": "Youtube01:z12yinh5ks2oinqzn04cctkgvvrohbrazvo0k", "labels": {"spam": 1}}
++{"id": "Youtube02:z12ijdi5kuimjphgy04cjzxxzyusg3xjoyc0k", "labels": {"spam": 1}}
++{"id": "Youtube02:z13zxxtwurq5cxuiz04cc5xapsypshtipdo", "labels": {"spam": 1}}
++{"id": "Youtube01:z12jy1tw0unnhhdnh23yyvyhjsnljxhf4", "labels": {"spam": 0}}
++{"id": "Youtube04:z12pxz2gvtrzfntqz04chluidzjvtr0yf04", "labels": {"spam": 0}}
++{"id": "Youtube03:z13mf1fz1mmrdr4hf04cdnhxmmqtulfgchc", "labels": {"spam": 1}}
++{"id": "Youtube01:z12aezowoqbjf3sn223hc1xrita3f3oz404", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc684Wob4j6dbLPeYzFG8ZB3h1sgfYm4SDsI", "labels": {"spam": 0}}
++{"id": "Youtube04:LneaDw26bFsNko3TEEPMTxWPlFophSSKkSqvjRsENU8", "labels": {"spam": 1}}
++{"id": "Youtube01:z12vvnza4rq5tvzou04cgxeookraexq5opo0k", "labels": {"spam": 1}}
++{"id": "Youtube05:z13fsxq5coffdz54p04cjxzppp3ezhhw0u40k", "labels": {"spam": 0}}
++{"id": "Youtube04:LneaDw26bFulIEwMLpMhW9hdZ7Zlfu8GwVEpN5x1LXc", "labels": {"spam": 1}}
++{"id": "Youtube02:z12hxjxqlu2bifvq204cgbggameftpswvfw", "labels": {"spam": 0}}
++{"id": "Youtube05:_2viQ_Qnc69IkplAQG3gXtQ9y40h_rrQsgjJk3v_MOk", "labels": {"spam": 0}}
++{"id": "Youtube05:z13zjlpo2nbehxwf322gelhzwmqwgn1mt", "labels": {"spam": 1}}
++{"id": "Youtube03:z13heluw2l21yhgov04ce5h53u2mhz4joes", "labels": {"spam": 0}}
++{"id": "Youtube04:z13pi3zgwsqlitvtb23nzjermmfivrvrl04", "labels": {"spam": 0}}
++{"id": "Youtube03:z122ixhpoqn3i3s5u04chxvxqtr0dns4gqs0k", "labels": {"spam": 0}}
++{"id": "Youtube01:z13oc52ihn22tfz3n231vv4bvxrujn0f0", "labels": {"spam": 1}}
++{"id": "Youtube01:z12qxl3xupmjsbzzg04cfzegyw3xfjjjpfc", "labels": {"spam": 0}}
++{"id": "Youtube01:z13xhp2xmkeowtbyo04cffggylf3yjjpsns0k", "labels": {"spam": 1}}
++{"id": "Youtube05:_2viQ_Qnc6-DELwfmf160qnTke41ME1MAOWHfxdLYyU", "labels": {"spam": 0}}
++{"id": "Youtube02:z13lzjnbmpmlc5p1o23ahn1wvkuvzzzvl", "labels": {"spam": 1}}
++{"id": "Youtube01:z122srjbvovwzxg0522yd1i4ty3kznxqs04", "labels": {"spam": 0}}
++{"id": "Youtube01:z12kcx2ahwmpupnw004cdt3rwqfes3xgbns0k", "labels": {"spam": 1}}
+diff --git a/.system1/specs/spam.yaml b/.system1/specs/spam.yaml
+new file mode 100644
+index 0000000..ba6ad85
+--- /dev/null
++++ b/.system1/specs/spam.yaml
+@@ -0,0 +1,46 @@
++description: >-
++  Whether a user-submitted text (a comment, a chat message) is spam, the judgement
++  spamfilter's OpenAI filter makes with one chat-model call (filters/openai.py, OpenAI.check).
++questions:
++  spam:
++    type: noul
++    instructions: >-
++      The text is spam: unsolicited promotion or bait posted to reach an audience rather than
++      to take part in the conversation.
++    criteria:
++      true: >-
++        It advertises or asks people to visit, follow, subscribe to, buy or click something
++        (a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is
++        a scam, a chain message or a link dropped with no relevance.
++      false: >-
++        It is an ordinary reaction, opinion, question or joke about the topic at hand, even if
++        rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a
++        well-known site or person in passing.
++keep: ["spam>=0.7"]
++policy:
++  thresholds:
++    spam:
++      value: 0.7
++      why: >-
++        A text called spam is blocked, so a wrong block silences a real user, while a missed
++        spam stays visible until a moderator acts. A wrong block costs more, so blocking needs
++        a confident yes. At or below 0.3 the module lets the text through; between the bars it
++        keeps the existing filter's answer.
++examples:
++  - id: channel-plug
++    state: "Hey everyone, check out my channel, I make covers of this song!! Subscribe pls"
++    expect: { spam: true }
++  - id: money-scheme
++    state: "I make $500 a day working from home, go to www.easy-cash-now.example and see how"
++    expect: { spam: true }
++  - id: reaction
++    state: "This song never gets old, still listening in 2015"
++    expect: { spam: false }
++  - id: rude-not-spam
++    state: "WORST VIDEO EVER, WHO EVEN LIKES THIS"
++    expect: { spam: false }
++  - id: names-a-site-in-passing
++    state: "I first heard this on the radio, then found it on YouTube the same night"
++    expect: { spam: false }
++  - id: like-bait
++    state: "Like this comment if you are watching in 2014!"
+diff --git a/system1/capture.py b/system1/capture.py
+new file mode 100644
+index 0000000..4361eb8
+--- /dev/null
++++ b/system1/capture.py
+@@ -0,0 +1,107 @@
++"""Runs the shadow harness for `spam` over a seeded sample of the UCI YouTube
++Spam Collection, and writes its labels:
++
++    PYTHONPATH=src:system1 python system1/capture.py <dir with Youtube0*.csv> [N]
++
++- `.system1/compare/spam/captured.jsonl`: one row per comment, with the OpenAI
++  filter's verdict (openai/gpt-4o-mini through OpenRouter) as `current`. This
++  runs the existing mechanism for real: each row is a paid call that sends the
++  comment to OpenRouter, outside system1's checks.
++- `.system1/labels/spam.jsonl`: the corpus's own `CLASS` (1 spam, 0 not).
++
++The harness asks OpenRouter to report each call's cost (`usage.include`), an
++accounting flag that leaves the request's content and the answer as they are.
++A row whose cost isn't reported has no `usage`: unknown, never zero.
++Ids are `<file>:<COMMENT_ID>`, so a rerun skips the same comments, never others.
++"""
++
++from __future__ import annotations
++
++import csv
++import glob
++import json
++import os
++import random
++import sys
++from typing import Any
++
++from shadow import CAPTURE_FILE, CurrentRun, capture_shadow
++from spamfilter.filters import OpenAI
++
++SEED = 20261006
++MODEL = "openai/gpt-4o-mini"
++
++
++def corpus(directory: str) -> list[tuple[str, str, int]]:
++    rows: list[tuple[str, str, int]] = []
++    for path in sorted(glob.glob(os.path.join(directory, "Youtube0*.csv"))):
++        stem = os.path.basename(path).split("-")[0]
++        with open(path, encoding="utf-8", newline="") as f:
++            for row in csv.DictReader(f):
++                rows.append((f"{stem}:{row['COMMENT_ID']}", row["CONTENT"], int(row["CLASS"])))
++    return rows
++
++
++def sample(rows: list[tuple[str, str, int]], n: int) -> list[tuple[str, str, int]]:
++    """n rows, half from each class, drawn with a fixed seed."""
++    rng = random.Random(SEED)
++    spam = [r for r in rows if r[2] == 1]
++    ham = [r for r in rows if r[2] == 0]
++    picked = rng.sample(spam, n // 2) + rng.sample(ham, n - n // 2)
++    rng.shuffle(picked)
++    return picked
++
++
++def existing_filter() -> tuple[OpenAI, dict[str, Any]]:
++    """The OpenAI filter as a user would configure it, plus the last response's usage."""
++    f = OpenAI(
++        MODEL,
++        base_url="https://openrouter.ai/api/v1",
++        api_key=os.environ["OPENROUTER_API_KEY"],
++        timeout=30,
++    )
++    last: dict[str, Any] = {}
++    create = f._client.chat.completions.create  # pylint: disable=protected-access
++
++    def recording_create(**kwargs: Any) -> Any:
++        last.clear()
++        response = create(**kwargs, extra_body={"usage": {"include": True}})
++        usage = getattr(response, "usage", None)
++        if usage is not None:
++            last.update(
++                cost=getattr(usage, "cost", None),
++                input_tokens=getattr(usage, "prompt_tokens", None),
++                output_tokens=getattr(usage, "completion_tokens", None),
++            )
++        return response
++
++    f._client.chat.completions.create = recording_create  # type: ignore[method-assign]
++    return f, last
++
++
++def main() -> None:
++    directory = sys.argv[1]
++    n = int(sys.argv[2]) if len(sys.argv) > 2 else 200
++    picked = sample(corpus(directory), n)
++    f, last = existing_filter()
++
++    def current(text: str) -> CurrentRun:
++        passed, _ = f.check(text)
++        return CurrentRun(output=not passed, usage=dict(last) or None)
++
++    summary = capture_shadow([(i, text) for i, text, _ in picked], current)
++    labels = os.path.join(".system1", "labels", "spam.jsonl")
++    os.makedirs(os.path.dirname(labels), exist_ok=True)
++    with open(labels, "w", encoding="utf-8") as out:
++        for i, _, label in picked:
++            out.write(json.dumps({"id": i, "labels": {"spam": label}}) + "\n")
++    print(
++        f"captured {summary.written} (skipped {len(summary.skipped)}, failed {len(summary.failed)})"
++        f" -> {CAPTURE_FILE}; {len(picked)} labels -> {labels}"
++    )
++    for i, error in summary.failed[:5]:
++        print(f"  failed {i}: {error}")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/system1/evaluate.py b/system1/evaluate.py
+new file mode 100644
+index 0000000..eb012fc
+--- /dev/null
++++ b/system1/evaluate.py
+@@ -0,0 +1,50 @@
++"""Scores the `spam` policy as it would run, the two bars and the fallback to
++the OpenAI filter included, against the corpus labels:
++
++    PYTHONPATH=src:system1 python system1/evaluate.py
++
++It replays the answers `decide compare spam --record` kept in
++`.system1/compare/spam/fixtures/` through `decide runtime --replay`, and the
++OpenAI filter's answers from the capture, so it sends nothing and needs no key.
++`DECIDE_CMD` names another `decide`, as in the tests.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++import shlex
++from collections import Counter
++
++import policy
++from policy import PolicyOptions, is_spam
++
++if os.environ.get("DECIDE_CMD"):
++    policy.DECIDE = shlex.split(os.environ["DECIDE_CMD"])
++
++ROOT = os.path.join(".system1", "compare", "spam")
++rows = [json.loads(line) for line in open(os.path.join(ROOT, "captured.jsonl"), encoding="utf-8")]
++labels = {
++    r["id"]: r["labels"]["spam"]
++    for r in map(json.loads, open(os.path.join(".system1", "labels", "spam.jsonl"), encoding="utf-8"))
++}
++options = PolicyOptions(enabled=True, replay=True, root=ROOT)
++tally: Counter[str] = Counter()
++fallbacks: Counter[str] = Counter()
++confusion = {"existing": Counter(), "policy": Counter()}
++for row in rows:
++    truth = labels[row["id"]] == 1
++    current = row["current"]["spam"] == 1
++    outcome = is_spam(row["state"], lambda _t, c=current: c, options)
++    if outcome.by == "model":
++        tally["model"] += 1
++    else:
++        fallbacks[outcome.reason or "?"] += 1
++    for side, said in (("existing", current), ("policy", outcome.value)):
++        tally[side] += said == truth
++        confusion[side][("tp" if truth else "fp") if said else ("fn" if truth else "tn")] += 1
++n = len(rows)
++print(f"n={n}  existing {tally['existing']}/{n}  policy {tally['policy']}/{n}  model decided {tally['model']}")
++print("fell back:", dict(fallbacks))
++for side, c in confusion.items():
++    print(f"{side}: tp {c['tp']} fp {c['fp']} fn {c['fn']} tn {c['tn']}")
+diff --git a/system1/filter.py b/system1/filter.py
+new file mode 100644
+index 0000000..b81171f
+--- /dev/null
++++ b/system1/filter.py
+@@ -0,0 +1,48 @@
++"""The `spam` policy wired in as a spamfilter filter, generated by system1
++`adopt`. It wraps the filter it would replace (the OpenAI filter) and is inert:
++with `enabled=False`, the default, every check is the wrapped filter's own.
++
++    from spamfilter.filters import OpenAI
++    from filter import System1Spam
++    f = System1Spam(OpenAI("openai/gpt-4o-mini", base_url=..., api_key=...),
++                    enabled=False, root=".system1")
++"""
++
++from __future__ import annotations
++
++from typing import Optional
++
++from policy import Outcome, PolicyOptions, is_spam
++from spamfilter.filters.filter import Filter
++
++
++class System1Spam(Filter):
++    """Checks a string with the decision model, and falls back to `existing`
++    (any spamfilter filter) whenever the policy can't act. In the "correcting"
++    sense of other filters it never changes the string."""
++
++    def __init__(
++        self,
++        existing: Filter,
++        enabled: bool = False,
++        root: Optional[str] = None,
++        timeout_ms: int = 5000,
++    ) -> None:
++        super().__init__("normal")
++        self.existing = existing
++        #: Where the spend ledger lives, so the daily cap holds across restarts.
++        self.options = PolicyOptions(enabled=enabled, root=root, timeout_ms=timeout_ms)
++        #: The last outcome, for a log line.
++        self.last: Optional[Outcome] = None
++        self._last_string = ""
++
++    def _existing_is_spam(self, string: str) -> bool:
++        passed, corrected = self.existing.check(string)
++        self._last_string = corrected
++        return not passed
++
++    def check(self, string: str) -> "tuple[bool, str]":
++        self._last_string = string
++        self.last = is_spam(string, self._existing_is_spam, self.options)
++        # The existing filter's own string when it ran (it may correct it).
++        return (not self.last.value, self._last_string if self.last.by == "existing" else string)
+diff --git a/system1/grants.py b/system1/grants.py
+new file mode 100644
+index 0000000..630cef4
+--- /dev/null
++++ b/system1/grants.py
+@@ -0,0 +1,266 @@
++"""The grant scan for this module's tests, generated by system1 `adopt`: the
++Python copy of the scan `pnpm validate` runs over adopt's templates (0020).
++
++`adopt` only ever writes the marked line set to "off"; turning it on is the
++user's edit. This is an allowlist for the name, read one line at a time:
++- the marked line is a `const` (TS) or `Final` (Python) set to "off";
++- every other use of the name in code is a comparison, an import, an
++  assertion, a read, or the runtime's option given exactly the name, as the
++  last property of the runtime call's object literal, which also names this
++  file (`module: import.meta.url`, so the runtime reads the marked line too),
++  in the file that declares it;
++- a Unicode line separator, or a backslash-u escape in TS code, is refused;
++- `--module` is this file, so `decide runtime` reads this file's marked line.
++
++Comments, docstrings and string contents are skipped. It reads text, not what
++runs, so the user's review of the diff is the control. `decide runtime` also
++reads the marked line from the module file, so both must say on. The words are
++assembled so this file carries no grant of its own.
++"""
++
++from __future__ import annotations
++
++import re
++from typing import Optional
++
++E, e = "EG" + "RESS", "egr" + "ess"
++MARKER = "".join(["system1", ": runtime ", e])
++CREATE = "createPolicy" + "Runtime"
++A = re.ASCII
++
++_SEPARATOR = re.compile("[\u2028\u2029]")
++_LINE_END = re.compile("\r\n|[\r\n\u2028\u2029]")
++_OFF_LINE = re.compile(
++    r"^(?:(?:export\s+)?const\s+" + E
++    + r"""\s*(?::\s*[\w.[\]|,"' ]+?\s*)?=\s*(["'])off\1\s*(?:(?:as|satisfies)\s+[\w.]+\s*)?;?\s*//|"""
++    + E
++    + r"""\s*:\s*(?:typing\.)?Final(?:\[[\w.[\]|,"' ]+\])?\s*=\s*(["'])off\2\s*#)\s*"""
++    + MARKER,
++    A,
++)
++_NAME = re.compile(r"\b" + E + r"\b", A)
++_WORD = re.compile(r"\b" + e + r"\b(?!-)", A)
++_ONE_LINE_IMPORT = re.compile(
++    r"^\s*(?:import\s*(?:type\s*)?\{[^}]*\}\s*from\s|from\s+[\w.]+\s+import\s+[\w\s,]*$)", A
++)
++_GIVEN_BEFORE = re.compile(r"\b" + e + r"\s*:\s*$", A)
++_GIVEN = re.compile(r"^\s*:\s*" + E + r"\s*,?\s*(\}\s*\))?", A)
++_QUOTED = re.compile(r"""["'`]""" + e + r"""["'`]""", A)
++_BY_NAME = re.compile(r"\." + e + r"\b|\b" + e + r"\s*\(", A)
++_CONSENT = re.compile(e + "Consent", re.IGNORECASE | A)
++_ENV = re.compile(r"process\.env|os\.environ|getenv", A)
++_REFLECTION = re.compile(
++    r"\bsetattr\s*\(|\bglobals\s*\(|\b__dict__\b|Object\.defineProperty|Reflect\.set", A
++)
++_GRANT_STARTS = re.compile(r"^\s*" + e + r"\s*:", A)
++_MODULE_THEN_GRANT = re.compile(r"^\s*import\.meta\.url\s*(?:,\s*(?:" + e + r"\s*:.*)?)?$", A)
++_CALLS = re.compile(r"\b" + CREATE + r"\s*\(", A)
++_OPENS = re.compile(r"\b" + CREATE + r"\s*\(\s*\{", A)
++#: Strings, left to right. A template literal keeps only its `${...}` code.
++_STRINGS = re.compile(
++    "|".join(
++        [
++            r"`(?:[^`\\]|\\.)*`",
++            r'(?<![fF])(?<![fF][rRbB])"(?:[^"\\]|\\.)*"',
++            r"(?<![fF])(?<![fF][rRbB])'(?:[^'\\]|\\.)*'",
++        ]
++    ),
++    A,
++)
++_ITEM = re.compile(r"^\s*(?:type\s+)?\w+(?:\s+as\s+\w+)?\s*,?\s*$", A)
++
++
++def grant_problems(source: str, python: bool = True) -> list[str]:
++    """Everything in `source` that could grant runtime egress; `python` for a `.py` file."""
++    problems: list[str] = []
++    if _SEPARATOR.search(source):
++        problems.append("a Unicode line separator (U+2028/U+2029)")
++    lines = _LINE_END.split(source)
++    marked = [line for line in lines if MARKER in line]
++    if len(marked) > 1:
++        problems.append(f"{len(marked)} lines carry the marker, not one")
++    declares = len(marked) == 1 and _OFF_LINE.search(marked[0]) is not None
++    codes = _code_lines(lines, python)
++
++    def next_code(i: int) -> str:
++        return next((c for c in codes[i + 1:] if c.strip() != ""), "")
++
++    def parens(text: str) -> int:
++        return text.count("(") - text.count(")")
++
++    # Parentheses still open in the runtime call, from its `(`; 0 outside it.
++    depth = 0
++    # Whether the open runtime call has named this file (module: import.meta.url).
++    call_module = False
++    # Open braces of the runtime call's options object, and whether it has closed.
++    braces = 0
++    obj_closed = False
++    for i, line in enumerate(lines):
++        at = f"line {i + 1}"
++        if MARKER in line:
++            if not _OFF_LINE.search(line):
++                problems.append(f'{at}: the marked line isn\'t a constant set to "off"')
++            continue
++        code = codes[i]
++        if code.strip() == "":
++            continue
++        if not python and "\\u" in code:
++            problems.append(f"{at}: a backslash-u escape in code")
++        if python and '"--module"' in line and not re.search(r"abspath\(__file__\)", code + next_code(i)):
++            problems.append(f"{at}: --module isn't this file (os.path.abspath(__file__))")
++        if _CALLS.search(code) and not _OPENS.search(code):
++            problems.append(f"{at}: {CREATE} not given an object literal")
++        opened = _OPENS.search(code)
++        start = 0 if depth > 0 else (opened.start() if opened else -1)
++        in_call = start >= 0
++        left = depth + parens(code[start:]) if in_call else 0
++        # Braces of the call's options object, before each character: `module` and
++        # the grant must sit at its top level, and its closing `}` must close the
++        # call, so no other object (a second argument, `|| {...}`) can stand in.
++        opened_call = None if depth > 0 else _OPENS.search(code)
++        obj_start = opened_call.end() - 1 if opened_call else 0
++        level: list[int] = []
++        b = braces if in_call else 0
++        for k, ch in enumerate(code):
++            level.append(b)
++            if not in_call or k < obj_start or obj_closed:
++                continue
++            if ch == "{":
++                b += 1
++            elif ch == "}":
++                b -= 1
++                if b == 0:
++                    obj_closed = True
++                    tail = code[k + 1:]
++                    if not re.match(r"\s*\)", tail) and not (tail.strip() == "" and re.match(r"\s*\)", next_code(i))):
++                        problems.append(f"{at}: the runtime's options object ends before its call does")
++        # `module: import.meta.url` must sit right before the grant: anything between
++        # (a spread, say) could replace it.
++        if in_call and (depth == 0 or not _GRANT_STARTS.match(code)):
++            call_module = False
++        for m in re.finditer(r"\bmodule\s*:(?!:)", code, A):
++            if not in_call:
++                continue
++            if level[m.start()] != 1:
++                problems.append(f"{at}: the runtime's module not at the top of its options object")
++                continue
++            rest = code[m.end():]
++            if not re.match(r"\s*import\.meta\.url\b", rest, A):
++                problems.append(f"{at}: the runtime's module given anything but import.meta.url")
++            else:
++                call_module = _MODULE_THEN_GRANT.match(rest) is not None
++        for m in _NAME.finditer(code):
++            before, after = code[: m.start()], code[m.end():]
++            allowed = (
++                re.match(r"\s*[!=]==?(?!=)", after)
++                or re.search(r"[!=]==?\s*$", before)
++                or _ONE_LINE_IMPORT.search(code)
++                or (re.search(r"\(\s*$", before) and re.match(r'\s*(?:\)|,\s*""\s*[,)])', after))
++                or (re.search(r"\w\.$", before, A) and not re.match(r"\s*[-+*/|&]?=(?!=)", after))
++                or _in_import_list(lines, i)
++                or _GIVEN_BEFORE.search(before)
++            )
++            if not allowed:
++                problems.append(f"{at}: {E} used other than as allowed")
++        for m in _WORD.finditer(code):
++            rest = code[m.end():]
++            if re.match(r"\s*[:=](?!=)", rest):
++                given = _GIVEN.match(rest)
++                tail = rest[given.end():] if given else rest
++                # Last in the call's object: the call closes right after it.
++                closes = (given is not None and given.group(1) is not None and left == 0) or (
++                    tail.strip() == "" and left == 1 and re.match(r"\s*\}\s*\)", next_code(i)) is not None
++                )
++                if not given or not closes or not in_call or level[m.start()] != 1:
++                    problems.append(f"{at}: the runtime given anything but {E}, last in {CREATE}({{...}})")
++                elif not call_module:
++                    problems.append(
++                        f"{at}: the runtime call doesn't name this file right before the grant (module: import.meta.url)"
++                    )
++                elif not declares:
++                    problems.append(f"{at}: the runtime given a {E} this file doesn't declare")
++            elif re.match(r"\s*[,})]", rest):
++                problems.append(f"{at}: the grant passed as a variable")
++        if _BY_NAME.search(code) or _QUOTED.search(line):
++            problems.append(f"{at}: the grant set by name")
++        if _CONSENT.search(line):
++            problems.append(f"{at}: a consent option")
++        if _REFLECTION.search(code):
++            problems.append(f"{at}: a binding set by reflection")
++        if _NAME.search(line) and _ENV.search(line):
++            problems.append(f"{at}: {E} read from the environment")
++        depth = max(left, 0)
++        braces = b if depth > 0 else 0
++        if depth == 0:
++            obj_closed = False
++    return problems
++
++
++def _code_lines(lines: list[str], python: bool) -> list[str]:
++    """Each line as code only: comments removed (block comments tracked across
++    lines in TS, docstrings in Python) and string contents blanked."""
++    out: list[str] = []
++    in_block = False
++    in_doc: Optional[str] = None
++    for raw in lines:
++        line = raw
++        if python:
++            if in_doc:
++                end = line.find(in_doc)
++                if end < 0:
++                    out.append("")
++                    continue
++                line = line[end + 3:]
++                in_doc = None
++            line = re.sub(r'("""|\'\'\')[\s\S]*?\1', '""', line)
++            opened = re.search(r'"""|\'\'\'', line)
++            if opened:
++                in_doc = opened.group(0)
++                line = line[: opened.start()]
++            line = _STRINGS.sub('""', line).replace(f"`{E}`", "")
++            out.append(re.sub(r"#.*$", "", line))
++            continue
++        if in_block:
++            end = line.find("*/")
++            if end < 0:
++                out.append("")
++                continue
++            line = line[end + 2:]
++            in_block = False
++
++        def blank(m: re.Match[str]) -> str:
++            s = m.group(0)
++            if s.startswith("`"):
++                return " " + " ".join(re.findall(r"\$\{([^}]*)\}", s)) + " "
++            return '""'
++
++        line = _STRINGS.sub(blank, line)
++        line = re.sub(r"/\*[\s\S]*?\*/", " ", line)
++        opened_at = line.find("/*")
++        if opened_at >= 0:
++            in_block = True
++            line = line[:opened_at]
++        out.append(re.sub(r"//.*$", "", line))
++    return out
++
++
++def _in_import_list(lines: list[str], i: int) -> bool:
++    """Is line `i` a bare item of a multi-line import (TS `import {...} from`, Python `from ... import (...)`)?"""
++
++    def strip(line: str) -> str:
++        return re.sub(r"\s*(?://|#).*$", "", line)
++
++    if not re.match(r"^\s*" + E + r"\s*,?\s*$", strip(lines[i]), A):
++        return False
++    start = i - 1
++    while start >= 0 and _ITEM.match(strip(lines[start])):
++        start -= 1
++    end = i + 1
++    while end < len(lines) and _ITEM.match(strip(lines[end])):
++        end += 1
++    open_ = strip(lines[start]) if start >= 0 else ""
++    close = strip(lines[end]) if end < len(lines) else ""
++    return bool(
++        (re.match(r"^\s*import\s*(?:type\s*)?(?:\w+\s*,\s*)?\{\s*$", open_, A) and re.match(r"^\s*\}\s*from\s", close, A))
++        or (re.match(r"^\s*from\s+[\w.]+\s+import\s*\(\s*$", open_, A) and re.match(r"^\s*\)\s*$", close, A))
++    )
+diff --git a/system1/mapping.py b/system1/mapping.py
+new file mode 100644
+index 0000000..0eb3268
+--- /dev/null
++++ b/system1/mapping.py
+@@ -0,0 +1,19 @@
++"""The OpenAI filter's output in the `spam` answer space, generated by system1
++`adopt`. The shadow harness writes it as each captured row's `current`, so
++`decide compare` can set the filter's answer beside the decision model's.
++
++Strict, like `compare`'s own reading: anything but a boolean raises rather than
++being guessed into one.
++"""
++
++from __future__ import annotations
++
++from typing import Union
++
++
++def to_answer_space(is_spam: bool) -> dict[str, Union[str, int, float]]:
++    """One value per question: a choice's key, a score's level, or a noul's 0-1."""
++    if not isinstance(is_spam, bool):
++        raise ValueError("is_spam is not a boolean")
++    # A yes/no mechanism is certain either way, so its noul is 1 or 0.
++    return {"spam": 1 if is_spam else 0}
+diff --git a/system1/policy.py b/system1/policy.py
+new file mode 100644
+index 0000000..428ff8d
+--- /dev/null
++++ b/system1/policy.py
+@@ -0,0 +1,253 @@
++"""Decision-model policy for `spam`, generated by system1 `adopt` from
++`.system1/specs/spam.yaml` against `decide` runtime protocol 1. It stands in
++for spamfilter's OpenAI filter (`spamfilter.filters.openai.OpenAI.check`), one
++chat-model call parsed to `{is_spam: bool}`; `filter.py` wires it in as a filter.
++
++It sits in front of the existing mechanism and is inert until you switch it on
++twice: `enabled=True` where you call it, and the `EGRESS` line below. Until both
++are on, every call takes the existing path. Any call the model can't answer well
++enough also takes the existing path, with a reason code to log.
++
++Requirements, in the runtime image and in CI: Node 22 or later and the `decide`
++CLI on PATH (`npm install -g @garygentry/system1`). Every call starts one
++`decide` process, which costs its startup time (tens of milliseconds). The first
++call checks the runtime protocol; when `decide` is missing or speaks another
++protocol, every call takes the existing path with `engine-unavailable`.
++Python 3.9 or later.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++import subprocess
++import time
++from dataclasses import dataclass, field
++from typing import Any, Callable, Final, Literal, Optional
++
++# Runtime egress for this module. `adopt` writes "off" and never anything else.
++# Changing it to "on" is your decision, made in reviewed code: it lets this
++# module send the checked text to OpenRouter's decision model. Nothing else turns it on.
++EGRESS: Final = "off"  # system1: runtime egress (only you switch this on)
++
++#: Measured spend a UTC day before every call takes the existing path (`budget`).
++MAX_USD_PER_DAY: Final = 1.0
++#: The decision model this module was generated and recorded against.
++MODEL: Final = "typesafe/jev-1.13"
++#: The spec's name: the fixture namespace its recorded answers live under.
++SPEC: Final = "spam"
++#: The `decide runtime` stdin/stdout shape this module speaks.
++PROTOCOL: Final = 1
++#: The command that runs `decide`. Tests may point it elsewhere.
++DECIDE: list[str] = ["decide"]
++
++# The spec's questions, copied verbatim. Recorded answers are keyed on them,
++# so an edit here needs fresh fixtures (`decide spec check spam --live`).
++# test_policy.py checks they match the spec file.
++QUESTIONS: Final[dict[str, Any]] = {
++    "spam": {
++        "type": "noul",
++        "instructions": (
++            "The text is spam: unsolicited promotion or bait posted to reach an audience rather "
++            "than to take part in the conversation."
++        ),
++        "criteria": {
++            "true": (
++                "It advertises or asks people to visit, follow, subscribe to, buy or click something "
++                "(a channel, a profile, a site, a product, a giveaway, a money-making scheme), or it is "
++                "a scam, a chain message or a link dropped with no relevance."
++            ),
++            "false": (
++                "It is an ordinary reaction, opinion, question or joke about the topic at hand, even if "
++                "rude, off-topic, misspelled, in capitals or full of emoji, and even if it names a "
++                "well-known site or person in passing."
++            ),
++        },
++    },
++}
++
++# The spec's `policy.thresholds`. A `spam` answer between the two bars is not
++# acted on: the call takes the existing path.
++SPAM_AT_LEAST: Final = 0.7
++NOT_SPAM_AT_MOST: Final = 0.3
++
++
++def to_state(text: str) -> str:
++    """What the model sees for one text: the text itself, as the OpenAI filter
++    sends it. The shadow harness captures the same state, so `decide compare`
++    judges exactly what this module would send.
++    """
++    return text
++
++
++@dataclass
++class Outcome:
++    #: Whether the text is spam (the OpenAI filter's `is_spam`).
++    value: bool
++    #: "model" when the model's answer was used, "existing" otherwise.
++    by: Literal["model", "existing"]
++    #: Why the model's answer wasn't used: a runtime reason code, "disabled" or "below-threshold".
++    reason: Optional[str] = None
++    detail: str = ""
++    #: Each step of the decision, for a log line or a test.
++    trace: list[str] = field(default_factory=list)
++
++
++#: Runs `decide runtime` with the request on stdin and returns its parsed result.
++Engine = Callable[[dict[str, Any], "PolicyOptions"], dict[str, Any]]
++
++
++@dataclass(frozen=True)
++class PolicyOptions:
++    #: The app-level switch. False (the default) keeps the existing path for every call.
++    enabled: bool = False
++    #: Where the spend ledger and recorded answers live. A live call needs a writable one.
++    root: Optional[str] = None
++    #: True answers from `root`'s recorded fixtures and sends nothing: how the tests run.
++    replay: bool = False
++    timeout_ms: int = 5000
++    #: For tests: a stand-in for spawning `decide runtime`.
++    engine: Optional[Engine] = None
++
++
++def is_spam(
++    text: str,
++    existing: Callable[[str], bool],
++    options: PolicyOptions = PolicyOptions(),
++) -> Outcome:
++    """Whether `text` is spam, by the decision model, falling back to `existing`
++    when the policy is off or the model's answer doesn't clear the spec's
++    thresholds. It never raises because of the model; `existing` may.
++    """
++    trace: list[str] = []
++
++    def fall_back(reason: str, detail: str) -> Outcome:
++        trace.append(f"existing: {reason}")
++        return Outcome(existing(text), "existing", reason, detail, trace)
++
++    if not options.enabled:
++        return fall_back("disabled", "the policy is not enabled")
++    # `decide runtime` reads the grant from this file too; both must say on.
++    if not options.replay and EGRESS != "on":
++        return fall_back("egress-off", "runtime egress is off (this module's EGRESS line)")
++
++    request = {"questions": QUESTIONS, "state": to_state(text), "namespace": SPEC}
++    result = (options.engine or _spawn)(request, options)
++    if result.get("ok") is not True:
++        reason = result.get("reason")
++        reason = reason if isinstance(reason, str) else "internal"
++        trace.append(f"model: {reason}")
++        return fall_back(reason, str(result.get("detail", "")))
++    trace.append(f"model: {result.get('source')}")
++    value = from_answers(result.get("answers"), trace)
++    if value is None:
++        return fall_back("below-threshold", "; ".join(trace))
++    return Outcome(value, "model", trace=trace)
++
++
++def from_answers(answers: Any, trace: Optional[list[str]] = None) -> Optional[bool]:
++    """The model's answer as `is_spam`, or None when it sits between the bars.
++    The check is added to `trace`.
++    """
++    trace = trace if trace is not None else []
++    spam = answers.get("spam") if isinstance(answers, dict) else None
++    if not isinstance(spam, dict) or spam.get("type") != "noul":
++        trace.append("answers: spam missing or of the wrong type")
++        return None
++    noul = spam.get("noul")
++    verdict: Optional[bool] = None
++    if isinstance(noul, (int, float)) and not isinstance(noul, bool):
++        if noul >= SPAM_AT_LEAST:
++            verdict = True
++        elif noul <= NOT_SPAM_AT_MOST:
++            verdict = False
++    trace.append(f"spam: {noul} -> {'between the bars' if verdict is None else verdict}")
++    return verdict
++
++
++_protocol_checked: Optional[str] = None  # None: not settled yet; "": fine; otherwise why not
++
++
++def _engine_problem(timeout_s: float) -> str:
++    """Why `decide` can't serve this module, or "" when it can. A definite
++    answer (fine, missing, another protocol) is kept for the process; a
++    transient failure (a slow start, a failed fork) is tried again next call.
++    """
++    global _protocol_checked
++    if _protocol_checked is not None:
++        return _protocol_checked
++    try:
++        done = subprocess.run(
++            [*DECIDE, "runtime", "--protocol"],
++            capture_output=True,
++            encoding="utf-8",
++            timeout=timeout_s,
++            check=False,
++        )
++    except FileNotFoundError:
++        _protocol_checked = "decide is not on PATH (npm install -g @garygentry/system1)"
++        return _protocol_checked
++    except (OSError, subprocess.SubprocessError) as error:
++        return f"decide runtime --protocol failed ({type(error).__name__})"
++    try:
++        protocol = json.loads(done.stdout or "null")
++    except ValueError:
++        protocol = None
++    found = protocol.get("protocol") if isinstance(protocol, dict) else None
++    if found is None and isinstance(protocol, dict) and protocol.get("ok") is False:
++        # The CLI's error envelope: a `decide` from before `runtime` existed.
++        _protocol_checked = "decide has no runtime command (upgrade @garygentry/system1)"
++        return _protocol_checked
++    if found is None:
++        return f"decide runtime --protocol printed nothing usable (exit {done.returncode})"
++    _protocol_checked = "" if found == PROTOCOL else f"decide runtime speaks protocol {found}, not {PROTOCOL}"
++    return _protocol_checked
++
++
++def _spawn(request: dict[str, Any], options: PolicyOptions) -> dict[str, Any]:
++    """One `decide runtime` call. Every problem is a fallback, never an exception."""
++    # The call's own deadline, plus room to start Node, shared with the check.
++    deadline = time.monotonic() + options.timeout_ms / 1000 + 10
++    problem = _engine_problem(deadline - time.monotonic())
++    if problem:
++        return {"ok": False, "reason": "engine-unavailable", "detail": problem}
++    argv = [
++        *DECIDE,
++        "runtime",
++        "--module",
++        os.path.abspath(__file__),
++        "--max-usd-per-day",
++        str(MAX_USD_PER_DAY),
++        "--model",
++        MODEL,
++        "--timeout-ms",
++        str(options.timeout_ms),
++    ]
++    if options.root:
++        argv += ["--root", options.root]
++    if options.replay:
++        argv.append("--replay")
++    try:
++        done = subprocess.run(
++            argv,
++            input=json.dumps(request),
++            capture_output=True,
++            encoding="utf-8",
++            timeout=max(deadline - time.monotonic(), 0.001),
++            check=False,
++        )
++    except subprocess.TimeoutExpired:
++        return {"ok": False, "reason": "timeout", "detail": "decide runtime did not answer in time"}
++    except (OSError, subprocess.SubprocessError) as error:
++        return {"ok": False, "reason": "engine-unavailable", "detail": type(error).__name__}
++    try:
++        result = json.loads(done.stdout)
++    except ValueError:
++        return {
++            "ok": False,
++            "reason": "engine-unavailable",
++            "detail": f"decide runtime printed no result (exit {done.returncode})",
++        }
++    if not isinstance(result, dict):
++        return {"ok": False, "reason": "engine-unavailable", "detail": "decide runtime printed no result"}
++    return result
+diff --git a/system1/shadow.py b/system1/shadow.py
+new file mode 100644
+index 0000000..270a3e3
+--- /dev/null
++++ b/system1/shadow.py
+@@ -0,0 +1,142 @@
++"""Shadow capture for `spam`, generated by system1 `adopt`. It runs the
++existing mechanism over sampled inputs and appends one row per input to
++`.system1/compare/spam/captured.jsonl`:
++
++    {id, state, current, usage?, latencyMs}
++
++`decide compare spam` then sends each `state` to the decision model and
++sets its answers beside `current`. The engine never runs this code.
++
++- The file holds raw inputs (each text checked). Keep it out of git:
++  `.system1/compare/` belongs in `.gitignore` (compare's recorded answers go there too).
++- The existing mechanism runs for real here. If it is a model call, every row
++  costs what it costs and sends what it sends, outside system1's checks.
++- A row without `usage` means its cost is unknown, never zero.
++
++The samples and the call to the OpenAI filter are in `capture.py`.
++"""
++
++from __future__ import annotations
++
++import json
++import math
++import os
++import sys
++import time
++from dataclasses import dataclass, field
++from typing import Any, Callable, Iterable, Optional
++
++from mapping import to_answer_space
++from policy import SPEC, to_state
++
++CAPTURE_FILE = f".system1/compare/{SPEC}/captured.jsonl"
++
++
++@dataclass
++class CurrentRun:
++    """What one run of the existing mechanism returned, and what it cost if known."""
++
++    #: The OpenAI filter's verdict: whether the text is spam.
++    output: bool
++    #: {"cost": USD, "input_tokens"?: n, "output_tokens"?: n}. Leave it out when the cost isn't known.
++    usage: Optional[dict[str, Any]] = None
++
++
++@dataclass
++class ShadowSummary:
++    file: str
++    written: int = 0
++    #: Ids already in the file, left as they are.
++    skipped: list[str] = field(default_factory=list)
++    #: Inputs the existing mechanism, or the mapping, failed on: no row is written.
++    failed: list[tuple[str, str]] = field(default_factory=list)
++
++
++def capture_shadow(
++    samples: Iterable[tuple[str, str]],
++    current: Callable[[str], CurrentRun],
++    file: str = CAPTURE_FILE,
++    warn: Callable[[str], None] = lambda message: print(message, file=sys.stderr),
++) -> ShadowSummary:
++    warn(
++        f"system1 shadow: {file} holds raw inputs. "
++        "Keep it out of git, and delete it when the comparison is done."
++    )
++    os.makedirs(os.path.dirname(file) or ".", exist_ok=True)
++    seen = _existing_ids(file)
++    # A torn last line (a crash mid-write) would swallow the next row.
++    if os.path.exists(file) and os.path.getsize(file) > 0:
++        with open(file, "rb") as existing:
++            existing.seek(-1, os.SEEK_END)
++            torn = existing.read(1) != b"\n"
++        if torn:
++            with open(file, "a", encoding="utf-8") as out:
++                out.write("\n")
++    summary = ShadowSummary(file)
++    for sample_id, text in samples:
++        if not isinstance(sample_id, str) or not sample_id.strip():
++            summary.failed.append((str(sample_id), "an id must be a non-empty string"))
++            continue
++        if sample_id in seen:
++            summary.skipped.append(sample_id)
++            continue
++        started = time.perf_counter()
++        try:
++            run = current(text)
++            latency_ms = round((time.perf_counter() - started) * 1000)
++            row: dict[str, Any] = {
++                "id": sample_id,
++                "state": to_state(text),
++                "current": to_answer_space(run.output),
++                "latencyMs": latency_ms,
++            }
++            usage = _usage(run.usage)
++            if usage:
++                row["usage"] = usage
++            line = json.dumps(row, allow_nan=False)
++        except Exception as error:  # noqa: BLE001 - one failed input never stops the capture
++            summary.failed.append((sample_id, str(error)))
++            continue
++        with open(file, "a", encoding="utf-8") as out:
++            out.write(line + "\n")
++        seen.add(sample_id)
++        summary.written += 1
++    return summary
++
++
++def _usage(raw: Any) -> Optional[dict[str, float]]:
++    """The cost as `compare` reads it: a finite cost of at least 0, with token
++    counts when they are numbers. Anything else means unknown."""
++    if not isinstance(raw, dict):
++        return None
++
++    def number(value: Any) -> Optional[float]:
++        if isinstance(value, bool) or not isinstance(value, (int, float)):
++            return None
++        return float(value) if math.isfinite(value) and value >= 0 else None
++
++    cost = number(raw.get("cost"))
++    if cost is None:
++        return None
++    usage = {"cost": cost}
++    for key in ("input_tokens", "output_tokens"):
++        count = number(raw.get(key))
++        if count is not None:
++            usage[key] = count
++    return usage
++
++
++def _existing_ids(file: str) -> set[str]:
++    """Ids already captured: `compare` reads a repeated id as a bad line."""
++    ids: set[str] = set()
++    if not os.path.exists(file):
++        return ids
++    with open(file, encoding="utf-8") as lines:
++        for line in lines:
++            try:
++                row_id = json.loads(line).get("id")
++            except (ValueError, AttributeError):
++                continue  # a torn line: compare reports it
++            if isinstance(row_id, str):
++                ids.add(row_id)
++    return ids
+diff --git a/system1/test_policy.py b/system1/test_policy.py
+new file mode 100644
+index 0000000..b234d25
+--- /dev/null
++++ b/system1/test_policy.py
+@@ -0,0 +1,329 @@
++"""Offline tests for the `spam` policy module, generated by system1
++`adopt`. They answer from the spec's recorded fixtures (replay) through
++`decide runtime --replay`: nothing is sent, and no key or grant is needed, but
++`decide` must be on PATH, as it must be wherever the module runs.
++
++Run from the repo root: `python -m pytest system1` (or `python -m unittest
++discover system1`). `DECIDE_CMD` names another `decide` for the tests, e.g.
++`node /path/to/decide.mjs`. Record fresh fixtures with `decide spec check spam
++--live` after changing the questions or the states below; the states here are
++the spec's examples, so their recorded answers are what replay serves.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++import shlex
++import shutil
++import stat
++import sys
++import tempfile
++import unittest
++from typing import Any
++
++import policy
++from filter import System1Spam
++from grants import grant_problems
++from mapping import to_answer_space
++from policy import EGRESS, QUESTIONS, PolicyOptions, is_spam
++from shadow import CurrentRun, capture_shadow
++from spamfilter.filters.filter import Filter
++
++if os.environ.get("DECIDE_CMD"):
++    policy.DECIDE = shlex.split(os.environ["DECIDE_CMD"])
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++#: The repo's `.system1` directory, which holds `fixtures/spam/`.
++SYSTEM1_DIR = os.path.join(HERE, "..", ".system1")
++#: The module files `adopt` wrote, checked for a grant below.
++MODULE_FILES = [
++    os.path.join(HERE, name)
++    for name in ("policy.py", "mapping.py", "shadow.py", "grants.py", "filter.py", "capture.py", "test_policy.py")
++]
++#: The comment on the one grant line, assembled so this file carries none.
++MARKER = "".join(["system1", ": runtime ", "egr", "ess"])
++
++# The spec's examples, verbatim: their answers are recorded.
++PLUG = "Hey everyone, check out my channel, I make covers of this song!! Subscribe pls"
++REACTION = "This song never gets old, still listening in 2015"
++LIKE_BAIT = "Like this comment if you are watching in 2014!"
++NEVER_RECORDED = "No fixture holds this comment."
++
++#: What the stand-in existing filter says: not spam.
++EXISTING = False
++
++#: Tests that run in live mode are skipped once EGRESS is on, so a test never sends.
++LIVE_SKIP = EGRESS != "off"
++
++
++def existing(_text: str) -> bool:
++    return EXISTING
++
++
++def answered(spam: float) -> PolicyOptions:
++    def engine(_request: dict[str, Any], _options: PolicyOptions) -> dict[str, Any]:
++        return {
++            "ok": True,
++            "source": "replay",
++            "answers": {"spam": {"type": "noul", "noul": spam}},
++            "usage": {"input_tokens": 0, "output_tokens": 0, "cost": 0},
++            "latencyMs": 1,
++            "ledger": "memory",
++        }
++
++    return PolicyOptions(enabled=True, replay=True, engine=engine)
++
++
++class FallsBack(unittest.TestCase):
++    def assert_fell_back(self, outcome: policy.Outcome, reason: str) -> None:
++        self.assertEqual(outcome.by, "existing", outcome)
++        self.assertEqual(outcome.value, EXISTING)
++        self.assertEqual(outcome.reason, reason, outcome.detail)
++
++
++class RuntimeEgress(unittest.TestCase):
++    # When you switch EGRESS on, change this expectation in the same reviewed edit.
++    def test_is_off_as_generated(self) -> None:
++        self.assertEqual(EGRESS, "off")
++
++    def test_no_grant_in_the_module_source(self) -> None:
++        with open(MODULE_FILES[0], encoding="utf-8") as f:
++            self.assertEqual(sum(MARKER in line for line in f), 1)
++        for path in MODULE_FILES:
++            with open(path, encoding="utf-8") as f:
++                self.assertEqual(grant_problems(f.read()), [], path)
++
++    def test_catches_the_grants_it_scans_for(self) -> None:
++        # Assembled, so this file holds none of them.
++        big, small = "EG" + "RESS", "egr" + "ess"
++        for bad in [
++            f'{big}: Final = "o{"n"}"  # system1: runtime {small}',
++            f"{big} = 'o{'n'}'",
++            f"{big}=process.env.X",
++            f'{big} = "off"',
++            f'{big}: Final = "off" and "on"  # system1: runtime {small}',
++            f'SEND = os.environ.get("X") == "1"\nrun({small}={big} if not SEND else "on")',
++            f"from settings import {big}  # system1: runtime {small}",
++            f"{big}, other = load()",
++            f'o["{small}"] = "on"',
++            f'options.{small} = "on"',
++            f'{big}: Final = os.environ.get("X", "off")',
++            f"{small}: true,",
++            f"{small}=grant",
++            f"{small}Consent: true",
++            f'g = os.environ["{big}"]',
++            f"# system1: runtime {small}\n# system1: runtime {small}",
++        ]:
++            self.assertNotEqual(grant_problems(bad), [], bad)
++
++
++class Inert(FallsBack):
++    def test_existing_path_when_not_enabled(self) -> None:
++        calls = []
++        outcome = is_spam(PLUG, lambda t: calls.append(t) or EXISTING)
++        self.assert_fell_back(outcome, "disabled")
++        self.assertEqual(len(calls), 1)
++
++    @unittest.skipIf(LIVE_SKIP, "EGRESS is on: this test would send")
++    def test_existing_path_when_enabled_but_egress_off(self) -> None:
++        self.assert_fell_back(is_spam(PLUG, existing, PolicyOptions(enabled=True)), "egress-off")
++
++
++class Replay(FallsBack):
++    """Answers from the recorded fixtures, through `decide runtime --replay`."""
++
++    def setUp(self) -> None:
++        policy._protocol_checked = None
++        self.replay = PolicyOptions(enabled=True, replay=True, root=SYSTEM1_DIR)
++
++    def test_acts_on_an_answer_that_clears_the_thresholds(self) -> None:
++        outcome = is_spam(PLUG, existing, self.replay)
++        self.assertEqual(outcome.by, "model", outcome)
++        self.assertIs(outcome.value, True)
++        quiet = is_spam(REACTION, lambda _t: True, self.replay)
++        self.assertEqual((quiet.by, quiet.value), ("model", False))
++
++    def test_keeps_the_existing_answer_when_undecided(self) -> None:
++        # Recorded at 0.50: the runtime reports it undecided before the bars apply.
++        self.assert_fell_back(is_spam(LIKE_BAIT, existing, self.replay), "undecided")
++
++    def test_provider_error_when_nothing_is_recorded(self) -> None:
++        self.assert_fell_back(is_spam(NEVER_RECORDED, existing, self.replay), "provider-error")
++
++    def test_refused_when_the_state_is_too_large(self) -> None:
++        self.assert_fell_back(is_spam("word " * 40_000, existing, self.replay), "refused")
++
++    def test_engine_unavailable_without_decide(self) -> None:
++        saved = policy.DECIDE
++        policy.DECIDE = [os.path.join(HERE, "no-such-decide")]
++        try:
++            self.assert_fell_back(is_spam(PLUG, existing, self.replay), "engine-unavailable")
++        finally:
++            policy.DECIDE = saved
++            policy._protocol_checked = None
++
++    def test_a_transient_protocol_failure_is_tried_again(self) -> None:
++        saved = policy.DECIDE
++        policy.DECIDE = [sys.executable, "-c", "pass"]  # prints nothing, as a failed start would
++        try:
++            self.assert_fell_back(is_spam(PLUG, existing, self.replay), "engine-unavailable")
++        finally:
++            policy.DECIDE = saved
++        self.assertEqual(is_spam(PLUG, existing, self.replay).by, "model")
++
++    def test_a_decide_without_runtime_is_settled_once(self) -> None:
++        saved = policy.DECIDE
++        old = 'print(\'{"v": 1, "ok": false}\'); raise SystemExit(2)'
++        policy.DECIDE = [sys.executable, "-c", old]
++        try:
++            outcome = is_spam(PLUG, existing, self.replay)
++            self.assert_fell_back(outcome, "engine-unavailable")
++            self.assertIn("upgrade", outcome.detail)
++        finally:
++            policy.DECIDE = saved
++        # Settled for the process: the real `decide` isn't asked again.
++        self.assert_fell_back(is_spam(PLUG, existing, self.replay), "engine-unavailable")
++
++    @unittest.skipIf(LIVE_SKIP, "EGRESS is on: this test would send")
++    def test_no_git_and_a_read_only_root(self) -> None:
++        with tempfile.TemporaryDirectory() as tmp:
++            root = os.path.join(tmp, "system1")
++            shutil.copytree(os.path.join(SYSTEM1_DIR, "fixtures"), os.path.join(root, "fixtures"))
++            for here, dirs, files in os.walk(root, topdown=False):
++                for name in files:
++                    os.chmod(os.path.join(here, name), stat.S_IRUSR)
++                os.chmod(here, stat.S_IRUSR | stat.S_IXUSR)
++            cwd = os.getcwd()
++            os.chdir(tmp)
++            try:
++                answered_ = is_spam(PLUG, existing, PolicyOptions(enabled=True, replay=True, root=root))
++                self.assertEqual(answered_.by, "model", answered_)
++                live = is_spam(PLUG, existing, PolicyOptions(enabled=True, root=root))
++                self.assert_fell_back(live, "egress-off")
++            finally:
++                os.chdir(cwd)
++                for here, dirs, files in os.walk(root):
++                    os.chmod(here, stat.S_IRWXU)
++                    for name in files:
++                        os.chmod(os.path.join(here, name), stat.S_IRUSR | stat.S_IWUSR)
++
++
++class Thresholds(FallsBack):
++    def test_falls_back_when_undecided(self) -> None:
++        def engine(_r: dict[str, Any], _o: PolicyOptions) -> dict[str, Any]:
++            return {"ok": False, "reason": "undecided", "detail": "undecided: spam", "ledger": "memory"}
++
++        options = PolicyOptions(enabled=True, replay=True, engine=engine)
++        self.assert_fell_back(is_spam(PLUG, existing, options), "undecided")
++
++    def test_falls_back_between_the_bars(self) -> None:
++        self.assert_fell_back(is_spam(PLUG, existing, answered(0.62)), "below-threshold")
++
++    def test_acts_at_the_bars_and_traces_each_branch(self) -> None:
++        yes = is_spam(PLUG, existing, answered(0.7))
++        self.assertEqual((yes.by, yes.value), ("model", True))
++        no = is_spam(PLUG, lambda _t: True, answered(0.3))
++        self.assertEqual((no.by, no.value), ("model", False))
++        self.assertEqual([step.split(":")[0] for step in yes.trace], ["model", "spam"])
++
++    def test_answers_of_the_wrong_shape_are_below_the_bar(self) -> None:
++        self.assertIsNone(policy.from_answers({}))
++        self.assertIsNone(policy.from_answers({"spam": {"type": "noul", "noul": True}}))
++
++
++class Spec(unittest.TestCase):
++    def test_has_the_module_questions_verbatim(self) -> None:
++        import yaml  # only the tests read the spec
++
++        with open(os.path.join(SYSTEM1_DIR, "specs", "spam.yaml"), encoding="utf-8") as f:
++            # BaseLoader: YAML 1.1 would read the `true:` key as a boolean.
++            self.assertEqual(yaml.load(f, Loader=yaml.BaseLoader)["questions"], QUESTIONS)
++
++
++class Mapping(unittest.TestCase):
++    def test_maps_every_output_into_the_answer_space(self) -> None:
++        self.assertEqual(to_answer_space(True), {"spam": 1})
++        self.assertEqual(to_answer_space(False), {"spam": 0})
++
++    def test_refuses_a_value_the_question_set_does_not_offer(self) -> None:
++        for bad in ("yes", 1, None):
++            with self.assertRaises(ValueError):
++                to_answer_space(bad)  # type: ignore[arg-type]
++
++
++class Wired(unittest.TestCase):
++    """The filter wired in: unchanged behaviour while it is off."""
++
++    class Marks(Filter):
++        def check(self, string: str) -> "tuple[bool, str]":
++            return ("buy" not in string, string.upper())
++
++    def test_is_the_existing_filter_while_off(self) -> None:
++        f = System1Spam(self.Marks())
++        for text in ("buy now", "nice song"):
++            self.assertEqual(f.check(text), self.Marks().check(text))
++            self.assertEqual(f.last.reason, "disabled")
++
++    @unittest.skipIf(LIVE_SKIP, "EGRESS is on: this test would send")
++    def test_is_the_existing_filter_when_enabled_but_egress_off(self) -> None:
++        f = System1Spam(self.Marks(), enabled=True)
++        self.assertEqual(f.check("buy now"), (False, "BUY NOW"))
++        self.assertEqual(f.last.reason, "egress-off")
++
++
++class Shadow(unittest.TestCase):
++    def test_a_torn_last_line_does_not_swallow_the_next_row(self) -> None:
++        with tempfile.TemporaryDirectory() as tmp:
++            file = os.path.join(tmp, "captured.jsonl")
++            with open(file, "w", encoding="utf-8") as f:
++                f.write('{"id": "t0", "sta')
++            capture_shadow([("t1", PLUG)], lambda _t: CurrentRun(EXISTING), file=file, warn=lambda _m: None)
++            with open(file, encoding="utf-8") as f:
++                self.assertEqual(json.loads(f.read().split("\n")[1])["id"], "t1")
++
++    def test_one_row_per_input_unknown_cost_and_a_warning(self) -> None:
++        with tempfile.TemporaryDirectory() as tmp:
++            file = os.path.join(tmp, "captured.jsonl")
++            warnings: list[str] = []
++            broken = "x"
++
++            def current(text: str) -> CurrentRun:
++                if text == broken:
++                    raise RuntimeError("the existing mechanism failed")
++                if text == PLUG:
++                    return CurrentRun(True, {"cost": 0.0004})
++                return CurrentRun(False)
++
++            samples = [("t1", PLUG), ("t2", NEVER_RECORDED), ("t3", broken)]
++            summary = capture_shadow(samples, current, file=file, warn=warnings.append)
++            self.assertEqual(summary.written, 2)
++            self.assertEqual([i for i, _ in summary.failed], ["t3"])
++            self.assertIn("raw inputs", "\n".join(warnings))
++            with open(file, encoding="utf-8") as f:
++                rows = [json.loads(line) for line in f]
++            self.assertEqual(rows[0]["current"], {"spam": 1})
++            self.assertEqual(rows[0]["state"], policy.to_state(PLUG))
++            self.assertEqual(rows[0]["usage"], {"cost": 0.0004})
++            self.assertNotIn("usage", rows[1])
++            self.assertIsInstance(rows[1]["latencyMs"], int)
++
++            odd = capture_shadow(
++                [("u1", PLUG), ("u2", PLUG)],
++                lambda _t: CurrentRun(EXISTING, {"cost": float("nan"), "input_tokens": 3}),
++                file=file,
++                warn=lambda _m: None,
++            )
++            self.assertEqual(odd.written, 2)
++
++            bad = capture_shadow(
++                [(5, PLUG), ("  ", PLUG)], current, file=file, warn=lambda _m: None  # type: ignore[list-item]
++            )
++            self.assertEqual([i for i, _ in bad.failed], ["5", "  "])
++
++            again = capture_shadow(samples[:1], lambda _t: CurrentRun(EXISTING), file=file, warn=lambda _m: None)
++            self.assertEqual(again.skipped, ["t1"])
++
++
++if __name__ == "__main__":
++    unittest.main()

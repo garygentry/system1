@@ -277,7 +277,7 @@
 - [ ] Generated TS and Python modules pass their own offline tests, take the fallback on undecided, provider error and refusal, and are inert until the user enables them.
 - [ ] The output→answer mapping is generated and tested; missing baseline cost is reported as unknown.
 - [ ] `compare` never names a winner without labels; with labels it reports accuracy with sample size.
-- [ ] One TS and one Python opportunity taken through the whole chain, with measured cost and agreement recorded. *TS done (PR 9, 2026-10-06): `route.ts`, see Results; Python is PR 10.*
+- [x] One TS and one Python opportunity taken through the whole chain, with measured cost and agreement recorded. *TS: `route.ts` (PR 9). Python: `mags0ft/spamfilter` (PR 10). Both 2026-10-06; see Results.*
 - [ ] Routing: `adopt` and `compare` load on explicit invocation in all three harnesses; the `ask` set does not regress.
 - [ ] `pnpm check`, `pnpm smoke` (including the Codex Python-test smoke), `pnpm eval:routing all` green.
 - [ ] **0.6.0 released** through the gates; tagged `v0.6.0`. M12 (design partners) unblocked.
@@ -305,6 +305,35 @@
 ## Results
 
 *(Filled in per milestone as each closes.)*
+
+### M11 PR 10: dogfood, Python: `spamfilter` through adopt → capture → compare (2026-10-06)
+
+- **The target:** [`mags0ft/spamfilter`](https://github.com/mags0ft/spamfilter) (MIT, about 1.4k lines of Python) at `03341e0`, the maintainer's pick from three candidates (D8). `filters/openai.py`, `OpenAI.check`, makes one OpenAI-compatible chat call with a strict JSON schema `{is_spam: bool}`. The existing mechanism ran as a user would configure it: `openai/gpt-4o-mini` through OpenRouter, with the package's own prompt and options.
+- **Where it ran:** a pinned clone in `~/.cache/system1-dogfood/spamfilter`, with its own egress consent, granted by the maintainer. The adoption is kept as `evidence/dogfood-spamfilter/adopt.patch`, with a README on how to reproduce it.
+  - The module (`system1/`) came from the Python template, and `filter.py` wires it in as a spamfilter `Filter` that wraps the filter it would replace. It is inert: `enabled=False`, `EGRESS` "off".
+  - The module's 24 offline tests and spamfilter's own 26 pass in replay.
+  - The tests use the in-repo `decide`, because the published 0.5.1 predates `decide runtime`.
+- **The spec:** `spam`, one noul. One live recording ($0.000108) passed all 5 graded examples, between 0.03 and 0.97. The captured "Like this comment if…" example came back undecided (0.50), so the module keeps the existing answer there.
+- **Data:** 200 comments from the UCI YouTube Spam Collection (CC BY 4.0), 100 from each class, drawn with a fixed seed, with the corpus's own labels.
+- **The shadow run:** 200 calls, no failures, **$0.00406 measured** in all ($0.000020 a call, reported by OpenRouter per call), p50 894 ms, p95 1,559 ms.
+- **`decide compare spam --record`** (live, $0.00375 measured):
+  - **Cost and latency:** Jev $0.000019 a call, p50 199 ms, p95 444 ms.
+  - **Agreement:** 91.1% of 190; Jev was undecided on 5.0%.
+  - **Accuracy:** Jev 93.7% of 190, the filter 91.5% of 200. Head-to-head over the 190 both gave: Jev 178, the filter 175, **Jev ahead**.
+- **The policy as it would run** (`system1/evaluate.py`, replaying compare's answers through `decide runtime --replay`; two bars, with the filter's answer whenever it can't act):
+
+  | | Right | Spam caught (of 100) | Real comments blocked (of 100) |
+  |---|---|---|---|
+  | The OpenAI filter (gpt-4o-mini) | 183/200 | 90 | 7 |
+  | The policy | 188/200 | 90 | 2 |
+
+  The model decided 179 of the 200. Of the rest, 10 were undecided and 11 sat between the bars.
+- **The Python spawn:** each call starts one `decide` process. Replay through `decide runtime` took p50 91 ms and p95 278 ms per call (n = 40), on top of the model's latency. That is under half of the gpt-4o-mini call it would replace.
+- **Verdict: a lean towards the policy, at no extra cost.** At about the same cost per call, with about a third of the latency (spawn included), it caught the same spam and wrongly blocked 2 real comments instead of 7. That is the error the spec's threshold `why` says costs more. With 200 rows it is a lean, not a result: the 5-row difference rests on a handful of comments. Cutover stays with spamfilter's users, and nothing here switches it on.
+- **Found on the way:**
+  - A value of 0.50 reaches the module as the runtime's `undecided` before its own bars apply. The template's tests should say so.
+  - The spec test needs YAML's `BaseLoader`, because PyYAML reads a `true:` criteria key as a boolean. The Python template has no spec test yet; worth adding one with that loader (PR 11).
+  - The shadow harness's cost needed OpenRouter's `usage.include` flag, an accounting flag the harness adds without changing the request's content. The template should say how to get a measured cost when the existing client doesn't report it.
 
 ### M11 PR 9: dogfood, TypeScript: `route.ts` through adopt → capture → compare (2026-10-06)
 
