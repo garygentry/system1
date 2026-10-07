@@ -278,9 +278,9 @@
 - [ ] The output→answer mapping is generated and tested; missing baseline cost is reported as unknown.
 - [ ] `compare` never names a winner without labels; with labels it reports accuracy with sample size.
 - [x] One TS and one Python opportunity taken through the whole chain, with measured cost and agreement recorded. *TS: `route.ts` (PR 9). Python: `mags0ft/spamfilter` (PR 10). Both 2026-10-06; see Results.*
-- [ ] Routing: `adopt` and `compare` load on explicit invocation in all three harnesses; the `ask` set does not regress.
-- [ ] `pnpm check`, `pnpm smoke` (including the Codex Python-test smoke), `pnpm eval:routing all` green.
-- [ ] **0.6.0 released** through the gates; tagged `v0.6.0`. M12 (design partners) unblocked.
+- [x] Routing: `adopt` and `compare` load on explicit invocation in all three harnesses; the `ask` set does not regress. *(0.6.0 gates, 2026-10-07: smoke markers in all three; `eval:routing all` 100% in every category.)*
+- [x] `pnpm check`, `pnpm smoke` (including the Codex Python-test smoke), `pnpm eval:routing all` green. *(995 tests; smoke 26/26 after #56; routing 100%.)*
+- [x] **0.6.0 released** through the gates; tagged `v0.6.0` on `09efbf2` (2026-10-07). M12 (design partners) unblocked.
 
 ---
 

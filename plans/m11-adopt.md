@@ -1,6 +1,6 @@
 # Plan: M11 — `adopt` + `compare`, runtime consent, the `emulated` baseline
 
-- **Status:** in progress (2026-09-30). Runtime consent: [0020](decisions/0020-runtime-consent-for-adopted-code.md).
+- **Status:** complete (2026-10-07): 0.6.0 released and verified. Started 2026-09-30. Runtime consent: [0020](decisions/0020-runtime-consent-for-adopted-code.md).
 - **Order:** the runtime (PR 3) comes before emulated and compare (PRs 4–5), against the spec's stated order, because 0020 was settled first and both later PRs build on PR 2.
 - **Spec:** [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) §M11. This file is the implementation plan; the spec wins where they differ, except for the decisions below and the corrections in "Where the spec meets the code".
 
@@ -82,7 +82,7 @@ The maintainer ruled on 1, 2, 6 and 8. The others are the agent's proposals, rev
    - Routing sets and `MINIMUMS`; the Pi package contents.
 9. **Dogfood, TypeScript:** `route.ts` through adopt → capture → compare, with the numbers recorded in the spec's Results. *Done (2026-10-06): a shadow in `tools/route-policy/`, no cutover; no quality gain over the regex at n=72.*
 10. **Dogfood, Python:** choose the target (D8), then take it through the whole chain. *Done (2026-10-06): `mags0ft/spamfilter`, in `evidence/dogfood-spamfilter/`. The policy got 188/200 right to the filter's 183 and blocked 2 real comments instead of 7, at about the same cost.*
-11. **Docs:** the chain, the policy module, runtime consent and environment, the emulated profile and its opt-in, and the report format. Update `docs/architecture/`, whose README still says 0.3.1. Then the 0.6.0 release.
+11. **Docs:** the chain, the policy module, runtime consent and environment, the emulated profile and its opt-in, and the report format. Update `docs/architecture/`, whose README still says 0.3.1. Then the 0.6.0 release. *Done (2026-10-07): `docs/adopt.md` and the architecture docs at 0.6.0 (#55); 0.6.0 released the same day.*
 
 **Contingency (spec):** met. 0020 was accepted before any code.
 

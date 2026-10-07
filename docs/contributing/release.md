@@ -127,6 +127,12 @@ read `workspace:*`, which pnpm would rewrite. That is harmless, because consumer
 devDependencies. Each package's `prepublishOnly` (`tools/prepublish-check.mjs`) runs its `build`
 and `prepack` and refuses to publish if any `bin`, `exports` or `files` entry is missing.
 
+If `publish` fails with `ENEEDAUTH` right after the tarball listing, npm didn't accept the OIDC
+token: the package's trusted publisher doesn't match this run's repository, workflow file or
+environment, or doesn't allow publish. Check `npm trust list <package>` against
+[One-time setup](#one-time-setup), fix it, and re-run the failed job (`gh run rerun <id>
+--failed`), which needs one more approval. Nothing was published.
+
 If `verify` fails, nothing was published. Fix the cause and either re-run the job or, if the fix
 changes the commit, move the tag: `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`, which
 needs the maintainer's ruleset bypass, then tag again. Only move a tag while nothing at that
@@ -229,16 +235,23 @@ recorded in [0022](../../plans/decisions/0022-ci-publish-trusted-staged.md) Amen
 
   Add rulesets that stop `v*` tags being updated or deleted, and stop `main` being force-pushed or
   deleted, with an admin bypass on both.
-- **npm, for each package:** open Settings → Trusted publishing and set GitHub Actions,
-  `garygentry/system1`, workflow `release.yml`, environment `release`, permission **publish**.
-  On the CLI that is:
+- **npm, for each package:** one trusted publisher: GitHub Actions, `garygentry/system1`,
+  workflow `release.yml`, environment `release`, permission **publish**. A package holds one
+  trusted publisher, so replace the old one rather than adding a second. Check the result with
+  `npm trust list`: on 0.6.0, an edit on npmjs.com changed the permission but left the
+  environment at `npm-publish`, and the first `publish` run failed with `ENEEDAUTH`. On the CLI
+  (an npm with `npm trust`, such as 12.1, logged in):
 
   ```sh
   for p in @garygentry/system1-core @garygentry/system1 @garygentry/system1-pi; do
-    npm trust github "$p" --repo garygentry/system1 --file release.yml --env release --yes
+    npm trust list "$p"     # note the id
   done
-  npm trust list @garygentry/system1
+  npm trust revoke <package> --id=<id>
+  npm trust github <package> --repo garygentry/system1 --file release.yml --env release --allow-publish --yes
   ```
+
+  Then `npm trust list` shows, for each package, `environment: release` and
+  `permissions: publish`.
 
   Set Settings → Publishing access to *Require two-factor authentication and disallow tokens*,
   and revoke any old publish tokens.
