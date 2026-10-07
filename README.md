@@ -10,7 +10,7 @@ everything themselves.
 - is this command destructive;
 - is "done" actually done.
 
-> **Status: 0.4.0, pre-1.0.** It installs and works in all three harnesses, and the claims below
+> **Status: 0.6.0, pre-1.0.** It installs and works in all three harnesses, and the claims below
 > are measured, but so far only its author has used it. Expect the details to change before 1.0.
 > [Where it stands](#where-it-stands) has the evidence.
 
@@ -135,7 +135,7 @@ for `decide`. Install the CLI first (step 1 above), then the plugin:
 | Harness | Plugin | Network |
 |---|---|---|
 | **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | allow `openrouter.ai` if the sandbox is on |
-| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules` |
+| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `~/.codex/rules/system1.rules` (`$CODEX_HOME/rules/` if you set `CODEX_HOME`), then restart Codex |
 | **Pi** | `pi install npm:@garygentry/system1-pi` | no sandbox |
 
 Then run the **setup** skill (`/system1:setup` in Claude Code, `$system1:setup` in Codex,
@@ -247,8 +247,9 @@ add `--confirm` ([spend](docs/spend.md)).
   thresholds depend on calibration that a different model wouldn't share. Replay keeps working,
   so saved specs still run as offline tests.
 - **Claude grades its own small diffs.** Asked to check a change it just wrote against criteria,
-  Claude sometimes does it by reading instead of handing it off, even with the hint. The planned
-  fix is the `done-check` hook ([details](docs/evaluation.md#routing-does-the-agent-reach-for-it)).
+  Claude sometimes does it by reading instead of handing it off, even with the hint. In a repo
+  that opts in with a criteria file, the `done-check` hook checks the change at Stop anyway
+  ([guard](docs/guard.md), [details](docs/evaluation.md#routing-does-the-agent-reach-for-it)).
 - **Not for everything.** Counting, arithmetic, dates, exact matching and anything that needs
   several documents reasoned together are jobs for code, not a decision model.
 - **Pre-1.0.** The CLI's JSON envelope is versioned ([decision 0015](plans/decisions/0015-cli-contract-v1.md)),
@@ -257,8 +258,8 @@ add `--confirm` ([spend](docs/spend.md)).
 
 ## Where it's going
 
-Next is **M10**, `guard` + `done-check` (0.5.0), then **M11**, `adopt` + `compare` (0.6.0). After
-those, 3–5 design partners try the whole chain on their own code (M12). The full plan and its
+Next is **M12**: 3–5 design partners try the whole chain on their own code, from the docs alone,
+and a fix round ships what they hit. Release hygiene and the 1.0 decision (M13) come after. The full plan and its
 reasoning are in [`plans/ROADMAP.md`](plans/ROADMAP.md).
 
 ## Documentation

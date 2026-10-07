@@ -153,8 +153,8 @@ Delete a capture once its comparison is done.
 The model's endpoint couldn't be reached from this shell. The fix depends on where you are:
 
 - **Codex:** its sandbox gives the shell no network. Add
-  `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules`
-  (the setup skill offers to do this), then restart Codex. The rule covers only commands that
+  `prefix_rule(pattern = ["decide"], decision = "allow")` to `~/.codex/rules/system1.rules`
+  (`$CODEX_HOME/rules/` if you set `CODEX_HOME`; the setup skill offers to do this), then restart Codex. The rule covers only commands that
   **start** with `decide`: `a && decide …` works, but `… | decide …` still runs offline, so pass
   content with `--file`.
 - **Claude Code with the sandbox on:** allow outbound access to `openrouter.ai` in its sandbox
