@@ -79,7 +79,9 @@ function flipOn(file: string) {
   writeFileSync(file, flipped)
 }
 
-describe("adopt templates: TypeScript", () => {
+// Each test spawns a whole suite (node --test, or python3 spawning decide):
+// seconds on a loaded machine, past vitest's 5 s default.
+describe("adopt templates: TypeScript", { timeout: 60_000 }, () => {
   it("passes its offline tests from a directory with no .git", () => {
     const { dir } = repo("ts")
     const run = runTs(dir)
@@ -98,7 +100,7 @@ describe("adopt templates: TypeScript", () => {
   })
 })
 
-describe.skipIf(!PYTHON)("adopt templates: Python", () => {
+describe.skipIf(!PYTHON)("adopt templates: Python", { timeout: 60_000 }, () => {
   it("passes its offline tests through decide runtime, from a directory with no .git", () => {
     const { dir } = repo("python")
     const run = runPython(dir)

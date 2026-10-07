@@ -337,7 +337,9 @@ describe("namedFiles", () => {
     )
     const started = performance.now()
     namedFiles(criteria, tracked)
-    expect(performance.now() - started).toBeLessThan(1000)
+    // Catches a quadratic scan, not a few percent: linear takes well under a
+    // second, and the slack keeps a loaded machine from failing it.
+    expect(performance.now() - started).toBeLessThan(3000)
   })
 })
 
