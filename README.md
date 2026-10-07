@@ -166,7 +166,7 @@ It is local pattern matching and sends nothing ([routing hints](docs/routing-hin
 |---|---|---|
 | `scout` | Find the places in your code and agent configuration where a decision model would pay off, and record them as a backlog | 0.4.0 ([scout](docs/scout.md)) |
 | `guard` + `done-check` | An opt-in check at Stop: judges the agent's change against your criteria (`TASK.md`, `.system1/done.md`) and blocks once when one is clearly unmet | 0.5.0 ([guard](docs/guard.md)) |
-| `adopt` + `compare` | Turn a found opportunity into code with a fallback, and measure it against what it replaces | planned, 0.6.0 |
+| `adopt` + `compare` | Turn a found opportunity into a policy module with a fallback, inert until you switch it on, and measure it against what it replaces | 0.6.0 ([adopt](docs/adopt.md)) |
 
 ## Use it in your own project
 
@@ -277,6 +277,7 @@ reasoning are in [`plans/ROADMAP.md`](plans/ROADMAP.md).
 | [Tutorial: zero to first decisions](docs/tutorial.md) | a 20-minute hands-on lab in Claude Code: install, set up, then route 300 tickets and gate a risky script |
 | [Scout](docs/scout.md) | find where a decision model would pay off in your code or agent config |
 | [Guard](docs/guard.md) | have `done-check` judge the agent's work against your criteria when it stops |
+| [Adopt and compare](docs/adopt.md) | put a decision model in front of a judgement your code makes, then measure it against what it replaces |
 | [Routing hints](docs/routing-hints.md) | tune or turn off the Claude Code hint |
 
 | Reference and evidence | |

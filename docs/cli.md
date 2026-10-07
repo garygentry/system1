@@ -173,7 +173,8 @@ decide compare <spec> [--baseline current|emulated|emulated:<model>] [--live|--r
 ```
 
 Measures Jev against a baseline over the same states, captured from real inputs by the shadow
-harness that `adopt` generates, and writes `.system1/compare/<spec>/report.json`.
+harness that `adopt` generates, and writes `.system1/compare/<spec>/report.json`. The whole
+chain, and how to read the report, is in [adopt and compare](adopt.md).
 
 - **The capture** is `.system1/compare/<spec>/captured.jsonl`, one JSON line per input:
   `{id, state, current, output?, usage?, latencyMs?}`. `current` is the mechanism in place's

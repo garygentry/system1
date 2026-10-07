@@ -20,15 +20,41 @@ The rule: every path to the provider goes through `prepare()` and a decider buil
 | Consent is required | `DeciderOptions.egressConsent` in `decide.ts` | The option is mandatory, so no caller can build a decider and forget it. Live and record call `assertConsent` before the transport. `tools/many.ts` also checks once before the fan-out. |
 | Consent is per repo | `readConsent` in `packages/core/src/config/load.ts` | Consent is read only from the repo layer. A grant in the user config is ignored rather than covering every repo. |
 | Consent is the user's | `packages/cli/src/commands/config.ts` | `decide config egress allow` needs an interactive terminal or `--confirm`. Skills never pass `--confirm` ([0015 § Consent guard](../../plans/decisions/0015-cli-contract-v1.md#consent-guard)). |
+| Opt-ins on top of consent | `packages/core/src/config/consent.ts`, `packages/cli/src/commands/config.ts`, `packages/cli/src/commands/guard.ts` | A guard pack sends only when `guard.packs.<pack>.enabled` and consent are both in the repo file; an emulated baseline only when its id is in `egress.allowProfiles`, also repo-only. `decide guard enable` and `decide config egress allow-profile` need a terminal or `--i-consent`; `--confirm` doesn't count. `tools/validate.ts` (`USER_ONLY`) fails any skill file that spells `--i-consent`, `allow-profile` or `allowProfiles`. |
+| A second vendor only in `compare` | `assertDecisionProfile` in `packages/core/src/model/profiles.ts`, `createDecider` in `decide.ts`, `tools/compare.ts` | An `openrouter-chat` profile can't build a decider, so `ask`, `many`, `spec check`, a guard hook and the runtime all refuse it with `profile-not-allowed`. `compare` builds its own client (`baseline/client.ts`) and refuses a profile the repo hasn't allowed before Jev spends anything. A chat profile can't come from the user config (`profileList` in `config/load.ts`). |
 
 Replay sends nothing, so it needs no consent and no key. The Claude prompt hook sends nothing
 either: `decide route` matches the prompt locally and never builds a decider
-([0018](../../plans/decisions/0018-claude-routing-hook.md)).
+([0018](../../plans/decisions/0018-claude-routing-hook.md)). The guard hooks return `{}` having
+read only the config until the pack is enabled and consented (`runHook` in
+`packages/core/src/tools/hook.ts`).
 
-**Adding a new source or a new command that decides:** route it through `prepare()` and
-`deciderFor()` in `packages/core/src/tools/context.ts`. Don't construct a transport anywhere else.
-The only other `fetch` in the engine is `packages/core/src/ping.ts`, a keyless GET of the public
-model listing that carries no content; keep it that way.
+### The exception: adopted code
+
+An adopted module runs in the user's application, where there may be no repo config to hold
+consent. Its grant is one marked line of reviewed code
+([0020](../../plans/decisions/0020-runtime-consent-for-adopted-code.md), which amends 0009 for this
+case). Everything else about egress still holds except excludes.
+
+| Piece | Where | What it guarantees |
+|---|---|---|
+| The grant is a line | `grantIn()` in `packages/core/src/runtime/grant.ts` | On only when exactly one line carries `system1: runtime egress` and assigns the literal `"on"` to `EGRESS` at column 0, with nothing after it but the marker. Two marked lines, a computed value or an indented line are off. No flag, config key or environment variable grants it. |
+| Two locks in TypeScript | `moduleLock()` in `packages/core/src/runtime/runtime.ts` | With `egress: "on"`, a live call also needs the file named by `module` (`import.meta.url`) to say on. Without `module`, it falls back with `egress-off`. `module: "bundled"` opts out, for builds that strip comments; then the value passed is the only lock. |
+| Two locks in Python | `packages/cli/src/commands/runtime.ts` | `decide runtime` reads the grant from `--module` itself, and refuses a live call with `egress-off` while a harness session variable is set (`HARNESS_SESSION_VARS`): a deterrent against an agent running a module it just wrote, not a control. It loads no config and reads no `SYSTEM1_*` variable. |
+| Scrub and size, no excludes | `prepareState()` in `packages/core/src/prepare-state.ts`, then `decide.ts` | Every runtime state is scrubbed and size-checked twice, as any other. Excludes match paths and an in-memory state has none, so the module decides what goes into a state. |
+| `adopt` never writes "on" | `plugins/system1/skills/adopt/references/templates/{ts,python}/grants.*`, `tools/validate.ts`, `tools/templates.test.ts` | Each generated module's test scans the module as written for any grant, not one spelling (an `EGRESS` set to anything but `"off"`, `egress:` from a variable, `egressConsent`, an `EGRESS` from the environment), and fails if its own line is on. `pnpm validate` runs the same scan over the templates, and refuses `decide runtime` in any skill file outside them. |
+| Visible after the fact | `adoptedCheck()` in `packages/core/src/tools/doctor-adopt.ts` | `decide doctor` finds adopted modules by the marker, `createPolicyRuntime` or a `"bundled"` opt-out (`git grep`), and warns (advisory) on any with egress on or the lock opted out. |
+
+The control is the user's review of the diff: nothing in generated code can stop an agent from
+writing a grant, so these make one visible, not impossible (0020, "What we give up").
+
+**Adding a new source or a new command that decides:** route it through `prepare()` (or
+`prepareState()` for a state held in memory) and `deciderFor()` in
+`packages/core/src/tools/context.ts`. Don't construct a transport anywhere else; the runtime
+builds its own because it has no tool context, and `baselineFor()` is for `compare` alone. Every
+content POST goes through `postJson()` in `packages/core/src/transport/post.ts`. The only other
+`fetch` in the engine is `packages/core/src/ping.ts`, a keyless GET of the public model listing
+that carries no content; keep it that way.
 
 ## Honest numbers
 
@@ -55,6 +81,27 @@ replay miss is an error, never a synthesised answer
 - **Undecided.** Answers too flat to act on are named in `undecided` and never rounded to the top
   option (`packages/core/src/model/answers.ts`); the projection lists them apart and never
   thresholds them (`packages/core/src/project/project.ts`).
+- **A paid failure is counted.** `transport/post.ts` decides, per attempt, whether it may have
+  been billed (`mayHaveRun`). A failure that may have been carries `details.spent`
+  (`{usage, uncounted}`) and is logged before it is reported; an answer whose retries may have been
+  billed unreported carries `uncountedAttempts`, and its `usage` is marked `reported: false`. A
+  `many` run folds its failed items' spend into `usage`.
+- **`compare` names no winner without labels.** `winner` is `null` unless
+  `.system1/labels/<spec>.jsonl` exists, and then it is decided only on the labelled answers both
+  sides gave (`headToHead` in `packages/core/src/compare/signals.ts`), each accuracy with its `n`.
+  A capture row with no `usage` is cost unknown, never zero (`costSignal`). The emulated
+  baseline's replies are parsed strictly and counted in `baseline.parsed`; nothing is rounded or
+  clamped into an answer (`packages/core/src/baseline/parse.ts`).
+- **Emulated answers stay apart.** A `BaselineAnswer` is a single uncalibrated value, a different
+  type from `Answer`, and never reaches `project()`, a threshold or a decider. Its profile says
+  `calibrated: false`.
+- **The runtime's cap counts what it can't see.** `maxUsdPerDay` is counted from the provider's
+  reported cost, at the projection for each attempt billed unreported, and at the projection for a
+  call abandoned at its deadline (plus any excess it later reports). Each call reserves its
+  projection first, so concurrent calls in one process can't pass the cap together; a call's
+  measured cost can still pass it by the difference. Across processes it holds only through a
+  shared, writable `root`, and in memory it resets on restart (0020 §4). A cap that isn't a finite
+  number of at least 0 makes every call fall back, never uncapped.
 
 ## The CLI contract
 
@@ -73,6 +120,12 @@ error class ([0015](../../plans/decisions/0015-cli-contract-v1.md)).
   doctor check.
 - **Inputs are strict.** The TypeBox schemas in `packages/core/src/tools/schemas.ts` refuse
   unknown properties, and `decide schema <tool>` prints them.
+- **Two commands are outside the envelope**, because something other than an agent reads them:
+  `decide hook` (the harness's hook JSON) and `decide runtime` (one policy result). Both always
+  exit 0 and report problems in their own output (`systemMessage`, or a fallback with `internal`).
+  `main.ts` dispatches them before it parses `--format`. Their stdin shapes are
+  `decide schema hook` and `decide schema runtime`, and `RUNTIME_PROTOCOL` changes only when the
+  runtime's stdin/stdout shape does (0015, M10 and M11 amendments).
 
 Adding a field to a result is not breaking. Removing or renaming a field, or changing its type, is
 a breaking change to the envelope or a result shape: it bumps `ENVELOPE_VERSION` and needs a
@@ -90,7 +143,11 @@ Where it happens: `loadConfig()` in `packages/core/src/config/load.ts`.
   both.
 - **Lists add up**, user first: `egress.exclude`, `profiles`, and `route.disable`,
   `route.triggers` and `route.ignore`. `SYSTEM1_ROUTE=off` disables routing whatever the files say.
-- **Consent** comes only from the repo layer (above).
+  A `profiles` entry with the chat transport is taken only from the repo file.
+- **Consent**, `egress.allowProfiles` and `guard.packs.<pack>.enabled` come only from the repo
+  layer; set in the user file they are ignored with a warning.
+- **The runtime reads no config at all.** `createPolicyRuntime` takes its environment as options,
+  and `decide runtime` reads only `OPENROUTER_API_KEY` from the environment.
 - **Other environment:** `SYSTEM1_REPLAY` forces replay, `SYSTEM1_SESSION` overrides the detected
   harness session, and `SYSTEM1_SPECS_PATH` overrides the bundled specs directory
   (`packages/core/src/tools/context.ts`).
