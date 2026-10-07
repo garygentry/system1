@@ -189,7 +189,8 @@ export function latencySignal(values: ReadonlyArray<number | undefined>): Latenc
     sorted[Math.min(sorted.length - 1, Math.ceil(q * sorted.length) - 1)] as number
   return {
     n: ms.length,
-    meanMs: Math.round(ms.reduce((a, b) => a + b, 0) / ms.length),
+    // To the microsecond, as the shadow harness writes it: a sub-millisecond mean isn't 0.
+    meanMs: Math.round((ms.reduce((a, b) => a + b, 0) / ms.length) * 1000) / 1000,
     p50Ms: at(0.5),
     p95Ms: at(0.95),
   }

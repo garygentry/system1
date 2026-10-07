@@ -19,6 +19,9 @@ const DECIDE = join(ROOT, "packages/cli/dist/bundle/decide.mjs")
 const PYTHON =
   spawnSync("python3", ["-c", "import sys; sys.exit(sys.version_info < (3, 9))"]).status === 0
 
+// PyYAML is the Python spec tests' only extra; without it they skip, with a reason.
+const PYYAML = PYTHON && spawnSync("python3", ["-c", "import yaml"]).status === 0
+
 const dirs: string[] = []
 afterAll(() => {
   for (const dir of dirs) rmSync(dir, { recursive: true, force: true })
@@ -79,6 +82,15 @@ function flipOn(file: string) {
   writeFileSync(file, flipped)
 }
 
+/** The spec moved away from the module: a `true:` criterion reworded. */
+function editSpec(dir: string) {
+  const file = join(dir, ".system1/specs/ticket-triage.yaml")
+  const text = readFileSync(file, "utf8")
+  const edited = text.replace(/(\n\s+true: )Something is down/, "$1Something is broken")
+  expect(edited).not.toBe(text)
+  writeFileSync(file, edited)
+}
+
 // Each test spawns a whole suite (node --test, or python3 spawning decide):
 // seconds on a loaded machine, past vitest's 5 s default.
 describe("adopt templates: TypeScript", { timeout: 60_000 }, () => {
@@ -98,6 +110,15 @@ describe("adopt templates: TypeScript", { timeout: 60_000 }, () => {
     expect(run.stdout).toMatch(/not ok \d+ - is off as generated/)
     expect(run.stdout).toMatch(/not ok \d+ - has no grant in the module's source/)
   })
+
+  it("fails its spec test once the spec moves away from the module", () => {
+    const { dir } = repo("ts")
+    editSpec(dir)
+    const run = runTs(dir)
+    expect(run.status).not.toBe(0)
+    expect(run.stdout).toMatch(/not ok \d+ - has the module's questions, verbatim/)
+    expect(run.stdout).toMatch(/# fail 1\n/)
+  })
 })
 
 describe.skipIf(!PYTHON)("adopt templates: Python", { timeout: 60_000 }, () => {
@@ -105,7 +126,7 @@ describe.skipIf(!PYTHON)("adopt templates: Python", { timeout: 60_000 }, () => {
     const { dir } = repo("python")
     const run = runPython(dir)
     expect(run.status, run.stdout + run.stderr).toBe(0)
-    expect(run.stderr).toMatch(/\nOK\n?$/)
+    expect(run.stderr).toMatch(PYYAML ? /\nOK\n?$/ : /\nOK \(skipped=3\)\n?$/)
   })
 
   it("fails its tests once the EGRESS line is switched on", () => {
@@ -115,6 +136,16 @@ describe.skipIf(!PYTHON)("adopt templates: Python", { timeout: 60_000 }, () => {
     expect(run.status).not.toBe(0)
     expect(run.stderr).toMatch(/FAIL: test_is_off_as_generated/)
     expect(run.stderr).toMatch(/FAIL: test_no_grant_in_the_module_source/)
+  })
+
+  // The passing suite above shows BaseLoader at work: PyYAML's others read `true:` as True.
+  it.skipIf(!PYYAML)("fails its spec test once the spec moves away from the module", () => {
+    const { dir } = repo("python")
+    editSpec(dir)
+    const run = runPython(dir)
+    expect(run.status).not.toBe(0)
+    expect(run.stderr).toMatch(/FAIL: test_has_the_spec_questions_verbatim/)
+    expect(run.stderr).toMatch(/FAILED \(failures=1\)/)
   })
 })
 

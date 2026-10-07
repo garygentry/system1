@@ -7,7 +7,8 @@ A worked example, `ticket-triage`, of what `adopt` generates: the existing mecha
 | `policy.ts` · `policy.py` | The policy module: the spec's questions and thresholds, the state builder, the `EGRESS` line, and `triage()`, which answers with the model or falls back to the existing mechanism with a reason code and a trace |
 | `mapping.ts` · `mapping.py` | The existing mechanism's output in the question set's answer space, strictly: what the shadow harness writes as `current` |
 | `shadow.ts` · `shadow.py` | The shadow harness: runs the existing mechanism over samples and appends `{id, state, current, usage?, latencyMs}` to `.system1/compare/<spec>/captured.jsonl` |
-| `policy.test.ts` · `test_policy.py` | Offline tests against the spec's recorded fixtures (replay) |
+| `policy.test.ts` · `test_policy.py` | Offline tests against the spec's recorded fixtures (replay), and a spec test that reads the spec's YAML |
+| `ticket-triage.yaml` | The worked example's spec, as `adopt` would write it to `.system1/specs/` |
 | `grants.ts` · `grants.py` | The grant scan the tests run over the module's own files |
 
 ## The rules every generated module keeps
@@ -24,4 +25,4 @@ A worked example, `ticket-triage`, of what `adopt` generates: the existing mecha
 - **One undecided question makes the whole call fall back** with `undecided`, even when the others were decided. That fallback still carries the decided `answers`. These templates ignore them, so keep diagnostic questions out of a module's set, or act on a decided answer that matters on its own, as `tools/route-policy/policy.ts` does with its `hint`. Each extra question adds another way to fall back: five diagnostic nouls took route.ts's fallbacks from 6 to 13.
 - **An answer inside the profile's undecided band (0.50 included) never reaches the module's own bars.** The runtime reports it as `undecided` first. Say so in the tests that pin a threshold.
 - **A measured `usage` in the capture** needs the existing client to report cost. If it doesn't, find its provider's accounting option (OpenRouter's `usage: {include: true}` added it for spamfilter, and changed nothing about the request's content), or leave `usage` out: compare then counts that row's cost as unknown, never as zero.
-- **Python spec tests that read YAML** should load it with `yaml.BaseLoader`, because PyYAML reads a `true:` criteria key as a boolean.
+- **The spec tests read the spec's YAML** and check the module's questions, thresholds and example states against it, since recorded answers are keyed on both agreeing. The Python test (`Spec` in `test_policy.py`) loads it with `yaml.BaseLoader`, because PyYAML's other loaders read a `true:` criteria key as a boolean, and reads every number as a string. Only the tests need a YAML library: without PyYAML (Python) or `yaml` (TypeScript) they skip with a reason, and the module itself never needs one.

@@ -333,7 +333,7 @@
 - **Verdict: a lean towards the policy, at about the same cost.** Its 21 fallbacks add about $0.0004 of gpt-4o-mini calls, so the run costs about 2% more than the filter alone. It caught as much spam (90 each, 88 of them the same comments) and wrongly blocked 2 real comments instead of 7, the error the spec's threshold `why` says costs more. With 200 rows it is a lean, not a result: the policy alone was right on 8 comments and the filter alone on 3, an exact McNemar p of about 0.23. Cutover stays with spamfilter's users, and nothing here switches it on.
 - **Found on the way:**
   - A value of 0.50 reaches the module as the runtime's `undecided` before its own bars apply. The template's tests should say so.
-  - The spec test needs YAML's `BaseLoader`, because PyYAML reads a `true:` criteria key as a boolean. The Python template has no spec test yet; worth adding one with that loader (PR 11).
+  - The spec test needs YAML's `BaseLoader`, because PyYAML reads a `true:` criteria key as a boolean. The Python template has no spec test yet; worth adding one with that loader (PR 11). Done for 0.6.1 (#58): both templates now have a spec test, the Python one with that loader.
   - The shadow harness's cost needed OpenRouter's `usage.include` flag, an accounting flag the harness adds without changing the request's content. The template should say how to get a measured cost when the existing client doesn't report it.
 
 ### M11 PR 9: dogfood, TypeScript: `route.ts` through adopt → capture → compare (2026-10-06)
@@ -364,7 +364,7 @@
 - **Verdict: no quality gain, so no cutover.** Over these 72 prompts the decision model is no better than the regex, and every prompt would pay about 200 ms and $0.00004 and send its text to the provider. The one set the regex wasn't tuned on (32 prompts) moves by one, which says nothing either way. That set has also been read, by whoever wrote `hint` among others, so it is no longer blind for either side. The routing hook stays the regex, and the module stays a measured shadow. With n this small this is a lean, not a result; a bigger blind set is what would change it.
 - **Found on the way:**
   - The runtime falls back with `undecided` when *any* question is undecided. Diagnostic questions (here, the five trigger nouls) took the fallbacks from 6 to 13. The module acts on a decided `hint` alone. The template and `docs/runtime.md` should say this (PR 11).
-  - The capture's rounded `latencyMs` reads 0 for a sub-millisecond mechanism.
+  - The capture's rounded `latencyMs` reads 0 for a sub-millisecond mechanism. Fixed for 0.6.1: the harnesses write it to the microsecond, and compare's mean keeps it.
 
 ### M10 §1 spike: Stop hooks from a plugin (2026-09-27)
 

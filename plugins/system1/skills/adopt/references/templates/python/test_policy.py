@@ -17,18 +17,31 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import unittest
 from typing import Any
 
 import policy
 from grants import grant_problems
 from mapping import to_answer_space
-from policy import EGRESS, QUESTIONS, PolicyOptions, Ticket, Triage, triage
+from policy import (
+    AREA_AT_LEAST,
+    EGRESS,
+    NOT_URGENT_AT_MOST,
+    QUESTIONS,
+    URGENT_AT_LEAST,
+    PolicyOptions,
+    Ticket,
+    Triage,
+    triage,
+)
 from shadow import CurrentRun, capture_shadow
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 #: ADOPT: the repo's `.system1` directory, which holds `fixtures/ticket-triage/`.
 SYSTEM1_DIR = os.path.join(HERE, "..", ".system1")
+#: ADOPT: the spec `adopt` generated this module from.
+SPEC_FILE = os.path.join(SYSTEM1_DIR, "specs", "ticket-triage.yaml")
 #: ADOPT: the module files `adopt` wrote, checked for a grant below.
 MODULE_FILES = [
     os.path.join(HERE, name)
@@ -225,6 +238,38 @@ class Thresholds(FallsBack):
         self.assertIsNone(policy.from_answers({}))
 
 
+def load_spec() -> Any:
+    """The spec, read as YAML. Only these tests read it: the module never needs PyYAML."""
+    try:
+        import yaml
+    except ImportError:
+        raise unittest.SkipTest("checks the module against its spec: install PyYAML (pip install pyyaml)")
+    with open(SPEC_FILE, encoding="utf-8") as f:
+        # BaseLoader keeps every key and value a string: PyYAML's other loaders
+        # read YAML 1.1, where a `true:` criteria key is the boolean True.
+        return yaml.load(f, Loader=yaml.BaseLoader)
+
+
+class Spec(unittest.TestCase):
+    """The module copies the spec; recorded answers are keyed on both agreeing."""
+
+    def test_has_the_spec_questions_verbatim(self) -> None:
+        self.assertEqual(load_spec()["questions"], QUESTIONS)
+
+    def test_has_the_spec_thresholds(self) -> None:
+        # BaseLoader reads every number as a string.
+        thresholds = {k: float(v["value"]) for k, v in load_spec()["policy"]["thresholds"].items()}
+        # ADOPT: one entry per threshold the spec sets, and the module's bar for it.
+        self.assertEqual(thresholds, {"urgent": URGENT_AT_LEAST, "area": AREA_AT_LEAST})
+        # ADOPT: the noul's lower bar, the mirror of its upper one (the spec's `why` says so).
+        self.assertAlmostEqual(NOT_URGENT_AT_MOST, 1 - URGENT_AT_LEAST)
+
+    def test_replays_the_spec_examples_states(self) -> None:
+        # ADOPT: the examples' states, built by the module from their inputs.
+        states = [example["state"] for example in load_spec()["examples"]]
+        self.assertEqual(states, [policy.to_state(OUTAGE)])
+
+
 class Mapping(unittest.TestCase):
     def test_maps_every_output_into_the_answer_space(self) -> None:
         for key in QUESTIONS["area"]["criteria"]:
@@ -240,6 +285,22 @@ class Mapping(unittest.TestCase):
 
 
 class Shadow(unittest.TestCase):
+    def test_keeps_a_sub_millisecond_latency_to_the_microsecond(self) -> None:
+        def current(_ticket: Ticket) -> CurrentRun:
+            # A mechanism as fast as a regex, give or take: about 0.2 ms.
+            until = time.perf_counter() + 0.0002
+            while time.perf_counter() < until:
+                pass
+            return CurrentRun(EXISTING)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            file = os.path.join(tmp, "captured.jsonl")
+            capture_shadow([("t1", OUTAGE)], current, file=file, warn=lambda _m: None)
+            with open(file, encoding="utf-8") as f:
+                latency = json.loads(f.read())["latencyMs"]
+            self.assertGreater(latency, 0)
+            self.assertEqual(latency, round(latency, 3))
+
     def test_a_torn_last_line_does_not_swallow_the_next_row(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             file = os.path.join(tmp, "captured.jsonl")
@@ -273,7 +334,7 @@ class Shadow(unittest.TestCase):
             self.assertEqual(rows[0]["state"], policy.to_state(OUTAGE))
             self.assertEqual(rows[0]["usage"], {"cost": 0.0004})
             self.assertNotIn("usage", rows[1])
-            self.assertIsInstance(rows[1]["latencyMs"], int)
+            self.assertIsInstance(rows[1]["latencyMs"], float)
 
             odd = capture_shadow(
                 [("u1", OUTAGE), ("u2", OUTAGE)],

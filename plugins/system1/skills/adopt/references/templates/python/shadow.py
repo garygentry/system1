@@ -82,7 +82,8 @@ def capture_shadow(
         started = time.perf_counter()
         try:
             run = current(ticket)
-            latency_ms = round((time.perf_counter() - started) * 1000)
+            # Fractional, to the microsecond: a sub-millisecond mechanism doesn't read 0.
+            latency_ms = round((time.perf_counter() - started) * 1000, 3)
             row: dict[str, Any] = {
                 "id": sample_id,
                 "state": to_state(ticket),
