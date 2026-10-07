@@ -33,7 +33,8 @@ assert_dormant claude:guard-dormant "$SMOKE/claude-guard" "$SMOKE/claude-guard.t
 for skill in adopt compare; do
   fixture_repo "$SMOKE/claude-$skill"
   prompt=$( [ "$skill" = adopt ] && echo "$ADOPT_PROMPT" || echo "$COMPARE_PROMPT" )
-  marker=$( [ "$skill" = adopt ] && echo "$ADOPT_MARKER" || echo "$COMPARE_MARKER" )
+  # printf, not echo: dash's echo turns the marker's \\ into \.
+  marker=$( [ "$skill" = adopt ] && printf '%s' "$ADOPT_MARKER" || printf '%s' "$COMPARE_MARKER" )
   (cd "$SMOKE/claude-$skill" && timeout "$TIMEOUT" claude -p "/system1:$skill $prompt" \
     --plugin-dir "$REPO/plugins/system1" --output-format stream-json --verbose \
     --allowedTools "Bash(decide *)" "Skill" --model "${SMOKE_CLAUDE_MODEL:-haiku}" </dev/null) \
