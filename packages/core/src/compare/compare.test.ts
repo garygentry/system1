@@ -163,6 +163,15 @@ describe("compare signals", () => {
     })
     expect(latencySignal([])).toMatchObject({ n: 0, p50Ms: null })
   })
+
+  it("keeps a sub-millisecond latency, to the microsecond", () => {
+    expect(latencySignal([0.0421, 0.0583, 0.0312])).toEqual({
+      n: 3,
+      meanMs: 0.044,
+      p50Ms: 0.0421,
+      p95Ms: 0.0583,
+    })
+  })
 })
 
 describe("reading a capture and labels", () => {

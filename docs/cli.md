@@ -180,7 +180,9 @@ chain, and how to read the report, is in [adopt and compare](adopt.md).
   `{id, state, current, output?, usage?, latencyMs?}`. `current` is the mechanism in place's
   answer, already mapped into the spec's answer space (`{"<question>": <value>}`: an option key,
   an integer level, or a probability). Only `state` is sent, scrubbed and size-checked; `current`,
-  `output` and `usage` stay on the machine. A bad line is left out and reported with its number.
+  `output` and `usage` stay on the machine. `latencyMs` may be fractional: the generated harness
+  writes it to the microsecond, so a sub-millisecond mechanism doesn't read 0. A bad line is left
+  out and reported with its number.
 - **`--baseline current`** (the default) compares against the captured `current` answers: no
   baseline call is made, and its cost and latency are what the harness recorded. A missing `usage`
   is unknown, never zero. **`--baseline emulated`** asks a chat model (Claude Haiku 4.5, or

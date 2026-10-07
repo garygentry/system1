@@ -68,7 +68,8 @@ export async function captureShadow(
     let line: string
     try {
       const run = await current(prompt)
-      const latencyMs = Math.round(performance.now() - started)
+      // Fractional, to the microsecond: a sub-millisecond mechanism doesn't read 0.
+      const latencyMs = Math.round((performance.now() - started) * 1000) / 1000
       const row: Record<string, unknown> = {
         id,
         state: toState(prompt),

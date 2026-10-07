@@ -5,6 +5,8 @@
 //
 // - the template's module files in <dir>/src (TS) or <dir>/app (Python);
 // - the core package linked as an installed dependency (<dir>/node_modules);
+// - the template's spec in <dir>/.system1/specs/ticket-triage.yaml;
+// - the `yaml` package core depends on, linked for the TypeScript spec test;
 // - a recorded answer for the template's first example in
 //   <dir>/.system1/fixtures/ticket-triage/.
 //
@@ -19,6 +21,7 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -48,6 +51,9 @@ writeFileSync(join(dir, MADE_HERE), "")
 cpSync(join(TEMPLATES, lang), join(dir, lang === "ts" ? "src" : "app"), { recursive: true })
 mkdirSync(join(dir, "node_modules/@garygentry"), { recursive: true })
 symlinkSync(CORE, join(dir, "node_modules/@garygentry/system1-core"), "dir")
+symlinkSync(realpathSync(join(CORE, "node_modules/yaml")), join(dir, "node_modules/yaml"), "dir")
+mkdirSync(join(dir, ".system1/specs"), { recursive: true })
+cpSync(join(TEMPLATES, "ticket-triage.yaml"), join(dir, ".system1/specs/ticket-triage.yaml"))
 
 const record = join(dir, ".record")
 mkdirSync(record)

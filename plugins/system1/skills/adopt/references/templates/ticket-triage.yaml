@@ -1,0 +1,39 @@
+description: >-
+  Whether a support ticket needs a reply within the hour, and which team handles it. The worked
+  example behind adopt's code templates: `.system1/specs/ticket-triage.yaml` in the repo it adopts.
+questions:
+  urgent:
+    type: noul
+    instructions: >-
+      The ticket reports something that needs a reply within the hour: an outage, lost data, a
+      security problem, or a customer blocked from working.
+    criteria:
+      true: Something is down, lost, exposed or blocking the customer's work now.
+      false: A question, a request, or a problem with a workaround.
+  area:
+    type: choice
+    instructions: Which team should handle this ticket?
+    criteria:
+      billing: Charges, invoices, refunds, plans or payment methods.
+      bug: The product behaves wrongly or fails.
+      account: Sign-in, passwords, users, permissions or settings.
+      other: None of the above.
+policy:
+  thresholds:
+    urgent:
+      value: 0.7
+      why: >-
+        A ticket wrongly marked urgent pages someone; a missed one waits in the queue for the
+        existing triage. So urgent needs a confident yes. At or below 0.3 (the mirror bar) the
+        module says not urgent; between the bars it keeps the existing triage's answer.
+    area:
+      value: 0.6
+      why: A ticket sent to the wrong team bounces back, so the chosen team needs a clear lead.
+examples:
+  # Each state is exactly what the module's toState builds from a ticket.
+  - id: outage
+    state: |-
+      Subject: Dashboard down for our whole team
+
+      Since 9am every page returns a 500 error and nobody here can work.
+    expect: { urgent: true, area: bug }

@@ -30,14 +30,18 @@ import {
   fromAnswers,
   type Outcome,
   QUESTIONS,
+  THRESHOLDS,
   type Ticket,
   type Triage,
+  toState,
   triage,
 } from "./policy.ts"
 import { captureShadow } from "./shadow.ts"
 
 /** ADOPT: the repo's `.system1` directory, which holds `fixtures/ticket-triage/`. */
 const SYSTEM1_DIR = fileURLToPath(new URL("../.system1", import.meta.url))
+/** ADOPT: the spec `adopt` generated this module from. */
+const SPEC_FILE = join(SYSTEM1_DIR, "specs", "ticket-triage.yaml")
 /** ADOPT: the module files `adopt` wrote, checked for a grant below. */
 const MODULE_FILES = ["policy.ts", "mapping.ts", "shadow.ts", "grants.ts", "policy.test.ts"].map(
   (name) => fileURLToPath(new URL(`./${name}`, import.meta.url)),
@@ -58,6 +62,20 @@ const existing = () => EXISTING
 
 /** Tests that run in live mode are skipped once EGRESS is on, so a test never sends. */
 const LIVE_SKIP = EGRESS === "off" ? false : "EGRESS is on: this test would send"
+
+/**
+ * The `yaml` package, which only the spec tests use: the module never needs it.
+ * ADOPT: a static import if the repo already depends on `yaml`.
+ */
+const yaml = await import("yaml").catch(() => undefined)
+const NO_YAML = yaml ? false : "checks the module against its spec: install yaml (npm i -D yaml)"
+
+interface SpecFile {
+  questions: unknown
+  policy: { thresholds: Record<string, { value: number }> }
+  examples: Array<{ state: unknown }>
+}
+const loadSpec = () => yaml?.parse(readFileSync(SPEC_FILE, "utf8")) as SpecFile
 
 const scratch: string[] = []
 function tempDir(): string {
@@ -252,6 +270,30 @@ describe("thresholds", () => {
   })
 })
 
+// The module copies the spec; recorded answers are keyed on both agreeing.
+describe("the spec", () => {
+  it("has the module's questions, verbatim", { skip: NO_YAML }, () => {
+    assert.deepEqual(loadSpec().questions, QUESTIONS)
+  })
+
+  it("has the module's thresholds", { skip: NO_YAML }, () => {
+    const thresholds = Object.entries(loadSpec().policy.thresholds).map(([k, v]) => [k, v.value])
+    // ADOPT: one entry per threshold the spec sets, and the module's bar for it.
+    assert.deepEqual(Object.fromEntries(thresholds), {
+      urgent: THRESHOLDS.urgentAtLeast,
+      area: THRESHOLDS.areaAtLeast,
+    })
+    // ADOPT: the noul's lower bar, the mirror of its upper one (the spec's `why` says so).
+    assert.ok(Math.abs(THRESHOLDS.notUrgentAtMost - (1 - THRESHOLDS.urgentAtLeast)) < 1e-9)
+  })
+
+  it("replays the spec's example states", { skip: NO_YAML }, () => {
+    // ADOPT: the examples' states, built by the module from their inputs.
+    const states = loadSpec().examples.map((example) => example.state)
+    assert.deepEqual(states, [toState(OUTAGE)])
+  })
+})
+
 describe("output → answer mapping", () => {
   it("maps every output into the answer space", () => {
     const area = QUESTIONS.area
@@ -270,6 +312,22 @@ describe("output → answer mapping", () => {
 })
 
 describe("shadow capture", () => {
+  it("keeps a sub-millisecond latency, to the microsecond", async () => {
+    const file = join(tempDir(), "captured.jsonl")
+    await captureShadow(
+      [{ id: "t1", ticket: OUTAGE }],
+      async () => {
+        // A mechanism as fast as a regex, give or take: about 0.2 ms.
+        const until = performance.now() + 0.2
+        while (performance.now() < until) continue
+        return { output: EXISTING }
+      },
+      { file, warn: () => {} },
+    )
+    const { latencyMs } = JSON.parse(readFileSync(file, "utf8"))
+    assert.ok(latencyMs > 0 && latencyMs === Math.round(latencyMs * 1000) / 1000, `${latencyMs}`)
+  })
+
   it("doesn't let a torn last line swallow the next row", async () => {
     const file = join(tempDir(), "captured.jsonl")
     writeFileSync(file, '{"id": "t0", "sta')
