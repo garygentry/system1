@@ -463,7 +463,7 @@
         },
         {
           "heading": "Next",
-          "intent": "Save the best entry as a spec with design; adopt and compare are planned.",
+          "intent": "Save the best entry as a spec with design, then adopt and compare (adopt.md).",
           "sourceRefs": ["s-cli-commands"]
         }
       ]
@@ -513,6 +513,72 @@
         }
       ],
       "verification": "Claims checked against packages/core/src/guard and the tools/done-check-eval results (M10 §8, 2026-09-27)."
+    },
+    {
+      "id": "howto-adopt",
+      "title": "Adopt and compare: replace a judgement, then measure it",
+      "slug": "how-to/adopt",
+      "path": "docs/adopt.md",
+      "family": "diataxis",
+      "type": "how-to",
+      "audience": ["agent-user"],
+      "purpose": "Take a closed judgement from scout through adopt (an inert policy module), a shadow capture and compare, read the report honestly, and switch the module on only by the user's own edits.",
+      "sourceRefs": ["s-cli-commands", "s-tools", "s-skills", "s-adrs", "s-milestones"],
+      "status": "drafted",
+      "priority": 2,
+      "outline": [
+        {
+          "heading": "The chain",
+          "intent": "Scout, adopt, capture, compare, cutover: who runs each step, what it sends, what it writes.",
+          "sourceRefs": ["s-skills"]
+        },
+        {
+          "heading": "Adopt: what it generates",
+          "intent": "The adopt skill's steps; the module, mapping, shadow harness, tests and grant scan from the templates; TypeScript vs Python requirements.",
+          "sourceRefs": ["s-skills"]
+        },
+        {
+          "heading": "Two switches, both off",
+          "intent": "The app-level enabled flag and the marked EGRESS line; adopt writes off only.",
+          "sourceRefs": ["s-skills", "s-adrs"]
+        },
+        {
+          "heading": "Capture: run the shadow harness",
+          "intent": "captured.jsonl rows; the user runs it; raw inputs stay out of git; missing usage is unknown cost.",
+          "sourceRefs": ["s-skills", "s-cli-commands"]
+        },
+        {
+          "heading": "Compare: measure it",
+          "intent": "dry-run, record, replay; the current and emulated baselines; allow-profile is the user's, emulated is refused outside compare.",
+          "sourceRefs": ["s-cli-commands", "s-tools"]
+        },
+        {
+          "heading": "Read the report",
+          "intent": "Cost, latency, agreement, undecided share, parse rate; labels give accuracy with n and a head-to-head; no winner without labels; raw answers vs the policy.",
+          "sourceRefs": ["s-tools"]
+        },
+        {
+          "heading": "Runtime consent: the marked line",
+          "intent": "0020: the line is the only grant, the generated test, the two locks, bundled builds, doctor's adopted check.",
+          "sourceRefs": ["s-adrs"]
+        },
+        {
+          "heading": "Switch it on",
+          "intent": "The user's two edits; key, writable root, daily cap, Python outside agent sessions; fallbacks with reason codes.",
+          "sourceRefs": ["s-adrs", "s-tools"]
+        },
+        {
+          "heading": "Worked examples",
+          "intent": "route.ts (no gain at n=72, regex kept) and spamfilter (188/200 vs 183, 2 vs 7 real comments blocked, about the same cost), measured numbers labelled.",
+          "sourceRefs": ["s-milestones", "s-evidence"]
+        },
+        {
+          "heading": "Where it falls short",
+          "intent": "No excludes for in-memory states, the grant guards reviewed paths only, approximate cap, small samples, replay matches exact states.",
+          "sourceRefs": ["s-adrs"]
+        }
+      ],
+      "verification": "Commands and flags checked against packages/cli/src/commands (compare, config, opportunities, runtime) and packages/core/src (runtime, compare, model/profiles); dogfood numbers copied from the M11 Results in plans/milestones/M9-M11-scout-guard-adopt.md (2026-10-06)."
     },
     {
       "id": "howto-routing",

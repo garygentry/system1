@@ -60,4 +60,4 @@ Commit the backlog if your team wants to share it, or ignore it; `decide` doesn'
 Take the best entry, save its question set as a spec with the `design` skill
 ([specs](specs.md)), and check it against real examples with `decide spec check`. Turning it into
 code with a fallback, and measuring it against what it replaces, is what `adopt` and `compare` are
-for (planned).
+for: see [adopt and compare](adopt.md).

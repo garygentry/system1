@@ -181,3 +181,5 @@ How to read the first line:
 - The `design` skill: ask your agent to save a question that proved useful as a spec, with
   examples that test it.
 - [calibration.md](calibration.md): what the probabilities mean, and which threshold to use.
+- [scout.md](scout.md) and [adopt.md](adopt.md): find a judgement your code makes that a decision
+  model could take over, put a policy module in front of it, and measure it.

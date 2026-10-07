@@ -50,7 +50,7 @@ CI covers `pnpm check` and `pnpm release:check`. The rest run only here.
 ```sh
 pnpm validate           # with claude on PATH: adds `claude plugin validate --strict`
 pnpm release:check      # packs all three, installs the CLI tarball, replays offline
-pnpm smoke              # bar: 12 of 12 (setup, doctor, many, scout × 3 harnesses)
+pnpm smoke              # bar: 26 of 26 (Claude 8, Codex 10, Pi 8; see quality.md)
 pnpm eval:routing all   # see the bar below
 ```
 

@@ -106,6 +106,11 @@ Only when the repo has consented, and only after these checks, in order:
 
 Withheld items are listed in the output with the reason, never silently dropped.
 
+Code that `adopt` generates is the one exception to repo consent. A deployed app may have no repo
+config, so its grant is a marked `EGRESS` line in the module itself, which only you switch on.
+Its states are scrubbed and size-checked the same way, but excludes match paths and an in-memory
+state has none. See [adopt and compare](adopt.md#runtime-consent-the-marked-line).
+
 ## Spend
 
 One call costs little, but an agent can start a fan-out over thousands of items in one command.

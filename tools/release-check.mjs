@@ -3,10 +3,11 @@
 //   pnpm release:check
 //
 // Builds, packs all three packages, installs the CLI tarball into a scratch
-// prefix and exercises it there, then checks the Pi tarball carries the skills.
+// prefix and exercises it there, imports the runtime adopted code uses from the
+// core tarball, then checks the Pi tarball carries every skill.
 // Nothing here touches the network or the real npm registry.
 import { execFileSync } from "node:child_process"
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs"
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -129,6 +130,36 @@ step("installed CLI replays an adopted cookbook recipe", () => {
   return out.split("\n")[0].slice(0, 60)
 })
 
+// Adopted Python modules spawn `decide runtime` and check its protocol first.
+step("installed CLI speaks the runtime protocol", () => {
+  const out = JSON.parse(run(decide, ["runtime", "--protocol"], { cwd: repo, env: offline }))
+  if (out.protocol !== 1) throw new Error(`protocol ${out.protocol}`)
+  return `protocol ${out.protocol}, ${out.version}`
+})
+
+// Adopted TypeScript imports @garygentry/system1-core/runtime. Unpack the core
+// tarball where packages/core's own dependencies resolve (no registry), and
+// import through the package's exports map, as an application would.
+step("core tarball exports the runtime", () => {
+  const file = readdirSync(packs).find((f) => f.includes("system1-core-"))
+  const dir = join(ROOT, "packages/core/node_modules/.release-check")
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
+  try {
+    run("tar", ["-xzf", join(packs, file), "-C", dir])
+    const probe = join(dir, "package", "probe.mjs")
+    writeFileSync(
+      probe,
+      'const r = await import("@garygentry/system1-core/runtime")\n' +
+        'if (typeof r.createPolicyRuntime !== "function") throw new Error("no createPolicyRuntime")\n' +
+        "console.log(Object.keys(r).length)\n",
+    )
+    return `${run("node", [probe]).trim()} exports`
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 step("CLI tarball carries its third-party notices", () => {
   const file = readdirSync(packs).find((f) => /system1-0\.\d+\.\d+\.tgz$/.test(f))
   const list = run("tar", ["-tzf", join(packs, file)])
@@ -136,12 +167,13 @@ step("CLI tarball carries its third-party notices", () => {
   return "present"
 })
 
-step("Pi tarball carries the skills", () => {
+step("Pi tarball carries every skill", () => {
   const file = readdirSync(packs).find((f) => f.includes("system1-pi-"))
   const list = run("tar", ["-tzf", join(packs, file)]).split("\n")
-  const skills = list.filter((f) => f.endsWith("SKILL.md"))
-  if (skills.length < 3) throw new Error(`only ${skills.length} skills`)
-  return `${skills.length} skills`
+  const authored = readdirSync(join(ROOT, "plugins/system1/skills"))
+  const missing = authored.filter((name) => !list.includes(`package/skills/${name}/SKILL.md`))
+  if (missing.length > 0) throw new Error(`missing ${missing.join(", ")}`)
+  return `${authored.length} skills`
 })
 
 const failed = steps.filter((s) => !s.ok)

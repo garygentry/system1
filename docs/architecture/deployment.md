@@ -20,7 +20,7 @@ flowchart LR
         claudeman[".claude-plugin/plugin.json"]
         codexman[".codex-plugin/plugin.json"]
         shim["bin/decide (shim, pinned version)"]
-        hooks["hooks/claude-hooks.json"]
+        hooks["hooks/claude-hooks.json<br/>hooks/codex-hooks.json"]
     end
     subgraph markets["marketplaces"]
         cmarket[".claude-plugin/marketplace.json"]
@@ -53,7 +53,10 @@ flowchart LR
   catalog's version.
 - **`pnpm validate`** (`tools/validate.ts`) checks skill frontmatter, version lockstep across every
   manifest, that each package's `repository.url` is the exact form npm trusted publishing matches
-  on (the generator stamps it), that there is no root `plugin.json` (Codex would ignore the hooks), and runs `claude plugin validate --strict` when
+  on (the generator stamps it), that there is no root `plugin.json` (Codex would ignore the hooks),
+  that no skill spells a user-only command or `decide runtime` and no adopt template grants runtime
+  egress ([crosscutting.md](crosscutting.md#the-exception-adopted-code)), and runs
+  `claude plugin validate --strict` when
   `claude` is on PATH. CI has no `claude`, so run it locally before a release.
 - **The Pi package's `skills/`** is not committed. Its generated `prepack.mjs` copies
   `plugins/system1/skills` in when the package is packed.
@@ -69,7 +72,9 @@ Details that matter:
 
 - **Code splitting keeps startup low.** `main.ts` imports each command with a dynamic `import()`,
   and each command becomes its own chunk, so `decide version`, `help` and the hook's
-  `route --hook` load only what they need. `entry.ts` also turns on Node's compile cache.
+  `route --hook` load only what they need. `decide hook` and `decide runtime` are their own chunks
+  too, importing the core's `./hook` and `./runtime` deep exports rather than the barrel, because
+  a dormant guard hook runs at every stop and an adopted Python module spawns one per call. `entry.ts` also turns on Node's compile cache.
 - **The build swaps in atomically.** It writes `dist/bundle.next` and renames it over
   `dist/bundle`, because the shim in a checkout runs that bundle and a concurrent `decide` must
   never find it missing.
@@ -105,7 +110,8 @@ that exists:
    plugin-only Claude install gets a CLI on first use.
 6. Otherwise it prints the `npm i -g` command to stderr and exits 127.
 
-`SYSTEM1_NO_NPX` is set by the Claude hook, so a prompt never waits on a download, and by
+`SYSTEM1_NO_NPX` is set by every hook command (the prompt hint and both harnesses' guard hooks),
+so a prompt or a stop never waits on a download, and by
 `decide doctor` when it probes which version PATH resolves to. Step 4 is why 0.3.1 exists: under
 `SYSTEM1_NO_NPX`, a plugin-only install used to reach step 6, so the hook was silent. See
 [runtime.md](runtime.md#the-claude-prompt-hook). `tools/shim.test.ts` covers the cache lookup.
@@ -139,10 +145,14 @@ tarball into a scratch prefix, and then checks that the installed CLI:
 - runs `decide doctor` offline in a fresh git repo;
 - replays a `many` run over `tools/smoke/fixture-repo` (`1 kept of 3`);
 - answers the routing hook: hints a done-check and stays quiet on a rename;
-- replays an adopted cookbook recipe (`ci-failure`) through `decide spec check`.
+- replays an adopted cookbook recipe (`ci-failure`) through `decide spec check`;
+- answers `decide runtime --protocol` with protocol 1, which adopted Python checks first.
 
-It also checks that the CLI tarball carries `THIRD-PARTY-NOTICES.md` and that the Pi tarball holds
-at least three `SKILL.md` files. On failure it keeps the scratch directory and prints its path.
+It also unpacks the core tarball under `packages/core/node_modules/`, where its dependencies
+resolve without a registry, and imports `@garygentry/system1-core/runtime` through the package's
+own exports map, as adopted TypeScript does. Last, it checks that the CLI tarball carries
+`THIRD-PARTY-NOTICES.md` and that the Pi tarball holds a `SKILL.md` for every skill under
+`plugins/system1/skills/`. On failure it keeps the scratch directory and prints its path.
 
 ### Release workflow
 

@@ -15,7 +15,7 @@
  *                                        replay, or live with --record; a threshold sweep
  *                                        on the fitted set only
  *
- * Replay needs no key and runs in CI (`done-check-eval.test.ts`). Live modes
+ * Replay needs no key and runs in CI (`eval.test.ts`). Live modes
  * take OPENROUTER_API_KEY from the environment or the user's credentials file
  * and spend about $0.00003 per call. The key is never printed.
  */

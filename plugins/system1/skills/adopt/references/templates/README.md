@@ -18,3 +18,10 @@ A worked example, `ticket-triage`, of what `adopt` generates: the existing mecha
 - **Python** spawns `decide` once per call, checks its runtime protocol once, and falls back with `engine-unavailable` when `decide` is missing or speaks another protocol. Node 22 and `decide` must be in the runtime image and in CI, with Python 3.9 or later.
 - **Recorded answers** live in `.system1/fixtures/<spec>/`, committed. `decide spec check <spec> --live` records them for the spec's examples, and the tests replay the same states, as plain strings. A state must reach the model exactly as the examples hold it, and be recorded with the module's `MODEL`, or replay misses.
 - **The capture holds raw inputs,** and so do compare's recorded answers beside it: `.system1/compare/` stays out of git.
+
+## Learned from dogfooding (route.ts, spamfilter)
+
+- **One undecided question makes the whole call fall back** with `undecided`, even when the others were decided. That fallback still carries the decided `answers`. These templates ignore them, so keep diagnostic questions out of a module's set, or act on a decided answer that matters on its own, as `tools/route-policy/policy.ts` does with its `hint`. Each extra question adds another way to fall back: five diagnostic nouls took route.ts's fallbacks from 6 to 13.
+- **An answer inside the profile's undecided band (0.50 included) never reaches the module's own bars.** The runtime reports it as `undecided` first. Say so in the tests that pin a threshold.
+- **A measured `usage` in the capture** needs the existing client to report cost. If it doesn't, find its provider's accounting option (OpenRouter's `usage: {include: true}` added it for spamfilter, and changed nothing about the request's content), or leave `usage` out: compare then counts that row's cost as unknown, never as zero.
+- **Python spec tests that read YAML** should load it with `yaml.BaseLoader`, because PyYAML reads a `true:` criteria key as a boolean.
