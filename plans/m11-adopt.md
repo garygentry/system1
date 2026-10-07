@@ -78,7 +78,7 @@ The maintainer ruled on 1, 2, 6 and 8. The others are the agent's proposals, rev
    - A Codex smoke runs the generated Python tests.
 8. **Skills:** `adopt` and `compare` (user-invocable).
    - Setup's `.gitignore` list.
-   - Doctor checks for runtime consent in adopted modules, found by the marker and by any `createPolicyRuntime(` call or `decide runtime` spawn, for the emulated allow-list, and for captured files not ignored.
+   - Doctor checks for runtime consent in adopted modules, found by the marker and by any `createPolicyRuntime(` call or `decide runtime` spawn (*as built: the marker, `createPolicyRuntime` and the `"bundled"` opt-out only. A Python module that spawns `decide runtime` without the marked line can't send, because `decide runtime` reads the line from the file; see `runtimeFiles` in `packages/core/src/tools/doctor-adopt.ts`*), for the emulated allow-list, and for captured files not ignored.
    - Routing sets and `MINIMUMS`; the Pi package contents.
 9. **Dogfood, TypeScript:** `route.ts` through adopt → capture → compare, with the numbers recorded in the spec's Results. *Done (2026-10-06): a shadow in `tools/route-policy/`, no cutover; no quality gain over the regex at n=72.*
 10. **Dogfood, Python:** choose the target (D8), then take it through the whole chain. *Done (2026-10-06): `mags0ft/spamfilter`, in `evidence/dogfood-spamfilter/`. The policy got 188/200 right to the filter's 183 and blocked 2 real comments instead of 7, at about the same cost.*

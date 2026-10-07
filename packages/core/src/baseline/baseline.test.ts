@@ -316,6 +316,12 @@ describe("createBaselineClient", () => {
   })
 })
 
+describe("the emulated profile", () => {
+  it("ships uncalibrated: a single chat-model value has no spread to calibrate", () => {
+    expect(emulated.calibrated).toBe(false)
+  })
+})
+
 describe("the emulated baseline is refused outside compare", () => {
   it("by the decider, including a dated build of the baseline", () => {
     for (const id of [DEFAULT_EMULATED_ID, `${DEFAULT_EMULATED_ID}-20251001`])
