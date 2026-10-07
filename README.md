@@ -10,7 +10,7 @@ everything themselves.
 - is this command destructive;
 - is "done" actually done.
 
-> **Status: 0.6.0, pre-1.0.** It installs and works in all three harnesses, and the claims below
+> **Status: 0.6.1, pre-1.0.** It installs and works in all three harnesses, and the claims below
 > are measured, but so far only its author has used it. Expect the details to change before 1.0.
 > [Where it stands](#where-it-stands) has the evidence.
 
