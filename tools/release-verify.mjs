@@ -3,18 +3,15 @@
 //
 //   pnpm release:verify vX.Y.Z [--main <ref>]
 //
-// Checks that the tag is vX.Y.Z of the packages' version, is an annotated tag
-// signed by a key in .github/allowed_signers *as committed on main* (so a tag
-// can't vouch for its own key), points at HEAD's commit or a descendant of
-// main, and that npm does not serve that version yet.
+// Checks that the tag is vX.Y.Z of the packages' version, is annotated (its
+// message heads the release summary), points at HEAD's commit and descends
+// from main, and that npm does not serve that version yet.
 //
-// The signature check catches a mistaken tag, not a hostile writer: the
-// workflow a tag runs is the tagged commit's own. The security gate is the
-// `release` environment's required reviewer (no agent can approve it).
+// These catch a mistaken tag, not a hostile writer: the workflow a tag runs is
+// the tagged commit's own. The tag needn't be signed (0022, Amendment 1): the
+// security gate is the `release` environment's required reviewer, which no
+// agent can satisfy.
 import { spawnSync } from "node:child_process"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
 import { parseArgs } from "node:util"
 import { checkTag, isPublished, manifest, PACKAGES, ROOT, releaseVersion } from "./release-lib.mjs"
 
@@ -43,25 +40,13 @@ const { version, error } = releaseVersion()
 check("packages share one version", () => (error ? [error] : []))
 check(`tag matches ${version}`, () => (error ? [] : checkTag(tag, version)))
 
-check("tag is annotated and signed by an allowed key", () => {
-  if (git(["cat-file", "-t", `refs/tags/${tag}`]).stdout.trim() !== "tag")
-    return [
-      `${tag} is missing or lightweight (in CI, fetch it with +refs/tags/${tag}:refs/tags/${tag})`,
-    ]
-  const signers = git(["show", `${main}:.github/allowed_signers`])
-  if (signers.status !== 0) return [`no .github/allowed_signers on ${main}`]
-  const dir = mkdtempSync(join(tmpdir(), "system1-verify-"))
-  try {
-    const file = join(dir, "allowed_signers")
-    writeFileSync(file, signers.stdout)
-    const r = git(["-c", `gpg.ssh.allowedSignersFile=${file}`, "verify-tag", tag])
-    return r.status === 0
-      ? []
-      : [`signature not verified: ${(r.stderr || r.stdout).trim().split("\n").at(-1)}`]
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
+check("tag is annotated", () =>
+  git(["cat-file", "-t", `refs/tags/${tag}`]).stdout.trim() === "tag"
+    ? []
+    : [
+        `${tag} is missing or lightweight (in CI, fetch it with +refs/tags/${tag}:refs/tags/${tag})`,
+      ],
+)
 
 check("tag is the checked-out commit", () => {
   const tagged = git(["rev-parse", `${tag}^{commit}`]).stdout.trim()

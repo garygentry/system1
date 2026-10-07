@@ -1215,7 +1215,7 @@
         },
         {
           "heading": "Tag, approve once, publish",
-          "intent": "Push the signed tag only; CI verifies and writes a release summary; the maintainer approves the release environment once; CI publishes; then push main.",
+          "intent": "Push the annotated tag only; CI verifies and writes a release summary; the maintainer approves the release environment once; CI publishes; then push main.",
           "sourceRefs": ["s-milestones"]
         },
         {
@@ -1224,7 +1224,7 @@
           "sourceRefs": ["s-milestones", "s-roadmap"]
         }
       ],
-      "verification": "Rewritten for 0022 Amendment 1 (2026-10-06): a signed tag, verify writes the release summary, one approval of the release environment, and publish goes live with provenance. The first release through the gate confirms it."
+      "verification": "Rewritten for 0022 Amendment 1 (2026-10-06): an annotated tag, verify writes the release summary, one approval of the release environment, and publish goes live with provenance. The first release through the gate confirms it."
     },
     {
       "id": "howto-local-plugin",

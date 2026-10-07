@@ -2,7 +2,7 @@
 
 Take a version from a catalog bump to published, tagged and verified in all three harnesses.
 
-1. A signed `vX.Y.Z` tag is pushed, and nothing else.
+1. An annotated `vX.Y.Z` tag is pushed, and nothing else.
 2. The `release` workflow's `verify` job checks the tag, runs the gates and writes a release
    summary on the run page.
 3. The maintainer approves the `release` environment **once**, on the web or in GitHub Mobile.
@@ -10,8 +10,7 @@ Take a version from a catalog bump to published, tagged and verified in all thre
 4. Once npm serves them (the job waits for that), `main` is pushed.
 
 An agent can do every step except the approval. Its GitHub identity can't approve the
-environment or change its rules. The maintainer also signs the tag (step 3), because
-`release:verify` checks the signature. No npm token exists anywhere: CI authenticates through
+environment or change its rules. No npm token exists anywhere: CI authenticates through
 npm trusted publishing (OIDC). The design and its threat model are in
 [0022](../../plans/decisions/0022-ci-publish-trusted-staged.md) and its Amendment 1. How the pieces fit is in
 [../architecture/deployment.md](../architecture/deployment.md).
@@ -19,10 +18,9 @@ npm trusted publishing (OIDC). The design and its threat model are in
 ## Before you start
 
 - You are on an up-to-date `main` with a clean working tree, and CI is green on it.
-- Git signs tags with your SSH key (`gpg.format ssh`, `tag.gpgsign true`, and a
-  `user.signingkey`), and that key is in `.github/allowed_signers`. The workflow checks tags
-  against that file as it is on `main`. Tags from `v0.2.0` on are SSH-signed; `v0.1.0` is annotated
-  but unsigned.
+- Tags are annotated. Tags `v0.2.0`–`v0.5.1` were also SSH-signed, but nothing checks that any
+  more (0022 Amendment 1). Create the tag with `git tag -a`, and with `--no-sign` if your git
+  config has `tag.gpgsign true`.
 - `claude`, `codex` and `pi` are installed and signed in, for `pnpm validate`, smoke and the
   routing evals. Each of those spends that harness's tokens.
 - An OpenRouter key is available for the live checks at the end.
@@ -72,13 +70,13 @@ Release-prep changes such as fixes and docs land through PRs as usual. The versi
 not: it is one commit on top of `origin/main`, and it reaches GitHub through the tag. `main`
 fast-forwards to it once npm serves the release (step 5).
 
-The tags are annotated, signed, and sit on the bump commit (`v0.3.1` is on `59cdfc6`). Their message
+The tags are annotated and sit on the bump commit (`v0.3.1` is on `59cdfc6`). Their message
 is the version and a one-line summary, for example `0.3.1: routing hook works for plugin-only Claude
 installs`. The message heads the release summary.
 
 ```sh
 git commit -am "Release X.Y.Z: version bump (not yet published)"
-git tag -s vX.Y.Z -m "X.Y.Z: <what this release is>"   # the maintainer: signed with their key
+git tag -a --no-sign vX.Y.Z -m "X.Y.Z: <what this release is>"
 pnpm release:verify vX.Y.Z           # the checks CI runs first; "npm does not serve" must pass
 pnpm release:summary vX.Y.Z          # preview what the approver will read
 git push origin vX.Y.Z               # the tag only
@@ -95,7 +93,7 @@ The tag starts `.github/workflows/release.yml`:
 
 - **`verify`** has no npm credential. It runs `tools/release-verify.mjs`, which checks that:
   - the tag is `v` plus the packages' version;
-  - it is annotated and signed by a key in `.github/allowed_signers` as committed on `origin/main`;
+  - it is annotated;
   - it builds on `origin/main`;
   - npm doesn't serve that version yet.
 

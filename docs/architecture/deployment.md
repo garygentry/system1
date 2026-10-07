@@ -154,7 +154,7 @@ only workflow that publishes.
 
 | Job | Permissions | Runs |
 |---|---|---|
-| `verify` | `contents: read` | `tools/release-verify.mjs` (tag = version, signed by `.github/allowed_signers` on `main`, builds on `main`, not yet on npm), `pnpm check`, `pnpm release:check`, then `tools/release-summary.mjs` writes the release summary (packages, tag message, commits and diff stat since the last tag, a flag on any `.github/` change) to the run page |
+| `verify` | `contents: read` | `tools/release-verify.mjs` (tag = version, annotated, builds on `main`, not yet on npm), `pnpm check`, `pnpm release:check`, then `tools/release-summary.mjs` writes the release summary (packages, tag message, commits and diff stat since the last tag, a flag on any `.github/` change) to the run page |
 | `publish` | `contents: read`, `id-token: write`; environment `release` (required reviewer) | `tools/release-publish.mjs --provenance --skip-check`: `npm publish --provenance` per package through npm trusted publishing (OIDC), Node 24, pinned npm 11, then waits until npm serves all three |
 
 npm trusts the workflow by its file name, the repository and the environment.

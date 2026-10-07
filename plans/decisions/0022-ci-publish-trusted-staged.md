@@ -76,7 +76,7 @@ Applies the estate release-gate policy, [ADR 0046 Amendment 4](https://github.co
 6. **Who does what.**
    - The agent does everything up to the gate: the release-prep PR, merging it, `release:verify`, `release:summary`, and pushing the tag. After the release it verifies with `npm view` and `smoke:published`.
    - The operator approves the environment once, on the web or in GitHub Mobile.
-   - The tag is still signed by a key in `.github/allowed_signers`, and `release:verify` still checks it. Signing is the operator's step for now. Dropping the check, so that an agent can push an unsigned annotated tag, was proposed and is left open.
+   - **The tag is no longer signed** (decided 2026-10-07). The agent creates an annotated tag, and `release:verify` checks that it is annotated, matches the version, descends from `main` and isn't on npm yet. It no longer checks a signature, and `.github/allowed_signers` is gone. That replaces decision item 3's signature check. A signature only ever caught mistakes, never a hostile writer (see below), and the environment approval is now the human gate. The approval stays the operator's only step.
 7. **No GitHub Release and no `actions/attest-build-provenance`.** The only build artifacts are the three npm tarballs, and npm already signs SLSA provenance for those, made by this exact job. Attesting the same tarballs again would add `attestations: write` and nothing new.
 
 **Accepted residual risk (ADR 0046 A4).** GitHub, not npm, is now the single factor:
