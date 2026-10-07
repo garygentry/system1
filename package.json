@@ -35,6 +35,7 @@
     "dev:link": "sh tools/dev-link.sh link",
     "dev:unlink": "sh tools/dev-link.sh unlink",
     "dev:status": "sh tools/dev-link.sh status",
+    "partners:check": "sh tools/partners/fresh-check.sh",
     "test:live": "vitest run --config vitest.live.config.ts --silent=false",
     "release:check": "node tools/release-check.mjs",
     "release:verify": "node tools/release-verify.mjs",

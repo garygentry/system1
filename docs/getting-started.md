@@ -21,8 +21,8 @@ Then add the plugin, so your agent knows when to use `decide`:
 
 | Harness | Plugin | Network |
 |---|---|---|
-| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | allow `openrouter.ai` if the sandbox is on |
-| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `$CODEX_HOME/rules/system1.rules`, then restart Codex |
+| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | if the sandbox is on, allow `openrouter.ai` and set `NODE_USE_ENV_PROXY` (Node 22.21+ or 24+; [how](troubleshooting.md#doctor-network)) |
+| **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `~/.codex/rules/system1.rules` (`$CODEX_HOME/rules/` if you set `CODEX_HOME`), then restart Codex |
 | **Pi** | `pi install npm:@garygentry/system1-pi` | no sandbox |
 
 Codex and Pi don't put a plugin's `bin/` on PATH, so the agent there uses the global install. The
@@ -58,14 +58,15 @@ decide doctor --format brief
 
 ```
 decide doctor: SETUP NEEDED (key, consent) · replay only · harness claude · session claude:…
-  ok   cli: decide 0.4.0 on node v22.23.2 (…)
+  ok   cli: decide 0.6.0 on node v22.23.2 (…)
   ok   path: decide on PATH: …/bin/decide
-  ok   path-version: decide on PATH is 0.4.0, same as this one
+  ok   path-version: decide on PATH is 0.6.0, same as this one
   warn key: no API key: only replay works
        fix: set OPENROUTER_API_KEY, or write `openrouter_api_key: <key>` to ~/.config/system1/credentials (create its directory first; chmod 600)
   warn consent: no egress consent for /path/to/repo: live calls are refused
        fix: if the user agrees, they grant it themselves (an agent must not): `decide config egress allow` in a terminal in this repo, or through their agent prompt's shell escape (not as a chat message) with --confirm added
   ok   route: routing hints on: batch-judgement, pick-from-many, criteria-check, done-check, gate-check
+  ok   guard: no guard pack enabled (all dormant)
   ok   backlog: no scout backlog yet
   ok   adopted: no adopted modules
   ok   emulated: no emulated baseline allowed
