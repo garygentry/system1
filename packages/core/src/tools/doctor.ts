@@ -427,11 +427,18 @@ async function versionCheck(
   }
 }
 
-function networkFix(
+/** NODE_USE_ENV_PROXY arrived in Node 22.21.0 and 24.0.0; no 23.x has it. */
+export function honoursEnvProxy(version: string): boolean {
+  const [major = 0, minor = 0] = version.replace(/^v/, "").split(".").map(Number)
+  return major >= 24 || (major === 22 && minor >= 21)
+}
+
+export function networkFix(
   httpStatus: number | undefined,
   harness: Harness | null,
   sandboxed: boolean,
   env: NodeJS.ProcessEnv,
+  nodeVersion = process.versions.node,
 ): string {
   // An HTTP answer means the network works; the problem is what was asked for.
   if (httpStatus === 404)
@@ -449,8 +456,13 @@ function networkFix(
   // Claude's sandbox lets a command out only through its proxy, and Node's
   // fetch ignores HTTPS_PROXY unless NODE_USE_ENV_PROXY is set: allowing the
   // domain alone still fails (verified in a sandboxed `claude -p`, 2026-10-07).
-  if (harness === "claude")
-    return 'if Claude Code\'s sandbox is on, add "openrouter.ai" to sandbox.network.allowedDomains and set env NODE_USE_ENV_PROXY to "1" in its settings, then restart Claude Code (decide reaches the network only through the sandbox proxy)'
+  if (harness === "claude") {
+    const fix =
+      'if Claude Code\'s sandbox is on, add "openrouter.ai" to sandbox.network.allowedDomains and set env NODE_USE_ENV_PROXY to "1" in its settings (Node 22.21+ or 24+), then restart Claude Code (decide reaches the network only through the sandbox proxy)'
+    return honoursEnvProxy(nodeVersion)
+      ? fix
+      : `${fix}; this is Node ${nodeVersion}, which ignores NODE_USE_ENV_PROXY, so upgrade Node first`
+  }
 
   return "check that this machine can reach openrouter.ai (proxy, firewall, DNS)"
 }

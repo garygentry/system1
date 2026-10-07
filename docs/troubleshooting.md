@@ -169,10 +169,12 @@ The model's endpoint couldn't be reached from this shell. The fix depends on whe
   }
   ```
 
-  Allowing the domain alone still fails, with `getaddrinfo EAI_AGAIN openrouter.ai`. Node prints
-  a one-line warning that its proxy support is experimental; it is harmless. Checked on Linux,
-  Node 22.23 and Claude Code 2.1.293, with a sandboxed `claude -p` running `decide ping`. The
-  alternative, `"excludedCommands": ["decide *"]` under `sandbox`, also works, but it runs
+  `NODE_USE_ENV_PROXY` needs **Node 22.21 or newer on the 22 line, or Node 24 or newer**. No
+  Node 23 has it, and an older Node ignores it, so upgrade first (`decide doctor` says which you
+  have). Allowing the domain alone still fails, with `getaddrinfo EAI_AGAIN openrouter.ai`. Node
+  prints a one-line warning that its proxy support is experimental; it is harmless. Checked on
+  Linux, Node 22.23 and Claude Code 2.1.293, with a sandboxed `claude -p` running `decide ping`.
+  The alternative, `"excludedCommands": ["decide *"]` under `sandbox`, also works, but it runs
   `decide` outside the sandbox altogether.
 - **Anywhere else:** check the proxy, firewall or DNS for `openrouter.ai`.
 - **An HTTP answer** (404, 5xx) means the network works. A 404 means the endpoint doesn't know the

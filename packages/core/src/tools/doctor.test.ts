@@ -3,7 +3,14 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { useTempDirs } from "../testkit/tmp.js"
 import { VERSION } from "../version.js"
-import { CODEX_RULE, type DoctorResult, runDoctor, which } from "./doctor.js"
+import {
+  CODEX_RULE,
+  type DoctorResult,
+  honoursEnvProxy,
+  networkFix,
+  runDoctor,
+  which,
+} from "./doctor.js"
 
 const temp = useTempDirs()
 const SECRET = "sk-or-TESTSECRET-doctor"
@@ -171,6 +178,18 @@ describe("doctor", () => {
     expect(r.harness).toBe("claude")
     expect(check(r, "network")?.fix).toContain('"openrouter.ai" to sandbox.network.allowedDomains')
     expect(check(r, "network")?.fix).toContain("NODE_USE_ENV_PROXY")
+    expect(check(r, "network")?.fix).toContain("Node 22.21+ or 24+")
+  })
+
+  it("knows which Node versions honour NODE_USE_ENV_PROXY", () => {
+    for (const v of ["22.21.0", "v22.23.2", "24.0.0", "25.1.0"])
+      expect(honoursEnvProxy(v), v).toBe(true)
+    for (const v of ["22.20.0", "v22.12.0", "23.11.1", "20.19.0"])
+      expect(honoursEnvProxy(v), v).toBe(false)
+    expect(networkFix(undefined, "claude", false, {}, "22.12.0")).toMatch(
+      /this is Node 22\.12\.0, which ignores NODE_USE_ENV_PROXY, so upgrade Node first$/,
+    )
+    expect(networkFix(undefined, "claude", false, {}, "24.1.0")).not.toContain("upgrade")
   })
 
   it("blames the request, not the network, when the endpoint answers with an error", async () => {
