@@ -8,7 +8,7 @@ under Results ("M11 PR 10").
 
 | File | What it is |
 |---|---|
-| `adopt.patch` | Everything adopt added to the clone: `.system1/specs/spam.yaml` with its recorded fixtures, the labels, and `system1/`. That folder holds the policy module, the mapping, the shadow harness, the grant scan, the filter that wires the policy in, `capture.py`, `evaluate.py` and the offline tests |
+| `adopt.patch` | Everything adopt added to the clone: `.system1/specs/spam.yaml` with its recorded fixtures, the labels, and `system1/`. That folder holds the policy module, the mapping, the shadow harness, the grant scan, the filter that wires the policy in (it wraps only a pass-or-fail filter), `capture.py`, `evaluate.py` and the offline tests |
 
 ## Reproduce
 
