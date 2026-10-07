@@ -65,10 +65,12 @@ Applies the estate release-gate policy, [ADR 0046 Amendment 4](https://github.co
 3. **Release summary.** `verify` (no credentials) now also runs `tools/release-summary.mjs` and writes the result to `$GITHUB_STEP_SUMMARY`:
    - the version and the three packages;
    - the tag message (this repo has no changelog);
-   - `git log` and `git diff --stat` since the previous `v*` tag;
-   - a `[!CAUTION]` block naming every file changed under `.github/` since that tag.
+   - `git log` and `git diff --stat` since the version npm serves as latest. It uses that version rather than the nearest `v*` tag, because the tag ruleset stops tags being moved, not created, and a planted tag could shrink the diff;
+   - a `[!CAUTION]` block naming every file changed under `.github/`, or saying there is no trusted base.
 
-   The approver reads this on the run page before approving.
+   All of that text comes from whoever pushed the tag, so each part is fenced with a fence longer than any backtick run inside it, and can't forge markdown. The approver reads the summary on the run page before approving.
+
+   **The summary is advice, not a control.** It is produced by the run it describes. A tag that edits `release.yml` or `tools/release-*.mjs` controls what the summary says, including whether the CAUTION block appears. No check inside a tag-triggered workflow can avoid that, because GitHub runs the tag's own copy of the workflow. The independent check is GitHub's own compare view, from npm's latest version to the tag, for `.github/` and `tools/release-*`. `release.md` makes it part of the approval.
 4. **Ordering.** Push the tag only, and push `main` once the `publish` job has succeeded. That job waits until npm serves all three packages, so its success means they are live. The M6 rule still holds: the shim on `main` must never point at a CLI that npm doesn't serve. The agent can push `main` as soon as the job is green, and doesn't need to wait for the operator.
 5. **Removed:** `pnpm release:approve`, `release-publish.mjs --stage` and the stage helpers (`stageIdFrom`, `stagedFor`, `atLeast`, `STAGE_NPM`). The break-glass path (item 5) is unchanged.
 6. **Who does what.**

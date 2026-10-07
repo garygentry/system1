@@ -7,7 +7,7 @@
 // It has no npm credential and changes nothing.
 import { spawnSync } from "node:child_process"
 import { appendFileSync } from "node:fs"
-import { manifest, PACKAGES, ROOT, releaseSummary, releaseVersion } from "./release-lib.mjs"
+import { manifest, npmEnv, PACKAGES, ROOT, releaseSummary, releaseVersion } from "./release-lib.mjs"
 
 const tag = process.argv[2]
 if (!tag) {
@@ -28,13 +28,31 @@ if (error) fail(error)
 if (git(["rev-parse", "--verify", "--quiet", `refs/tags/${tag}`]) === undefined)
   fail(`no tag ${tag} (in CI, the checkout needs fetch-depth: 0)`)
 
-// The release before this one: the nearest v* tag reachable from the tag's parent.
-const previous = git(["describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", `${tag}^`])?.trim()
+// The release before this one is what npm serves as latest, not the nearest
+// v* tag: the tag ruleset stops tags moving, not new ones, so a planted tag just
+// below this one could otherwise shrink the diff and hide a .github/ change.
+const cli = manifest("cli").name
+const latest = spawnSync("npm", ["view", cli, "version"], { encoding: "utf8", env: npmEnv() })
+let previous
+let previousProblem
+if (latest.status !== 0 || !/^\d+\.\d+\.\d+$/.test(latest.stdout.trim())) {
+  previousProblem = `\`npm view ${cli} version\` failed`
+} else {
+  const candidate = `v${latest.stdout.trim()}`
+  if (git(["rev-parse", "--verify", "--quiet", `refs/tags/${candidate}`]) === undefined)
+    previousProblem = `npm's latest is ${candidate}, and there is no such tag`
+  else if (
+    spawnSync("git", ["merge-base", "--is-ancestor", candidate, tag], { cwd: ROOT }).status !== 0
+  )
+    previousProblem = `npm's latest, ${candidate}, is not an ancestor of ${tag}`
+  else previous = candidate
+}
 const range = previous ? `${previous}..${tag}` : tag
 const summary = releaseSummary({
   version,
   tag,
   previous,
+  previousProblem,
   packages: PACKAGES.map((pkg) => manifest(pkg).name),
   message: git(["tag", "-l", "--format=%(contents)", tag]) ?? "",
   log: git(["log", "--oneline", "--no-decorate", range]) ?? "",

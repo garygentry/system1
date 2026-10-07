@@ -4,10 +4,12 @@ export const PACKAGES: string[]
 export function manifest(pkg: string): { name: string; version: string }
 export function releaseVersion(): { version: string; error?: undefined } | { error: string }
 export function checkTag(tag: string, version: string): string[]
+export function fenced(text: string): string
 export function releaseSummary(release: {
   version: string
   tag: string
   previous?: string
+  previousProblem?: string
   packages: string[]
   message: string
   log: string

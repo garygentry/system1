@@ -34,16 +34,34 @@ export function checkTag(tag, version) {
 const SIGNATURE = /-----BEGIN [A-Z ]*SIGNATURE-----[\s\S]*$/
 
 /**
+ * `text` as a fenced code block whose fence is longer than any run of
+ * backticks inside it, so commit subjects, tag messages and file names (all
+ * written by whoever pushed the tag) can't close the fence and forge markdown.
+ */
+export function fenced(text) {
+  const longest = Math.max(2, ...(text.match(/`+/g) ?? []).map((run) => run.length))
+  const fence = "`".repeat(longest + 1)
+  return [fence, text, fence].join("\n")
+}
+
+/**
  * The release summary the workflow's `verify` job writes to its run page, as
- * markdown: what the approver is about to put on npm. `diffStat` is
- * `git diff --stat <previous>..<tag>`. `github` lists the files changed under
- * `.github/` (from `--name-only`, since `--stat` may shorten paths); any are
- * flagged loudly, because a tag runs the workflow as the tagged commit wrote it.
+ * markdown: what the approver is about to put on npm. `previous` is the tag of
+ * the version npm serves as latest (not the nearest tag, which anyone who can
+ * push a tag could plant); `previousProblem` says why there is none.
+ * `diffStat` is `git diff --stat <previous>..<tag>`. `github` lists the files
+ * changed under `.github/` (from `--name-only`, since `--stat` may shorten
+ * paths); any are flagged loudly, because a tag runs the workflow as the
+ * tagged commit wrote it.
+ *
+ * The summary is advice, not a control: the run that writes it is the tag's
+ * own, so a hostile tag can rewrite it too (0022, Amendment 1).
  */
 export function releaseSummary({
   version,
   tag,
   previous,
+  previousProblem,
   packages,
   message,
   log,
@@ -51,37 +69,45 @@ export function releaseSummary({
   github,
 }) {
   const range = previous ? `${previous}..${tag}` : tag
+  const caution = [
+    ...(previousProblem
+      ? [
+          `> **No trusted base to compare against:** ${previousProblem}. Everything below is unbounded.`,
+        ]
+      : []),
+    ...(github.length > 0
+      ? [
+          `> **\`.github/\` changed since ${previous}.** This run executes the workflow as the tag`,
+          "> wrote it. Read these changes in GitHub's own compare view before you approve:",
+          ">",
+          ...fenced(github.join("\n"))
+            .split("\n")
+            .map((line) => `> ${line}`),
+        ]
+      : []),
+  ]
   return [
     `## Release ${version}: waiting for approval`,
     "",
-    ...(github.length > 0
-      ? [
-          "> [!CAUTION]",
-          `> **\`.github/\` changed since ${previous ?? "the first commit"}.** This run executes the workflow as the`,
-          "> tag wrote it. Read these changes before you approve:",
-          ...github.map((file) => `> - \`${file}\``),
-          "",
-        ]
-      : []),
-    "| Package | Version |",
-    "|---|---|",
-    ...packages.map((name) => `| \`${name}\` | ${version} |`),
+    ...(caution.length > 0 ? ["> [!CAUTION]", ...caution, ""] : []),
+    "### Packages",
     "",
-    `**Tag message:** ${message.replace(SIGNATURE, "").trim() || "(none)"}`,
+    fenced(packages.map((name) => `${name}@${version}`).join("\n")),
+    "",
+    "### Tag message",
+    "",
+    fenced(message.replace(SIGNATURE, "").trim() || "(none)"),
     "",
     `### Changes (${range})`,
     "",
-    "```",
-    log.trim() || "(no commits)",
-    "```",
+    fenced(log.trim() || "(no commits)"),
     "",
     "### Files",
     "",
-    "```",
-    diffStat.replace(/^\n+|\s+$/g, "") || "(no changes)",
-    "```",
+    fenced(diffStat.replace(/^\n+|\s+$/g, "") || "(no changes)"),
     "",
     "Approving the `publish` job publishes all three packages live on npm, with provenance.",
+    "This summary is written by the run it describes; check `.github/` in GitHub's compare view.",
     "",
   ].join("\n")
 }

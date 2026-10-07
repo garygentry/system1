@@ -100,9 +100,10 @@ The tag starts `.github/workflows/release.yml`:
   - npm doesn't serve that version yet.
 
   Then it runs `pnpm check` and `pnpm release:check`. Last, `tools/release-summary.mjs` writes the
-  release summary to the run page. The summary has the packages, the tag message, the commits and
-  the `git diff --stat` since the previous tag, plus a **CAUTION** block naming any file changed
-  under `.github/`.
+  release summary to the run page. It has the packages, the tag message, and the commits and
+  `git diff --stat` since the version npm serves as latest. It uses that version, not the nearest
+  tag, so a planted tag can't shrink the diff. A **CAUTION** block names any file changed under
+  `.github/`, or says there is no trusted base to compare against.
 - **`publish`** runs in the `release` environment with `id-token: write`, on Node 24 and a
   pinned npm 11. It waits until the maintainer approves the environment. Then it runs
   `node tools/release-publish.mjs --provenance --skip-check`. Each package's `npm publish` swaps
@@ -111,6 +112,15 @@ The tag starts `.github/workflows/release.yml`:
 
 **The approval.** Before approving, the maintainer reads the summary on the run page. Pay
 particular attention to the CAUTION block: a tag runs the workflow as the tagged commit wrote it.
+
+**The summary is advice, not a control.** It is written by the run it describes, so a tag that
+edits `release.yml` or `tools/release-*.mjs` can rewrite the summary too, including leaving out
+the CAUTION block. So also check GitHub's own compare view,
+`https://github.com/garygentry/system1/compare/vPREV...vX.Y.Z`, where `vPREV` is the version
+`npm view @garygentry/system1 version` gives. Type the URL yourself rather than following a link
+in the summary. Look for changes under `.github/` and `tools/release-*`. Any you didn't expect
+mean: don't approve.
+
 Then approve under "Review deployments", on the web or in GitHub Mobile. An agent can't approve
 it. It can watch the run (`gh run watch`) and tell the maintainer it is waiting.
 
