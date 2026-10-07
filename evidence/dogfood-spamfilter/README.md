@@ -17,19 +17,27 @@ git clone https://github.com/mags0ft/spamfilter ~/.cache/system1-dogfood/spamfil
 cd ~/.cache/system1-dogfood/spamfilter && git checkout -b system1-adopt 03341e0
 git apply ~/workspace/system1/evidence/dogfood-spamfilter/adopt.patch
 python3 -m venv ../venv && ../venv/bin/pip install openai pytest pyyaml python-dotenv requests
-DECIDE_CMD="node ~/workspace/system1/packages/cli/dist/bundle/decide.mjs" ../venv/bin/python -m pytest system1 tests
+DECIDE_CMD="node $HOME/workspace/system1/packages/cli/dist/bundle/decide.mjs" ../venv/bin/python -m pytest system1 tests
 ```
 
 The tests replay the recorded answers and send nothing. `DECIDE_CMD` is needed only while the
 published `decide` (0.5.1) predates `decide runtime`.
 
-Re-running the measurement involves spending:
+That shows the module works. The numbers in Results come from a capture and compare's recorded
+answers, which hold raw comments and are not in the patch. To re-derive them you have to pay again:
 
-- **`capture.py`** sends each sampled comment to OpenRouter through the OpenAI filter, outside
-  system1's checks, at about $0.00002 a call.
-- **`decide compare spam --record`** needs the clone's own egress consent, which you grant.
+```sh
+# The existing filter over the sample: about $0.004, sent to OpenRouter outside system1's checks.
+OPENROUTER_API_KEY=… PYTHONPATH=src:system1 ../venv/bin/python system1/capture.py <dir with Youtube0*.csv> 200
+# Jev over the same states: about $0.004. It needs this clone's own egress consent, which you grant.
+node --env-file=<a .env with the key> $HOME/workspace/system1/packages/cli/dist/bundle/decide.mjs compare spam --record
+# The policy as it would run, replaying both: free.
+DECIDE_CMD="node $HOME/workspace/system1/packages/cli/dist/bundle/decide.mjs" PYTHONPATH=src:system1 ../venv/bin/python system1/evaluate.py
+```
 
-Both write raw comments under `.system1/compare/`, which stays out of git.
+Both paid steps write raw comments under `.system1/compare/`, which stays out of git. A fresh
+capture is the same 200 comments, but the filter's answers, and so the figures, can differ from
+run to run.
 
 ## Data
 

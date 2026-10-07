@@ -308,12 +308,12 @@
 
 ### M11 PR 10: dogfood, Python: `spamfilter` through adopt → capture → compare (2026-10-06)
 
-- **The target:** [`mags0ft/spamfilter`](https://github.com/mags0ft/spamfilter) (MIT, about 1.4k lines of Python) at `03341e0`, the maintainer's pick from three candidates (D8). `filters/openai.py`, `OpenAI.check`, makes one OpenAI-compatible chat call with a strict JSON schema `{is_spam: bool}`. The existing mechanism ran as a user would configure it: `openai/gpt-4o-mini` through OpenRouter, with the package's own prompt and options.
+- **The target:** [`mags0ft/spamfilter`](https://github.com/mags0ft/spamfilter) (MIT, about 2k lines of Python, 1.4k of them in `src/`) at `03341e0`, the maintainer's pick from three candidates (D8). `filters/openai.py`, `OpenAI.check`, makes one OpenAI-compatible chat call with a strict JSON schema `{is_spam: bool}`. The existing mechanism ran as a user would configure it: `openai/gpt-4o-mini` through OpenRouter, with the package's own prompt and options and a 30 s timeout (the package's default is 3 s; its own test uses 30).
 - **Where it ran:** a pinned clone in `~/.cache/system1-dogfood/spamfilter`, with its own egress consent, granted by the maintainer. The adoption is kept as `evidence/dogfood-spamfilter/adopt.patch`, with a README on how to reproduce it.
   - The module (`system1/`) came from the Python template, and `filter.py` wires it in as a spamfilter `Filter` that wraps the filter it would replace. It is inert: `enabled=False`, `EGRESS` "off".
   - The module's 24 offline tests and spamfilter's own 26 pass in replay.
   - The tests use the in-repo `decide`, because the published 0.5.1 predates `decide runtime`.
-- **The spec:** `spam`, one noul. One live recording ($0.000108) passed all 5 graded examples, between 0.03 and 0.97. The captured "Like this comment if…" example came back undecided (0.50), so the module keeps the existing answer there.
+- **The spec:** `spam`, one noul. One live recording ($0.000108) passed all 5 graded examples, between 0.03 and 0.97. The ungraded spec example "Like this comment if…" (written for the spec, not from the corpus) came back undecided (0.50), so the module keeps the existing answer there.
 - **Data:** 200 comments from the UCI YouTube Spam Collection (CC BY 4.0), 100 from each class, drawn with a fixed seed, with the corpus's own labels.
 - **The shadow run:** 200 calls, no failures, **$0.00406 measured** in all ($0.000020 a call, reported by OpenRouter per call), p50 894 ms, p95 1,559 ms.
 - **`decide compare spam --record`** (live, $0.00375 measured):
@@ -328,8 +328,9 @@
   | The policy | 188/200 | 90 | 2 |
 
   The model decided 179 of the 200. Of the rest, 10 were undecided and 11 sat between the bars.
-- **The Python spawn:** each call starts one `decide` process. Replay through `decide runtime` took p50 91 ms and p95 278 ms per call (n = 40), on top of the model's latency. That is under half of the gpt-4o-mini call it would replace.
-- **Verdict: a lean towards the policy, at no extra cost.** At about the same cost per call, with about a third of the latency (spawn included), it caught the same spam and wrongly blocked 2 real comments instead of 7. That is the error the spec's threshold `why` says costs more. With 200 rows it is a lean, not a result: the 5-row difference rests on a handful of comments. Cutover stays with spamfilter's users, and nothing here switches it on.
+- **The Python spawn:** each call starts one `decide` process. In `evaluate.py`, a replay call through `decide runtime` took p50 90 ms and p95 148 ms (n = 200), on top of the model's latency.
+- **Latency by path:** on the 179 calls the model decides, the policy costs Jev's call plus the spawn, against the filter's 894 ms p50. On the 21 it can't (10.5%), it pays all three, Jev, the spawn and the full gpt-4o-mini call, so its tail is worse than the filter's alone. The p50s don't add into a distribution; no end-to-end latency was measured.
+- **Verdict: a lean towards the policy, at about the same cost.** Its 21 fallbacks add about $0.0004 of gpt-4o-mini calls, so the run costs about 2% more than the filter alone. It caught as much spam (90 each, 88 of them the same comments) and wrongly blocked 2 real comments instead of 7, the error the spec's threshold `why` says costs more. With 200 rows it is a lean, not a result: the policy alone was right on 8 comments and the filter alone on 3, an exact McNemar p of about 0.23. Cutover stays with spamfilter's users, and nothing here switches it on.
 - **Found on the way:**
   - A value of 0.50 reaches the module as the runtime's `undecided` before its own bars apply. The template's tests should say so.
   - The spec test needs YAML's `BaseLoader`, because PyYAML reads a `true:` criteria key as a boolean. The Python template has no spec test yet; worth adding one with that loader (PR 11).
