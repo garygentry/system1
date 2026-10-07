@@ -446,8 +446,12 @@ function networkFix(
   if (sandboxed) {
     return `add \`${CODEX_RULE}\` to ${env.CODEX_HOME?.trim() || "~/.codex"}/rules/system1.rules, then restart Codex (it covers commands that start with decide; a pipe into decide stays offline)`
   }
+  // Claude's sandbox lets a command out only through its proxy, and Node's
+  // fetch ignores HTTPS_PROXY unless NODE_USE_ENV_PROXY is set: allowing the
+  // domain alone still fails (verified in a sandboxed `claude -p`, 2026-10-07).
   if (harness === "claude")
-    return "allow outbound access to openrouter.ai in Claude Code's sandbox settings"
+    return 'if Claude Code\'s sandbox is on, add "openrouter.ai" to sandbox.network.allowedDomains and set env NODE_USE_ENV_PROXY to "1" in its settings, then restart Claude Code (decide reaches the network only through the sandbox proxy)'
+
   return "check that this machine can reach openrouter.ai (proxy, firewall, DNS)"
 }
 

@@ -166,6 +166,13 @@ describe("doctor", () => {
     expect(check(unsandboxed, "network")?.fix).toMatch(/proxy, firewall, DNS/)
   })
 
+  it("gives Claude Code both sandbox settings: the domain alone isn't enough", async () => {
+    const r = await doctor({ CLAUDE_CODE_SESSION_ID: "s1" }, noDns)
+    expect(r.harness).toBe("claude")
+    expect(check(r, "network")?.fix).toContain('"openrouter.ai" to sandbox.network.allowedDomains')
+    expect(check(r, "network")?.fix).toContain("NODE_USE_ENV_PROXY")
+  })
+
   it("blames the request, not the network, when the endpoint answers with an error", async () => {
     const missing = await doctor({ CLAUDECODE: "1", SYSTEM1_MODEL: "bad/model" }, status404)
     expect(check(missing, "network")?.fix).toMatch(/does not know this model/)

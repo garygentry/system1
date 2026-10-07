@@ -6,12 +6,14 @@ the package. The maintainer runs it before every design-partner session. A partn
 run it too, if they're willing, before or after their session: it is the first check of System 1
 on macOS outside CI.
 
-You need Node 22 or newer, npm and git. From a clone of the repo, at the release being tried:
+You need Node 22 or newer, npm and git. Run it from a clone of the repo, at the release being
+tried. `v0.6.1` is the first release that has the script, and by default it checks the version of
+the checkout it runs from:
 
 ```sh
 git clone https://github.com/garygentry/system1.git
 cd system1
-git checkout v0.6.0
+git checkout v0.6.1
 sh tools/partners/fresh-check.sh
 ```
 

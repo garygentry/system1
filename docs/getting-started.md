@@ -21,7 +21,7 @@ Then add the plugin, so your agent knows when to use `decide`:
 
 | Harness | Plugin | Network |
 |---|---|---|
-| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | allow `openrouter.ai` if the sandbox is on |
+| **Claude Code** | `/plugin marketplace add garygentry/system1`, then `/plugin install system1@system1` | if the sandbox is on, allow `openrouter.ai` and set `NODE_USE_ENV_PROXY` ([how](troubleshooting.md#doctor-network)) |
 | **Codex** | `codex plugin marketplace add garygentry/system1`, then `codex plugin add system1@system1` | add `prefix_rule(pattern = ["decide"], decision = "allow")` to `~/.codex/rules/system1.rules` (`$CODEX_HOME/rules/` if you set `CODEX_HOME`), then restart Codex |
 | **Pi** | `pi install npm:@garygentry/system1-pi` | no sandbox |
 

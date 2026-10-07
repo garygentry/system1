@@ -154,11 +154,26 @@ The model's endpoint couldn't be reached from this shell. The fix depends on whe
 
 - **Codex:** its sandbox gives the shell no network. Add
   `prefix_rule(pattern = ["decide"], decision = "allow")` to `~/.codex/rules/system1.rules`
-  (`$CODEX_HOME/rules/` if you set `CODEX_HOME`; the setup skill offers to do this), then restart Codex. The rule covers only commands that
-  **start** with `decide`: `a && decide …` works, but `… | decide …` still runs offline, so pass
-  content with `--file`.
-- **Claude Code with the sandbox on:** allow outbound access to `openrouter.ai` in its sandbox
-  settings.
+  (`$CODEX_HOME/rules/` if you set `CODEX_HOME`; the setup skill offers to do this), then
+  restart Codex. The rule covers only commands that **start** with `decide`: `a && decide …`
+  works, but `… | decide …` still runs offline, so pass content with `--file`.
+- **Claude Code with the sandbox on:** a sandboxed command reaches the network only through
+  Claude Code's proxy, and Node's `fetch`, which `decide` uses, ignores the proxy unless
+  `NODE_USE_ENV_PROXY` is set. So it takes two settings, in `~/.claude/settings.json` (or the
+  repo's `.claude/settings.json`), then a restart of Claude Code:
+
+  ```json
+  {
+    "env": { "NODE_USE_ENV_PROXY": "1" },
+    "sandbox": { "network": { "allowedDomains": ["openrouter.ai"] } }
+  }
+  ```
+
+  Allowing the domain alone still fails, with `getaddrinfo EAI_AGAIN openrouter.ai`. Node prints
+  a one-line warning that its proxy support is experimental; it is harmless. Checked on Linux,
+  Node 22.23 and Claude Code 2.1.293, with a sandboxed `claude -p` running `decide ping`. The
+  alternative, `"excludedCommands": ["decide *"]` under `sandbox`, also works, but it runs
+  `decide` outside the sandbox altogether.
 - **Anywhere else:** check the proxy, firewall or DNS for `openrouter.ai`.
 - **An HTTP answer** (404, 5xx) means the network works. A 404 means the endpoint doesn't know the
   model (check `SYSTEM1_MODEL` and `SYSTEM1_ENDPOINT`). A 5xx means the provider is having trouble,
