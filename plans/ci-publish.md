@@ -1,6 +1,6 @@
 # Plan: publish from CI with trusted publishing and staged approval
 
-- **Status:** complete, 2026-09-25 (C: the 0.4.1 release; D: the lock-down, done by the maintainer)
+- **Status:** complete, 2026-09-25 (C: the 0.4.1 release; D: the lock-down, done by the maintainer). **Partly superseded 2026-10-06** by [0022 Amendment 1](decisions/0022-ci-publish-trusted-staged.md#amendment-1-2026-10-06-one-approval-in-github-replaces-stage--2fa): staging, `release:approve` and the `npm-publish` environment are gone, and one approval of the GitHub environment `release` replaces them. This plan is the historical record
 - **Decision:** [`decisions/0022-ci-publish-trusted-staged.md`](decisions/0022-ci-publish-trusted-staged.md)
 - **Replaces:** `docs/contributing/release.md` §4 (publishing from the maintainer's machine) as the documented path. `pnpm release:publish` stays as a break-glass option.
 - **Inputs:** `.handoff/npm.md` (agent research), checked against the primary sources listed at the end.

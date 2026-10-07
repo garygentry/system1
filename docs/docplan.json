@@ -42,7 +42,7 @@
       "id": "s-root-pkg",
       "path": "package.json",
       "type": "manifest",
-      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, dev:link/unlink/status, release:check, release:verify, release:publish, release:approve."
+      "note": "Workspace scripts: check, generate, test:live, smoke, eval:routing, bench:startup, dev:link/unlink/status, release:check, release:verify, release:summary, release:publish."
     },
     {
       "id": "s-cli-main",
@@ -1214,8 +1214,8 @@
           "sourceRefs": ["s-root-pkg", "s-evals"]
         },
         {
-          "heading": "Tag, stage and approve",
-          "intent": "Push the signed tag only; CI stages the three packages; approve with npm 2FA, then push main.",
+          "heading": "Tag, approve once, publish",
+          "intent": "Push the annotated tag only; CI verifies and writes a release summary; the maintainer approves the release environment once; CI publishes; then push main.",
           "sourceRefs": ["s-milestones"]
         },
         {
@@ -1224,7 +1224,7 @@
           "sourceRefs": ["s-milestones", "s-roadmap"]
         }
       ],
-      "verification": "Rewritten for 0022: a signed tag, the release workflow stages, and release:approve takes it live with npm 2FA. The first CI release (plans/ci-publish.md phase C) is what confirms the staged steps."
+      "verification": "Rewritten for 0022 Amendment 1 (2026-10-06): an annotated tag, verify writes the release summary, one approval of the release environment, and publish goes live with provenance. The first release through the gate confirms it."
     },
     {
       "id": "howto-local-plugin",

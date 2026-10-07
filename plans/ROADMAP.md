@@ -124,7 +124,7 @@ Full records are in `plans/decisions/NNNN-*.md`. A superseded record is kept and
 | 0019 | `scout`, `guard`/`done-check` and `adopt`+`compare` ship as M9–M11 (0.4.0–0.6.0) before design partners (now M12) | accepted |
 | 0020 | Adopted code gets runtime consent only from a marked line in the generated module (never env or config); an explicit runtime root with an in-memory ledger fallback; a $1.00/day default cap; every fallback carries a reason code | accepted |
 | 0021 | `decide` is a product in its own right: one repo, two layers (the tool; the agent plugin with core skills and use-case packs). A global CLI install is the default in every harness | accepted |
-| 0022 | Releases publish from CI: a signed tag makes the `release` workflow stage the packages through npm trusted publishing (OIDC, stage-only), and the maintainer approves with npm 2FA. No npm token. Plan: [`ci-publish.md`](ci-publish.md) | accepted |
+| 0022 | Releases publish from CI: a `vX.Y.Z` tag runs the `release` workflow, which publishes through npm trusted publishing (OIDC) after the maintainer approves the GitHub environment `release` once (amended 2026-10-06, ADR 0046 A4; it was stage + per-package npm 2FA). No npm token. Plan: [`ci-publish.md`](ci-publish.md) | accepted, amended |
 
 Carried over from the archived brief and still in force:
 - the vocabulary (state, question set, primitives, policy, shape, undecided);

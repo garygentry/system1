@@ -1,5 +1,5 @@
-// Shared by release-publish.mjs, release-approve.mjs and the release workflow
-// (decision 0022). The pure checks are unit-tested in release-lib.test.ts.
+// Shared by release-publish.mjs, release-verify.mjs, release-summary.mjs and
+// the release workflow (decision 0022). The pure checks are unit-tested in release-lib.test.ts.
 import { spawnSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -8,8 +8,6 @@ import { fileURLToPath } from "node:url"
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 /** Publish order. The CLI bundles core, so none depends on another at install time. */
 export const PACKAGES = ["core", "cli", "pi"]
-/** `npm stage` and stage-only trusted publishing arrived in npm 11.15.0. */
-export const STAGE_NPM = "11.15.0"
 
 export const manifest = (pkg) =>
   JSON.parse(readFileSync(join(ROOT, "packages", pkg, "package.json"), "utf8"))
@@ -32,24 +30,86 @@ export function checkTag(tag, version) {
   return tag === `v${version}` ? [] : [`tag ${tag} does not match the packages' version ${version}`]
 }
 
-/** True when `version` (x.y.z) is at least `min`. */
-export function atLeast(version, min) {
-  const a = version.split(".").map(Number)
-  const b = min.split(".").map(Number)
-  for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0)
-  return true
+/** The signature git appends to a signed tag's message. */
+const SIGNATURE = /-----BEGIN [A-Z ]*SIGNATURE-----[\s\S]*$/
+
+/**
+ * `text` as a fenced code block whose fence is longer than any run of
+ * backticks inside it, so commit subjects, tag messages and file names (all
+ * written by whoever pushed the tag) can't close the fence and forge markdown.
+ */
+export function fenced(text) {
+  const longest = Math.max(2, ...(text.match(/`+/g) ?? []).map((run) => run.length))
+  const fence = "`".repeat(longest + 1)
+  return [fence, text, fence].join("\n")
 }
 
-/** The stage id in `npm stage publish` output: `+ name@1.2.3 (staged with id <uuid>)`. */
-export function stageIdFrom(output) {
-  return /staged with id ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i.exec(
-    output,
-  )?.[1]
-}
-
-/** The items of `npm stage list <name> --json` that stage `name@version`. */
-export function stagedFor(items, name, version) {
-  return items.filter((item) => item.packageName === name && item.version === version)
+/**
+ * The release summary the workflow's `verify` job writes to its run page, as
+ * markdown: what the approver is about to put on npm. `previous` is the tag of
+ * the version npm serves as latest (not the nearest tag, which anyone who can
+ * push a tag could plant); `previousProblem` says why there is none.
+ * `diffStat` is `git diff --stat <previous>..<tag>`. `github` lists the files
+ * changed under `.github/` (from `--name-only`, since `--stat` may shorten
+ * paths); any are flagged loudly, because a tag runs the workflow as the
+ * tagged commit wrote it.
+ *
+ * The summary is advice, not a control: the run that writes it is the tag's
+ * own, so a hostile tag can rewrite it too (0022, Amendment 1).
+ */
+export function releaseSummary({
+  version,
+  tag,
+  previous,
+  previousProblem,
+  packages,
+  message,
+  log,
+  diffStat,
+  github,
+}) {
+  const range = previous ? `${previous}..${tag}` : tag
+  const caution = [
+    ...(previousProblem
+      ? [
+          `> **No trusted base to compare against:** ${previousProblem}. Everything below is unbounded.`,
+        ]
+      : []),
+    ...(github.length > 0
+      ? [
+          `> **\`.github/\` changed since ${previous}.** This run executes the workflow as the tag`,
+          "> wrote it. Read these changes in GitHub's own compare view before you approve:",
+          ">",
+          ...fenced(github.join("\n"))
+            .split("\n")
+            .map((line) => `> ${line}`),
+        ]
+      : []),
+  ]
+  return [
+    `## Release ${version}: waiting for approval`,
+    "",
+    ...(caution.length > 0 ? ["> [!CAUTION]", ...caution, ""] : []),
+    "### Packages",
+    "",
+    fenced(packages.map((name) => `${name}@${version}`).join("\n")),
+    "",
+    "### Tag message",
+    "",
+    fenced(message.replace(SIGNATURE, "").trim() || "(none)"),
+    "",
+    `### Changes (${range})`,
+    "",
+    fenced(log.trim() || "(no commits)"),
+    "",
+    "### Files",
+    "",
+    fenced(diffStat.replace(/^\n+|\s+$/g, "") || "(no changes)"),
+    "",
+    "Approving the `publish` job publishes all three packages live on npm, with provenance.",
+    "This summary is written by the run it describes; check `.github/` in GitHub's compare view.",
+    "",
+  ].join("\n")
 }
 
 /**
