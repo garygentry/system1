@@ -10,7 +10,25 @@ The only supported model is Jev (`typesafe/jev-1.13`, on OpenRouter's `/api/alph
 
 ### Where we are
 
-**Updated 2026-09-30 (0.5.1).** M10 is done: `guard` and its first pack, `done-check`, check the agent's work at Stop against the repo's criteria in Claude Code and Codex, for repos that opt in. It shipped in 0.5.0, and in Codex it works from 0.5.1. M11 (`adopt` + `compare`) is next. Design partners are M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+**Updated 2026-10-07 (0.6.0).** M11 is done: `adopt` puts a decision-model policy module in front of a closed judgement in the user's code (TypeScript or Python), inert until the user switches it on, and `compare` measures it against the mechanism it would replace. It shipped in 0.6.0, the first release through the one-approval gate ([0022](decisions/0022-ci-publish-trusted-staged.md) Amendment 1). M10 (`guard` + `done-check`) shipped in 0.5.0, and works in Codex from 0.5.1. Design partners are M12 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)), and nobody but the author has used System 1 yet. `docs/evaluation.md` summarises every measurement.
+
+**0.6.0, released and verified 2026-10-07** (tag `v0.6.0` on `09efbf2`, annotated, not signed). M11: `adopt` and `compare`. The plan and its results are in [`m11-adopt.md`](m11-adopt.md) and [`milestones/M9-M11-scout-guard-adopt.md`](milestones/M9-M11-scout-guard-adopt.md) § M11; the user guide is `docs/adopt.md`.
+
+- **What it adds:**
+  - `@garygentry/system1-core/runtime` for adopted TypeScript, and `decide runtime` for Python, with runtime consent in the module's own marked line ([0020](decisions/0020-runtime-consent-for-adopted-code.md)).
+  - `decide compare`, with the `emulated` baseline (Haiku 4.5), which needs its own opt-in and is refused anywhere else.
+  - `decide opportunities set-status`; the `adopt` and `compare` skills; doctor checks for adopted modules; adopt's TS and Python templates.
+  - Architecture docs brought up to date from 0.3.1.
+- **Gates:**
+  - `pnpm check` (995 tests), `validate`, and `release:check` 14/14. It now also imports `./runtime` from the packed core tarball and asks the installed CLI for its runtime protocol.
+  - Smoke 26/26 (Claude 8, Codex 10 with the Python template in the sandbox, Pi 8), after #56 fixed a dash `echo` in the Claude script that broke the adopt marker.
+  - `eval:routing all`: 100% in every category on all three harnesses.
+  - A publish dry run (core 271 files, CLI 28, Pi 35), and `release:verify`.
+- **Release, through the new gate (#52, #54):**
+  - The tag was pushed alone. `verify` wrote the release summary, flagging the two `.github/` changes, and the maintainer approved environment `release` once.
+  - The first `publish` attempt failed with `ENEEDAUTH`: the npm trusted publishers still named environment `npm-publish`. Editing on npmjs.com had changed their permission but not their environment. Fixed with `npm trust`, then the failed job was re-run with one more approval.
+  - npm then served all three with SLSA v1 provenance, and `main` followed. No npm 2FA prompt and no `release:approve`; `release.md` now covers the trust fix.
+- **Published artifacts, fresh profiles:** `smoke:published --live` passed 10/10. Claude, Codex and Pi each made a live `decide many`, for $0.000071, $0.000077 and $0.000080. Codex listed both system1 hooks, `untrusted` until the user trusts them.
 
 **0.5.1, released and verified 2026-09-30** (tag `v0.5.1` on `293128d`, signed with the rotated `gov-git-signing` key, #38). A fix to 0.5.0: done-check now runs in Codex.
 
@@ -282,7 +300,7 @@ No `mcp.json` or `.mcp.json` is generated in v1.
 | **M8** | **Onboarding: the first hour works** | **done** 2026-09-23, **0.2.0 published**, see `milestones/M8-onboarding.md`. Six replay-tested cookbook recipes, `docs/` checked against the code by a test, six first-run stalls fixed across three harnesses, CI on Ubuntu and macOS (which found a real symlinked-path bug). A cookbook of tested question sets; `docs/`; a first-run and error-message pass; macOS verified and a CI matrix; the supported-model statement |
 | **M9** | **`scout` → 0.4.0** | **done 2026-09-25, 0.4.0 released and verified**; see `milestones/M9-M11-scout-guard-adopt.md` ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Screen a codebase or agent configuration for decisions worth handing over; typed backlog via `decide opportunities`; offline `decide spec lint` |
 | M10 | `guard` + `done-check` → 0.5.0 | **done** 2026-09-28, released 0.5.0. Opt-in Stop hook, one verdict per acceptance criterion, block once then allow; addresses Known gap #1 for repos that opt in with a criteria file |
-| **M11** | **`adopt` + `compare` → 0.6.0** | **in progress**; implementation plan [`m11-adopt.md`](m11-adopt.md), runtime consent [0020](decisions/0020-runtime-consent-for-adopted-code.md). TS/Python policy modules through the engine with fallback; shadow run against the current mechanism and an `emulated` baseline |
+| **M11** | **`adopt` + `compare` → 0.6.0** | **done 2026-10-07, 0.6.0 released and verified**; implementation plan [`m11-adopt.md`](m11-adopt.md), runtime consent [0020](decisions/0020-runtime-consent-for-adopted-code.md). TS/Python policy modules through the engine with fallback; shadow run against the current mechanism and an `emulated` baseline |
 | M12 | **Design partners: 3–5 real users** (was M9) | outline, after M11 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)). Recruit, watch them reach a first useful decision unaided, collect what breaks and what surprises, one fix round. The gate on any wider release. **M7 gate (D5): cleared 2026-09-23.** The user judged the checkable curve not bad, so calibration does not block this milestone |
 | M13 | **Release** (was M10) | outline. Hygiene informed by M12 (CHANGELOG, CONTRIBUTING, SECURITY, issue templates), a stability and deprecation policy, the version decision, the public statement |
 | — | *Post-release features:* `calibrate`, `sweep`, `pairs`, the `command-guard` and `loop-check` packs | Cut from the road to release (2026-09-23). `scout`, `adopt`, `compare` and `guard`/`done-check` were brought back as M9–M11 on 2026-09-24 ([0019](decisions/0019-scout-guard-adopt-before-partners.md)) |

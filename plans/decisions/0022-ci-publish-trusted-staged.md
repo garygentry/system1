@@ -98,3 +98,9 @@ The "What this protects against" section above describes the original design. Re
 4. Delete the `npm-publish` environment.
 
 Until step 1 is done, the `publish` job fails at the OIDC exchange and publishes nothing.
+
+**Confirmed on 0.6.0 (2026-10-07):**
+- That failure did happen. An edit on npmjs.com changed each publisher's permission to "publish, stage publish" but left the environment at `npm-publish`. npm then refused the run's token, and `npm publish` fell back to no credential (`ENEEDAUTH`, straight after the tarball listing). Nothing was published.
+- `npm trust` fixed the environment, and re-running the failed job took one more approval. npm then served all three packages with SLSA v1 provenance (`dist.attestations`).
+- The tag was annotated and not signed, and `verify`'s summary flagged both `.github/` changes.
+- Operator steps 1–3 are done; step 4, deleting `npm-publish`, is still to do.
