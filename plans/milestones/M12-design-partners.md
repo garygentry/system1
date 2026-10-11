@@ -1,6 +1,6 @@
 # M12 — Design partners: someone else's first hour
 
-**Status:** **planned (kit ready)**, 2026-10-07. The kit ships with 0.6.1, and the sessions run on 0.6.1 or later (X4). The decisions below are the user's, collected by the coordinating session the same day. Recruiting and the sessions are the user's; this plan and the partner kit are ready.
+**Status:** **planned (kit ready)**, 2026-10-07. The kit shipped with 0.6.1 (released and verified 2026-10-11), and the sessions run on 0.6.1 or later (X4). The decisions below are the user's, collected by the coordinating session the same day. Recruiting and the sessions are the user's; this plan and the partner kit are ready.
 **Goal:** 3–5 people who have never seen System 1 install it from the docs, in their own harness and their own repo, and reach a decision they'd act on, with nobody helping. Everything they trip on gets a fix or a written reason, and the fixes ship as a release. That is the gate on M13 and on any wider release.
 
 **How to track this plan.** Sessions are written up in `plans/m12/sessions/P<n>.md` from the [observation template](../m12/observation-template.md). Every stall, bug or surprise becomes one row in the [findings log](../m12/findings.md), and the Results section and the gate (D4) are read from that log. Tick the acceptance boxes with the session, PR or release next to each.
@@ -32,7 +32,7 @@ The user's answers, collected for this milestone by the coordinating session.
 | X1 | **A useful decision** is a live decision on the partner's own repo that the partner says they'd act on, reached without help. The task sheet says what that looks like per task. | D4 needs a test the maintainer can apply on the spot. "Live" excludes replay; "own repo" excludes the README's examples; "they'd act on it" is the partner's call, not ours. |
 | X2 | **Partner-facing pages live in `docs/partners/`; maintainer-facing ones in `plans/m12/`.** The fresh-machine check is `tools/partners/fresh-check.sh`. | Partners may be sent a link, so their pages sit with the other user docs, where the docs test checks every link. The observation sheets and findings are plan tracking ([0012](../decisions/0012-plan-tracking-plans-roadmap-md-plans-milestones-mn.md)). The script is a repo tool with a test, like `tools/smoke/`. |
 | X3 | **Pseudonyms only.** Session notes use `P1`…`P5`, the repo's kind but not its name, and no code unless the partner agrees. | The sheets are committed to a public repo. |
-| X4 | **0.6.1 carries the kit; the sessions run on 0.6.1 or later; the fix round is a later release.** 0.6.1 (released up to the gate on 2026-10-07, by the user's choice) carries #60's fixes to shipped code (sub-millisecond `latencyMs` in core's compare signals and in the plugin's adopt templates, plus template spec tests), this PR's docs fixes, and the one code change the kit needed: `doctor`'s network fix for Claude Code's sandbox (F5). `v0.6.1` is also the first tag with `tools/partners/fresh-check.sh`. The fix round after the sessions is a later patch release unless a fix needs a contract change. | D1 puts the kit's code changes in 0.6.1, and #60 already needed a release. Partners should install what the kit was checked against. |
+| X4 | **0.6.1 carries the kit; the sessions run on 0.6.1 or later; the fix round is a later release.** 0.6.1 (released up to the gate on 2026-10-07, by the user's choice; approved, published and verified 2026-10-11) carries #60's fixes to shipped code (sub-millisecond `latencyMs` in core's compare signals and in the plugin's adopt templates, plus template spec tests), this PR's docs fixes, and the one code change the kit needed: `doctor`'s network fix for Claude Code's sandbox (F5). `v0.6.1` is also the first tag with `tools/partners/fresh-check.sh`. The fix round after the sessions is a later patch release unless a fix needs a contract change. | D1 puts the kit's code changes in 0.6.1, and #60 already needed a release. Partners should install what the kit was checked against. |
 
 ## Scope
 
@@ -46,7 +46,7 @@ The user's answers, collected for this milestone by the coordinating session.
 | Observation template | [`plans/m12/observation-template.md`](../m12/observation-template.md) | Versions, a timeline with the first live and first useful decision, one block per stall, errors verbatim, `doctor` output, cost from the ledger, the per-task outcome and a 10-question debrief |
 | Findings log | [`plans/m12/findings.md`](../m12/findings.md) | One row per stall, bug, surprise or wish, with severity, disposition and status. Rows found while writing the kit are already in it (F1–F5) |
 
-**Verified 2026-10-07:** `fresh-check.sh` against the published 0.6.0 on Linux (the script's default is the checkout's version, so at `v0.6.1` it checks 0.6.1) passed all checks (`SETUP NEEDED (key, consent)`, replay `1 kept of 3`, `ping` 189 ms), and `--offline` against the checkout bundle passed too. It hasn't run on a Mac outside CI yet; that is what D2's macOS partners are for.
+**Verified 2026-10-07:** `fresh-check.sh` against the published 0.6.0 on Linux (the script's default is the checkout's version, so at `v0.6.1` it checks 0.6.1) passed all checks (`SETUP NEEDED (key, consent)`, replay `1 kept of 3`, `ping` 189 ms), and `--offline` against the checkout bundle passed too. **Re-verified 2026-10-11** at `v0.6.1` against the published 0.6.1 (Linux, Node 22.23): PASS, `SETUP NEEDED (key, consent)`, replay `1 kept of 3`, `ping` 552 ms, no consent or credentials written. It hasn't run on a Mac outside CI yet; that is what D2's macOS partners are for.
 
 ### 2. Pre-M12 fixes (found while writing the kit)
 
@@ -61,7 +61,7 @@ Fixed in this PR (findings F1–F5; all docs except F5's `doctor` message):
 Before the first session (larger, or needs verifying first):
 
 - **F6, `decide` ignores proxy variables.** F5's root cause reaches beyond Claude: behind any HTTP proxy (a corporate network, another sandbox), `decide` connects directly. `NODE_USE_ENV_PROXY=1` is the workaround on recent Node. Honouring `HTTPS_PROXY` in the transport itself is the real fix, but it touches the egress path, so it goes to the fix round rather than into 0.6.1 untested.
-- **README status line.** It says 0.6.0. Change it to 0.6.1 in the 0.6.1 bump commit, not before: `main` must not get ahead of npm.
+- **README status line.** Done: the 0.6.1 bump commit (`e81b2e5`) changed it from 0.6.0 to 0.6.1, and `main` moved there only once npm served 0.6.1.
 - **Main must match npm during M12.** Partners follow the README on `main`. Until the fix round ships, nothing merged to `main` may describe behaviour npm doesn't serve yet. If something must, it waits on a branch, or the session moves to the release that has it.
 
 ### 3. Recruiting (the user's)
@@ -147,7 +147,7 @@ If fewer than 3 partners reach a useful decision, the gate isn't met: fix, relea
 
 ## Acceptance
 
-- [ ] The kit is merged: invite, task sheet, fresh-machine check (with its test), observation template, findings log.
+- [x] The kit is merged: invite, task sheet, fresh-machine check (with its test), observation template, findings log. *(#61, `3324193`; shipped in 0.6.1, where `fresh-check.sh` passed against the published package on 2026-10-11.)*
 - [x] F5 (the Claude sandbox setting) is verified and documented before the first Claude Code session. *(2026-10-07, Linux; this PR.)*
 - [ ] 3–5 partners recruited, covering Claude Code, Codex and Pi, at least one on macOS (D2).
 - [ ] The fresh-machine check passed before every session, and its result is in that session's sheet.

@@ -80,10 +80,14 @@ describe("guard state", () => {
     const file = fileIn()
     const bad = { ...session(NOW.toISOString()), base: "not-a-sha" } as GuardSession
     expect(() =>
-      updateGuardState(file, (st) => ({
-        state: { ...st, sessions: { "claude:x": bad } },
-        result: 0,
-      })),
+      updateGuardState(
+        file,
+        (st) => ({
+          state: { ...st, sessions: { "claude:x": bad } },
+          result: 0,
+        }),
+        { now: NOW },
+      ),
     ).toThrow(/Refused to write an invalid guard state/)
     expect(() => readFileSync(file)).toThrow()
   })
